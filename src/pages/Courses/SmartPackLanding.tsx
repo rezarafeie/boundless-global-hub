@@ -46,15 +46,127 @@ import IframeModal from "@/components/IframeModal";
 import MobileStickyButton from "@/components/MobileStickyButton";
 import CountdownTimer from "@/components/CountdownTimer";
 import SectionTitle from "@/components/SectionTitle";
+import { supabase } from '@/integrations/supabase/client';
+import { TetherlandService } from '@/lib/tetherlandService';
+
+interface Course {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  price: number;
+  use_dollar_price: boolean;
+  usd_price: number | null;
+  is_sale_enabled: boolean;
+  sale_price: number | null;
+  sale_expires_at: string | null;
+  is_pre_launch_enabled?: boolean;
+  pre_launch_price?: number | null;
+  pre_launch_ends_at?: string | null;
+}
 
 const SmartPackLanding = () => {
   const [openFAQ, setOpenFAQ] = useState<string | null>(null);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [course, setCourse] = useState<Course | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [finalRialPrice, setFinalRialPrice] = useState<number | null>(null);
+  const [originalRialPrice, setOriginalRialPrice] = useState<number | null>(null);
+  const [salePrice, setSalePrice] = useState<number | null>(null);
+  const [isOnSale, setIsOnSale] = useState(false);
 
   // Set countdown target for 7 days from now
   const targetDate = new Date();
   targetDate.setDate(targetDate.getDate() + 7);
   const endDateString = targetDate.toISOString();
+
+  // Fetch course data on component mount
+  useEffect(() => {
+    fetchCourse();
+  }, []);
+
+  // Calculate pricing when course data changes
+  useEffect(() => {
+    if (course) {
+      calculatePricing();
+    }
+  }, [course]);
+
+  const fetchCourse = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('slug', 'smart-pack')
+        .eq('is_active', true)
+        .single();
+
+      if (error) throw error;
+      setCourse(data);
+    } catch (error) {
+      console.error('Error fetching smart-pack course:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculatePricing = async () => {
+    if (!course) return;
+
+    const now = new Date();
+    
+    // Check if sale is active
+    const saleExpiry = course.sale_expires_at ? new Date(course.sale_expires_at) : null;
+    const isSaleActive = course.is_sale_enabled && 
+                        course.sale_price !== null && 
+                        saleExpiry && 
+                        now < saleExpiry;
+    
+    setIsOnSale(isSaleActive);
+
+    if (course.use_dollar_price && course.usd_price) {
+      // Convert USD prices to IRR
+      try {
+        const originalRial = await TetherlandService.convertUSDToIRR(course.usd_price);
+        setOriginalRialPrice(originalRial);
+        
+        if (isSaleActive && course.sale_price) {
+          const saleRial = await TetherlandService.convertUSDToIRR(course.sale_price);
+          setSalePrice(saleRial);
+          setFinalRialPrice(saleRial);
+        } else {
+          setSalePrice(null);
+          setFinalRialPrice(originalRial);
+        }
+      } catch (error) {
+        console.error('Error converting USD to IRR:', error);
+        // Fallback to showing USD prices as IRR
+        setOriginalRialPrice(course.price);
+        setFinalRialPrice(isSaleActive ? course.sale_price : course.price);
+      }
+    } else {
+      // Course uses IRR pricing
+      setOriginalRialPrice(course.price);
+      if (isSaleActive && course.sale_price) {
+        setSalePrice(course.sale_price);
+        setFinalRialPrice(course.sale_price);
+      } else {
+        setSalePrice(null);
+        setFinalRialPrice(course.price);
+      }
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
+  };
+
+  const calculateDiscountPercentage = () => {
+    if (!originalRialPrice || !finalRialPrice || originalRialPrice === finalRialPrice) {
+      return 0;
+    }
+    return Math.round(((originalRialPrice - finalRialPrice) / originalRialPrice) * 100);
+  };
 
   const handlePurchaseClick = () => {
     window.location.href = '/enroll/?course=smart-pack';
@@ -1512,15 +1624,30 @@ const SmartPackLanding = () => {
             
             {/* Clean Price Card */}
             <div className="bg-muted/30 rounded-2xl p-8 mb-8 border border-border">
-              <div className="flex items-center justify-center gap-4 mb-6">
-                <span className="text-lg text-muted-foreground line-through">۲,۵۰۰,۰۰۰ تومان</span>
-                <Badge variant="destructive" className="text-sm">۴۰٪ تخفیف</Badge>
-              </div>
-              
-              <div className="text-5xl md:text-6xl font-bold text-foreground mb-8">
-                ۱,۴۹۹,۰۰۰
-                <span className="text-xl font-normal text-muted-foreground mr-2">تومان</span>
-              </div>
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <p className="text-muted-foreground mt-4">در حال بارگیری قیمت...</p>
+                </div>
+              ) : (
+                <>
+                  {isOnSale && originalRialPrice && finalRialPrice && originalRialPrice > finalRialPrice && (
+                    <div className="flex items-center justify-center gap-4 mb-6">
+                      <span className="text-lg text-muted-foreground line-through">
+                        {formatPrice(originalRialPrice)}
+                      </span>
+                      <Badge variant="destructive" className="text-sm">
+                        {calculateDiscountPercentage()}٪ تخفیف
+                      </Badge>
+                    </div>
+                  )}
+                  
+                  <div className="text-5xl md:text-6xl font-bold text-foreground mb-8">
+                    {finalRialPrice ? new Intl.NumberFormat('fa-IR').format(finalRialPrice) : '---'}
+                    <span className="text-xl font-normal text-muted-foreground mr-2">تومان</span>
+                  </div>
+                </>
+              )}
               
               {/* Trust Indicators */}
               <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-8 text-sm text-muted-foreground">
