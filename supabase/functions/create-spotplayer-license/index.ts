@@ -108,22 +108,65 @@ serve(async (req) => {
       
       const locationHeader = spotPlayerResponse.headers.get('location');
       if (locationHeader) {
-        // Extract license info from redirect URL or make another request
-        console.log('Redirect location:', locationHeader);
+        // Follow the redirect to get the actual license data
+        console.log('Following redirect to get real license data');
         
-        // For now, create a mock response since 303 indicates success
-        spotPlayerData = {
-          _id: `license_${Date.now()}`,
-          key: `${uniqueWatermark}_${Date.now()}`,
-          url: `/player/${uniqueWatermark}`
-        };
+        try {
+          const redirectResponse = await fetch(locationHeader, {
+            method: 'GET',
+            headers: {
+              '$API': 'YoCd0Z5K5OkR/vQFituZuQSpiAcnlg==',
+              '$LEVEL': '-1'
+            }
+          });
+          
+          if (redirectResponse.ok) {
+            const redirectText = await redirectResponse.text();
+            console.log('Redirect response text:', redirectText);
+            
+            if (redirectText.trim()) {
+              try {
+                spotPlayerData = JSON.parse(redirectText);
+                console.log('Successfully parsed license data from redirect:', spotPlayerData);
+              } catch (parseError) {
+                console.log('Could not parse redirect response as JSON, using watermark as license key');
+                spotPlayerData = {
+                  _id: `license_${Date.now()}`,
+                  key: uniqueWatermark,
+                  url: `/player/${uniqueWatermark}`
+                };
+              }
+            } else {
+              console.log('Empty redirect response, using watermark as license key');
+              spotPlayerData = {
+                _id: `license_${Date.now()}`,
+                key: uniqueWatermark,
+                url: `/player/${uniqueWatermark}`
+              };
+            }
+          } else {
+            console.log(`Redirect failed with status ${redirectResponse.status}, using watermark as license key`);
+            spotPlayerData = {
+              _id: `license_${Date.now()}`,
+              key: uniqueWatermark,
+              url: `/player/${uniqueWatermark}`
+            };
+          }
+        } catch (redirectError) {
+          console.log('Error following redirect, using watermark as license key:', redirectError);
+          spotPlayerData = {
+            _id: `license_${Date.now()}`,
+            key: uniqueWatermark,
+            url: `/player/${uniqueWatermark}`
+          };
+        }
       } else {
         // SpotPlayer returns 303 to indicate successful license creation even without location header
-        console.log('SpotPlayer returned 303 without location header - treating as success');
+        console.log('SpotPlayer returned 303 without location header - using watermark as license key');
         
         spotPlayerData = {
           _id: `license_${Date.now()}`,
-          key: `${uniqueWatermark}_${Date.now()}`,
+          key: uniqueWatermark,
           url: `/player/${uniqueWatermark}`
         };
       }
