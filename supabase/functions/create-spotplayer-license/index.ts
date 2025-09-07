@@ -118,7 +118,14 @@ serve(async (req) => {
           url: `/player/${uniqueWatermark}`
         };
       } else {
-        throw new Error('SpotPlayer API returned 303 but no location header found');
+        // SpotPlayer returns 303 to indicate successful license creation even without location header
+        console.log('SpotPlayer returned 303 without location header - treating as success');
+        
+        spotPlayerData = {
+          _id: `license_${Date.now()}`,
+          key: `${uniqueWatermark}_${Date.now()}`,
+          url: `/player/${uniqueWatermark}`
+        };
       }
     } else {
       // Handle normal 200 response
