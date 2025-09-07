@@ -84,10 +84,11 @@ serve(async (req) => {
     console.log('Sending request to SpotPlayer API:', spotPlayerRequestBody);
 
     // Call SpotPlayer API
+    const spotPlayerApiKey = Deno.env.get('SPOTPLAYER_API_KEY') || 'YoCd0Z5K5OkR/vQFituZuQSpiAcnlg==';
     const spotPlayerResponse = await fetch('https://panel.spotplayer.ir/license/edit/', {
       method: 'POST',
       headers: {
-        '$API': 'YoCd0Z5K5OkR/vQFituZuQSpiAcnlg==',
+        '$API': spotPlayerApiKey,
         '$LEVEL': '-1',
         'Content-Type': 'application/json'
       },
