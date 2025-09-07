@@ -71,8 +71,7 @@ export const getProductIdForCourse = (courseSlug: string): number => {
   const productMapping: Record<string, number> = {
     "boundless": 5311,
     "instagram": 5089,
-    "metaverse": 145,
-    "smart-pack": 5312 // Smart Pack course
+    "metaverse": 145
   };
   
   return productMapping[courseSlug] || 5311;
