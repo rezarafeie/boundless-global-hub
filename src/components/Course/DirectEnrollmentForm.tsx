@@ -70,13 +70,23 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
     setSubmitting(true);
     
     try {
-      console.log('Looking for course with slug:', courseSlug);
-      
+      console.log('=== ENROLLMENT DEBUG START ===');
+      console.log('Course slug received:', courseSlug);
+      console.log('Form data:', {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        countryCode: formData.countryCode
+      });
+
       // First get course ID from slug
+      console.log('Querying courses table for slug:', courseSlug);
       const { data: course, error: courseError } = await supabase
         .from('courses')
-        .select('id, slug, title')
+        .select('id, slug, title, is_active')
         .eq('slug', courseSlug)
+        .eq('is_active', true)
         .maybeSingle();
 
       console.log('Course query result:', { course, courseError });
@@ -88,10 +98,20 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
       
       if (!course) {
         console.error('Course not found for slug:', courseSlug);
+        
+        // Let's also check what courses DO exist
+        const { data: allCourses } = await supabase
+          .from('courses')
+          .select('id, slug, title, is_active')
+          .limit(10);
+        
+        console.log('Available courses:', allCourses);
         throw new Error('دوره مورد نظر یافت نشد');
       }
 
-      // Create enrollment directly in database (bypass edge function issues)
+      console.log('Found course:', course);
+
+      // Create enrollment directly in database
       const enrollmentData = {
         course_id: course.id,
         full_name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
@@ -117,6 +137,7 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
       }
 
       console.log('Enrollment created successfully:', result);
+      console.log('=== ENROLLMENT DEBUG END ===');
       
       // Show success message
       toast.success('ثبت‌نام با موفقیت انجام شد!');
