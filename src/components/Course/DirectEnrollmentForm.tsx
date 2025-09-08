@@ -97,7 +97,7 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
         throw new Error('دوره مورد نظر یافت نشد');
       }
 
-      // Create enrollment
+      // Create enrollment using edge function to avoid database trigger timeout
       const enrollmentData = {
         course_id: course.id,
         full_name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
@@ -109,18 +109,20 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
         payment_status: 'completed'
       };
 
-      console.log('Creating enrollment:', enrollmentData);
+      console.log('Creating enrollment via edge function:', enrollmentData);
 
-      const { data: result, error: enrollmentError } = await supabase
-        .from('enrollments')
-        .insert(enrollmentData)
-        .select()
-        .single();
+      const { data: enrollmentResponse, error: enrollmentError } = await supabase.functions.invoke('create-enrollment', {
+        body: enrollmentData
+      });
 
-      if (enrollmentError) {
-        console.error('Enrollment error:', enrollmentError);
-        throw new Error(`خطا در ثبت‌نام: ${enrollmentError.message}`);
+      console.log('Edge function result:', { enrollmentResponse, enrollmentError });
+
+      if (enrollmentError || !enrollmentResponse?.success) {
+        console.error('Enrollment error:', enrollmentError || enrollmentResponse);
+        throw new Error(`خطا در ثبت‌نام: ${enrollmentError?.message || enrollmentResponse?.error || 'خطای نامشخص'}`);
       }
+
+      const result = enrollmentResponse.enrollment;
 
       console.log('Success:', result);
       toast.success('ثبت‌نام با موفقیت انجام شد!');
