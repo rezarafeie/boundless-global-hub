@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import MainLayout from "@/components/Layout/MainLayout";
 import SectionTitle from "@/components/SectionTitle";
-import EnrollmentButton from "@/components/Course/EnrollmentButton";
+import DirectEnrollmentForm from "@/components/Course/DirectEnrollmentForm";
 import { 
   Shield, 
   TrendingUp, 
@@ -60,15 +60,14 @@ const CrisisProjectEnhanced = ({
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
               مدیریت بحران، سرمایه‌گذاری هوشمند، و ساخت کسب‌وکار بین‌المللی در سخت‌ترین شرایط
             </p>
-            <EnrollmentButton 
-              courseId={courseSlug}
+            <DirectEnrollmentForm 
+              courseSlug={courseSlug}
               courseName="پروژه بحران"
-              isFreeCourse={true}
-              className="text-lg px-8 py-6 bg-primary hover:bg-primary/90"
+              className="max-w-md mx-auto"
             >
               <Shield className="ml-2 h-5 w-5" />
               همین حالا ثبت‌نام کنید
-            </EnrollmentButton>
+            </DirectEnrollmentForm>
           </div>
         </section>
 
@@ -250,45 +249,16 @@ const CrisisProjectEnhanced = ({
               </Badge>
             </div>
             
-            <Card className="p-8 border-2 border-primary/20">
-              <div className="text-center space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-xl font-bold">دسترسی کامل و رایگان به:</h3>
-                  <div className="grid md:grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-primary" />
-                      <span>مدیریت بحران شخصی</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-primary" />
-                      <span>راهبردهای سرمایه‌گذاری</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-primary" />
-                      <span>کسب‌وکارهای بدون مرز</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-primary" />
-                      <span>پشتیبانی مادام‌العمر</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <EnrollmentButton 
-                  courseId={courseSlug}
-                  courseName="پروژه بحران"
-                  isFreeCourse={true}
-                  className="w-full text-lg py-6 bg-primary hover:bg-primary/90"
-                >
-                  <Play className="ml-2 h-5 w-5" />
-                  ثبت‌نام رایگان در پروژه بحران
-                </EnrollmentButton>
-                
-                <p className="text-sm text-muted-foreground">
-                  ✨ رایگان بدون نیاز به کارت بانکی
-                </p>
-              </div>
-            </Card>
+            <div id="enrollment-form">
+              <DirectEnrollmentForm 
+                courseSlug={courseSlug}
+                courseName="پروژه بحران"
+                className="border-2 border-primary/20"
+              >
+                <Play className="ml-2 h-5 w-5" />
+                ثبت‌نام رایگان در پروژه بحران
+              </DirectEnrollmentForm>
+            </div>
           </div>
         </section>
 
@@ -323,15 +293,13 @@ const CrisisProjectEnhanced = ({
               <p className="text-lg md:text-xl mb-8 opacity-90">
                 انتخاب با توست - امروز قدم اول را بردار
               </p>
-              <EnrollmentButton 
-                courseId={courseSlug}
-                courseName="پروژه بحران"
-                isFreeCourse={true}
+              <Button 
+                onClick={() => document.querySelector('#enrollment-form')?.scrollIntoView({ behavior: 'smooth' })}
                 className="text-lg px-8 py-6 bg-background text-foreground hover:bg-background/90"
               >
                 <Lightbulb className="ml-2 h-5 w-5" />
                 همین حالا ثبت‌نام کنید
-              </EnrollmentButton>
+              </Button>
             </div>
           </div>
         </section>
