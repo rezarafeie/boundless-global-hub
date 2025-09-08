@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -3394,9 +3394,9 @@ export type Database = {
       }
       assign_lead_to_agent: {
         Args: {
-          p_enrollment_id: string
           p_agent_user_id: number
           p_assigned_by: number
+          p_enrollment_id: string
         }
         Returns: boolean
       }
@@ -3422,19 +3422,19 @@ export type Database = {
       }
       distribute_lead_and_create_deal: {
         Args: {
-          p_enrollment_id: string
           p_agent_user_id: number
           p_assigned_by: number
           p_deal_course_id: string
           p_deal_price: number
+          p_enrollment_id: string
         }
         Returns: boolean
       }
       distribute_lead_to_agent: {
         Args: {
-          p_enrollment_id: string
           p_agent_user_id: number
           p_assigned_by: number
+          p_enrollment_id: string
         }
         Returns: boolean
       }
@@ -3443,8 +3443,8 @@ export type Database = {
         Returns: {
           enrollment_id: string
           full_name: string
-          old_status: string
           new_status: string
+          old_status: string
           ref_id: string
         }[]
       }
@@ -3463,32 +3463,32 @@ export type Database = {
       get_lead_assignments: {
         Args: { agent_user_id: number }
         Returns: {
+          assigned_at: string
           assignment_id: number
+          course_title: string
+          email: string
           enrollment_id: string
           full_name: string
-          email: string
-          phone: string
-          course_title: string
           payment_amount: number
-          assigned_at: string
+          phone: string
           status: string
         }[]
       }
       get_lesson_by_number: {
         Args: { course_slug_param: string; lesson_num: number }
         Returns: {
-          id: string
-          title: string
           content: string
-          video_url: string
-          file_url: string
+          course_id: string
+          created_at: string
           duration: number
+          file_url: string
+          id: string
+          lesson_number: number
           order_index: number
           section_id: string
-          course_id: string
-          lesson_number: number
-          created_at: string
+          title: string
           updated_at: string
+          video_url: string
         }[]
       }
       get_or_create_private_conversation: {
@@ -3499,8 +3499,8 @@ export type Database = {
         Args: { agent_user_id: number }
         Returns: {
           course_id: string
-          course_title: string
           course_slug: string
+          course_title: string
         }[]
       }
       get_support_room_agents: {
@@ -3509,8 +3509,8 @@ export type Database = {
           agent_id: number
           agent_name: string
           agent_phone: string
-          is_active: boolean
           conversation_count: number
+          is_active: boolean
         }[]
       }
       get_support_unread_count: {
@@ -3524,33 +3524,33 @@ export type Database = {
       get_user_courses_by_phone: {
         Args: { user_phone: string }
         Returns: {
-          enrollment_id: string
-          course_id: string
-          course_title: string
           course_description: string
+          course_id: string
           course_price: number
           course_redirect_url: string
+          course_title: string
           enrollment_date: string
-          payment_status: string
+          enrollment_id: string
           payment_amount: number
+          payment_status: string
+          spotplayer_license_id: string
           spotplayer_license_key: string
           spotplayer_license_url: string
-          spotplayer_license_id: string
         }[]
       }
       get_user_courses_for_sales_agent: {
         Args: { agent_user_id: number }
         Returns: {
+          assigned_to_agent: string
+          course_title: string
+          created_at: string
+          email: string
           enrollment_id: string
           full_name: string
-          email: string
-          phone: string
-          course_title: string
-          payment_status: string
-          payment_amount: number
-          created_at: string
           is_assigned: boolean
-          assigned_to_agent: string
+          payment_amount: number
+          payment_status: string
+          phone: string
         }[]
       }
       get_user_from_session: {
@@ -3560,26 +3560,26 @@ export type Database = {
       get_user_licenses_by_phone: {
         Args: { user_phone: string }
         Returns: {
-          license_id: string
+          activated_at: string
           course_id: string
           course_title: string
-          license_key: string
-          license_data: Json
-          license_status: string
           created_at: string
-          expires_at: string
-          activated_at: string
           enrollment_id: string
+          expires_at: string
+          license_data: Json
+          license_id: string
+          license_key: string
+          license_status: string
         }[]
       }
       get_user_support_rooms: {
         Args: { user_id_param: number }
         Returns: {
-          id: number
-          name: string
+          color: string
           description: string
           icon: string
-          color: string
+          id: number
+          name: string
           thread_type_id: number
         }[]
       }
@@ -3589,12 +3589,12 @@ export type Database = {
       }
       http_delete: {
         Args:
+          | { content: string; content_type: string; uri: string }
           | { uri: string }
-          | { uri: string; content: string; content_type: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
       }
       http_get: {
-        Args: { uri: string } | { uri: string; data: Json }
+        Args: { data: Json; uri: string } | { uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
       }
       http_head: {
@@ -3613,17 +3613,17 @@ export type Database = {
         }[]
       }
       http_patch: {
-        Args: { uri: string; content: string; content_type: string }
+        Args: { content: string; content_type: string; uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
       }
       http_post: {
         Args:
-          | { uri: string; content: string; content_type: string }
-          | { uri: string; data: Json }
+          | { content: string; content_type: string; uri: string }
+          | { data: Json; uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
       }
       http_put: {
-        Args: { uri: string; content: string; content_type: string }
+        Args: { content: string; content_type: string; uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
       }
       http_reset_curlopt: {
@@ -3672,10 +3672,10 @@ export type Database = {
       }
       log_user_activity: {
         Args: {
-          p_user_id: number
           p_event_type: string
-          p_reference?: string
           p_metadata?: Json
+          p_reference?: string
+          p_user_id: number
         }
         Returns: string
       }
@@ -3687,10 +3687,10 @@ export type Database = {
         Args: { search_term: string }
         Returns: {
           id: number
-          name: string
-          username: string
-          phone: string
           is_approved: boolean
+          name: string
+          phone: string
+          username: string
         }[]
       }
       set_session_context: {
@@ -3702,7 +3702,7 @@ export type Database = {
         Returns: string
       }
       update_user_presence: {
-        Args: { p_user_id: number; p_is_online?: boolean }
+        Args: { p_is_online?: boolean; p_user_id: number }
         Returns: undefined
       }
       url_encode: {
@@ -3716,8 +3716,8 @@ export type Database = {
       validate_user_session: {
         Args: { session_token_param: string }
         Returns: {
-          user_id: number
           is_valid: boolean
+          user_id: number
         }[]
       }
     }
