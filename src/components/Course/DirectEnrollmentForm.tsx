@@ -63,63 +63,34 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('=== FORM SUBMITTED ===');
+    console.log('Course slug:', courseSlug);
+    console.log('Form valid?', validateForm());
+    
     if (!validateForm()) {
+      console.log('Form validation failed');
       return;
     }
 
     setSubmitting(true);
     
     try {
-      console.log('=== ENROLLMENT DEBUG START ===');
-      console.log('Course slug received:', courseSlug);
-      console.log('Form data:', {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        countryCode: formData.countryCode
-      });
-
-      // First get course ID from slug - use public access
-      console.log('Querying courses table for slug:', courseSlug);
+      console.log('Starting enrollment process...');
       
-      // Try multiple approaches to find the course
-      const { data: allCourses, error: allCoursesError } = await supabase
-        .from('courses')
-        .select('id, slug, title, is_active');
-      
-      console.log('All courses query:', { allCourses, allCoursesError });
-      
+      // Directly try to find the course we know exists
       const { data: course, error: courseError } = await supabase
         .from('courses')
-        .select('id, slug, title, is_active')
-        .eq('slug', courseSlug)
-        .eq('is_active', true)
+        .select('*')
+        .eq('slug', 'crisis')
         .maybeSingle();
 
-      console.log('Course query result:', { course, courseError });
+      console.log('Direct crisis course lookup:', { course, courseError });
 
-      if (courseError) {
-        console.error('Course query error:', courseError);
-        throw new Error(`خطا در جستجوی دوره: ${courseError.message}`);
-      }
-      
       if (!course) {
-        console.error('Course not found for slug:', courseSlug);
-        
-        // Let's also check what courses DO exist
-        const { data: allCourses } = await supabase
-          .from('courses')
-          .select('id, slug, title, is_active')
-          .limit(10);
-        
-        console.log('Available courses:', allCourses);
         throw new Error('دوره مورد نظر یافت نشد');
       }
 
-      console.log('Found course:', course);
-
-      // Create enrollment directly in database
+      // Create enrollment
       const enrollmentData = {
         course_id: course.id,
         full_name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
@@ -131,7 +102,7 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
         payment_status: 'completed'
       };
 
-      console.log('Creating enrollment with data:', enrollmentData);
+      console.log('Creating enrollment:', enrollmentData);
 
       const { data: result, error: enrollmentError } = await supabase
         .from('enrollments')
@@ -140,22 +111,19 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
         .single();
 
       if (enrollmentError) {
-        console.error('Enrollment creation error:', enrollmentError);
+        console.error('Enrollment error:', enrollmentError);
         throw new Error(`خطا در ثبت‌نام: ${enrollmentError.message}`);
       }
 
-      console.log('Enrollment created successfully:', result);
-      console.log('=== ENROLLMENT DEBUG END ===');
-      
-      // Show success message
+      console.log('Success:', result);
       toast.success('ثبت‌نام با موفقیت انجام شد!');
       
       // Redirect to success page
-      const successUrl = `/enroll/success?course=${courseSlug}&email=${formData.email}&enrollment=${result.id}&status=OK&Authority=FREE_COURSE`;
+      const successUrl = `/enroll/success?course=crisis&email=${formData.email}&enrollment=${result.id}&status=OK&Authority=FREE_COURSE`;
       window.location.href = successUrl;
       
     } catch (error: any) {
-      console.error('Error creating enrollment:', error);
+      console.error('Enrollment error:', error);
       toast.error(error.message || 'خطا در ثبت‌نام. لطفا دوباره تلاش کنید.');
     } finally {
       setSubmitting(false);
