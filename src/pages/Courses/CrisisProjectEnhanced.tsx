@@ -41,7 +41,7 @@ const CrisisProjectEnhanced = ({
   benefitTwo,
   iconType = "shield",
   iframeUrl,
-  courseSlug = "crisis-project"
+  courseSlug = "crisis"
 }: CrisisProjectEnhancedProps) => {
 
   return (
