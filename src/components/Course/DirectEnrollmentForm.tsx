@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { Loader2, CheckCircle, ShieldCheck, TrendingUp, Globe, Headphones } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getCountryCodeOptions } from '@/lib/countryCodeUtils';
@@ -76,99 +75,84 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
         .from('courses')
         .select('id')
         .eq('slug', courseSlug)
-        .single();
+        .maybeSingle();
 
-      if (courseError) {
+      if (courseError || !course) {
+        console.error('Course not found:', courseError);
         throw new Error('دوره مورد نظر یافت نشد');
       }
 
-      // Create enrollment with course_id (edge function expects course_id not course_slug)
+      // Create enrollment directly in database (bypass edge function issues)
       const enrollmentData = {
         course_id: course.id,
-        full_name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        phone: formData.phone,
+        full_name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+        email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.trim(),
         country_code: formData.countryCode,
         payment_amount: 0,
         payment_method: 'free',
         payment_status: 'completed'
       };
 
-      console.log('Creating direct enrollment:', enrollmentData);
+      console.log('Creating enrollment with data:', enrollmentData);
 
-      const { data: result, error } = await supabase.functions
-        .invoke('create-enrollment', {
-          body: enrollmentData
-        });
+      const { data: result, error: enrollmentError } = await supabase
+        .from('enrollments')
+        .insert(enrollmentData)
+        .select()
+        .single();
 
-      if (error) {
-        console.warn('Edge function failed, trying direct insert:', error);
-        
-        const { data: directResult, error: directError } = await supabase
-          .from('enrollments')
-          .insert(enrollmentData)
-          .select()
-          .single();
-
-        if (directError) {
-          throw directError;
-        }
-
-        console.log('Direct enrollment created:', directResult);
-        
-        // Redirect to success page
-        const successUrl = `/enroll/success?course=${courseSlug}&email=${formData.email}&enrollment=${directResult.id}&status=OK&Authority=FREE_COURSE`;
-        window.location.href = successUrl;
-        return;
+      if (enrollmentError) {
+        console.error('Enrollment creation error:', enrollmentError);
+        throw new Error(`خطا در ثبت‌نام: ${enrollmentError.message}`);
       }
 
-      console.log('Enrollment created via edge function:', result.enrollment);
+      console.log('Enrollment created successfully:', result);
+      
+      // Show success message
+      toast.success('ثبت‌نام با موفقیت انجام شد!');
       
       // Redirect to success page
-      const enrollmentId = result.enrollment?.id;
-      if (enrollmentId) {
-        const successUrl = `/enroll/success?course=${courseSlug}&email=${formData.email}&enrollment=${enrollmentId}&status=OK&Authority=FREE_COURSE`;
-        window.location.href = successUrl;
-      } else {
-        throw new Error('خطا در ایجاد ثبت‌نام');
-      }
-    } catch (error) {
+      const successUrl = `/enroll/success?course=${courseSlug}&email=${formData.email}&enrollment=${result.id}&status=OK&Authority=FREE_COURSE`;
+      window.location.href = successUrl;
+      
+    } catch (error: any) {
       console.error('Error creating enrollment:', error);
-      toast.error('خطا در ثبت‌نام. لطفا دوباره تلاش کنید.');
+      toast.error(error.message || 'خطا در ثبت‌نام. لطفا دوباره تلاش کنید.');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className={`bg-background border border-border rounded-2xl p-8 shadow-sm ${className}`}>
-      <div className="text-center space-y-6">
-        <div className="space-y-4">
-          <h3 className="text-2xl font-bold text-foreground">دسترسی کامل و رایگان به:</h3>
-          <div className="grid md:grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2 justify-center md:justify-start">
-              <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
-              <span className="text-muted-foreground">مدیریت بحران شخصی</span>
+    <div className={`bg-background/80 backdrop-blur-sm border border-border/50 rounded-3xl p-8 shadow-xl ${className}`}>
+      <div className="text-center space-y-8">
+        <div className="space-y-6">
+          <h3 className="text-3xl font-bold text-foreground">🎯 دسترسی کامل و رایگان به:</h3>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-xl border border-primary/10">
+              <ShieldCheck className="h-6 w-6 text-primary flex-shrink-0" />
+              <span className="text-foreground font-medium">مدیریت بحران شخصی</span>
             </div>
-            <div className="flex items-center gap-2 justify-center md:justify-start">
-              <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
-              <span className="text-muted-foreground">راهبردهای سرمایه‌گذاری</span>
+            <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-xl border border-primary/10">
+              <TrendingUp className="h-6 w-6 text-primary flex-shrink-0" />
+              <span className="text-foreground font-medium">راهبردهای سرمایه‌گذاری</span>
             </div>
-            <div className="flex items-center gap-2 justify-center md:justify-start">
-              <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
-              <span className="text-muted-foreground">کسب‌وکارهای بدون مرز</span>
+            <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-xl border border-primary/10">
+              <Globe className="h-6 w-6 text-primary flex-shrink-0" />
+              <span className="text-foreground font-medium">کسب‌وکارهای بدون مرز</span>
             </div>
-            <div className="flex items-center gap-2 justify-center md:justify-start">
-              <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
-              <span className="text-muted-foreground">پشتیبانی مادام‌العمر</span>
+            <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-xl border border-primary/10">
+              <Headphones className="h-6 w-6 text-primary flex-shrink-0" />
+              <span className="text-foreground font-medium">پشتیبانی مادام‌العمر</span>
             </div>
           </div>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName" className="text-sm font-medium text-foreground">نام *</Label>
+              <Label htmlFor="firstName" className="text-sm font-semibold text-foreground">نام *</Label>
               <Input
                 id="firstName"
                 type="text"
@@ -177,11 +161,11 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
                 onChange={(e) => handleInputChange('firstName', e.target.value)}
                 required
                 disabled={submitting}
-                className="h-12 border-border focus:border-primary"
+                className="h-14 text-lg border-2 border-border focus:border-primary rounded-xl transition-all duration-200"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lastName" className="text-sm font-medium text-foreground">نام خانوادگی *</Label>
+              <Label htmlFor="lastName" className="text-sm font-semibold text-foreground">نام خانوادگی *</Label>
               <Input
                 id="lastName"
                 type="text"
@@ -190,13 +174,13 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
                 onChange={(e) => handleInputChange('lastName', e.target.value)}
                 required
                 disabled={submitting}
-                className="h-12 border-border focus:border-primary"
+                className="h-14 text-lg border-2 border-border focus:border-primary rounded-xl transition-all duration-200"
               />
             </div>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium text-foreground">ایمیل *</Label>
+            <Label htmlFor="email" className="text-sm font-semibold text-foreground">ایمیل *</Label>
             <Input
               id="email"
               type="email"
@@ -205,24 +189,24 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
               onChange={(e) => handleInputChange('email', e.target.value)}
               required
               disabled={submitting}
-              className="h-12 border-border focus:border-primary"
+              className="h-14 text-lg border-2 border-border focus:border-primary rounded-xl transition-all duration-200"
             />
           </div>
           
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="countryCode" className="text-sm font-medium text-foreground">کد کشور</Label>
+              <Label htmlFor="countryCode" className="text-sm font-semibold text-foreground">کد کشور</Label>
               <Select 
                 value={formData.countryCode} 
                 onValueChange={(value) => handleInputChange('countryCode', value)}
                 disabled={submitting}
               >
-                <SelectTrigger className="h-12 border-border">
+                <SelectTrigger className="h-14 text-lg border-2 border-border rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {countryOptions.map((option) => (
-                    <SelectItem key={option.code} value={option.code}>
+                  {countryOptions.map((option, index) => (
+                    <SelectItem key={`${option.code}-${index}`} value={option.code}>
                       {option.flag} {option.code}
                     </SelectItem>
                   ))}
@@ -230,7 +214,7 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
               </Select>
             </div>
             <div className="col-span-2 space-y-2">
-              <Label htmlFor="phone" className="text-sm font-medium text-foreground">شماره تلفن *</Label>
+              <Label htmlFor="phone" className="text-sm font-semibold text-foreground">شماره تلفن *</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -239,19 +223,19 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 required
                 disabled={submitting}
-                className="h-12 border-border focus:border-primary"
+                className="h-14 text-lg border-2 border-border focus:border-primary rounded-xl transition-all duration-200"
               />
             </div>
           </div>
 
           <Button 
             type="submit" 
-            className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full h-16 text-xl font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
             disabled={submitting}
           >
             {submitting ? (
               <>
-                <Loader2 className="ml-2 h-5 w-5 animate-spin" />
+                <Loader2 className="ml-2 h-6 w-6 animate-spin" />
                 در حال ثبت‌نام...
               </>
             ) : (
@@ -260,10 +244,10 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
           </Button>
         </form>
         
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <span>✨</span>
+        <div className="flex items-center justify-center gap-2 text-base text-muted-foreground font-medium">
+          <span className="text-2xl">✨</span>
           <span>رایگان بدون نیاز به کارت بانکی</span>
-          <span>✨</span>
+          <span className="text-2xl">✨</span>
         </div>
       </div>
     </div>
