@@ -70,15 +70,24 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
     setSubmitting(true);
     
     try {
+      console.log('Looking for course with slug:', courseSlug);
+      
       // First get course ID from slug
       const { data: course, error: courseError } = await supabase
         .from('courses')
-        .select('id')
+        .select('id, slug, title')
         .eq('slug', courseSlug)
         .maybeSingle();
 
-      if (courseError || !course) {
-        console.error('Course not found:', courseError);
+      console.log('Course query result:', { course, courseError });
+
+      if (courseError) {
+        console.error('Course query error:', courseError);
+        throw new Error(`خطا در جستجوی دوره: ${courseError.message}`);
+      }
+      
+      if (!course) {
+        console.error('Course not found for slug:', courseSlug);
         throw new Error('دوره مورد نظر یافت نشد');
       }
 
@@ -173,8 +182,8 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {countryOptions.map((option, index) => (
-                <SelectItem key={`${option.code}-${index}`} value={option.code}>
+              {countryOptions.map((option) => (
+                <SelectItem key={option.code} value={option.code}>
                   {option.flag} {option.code}
                 </SelectItem>
               ))}
