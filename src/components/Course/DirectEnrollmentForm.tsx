@@ -71,9 +71,20 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
     setSubmitting(true);
     
     try {
-      // Create free enrollment directly
+      // First get course ID from slug
+      const { data: course, error: courseError } = await supabase
+        .from('courses')
+        .select('id')
+        .eq('slug', courseSlug)
+        .single();
+
+      if (courseError) {
+        throw new Error('دوره مورد نظر یافت نشد');
+      }
+
+      // Create enrollment with course_id (edge function expects course_id not course_slug)
       const enrollmentData = {
-        course_slug: courseSlug,
+        course_id: course.id,
         full_name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         phone: formData.phone,
@@ -93,31 +104,9 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
       if (error) {
         console.warn('Edge function failed, trying direct insert:', error);
         
-        // Fallback to direct insert - first get course ID
-        const { data: course, error: courseError } = await supabase
-          .from('courses')
-          .select('id')
-          .eq('slug', courseSlug)
-          .single();
-
-        if (courseError) {
-          throw new Error('دوره مورد نظر یافت نشد');
-        }
-
-        const directEnrollmentData = {
-          course_id: course.id,
-          full_name: `${formData.firstName} ${formData.lastName}`,
-          email: formData.email,
-          phone: formData.phone,
-          country_code: formData.countryCode,
-          payment_amount: 0,
-          payment_method: 'free',
-          payment_status: 'completed'
-        };
-
         const { data: directResult, error: directError } = await supabase
           .from('enrollments')
-          .insert(directEnrollmentData)
+          .insert(enrollmentData)
           .select()
           .single();
 
@@ -152,128 +141,132 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
   };
 
   return (
-    <Card className={className}>
-      <CardContent className="p-8">
-        <div className="text-center space-y-6">
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold">دسترسی کامل و رایگان به:</h3>
-            <div className="grid md:grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-primary" />
-                <span>مدیریت بحران شخصی</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-primary" />
-                <span>راهبردهای سرمایه‌گذاری</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-primary" />
-                <span>کسب‌وکارهای بدون مرز</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-primary" />
-                <span>پشتیبانی مادام‌العمر</span>
-              </div>
+    <div className={`bg-background border border-border rounded-2xl p-8 shadow-sm ${className}`}>
+      <div className="text-center space-y-6">
+        <div className="space-y-4">
+          <h3 className="text-2xl font-bold text-foreground">دسترسی کامل و رایگان به:</h3>
+          <div className="grid md:grid-cols-2 gap-3 text-sm">
+            <div className="flex items-center gap-2 justify-center md:justify-start">
+              <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
+              <span className="text-muted-foreground">مدیریت بحران شخصی</span>
+            </div>
+            <div className="flex items-center gap-2 justify-center md:justify-start">
+              <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
+              <span className="text-muted-foreground">راهبردهای سرمایه‌گذاری</span>
+            </div>
+            <div className="flex items-center gap-2 justify-center md:justify-start">
+              <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
+              <span className="text-muted-foreground">کسب‌وکارهای بدون مرز</span>
+            </div>
+            <div className="flex items-center gap-2 justify-center md:justify-start">
+              <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
+              <span className="text-muted-foreground">پشتیبانی مادام‌العمر</span>
+            </div>
+          </div>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName" className="text-sm font-medium text-foreground">نام *</Label>
+              <Input
+                id="firstName"
+                type="text"
+                placeholder="نام خود را وارد کنید"
+                value={formData.firstName}
+                onChange={(e) => handleInputChange('firstName', e.target.value)}
+                required
+                disabled={submitting}
+                className="h-12 border-border focus:border-primary"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName" className="text-sm font-medium text-foreground">نام خانوادگی *</Label>
+              <Input
+                id="lastName"
+                type="text"
+                placeholder="نام خانوادگی خود را وارد کنید"
+                value={formData.lastName}
+                onChange={(e) => handleInputChange('lastName', e.target.value)}
+                required
+                disabled={submitting}
+                className="h-12 border-border focus:border-primary"
+              />
             </div>
           </div>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="firstName">نام *</Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  placeholder="نام"
-                  value={formData.firstName}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  required
-                  disabled={submitting}
-                />
-              </div>
-              <div>
-                <Label htmlFor="lastName">نام خانوادگی *</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  placeholder="نام خانوادگی"
-                  value={formData.lastName}
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  required
-                  disabled={submitting}
-                />
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium text-foreground">ایمیل *</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="example@gmail.com"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              required
+              disabled={submitting}
+              className="h-12 border-border focus:border-primary"
+            />
+          </div>
+          
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="countryCode" className="text-sm font-medium text-foreground">کد کشور</Label>
+              <Select 
+                value={formData.countryCode} 
+                onValueChange={(value) => handleInputChange('countryCode', value)}
+                disabled={submitting}
+              >
+                <SelectTrigger className="h-12 border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {countryOptions.map((option) => (
+                    <SelectItem key={option.code} value={option.code}>
+                      {option.flag} {option.code}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            
-            <div>
-              <Label htmlFor="email">ایمیل *</Label>
+            <div className="col-span-2 space-y-2">
+              <Label htmlFor="phone" className="text-sm font-medium text-foreground">شماره تلفن *</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="ایمیل"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+                id="phone"
+                type="tel"
+                placeholder="912*******"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
                 required
                 disabled={submitting}
+                className="h-12 border-border focus:border-primary"
               />
             </div>
-            
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <Label htmlFor="countryCode">کد کشور</Label>
-                <Select 
-                  value={formData.countryCode} 
-                  onValueChange={(value) => handleInputChange('countryCode', value)}
-                  disabled={submitting}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countryOptions.map((option) => (
-                      <SelectItem key={option.code} value={option.code}>
-                        {option.flag} {option.code}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="phone">شماره تلفن *</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="9123456789"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  required
-                  disabled={submitting}
-                />
-              </div>
-            </div>
+          </div>
 
-            <Button 
-              type="submit" 
-              className="w-full text-lg py-6 bg-primary hover:bg-primary/90"
-              disabled={submitting}
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="ml-2 h-5 w-5 animate-spin" />
-                  در حال ثبت‌نام...
-                </>
-              ) : (
-                children || `ثبت‌نام رایگان در ${courseName}`
-              )}
-            </Button>
-          </form>
-          
-          <p className="text-sm text-muted-foreground">
-            ✨ رایگان بدون نیاز به کارت بانکی
-          </p>
+          <Button 
+            type="submit" 
+            className="w-full h-14 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            disabled={submitting}
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="ml-2 h-5 w-5 animate-spin" />
+                در حال ثبت‌نام...
+              </>
+            ) : (
+              children || `🚀 ثبت‌نام رایگان در ${courseName}`
+            )}
+          </Button>
+        </form>
+        
+        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <span>✨</span>
+          <span>رایگان بدون نیاز به کارت بانکی</span>
+          <span>✨</span>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
