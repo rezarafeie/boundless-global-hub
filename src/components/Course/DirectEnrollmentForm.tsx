@@ -37,26 +37,33 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
   };
 
   const validateForm = () => {
+    console.log('Validating form with data:', formData);
+    
     if (!formData.firstName.trim()) {
+      console.log('First name validation failed');
       toast.error('لطفا نام خود را وارد کنید');
       return false;
     }
     
     if (!formData.lastName.trim()) {
+      console.log('Last name validation failed');
       toast.error('لطفا نام خانوادگی خود را وارد کنید');
       return false;
     }
     
     if (!formData.email.trim() || !formData.email.includes('@')) {
+      console.log('Email validation failed');
       toast.error('لطفا ایمیل معتبر وارد کنید');
       return false;
     }
     
     if (!formData.phone.trim()) {
+      console.log('Phone validation failed');
       toast.error('لطفا شماره تلفن خود را وارد کنید');
       return false;
     }
     
+    console.log('Form validation passed');
     return true;
   };
 
@@ -201,6 +208,7 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
           type="submit" 
           className="w-full h-12 font-medium bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-all duration-200"
           disabled={submitting}
+          onClick={() => console.log('Button clicked!')}
         >
           {submitting ? (
             <>
