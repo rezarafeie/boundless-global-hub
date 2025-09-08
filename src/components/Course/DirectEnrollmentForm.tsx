@@ -80,8 +80,16 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
         countryCode: formData.countryCode
       });
 
-      // First get course ID from slug
+      // First get course ID from slug - use public access
       console.log('Querying courses table for slug:', courseSlug);
+      
+      // Try multiple approaches to find the course
+      const { data: allCourses, error: allCoursesError } = await supabase
+        .from('courses')
+        .select('id, slug, title, is_active');
+      
+      console.log('All courses query:', { allCourses, allCoursesError });
+      
       const { data: course, error: courseError } = await supabase
         .from('courses')
         .select('id, slug, title, is_active')
