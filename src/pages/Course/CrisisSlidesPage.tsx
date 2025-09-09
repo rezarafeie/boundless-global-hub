@@ -4,9 +4,9 @@ import Header from "@/components/Layout/Header";
 
 const CrisisSlidesPage = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background">
       <Header />
-      <div className="h-[calc(100vh-64px)]">
+      <div className="flex-1 w-full">
         <EnhancedIframe
           src="https://far-snake-pqxtxot.gamma.site/"
           title="Crisis Project Slides"
