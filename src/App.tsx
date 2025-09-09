@@ -60,6 +60,7 @@ import BoundlessTastePage from "./pages/Course/BoundlessTastePage";
 import PassiveIncomePage from "./pages/Course/PassiveIncomePage";
 import SmartLifePage from "./pages/Course/SmartLifePage";
 import CrisisProjectPage from "./pages/Course/CrisisProjectPage";
+import CrisisSlidesPage from "./pages/Course/CrisisSlidesPage";
 
 // Course access pages
 import TaghirAccess from "./pages/Course/Access/TaghirAccess";
@@ -285,6 +286,7 @@ const App = () => {
                     <Route path="/course/smart-life" element={<SmartLifePage />} />
                     <Route path="/course/crisis-project" element={<CrisisProjectPage />} />
                     <Route path="/crisis" element={<CrisisProjectPage />} />
+                    <Route path="/crisis/slides" element={<CrisisSlidesPage />} />
                     <Route path="/daramad" element={<PassiveIncomePage />} />
 
                     {/* Course access control */}
