@@ -6,7 +6,7 @@ const CrisisSlidesPage = () => {
   return (
     <div className="flex flex-col h-screen bg-background">
       <Header />
-      <div className="flex-1 w-full">
+      <div className="flex-1 w-full pt-4 md:pt-0">
         <EnhancedIframe
           src="https://far-snake-pqxtxot.gamma.site/"
           title="Crisis Project Slides"
