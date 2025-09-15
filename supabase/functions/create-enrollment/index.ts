@@ -324,6 +324,36 @@ Deno.serve(async (req) => {
       console.error('❌ Webhook error (non-blocking):', webhookError);
     }
 
+    // Send enrollment email for completed payments (free courses or immediate payments)
+    if (finalPaymentStatus === 'completed') {
+      try {
+        console.log('📧 Sending enrollment email for completed payment...');
+        
+        const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-enrollment-email`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            enrollmentId: createdEnrollment.id
+          })
+        });
+
+        if (emailResponse.ok) {
+          console.log('✅ Enrollment email sent successfully');
+        } else {
+          const errorText = await emailResponse.text();
+          console.error('❌ Enrollment email failed:', emailResponse.status, errorText);
+        }
+      } catch (emailError) {
+        console.error('❌ Enrollment email error (non-blocking):', emailError);
+      }
+    } else {
+      console.log('ℹ️ Enrollment pending approval - email will be sent after admin approval');
+    }
+
+
     // Create SpotPlayer license for free courses if enabled
     if (payment_amount === 0 && courseData?.is_spotplayer_enabled) {
       try {
