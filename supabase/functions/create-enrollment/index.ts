@@ -281,12 +281,41 @@ Deno.serve(async (req) => {
       userData = userInfo;
     }
 
+    // Send enrollment email for completed payments (free courses or completed payments)
+    if (createdEnrollment.payment_status === 'completed') {
+      try {
+        console.log('📧 Sending enrollment email for completed payment...');
+        
+        const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-enrollment-email`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ enrollmentId: createdEnrollment.id })
+        });
+
+        if (emailResponse.ok) {
+          console.log('✅ Enrollment email sent successfully');
+        } else {
+          const errorText = await emailResponse.text();
+          console.error('❌ Enrollment email failed:', errorText);
+        }
+      } catch (emailError) {
+        console.error('❌ Enrollment email error (non-blocking):', emailError);
+      }
+    }
+
     // Send enrollment webhook
     try {
       console.log('📤 Sending enrollment_created webhook...');
 
+      const eventType = createdEnrollment.payment_method === 'manual' && createdEnrollment.payment_status === 'pending' 
+        ? 'enrollment_manual_payment_submitted'
+        : 'enrollment_created';
+
       const webhookPayload = {
-        event_type: 'enrollment_created',
+        event_type: eventType,
         timestamp: new Date().toISOString(),
         data: {
           enrollment: createdEnrollment,
@@ -298,7 +327,8 @@ Deno.serve(async (req) => {
           },
           course: courseData,
           is_free_enrollment: createdEnrollment.payment_amount === 0,
-          enrollment_type: createdEnrollment.payment_amount === 0 ? 'free' : 'paid'
+          enrollment_type: createdEnrollment.payment_amount === 0 ? 'free' : 'paid',
+          is_manual_payment: createdEnrollment.payment_method === 'manual'
         }
       };
 
@@ -309,13 +339,13 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          eventType: 'enrollment_created',
+          eventType: eventType,
           payload: webhookPayload
         })
       });
 
       if (webhookResponse.ok) {
-        console.log('✅ Enrollment created webhook sent successfully');
+        console.log('✅ Enrollment webhook sent successfully');
       } else {
         const errorText = await webhookResponse.text();
         console.error('❌ Webhook failed:', webhookResponse.status, errorText);
