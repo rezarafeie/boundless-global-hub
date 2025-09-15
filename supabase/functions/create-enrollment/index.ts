@@ -69,27 +69,26 @@ Deno.serve(async (req) => {
       // First check by email
       const { data: existingUser } = await supabase
         .from('chat_users')
-        .select('id, phone, email, name, full_name')
+        .select('id')
         .eq('email', email.trim().toLowerCase())
         .maybeSingle();
 
       if (existingUser) {
         resolvedChatUserId = existingUser.id;
-        console.log('✅ Found existing user by email:', resolvedChatUserId);
-        console.log('📞 User phone:', existingUser.phone, 'vs submitted:', phone.trim());
+        console.log('✅ Found existing user by email, using ID:', resolvedChatUserId);
       } else {
         console.log('🔍 No user found by email, checking by phone...');
         
         // If not found by email, check by phone
         const { data: phoneUser } = await supabase
           .from('chat_users')
-          .select('id, phone, email, name, full_name')
+          .select('id')
           .eq('phone', phone.trim())
           .maybeSingle();
         
         if (phoneUser) {
           resolvedChatUserId = phoneUser.id;
-          console.log('✅ Found existing user by phone:', resolvedChatUserId);
+          console.log('✅ Found existing user by phone, using ID:', resolvedChatUserId);
         } else {
           console.log('👤 Creating new chat_user...');
           
