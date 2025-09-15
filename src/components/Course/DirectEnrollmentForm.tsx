@@ -117,14 +117,14 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
     try {
       console.log('Starting enrollment process...');
       
-      // Directly try to find the course we know exists
+      // Find the course by slug
       const { data: course, error: courseError } = await supabase
         .from('courses')
         .select('*')
-        .eq('slug', 'crisis')
+        .eq('slug', courseSlug)
         .maybeSingle();
 
-      console.log('Direct crisis course lookup:', { course, courseError });
+      console.log('Course lookup for slug:', courseSlug, { course, courseError });
 
       if (!course) {
         throw new Error('دوره مورد نظر یافت نشد');
