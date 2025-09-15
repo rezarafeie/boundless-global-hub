@@ -145,21 +145,51 @@ Deno.serve(async (req) => {
     
     console.log('👤 Using chat_user_id:', resolvedChatUserId);
 
-    // Check if enrollment already exists
-    const { data: existingEnrollment } = await supabase
+    // Check if enrollment already exists by email and phone (more comprehensive check)
+    const { data: existingEnrollmentByEmail } = await supabase
       .from('enrollments')
-      .select('id, payment_status')
+      .select('id, payment_status, chat_user_id')
       .eq('course_id', course_id)
-      .eq('chat_user_id', resolvedChatUserId)
+      .eq('email', email.trim().toLowerCase())
       .maybeSingle();
 
-    if (existingEnrollment) {
-      console.log('📋 Found existing enrollment:', existingEnrollment.id);
+    if (existingEnrollmentByEmail) {
+      console.log('📋 Found existing enrollment by email:', existingEnrollmentByEmail.id);
       
       const { data: fullEnrollment } = await supabase
         .from('enrollments')
         .select('*')
-        .eq('id', existingEnrollment.id)
+        .eq('id', existingEnrollmentByEmail.id)
+        .single();
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          enrollment: fullEnrollment,
+          message: 'User already enrolled in this course'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      );
+    }
+
+    // Also check by phone
+    const { data: existingEnrollmentByPhone } = await supabase
+      .from('enrollments')
+      .select('id, payment_status, chat_user_id')
+      .eq('course_id', course_id)
+      .eq('phone', phone.trim())
+      .maybeSingle();
+
+    if (existingEnrollmentByPhone) {
+      console.log('📋 Found existing enrollment by phone:', existingEnrollmentByPhone.id);
+      
+      const { data: fullEnrollment } = await supabase
+        .from('enrollments')
+        .select('*')
+        .eq('id', existingEnrollmentByPhone.id)
         .single();
 
       return new Response(
@@ -180,10 +210,33 @@ Deno.serve(async (req) => {
 
     console.log('🎯 Creating new enrollment...');
 
-    // Create enrollment record
-    const { data: createdEnrollment, error: enrollmentError } = await supabase
-      .from('enrollments')
-      .insert({
+    // Create enrollment record - use existing user's actual data to avoid trigger conflicts
+    let enrollmentData;
+    if (resolvedChatUserId) {
+      // Get the actual user data to ensure consistency
+      const { data: actualUser } = await supabase
+        .from('chat_users')
+        .select('phone, email, name, full_name')
+        .eq('id', resolvedChatUserId)
+        .single();
+      
+      console.log('📋 Using actual user data for enrollment:', actualUser);
+      
+      enrollmentData = {
+        course_id,
+        full_name: actualUser?.full_name || actualUser?.name || full_name.trim(),
+        email: actualUser?.email || email.trim().toLowerCase(),
+        phone: actualUser?.phone || phone.trim(),
+        payment_amount: Number(payment_amount),
+        payment_status: finalPaymentStatus,
+        payment_method: payment_method || 'manual',
+        manual_payment_status: manual_payment_status || null,
+        receipt_url,
+        chat_user_id: resolvedChatUserId,
+        country_code: country_code || '+98'
+      };
+    } else {
+      enrollmentData = {
         course_id,
         full_name: full_name.trim(),
         email: email.trim().toLowerCase(),
@@ -193,9 +246,13 @@ Deno.serve(async (req) => {
         payment_method: payment_method || 'manual',
         manual_payment_status: manual_payment_status || null,
         receipt_url,
-        chat_user_id: resolvedChatUserId,
         country_code: country_code || '+98'
-      })
+      };
+    }
+
+    const { data: createdEnrollment, error: enrollmentError } = await supabase
+      .from('enrollments')
+      .insert(enrollmentData)
       .select()
       .single();
 
