@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,6 +7,7 @@ import { Loader2, CheckCircle, ShieldCheck, TrendingUp, Globe, Headphones } from
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getCountryCodeOptions } from '@/lib/countryCodeUtils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DirectEnrollmentFormProps {
   courseSlug: string;
@@ -30,7 +31,34 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
     countryCode: '+98'
   });
 
+  const { user, isAuthenticated } = useAuth();
   const countryOptions = getCountryCodeOptions();
+
+  // Auto-complete form with logged in user data
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log('Auto-filling form with user data:', user);
+      
+      // Clean phone number by removing leading zeros and country codes
+      let cleanPhone = user.phone || '';
+      if (cleanPhone.startsWith('+98')) {
+        cleanPhone = cleanPhone.substring(3);
+      } else if (cleanPhone.startsWith('98')) {
+        cleanPhone = cleanPhone.substring(2);
+      }
+      if (cleanPhone.startsWith('0')) {
+        cleanPhone = cleanPhone.substring(1);
+      }
+      
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: cleanPhone,
+        countryCode: user.countryCode || '+98'
+      });
+    }
+  }, [isAuthenticated, user]);
 
   const handleInputChange = (field: string, value: string) => {
     // Remove leading zeros from phone number
@@ -147,8 +175,12 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
   return (
     <div className={`bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-6 ${className}`}>
       <div className="text-center mb-6">
-        <h3 className="text-xl font-bold text-foreground mb-2">✨ ثبت‌نام رایگان</h3>
-        <p className="text-muted-foreground text-sm">فقط ۳۰ ثانیه وقت می‌برد</p>
+        <h3 className="text-xl font-bold text-foreground mb-2">
+          {isAuthenticated && user ? '✅ ثبت‌نام سریع' : '✨ ثبت‌نام رایگان'}
+        </h3>
+        <p className="text-muted-foreground text-sm">
+          {isAuthenticated && user ? 'اطلاعات شما از حساب کاربری بارگذاری شد' : 'فقط ۳۰ ثانیه وقت می‌برد'}
+        </p>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
