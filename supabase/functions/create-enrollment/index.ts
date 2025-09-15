@@ -68,27 +68,35 @@ Deno.serve(async (req) => {
       
       // First try to find by email (more reliable)
       let existingUser = null;
-      const { data: emailUser } = await supabase
-        .from('chat_users')
-        .select('id, phone, email, name, full_name')
-        .eq('email', email.trim().toLowerCase())
-        .maybeSingle();
-      
-      if (emailUser) {
-        existingUser = emailUser;
-        console.log('🔗 Found existing user by email:', existingUser.id);
-      } else {
-        // If not found by email, try by phone
-        const { data: phoneUser } = await supabase
+      try {
+        const { data: emailUser, error: emailError } = await supabase
           .from('chat_users')
           .select('id, phone, email, name, full_name')
-          .eq('phone', phone.trim())
+          .eq('email', email.trim().toLowerCase())
           .maybeSingle();
         
-        if (phoneUser) {
-          existingUser = phoneUser;
-          console.log('🔗 Found existing user by phone:', existingUser.id);
+        console.log('Email lookup result:', { emailUser, emailError });
+        
+        if (emailUser) {
+          existingUser = emailUser;
+          console.log('🔗 Found existing user by email:', existingUser.id);
+        } else if (!emailError) {
+          // If not found by email, try by phone
+          const { data: phoneUser, error: phoneError } = await supabase
+            .from('chat_users')
+            .select('id, phone, email, name, full_name')
+            .eq('phone', phone.trim())
+            .maybeSingle();
+          
+          console.log('Phone lookup result:', { phoneUser, phoneError });
+          
+          if (phoneUser) {
+            existingUser = phoneUser;
+            console.log('🔗 Found existing user by phone:', existingUser.id);
+          }
         }
+      } catch (lookupError) {
+        console.error('❌ Error during user lookup:', lookupError);
       }
       
       if (existingUser) {
@@ -112,58 +120,69 @@ Deno.serve(async (req) => {
         
         if (Object.keys(updateData).length > 0) {
           console.log('🔄 Updating existing user with missing data:', updateData);
-          const { error: updateError } = await supabase
-            .from('chat_users')
-            .update(updateData)
-            .eq('id', existingUser.id);
-          
-          if (updateError) {
-            console.warn('⚠️ Could not update existing user:', updateError);
+          try {
+            const { error: updateError } = await supabase
+              .from('chat_users')
+              .update(updateData)
+              .eq('id', existingUser.id);
+            
+            if (updateError) {
+              console.warn('⚠️ Could not update existing user:', updateError);
+            } else {
+              console.log('✅ User updated successfully');
+            }
+          } catch (updateError) {
+            console.warn('⚠️ Exception during user update:', updateError);
           }
         }
       } else {
         // Create new chat_user only if none exists
         console.log('👤 Creating new chat_user...');
-        const { data: newUser, error: createUserError } = await supabase
-          .from('chat_users')
-          .insert({
-            name: full_name.trim(),
-            phone: phone.trim(),
-            email: email.trim().toLowerCase(),
-            first_name: full_name.trim().split(' ')[0],
-            last_name: full_name.trim().split(' ').slice(1).join(' ') || '',
-            full_name: full_name.trim(),
-            country_code: country_code || '+98',
-            signup_source: 'enrollment',
-            is_approved: true,
-            role: 'user'
-          })
-          .select('id')
-          .single();
-        
-        if (createUserError) {
-          console.error('❌ Error creating chat_user:', createUserError);
-          // If user creation fails due to duplicate, try to find the user one more time
-          if (createUserError.code === '23505') {
-            console.log('🔄 Duplicate detected during creation, finding existing user...');
-            const { data: foundUser } = await supabase
-              .from('chat_users')
-              .select('id')
-              .or(`phone.eq.${phone.trim()},email.eq.${email.trim().toLowerCase()}`)
-              .single();
-            
-            if (foundUser) {
-              resolvedChatUserId = foundUser.id;
-              console.log('🔗 Using existing user after duplicate error:', resolvedChatUserId);
+        try {
+          const { data: newUser, error: createUserError } = await supabase
+            .from('chat_users')
+            .insert({
+              name: full_name.trim(),
+              phone: phone.trim(),
+              email: email.trim().toLowerCase(),
+              first_name: full_name.trim().split(' ')[0],
+              last_name: full_name.trim().split(' ').slice(1).join(' ') || '',
+              full_name: full_name.trim(),
+              country_code: country_code || '+98',
+              signup_source: 'enrollment',
+              is_approved: true,
+              role: 'user'
+            })
+            .select('id')
+            .single();
+          
+          if (createUserError) {
+            console.error('❌ Error creating chat_user:', createUserError);
+            // If user creation fails due to duplicate, try to find the user one more time
+            if (createUserError.code === '23505') {
+              console.log('🔄 Duplicate detected during creation, finding existing user...');
+              const { data: foundUser } = await supabase
+                .from('chat_users')
+                .select('id')
+                .or(`phone.eq.${phone.trim()},email.eq.${email.trim().toLowerCase()}`)
+                .single();
+              
+              if (foundUser) {
+                resolvedChatUserId = foundUser.id;
+                console.log('🔗 Using existing user after duplicate error:', resolvedChatUserId);
+              } else {
+                throw new Error('Could not find or create user after duplicate error');
+              }
             } else {
-              throw new Error('Could not find or create user after duplicate error');
+              throw createUserError;
             }
-          } else {
-            throw createUserError;
+          } else if (newUser) {
+            resolvedChatUserId = newUser.id;
+            console.log('✅ Created new chat_user:', resolvedChatUserId);
           }
-        } else if (newUser) {
-          resolvedChatUserId = newUser.id;
-          console.log('✅ Created new chat_user:', resolvedChatUserId);
+        } catch (createError) {
+          console.error('❌ Exception during user creation:', createError);
+          throw createError;
         }
       }
     }
