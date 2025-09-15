@@ -61,21 +61,41 @@ Deno.serve(async (req) => {
 
     console.log('✅ Validation passed, creating enrollment...');
 
-    // Try to find existing chat_user by phone or email if not provided
+    // Try to find existing chat_user by email first, then by phone if not provided
     let resolvedChatUserId = chat_user_id;
     if (!resolvedChatUserId) {
       console.log('🔍 Looking for existing chat_user...');
-      const { data: existingUser } = await supabase
+      
+      // First try to find by email (more reliable)
+      let existingUser = null;
+      const { data: emailUser } = await supabase
         .from('chat_users')
         .select('id, phone, email, name, full_name')
-        .or(`phone.eq.${phone.trim()},email.eq.${email.trim().toLowerCase()}`)
+        .eq('email', email.trim().toLowerCase())
         .maybeSingle();
+      
+      if (emailUser) {
+        existingUser = emailUser;
+        console.log('🔗 Found existing user by email:', existingUser.id);
+      } else {
+        // If not found by email, try by phone
+        const { data: phoneUser } = await supabase
+          .from('chat_users')
+          .select('id, phone, email, name, full_name')
+          .eq('phone', phone.trim())
+          .maybeSingle();
+        
+        if (phoneUser) {
+          existingUser = phoneUser;
+          console.log('🔗 Found existing user by phone:', existingUser.id);
+        }
+      }
       
       if (existingUser) {
         resolvedChatUserId = existingUser.id;
-        console.log('🔗 Found existing chat_user:', resolvedChatUserId);
+        console.log('✅ Using existing chat_user:', resolvedChatUserId);
         
-        // Update existing user with any missing information without creating duplicates
+        // Update existing user with any missing information
         const updateData: any = {};
         if (!existingUser.email && email) {
           updateData.email = email.trim().toLowerCase();
