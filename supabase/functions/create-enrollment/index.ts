@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
         .from('chat_users')
         .select('id')
         .or(`phone.eq.${phone.trim()},email.eq.${email.trim().toLowerCase()}`)
-        .single();
+        .maybeSingle();
       
       if (existingUser) {
         resolvedChatUserId = existingUser.id;
