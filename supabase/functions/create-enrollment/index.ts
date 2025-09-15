@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -47,7 +46,7 @@ Deno.serve(async (req) => {
       payment_status
     } = body;
 
-    // Validate required fields - handle both null and undefined
+    // Validate required fields
     if (!course_id || !full_name || !email || !phone || (payment_amount === null || payment_amount === undefined)) {
       console.error('❌ Validation failed. Missing fields:', {
         course_id: !!course_id,
@@ -59,86 +58,42 @@ Deno.serve(async (req) => {
       throw new Error('Missing required fields: course_id, full_name, email, phone, payment_amount are required');
     }
 
-    console.log('✅ Validation passed, creating enrollment...');
+    console.log('✅ Validation passed, processing enrollment...');
 
-    // Try to find existing chat_user by email first, then by phone if not provided
+    // Find or create chat_user
     let resolvedChatUserId = chat_user_id;
+    
     if (!resolvedChatUserId) {
-      console.log('🔍 Looking for existing chat_user...');
+      console.log('🔍 Looking for existing chat_user by email...');
       
-      // First try to find by email (more reliable)
-      let existingUser = null;
-      try {
-        const { data: emailUser, error: emailError } = await supabase
-          .from('chat_users')
-          .select('id, phone, email, name, full_name')
-          .eq('email', email.trim().toLowerCase())
-          .maybeSingle();
-        
-        console.log('Email lookup result:', { emailUser, emailError });
-        
-        if (emailUser) {
-          existingUser = emailUser;
-          console.log('🔗 Found existing user by email:', existingUser.id);
-        } else if (!emailError) {
-          // If not found by email, try by phone
-          const { data: phoneUser, error: phoneError } = await supabase
-            .from('chat_users')
-            .select('id, phone, email, name, full_name')
-            .eq('phone', phone.trim())
-            .maybeSingle();
-          
-          console.log('Phone lookup result:', { phoneUser, phoneError });
-          
-          if (phoneUser) {
-            existingUser = phoneUser;
-            console.log('🔗 Found existing user by phone:', existingUser.id);
-          }
-        }
-      } catch (lookupError) {
-        console.error('❌ Error during user lookup:', lookupError);
-      }
-      
+      // First check by email
+      const { data: existingUser } = await supabase
+        .from('chat_users')
+        .select('id, phone, email, name, full_name')
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle();
+
       if (existingUser) {
         resolvedChatUserId = existingUser.id;
-        console.log('✅ Using existing chat_user:', resolvedChatUserId);
-        
-        // Update existing user with any missing information
-        const updateData: any = {};
-        if (!existingUser.email && email) {
-          updateData.email = email.trim().toLowerCase();
-        }
-        if (!existingUser.phone && phone) {
-          updateData.phone = phone.trim();
-        }
-        if (!existingUser.name || !existingUser.full_name) {
-          updateData.name = full_name.trim();
-          updateData.full_name = full_name.trim();
-          updateData.first_name = full_name.trim().split(' ')[0];
-          updateData.last_name = full_name.trim().split(' ').slice(1).join(' ') || '';
-        }
-        
-        if (Object.keys(updateData).length > 0) {
-          console.log('🔄 Updating existing user with missing data:', updateData);
-          try {
-            const { error: updateError } = await supabase
-              .from('chat_users')
-              .update(updateData)
-              .eq('id', existingUser.id);
-            
-            if (updateError) {
-              console.warn('⚠️ Could not update existing user:', updateError);
-            } else {
-              console.log('✅ User updated successfully');
-            }
-          } catch (updateError) {
-            console.warn('⚠️ Exception during user update:', updateError);
-          }
-        }
+        console.log('✅ Found existing user by email:', resolvedChatUserId);
+        console.log('📞 User phone:', existingUser.phone, 'vs submitted:', phone.trim());
       } else {
-        // Create new chat_user only if none exists
-        console.log('👤 Creating new chat_user...');
-        try {
+        console.log('🔍 No user found by email, checking by phone...');
+        
+        // If not found by email, check by phone
+        const { data: phoneUser } = await supabase
+          .from('chat_users')
+          .select('id, phone, email, name, full_name')
+          .eq('phone', phone.trim())
+          .maybeSingle();
+        
+        if (phoneUser) {
+          resolvedChatUserId = phoneUser.id;
+          console.log('✅ Found existing user by phone:', resolvedChatUserId);
+        } else {
+          console.log('👤 Creating new chat_user...');
+          
+          // Create new user
           const { data: newUser, error: createUserError } = await supabase
             .from('chat_users')
             .insert({
@@ -158,9 +113,10 @@ Deno.serve(async (req) => {
           
           if (createUserError) {
             console.error('❌ Error creating chat_user:', createUserError);
-            // If user creation fails due to duplicate, try to find the user one more time
+            
+            // Handle duplicate email/phone errors by finding the existing user
             if (createUserError.code === '23505') {
-              console.log('🔄 Duplicate detected during creation, finding existing user...');
+              console.log('🔄 Duplicate detected, finding existing user...');
               const { data: foundUser } = await supabase
                 .from('chat_users')
                 .select('id')
@@ -180,21 +136,17 @@ Deno.serve(async (req) => {
             resolvedChatUserId = newUser.id;
             console.log('✅ Created new chat_user:', resolvedChatUserId);
           }
-        } catch (createError) {
-          console.error('❌ Exception during user creation:', createError);
-          throw createError;
         }
       }
     }
 
-    // Ensure we have a chat_user_id before proceeding
     if (!resolvedChatUserId) {
       throw new Error('Could not resolve or create chat_user');
     }
     
     console.log('👤 Using chat_user_id:', resolvedChatUserId);
 
-    // Check if enrollment already exists for this user and course
+    // Check if enrollment already exists
     const { data: existingEnrollment } = await supabase
       .from('enrollments')
       .select('id, payment_status')
@@ -205,7 +157,6 @@ Deno.serve(async (req) => {
     if (existingEnrollment) {
       console.log('📋 Found existing enrollment:', existingEnrollment.id);
       
-      // Return the existing enrollment instead of creating a new one
       const { data: fullEnrollment } = await supabase
         .from('enrollments')
         .select('*')
@@ -225,10 +176,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Determine final payment status - free courses should be 'completed'
+    // Determine final payment status
     const finalPaymentStatus = payment_amount === 0 ? 'completed' : (payment_status || 'pending');
 
-    // Create enrollment record with service role privileges
+    console.log('🎯 Creating new enrollment...');
+
+    // Create enrollment record
     const { data: createdEnrollment, error: enrollmentError } = await supabase
       .from('enrollments')
       .insert({
@@ -236,7 +189,7 @@ Deno.serve(async (req) => {
         full_name: full_name.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim(),
-        payment_amount: Number(payment_amount), // Ensure it's a number
+        payment_amount: Number(payment_amount),
         payment_status: finalPaymentStatus,
         payment_method: payment_method || 'manual',
         manual_payment_status: manual_payment_status || null,
@@ -261,7 +214,7 @@ Deno.serve(async (req) => {
       .eq('id', course_id)
       .single();
 
-    // Get user details if chat_user_id exists
+    // Get user details
     let userData = null;
     if (resolvedChatUserId) {
       const { data: userInfo } = await supabase
@@ -272,14 +225,9 @@ Deno.serve(async (req) => {
       userData = userInfo;
     }
 
-    // Always send enrollment_created webhook
+    // Send enrollment webhook
     try {
       console.log('📤 Sending enrollment_created webhook...');
-      console.log('🎯 Free course enrollment details:', {
-        payment_amount: createdEnrollment.payment_amount,
-        payment_status: createdEnrollment.payment_status,
-        payment_method: createdEnrollment.payment_method
-      });
 
       const webhookPayload = {
         event_type: 'enrollment_created',
@@ -293,7 +241,6 @@ Deno.serve(async (req) => {
             country_code: country_code || '+98'
           },
           course: courseData,
-          // Add explicit markers for free course enrollments
           is_free_enrollment: createdEnrollment.payment_amount === 0,
           enrollment_type: createdEnrollment.payment_amount === 0 ? 'free' : 'paid'
         }
@@ -321,7 +268,7 @@ Deno.serve(async (req) => {
       console.error('❌ Webhook error (non-blocking):', webhookError);
     }
 
-    // For free courses (payment_amount = 0), also create SpotPlayer license if enabled
+    // Create SpotPlayer license for free courses if enabled
     if (payment_amount === 0 && courseData?.is_spotplayer_enabled) {
       try {
         console.log('🎮 Creating SpotPlayer license for free course...');
