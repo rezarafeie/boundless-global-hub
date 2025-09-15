@@ -33,6 +33,11 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
   const countryOptions = getCountryCodeOptions();
 
   const handleInputChange = (field: string, value: string) => {
+    // Remove leading zeros from phone number
+    if (field === 'phone' && value.startsWith('0')) {
+      value = value.replace(/^0+/, '');
+    }
+    
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
