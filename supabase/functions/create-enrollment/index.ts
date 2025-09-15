@@ -66,13 +66,75 @@ Deno.serve(async (req) => {
     if (!resolvedChatUserId) {
       const { data: existingUser } = await supabase
         .from('chat_users')
-        .select('id')
+        .select('id, phone, email')
         .or(`phone.eq.${phone.trim()},email.eq.${email.trim().toLowerCase()}`)
         .maybeSingle();
       
       if (existingUser) {
         resolvedChatUserId = existingUser.id;
         console.log('🔗 Found existing chat_user:', resolvedChatUserId);
+        
+        // Update existing user with any missing information
+        const updateData: any = {};
+        if (!existingUser.email && email) {
+          updateData.email = email.trim().toLowerCase();
+        }
+        if (!existingUser.phone && phone) {
+          updateData.phone = phone.trim();
+        }
+        
+        if (Object.keys(updateData).length > 0) {
+          console.log('🔄 Updating existing user with missing data:', updateData);
+          const { error: updateError } = await supabase
+            .from('chat_users')
+            .update(updateData)
+            .eq('id', existingUser.id);
+          
+          if (updateError) {
+            console.warn('⚠️ Could not update existing user:', updateError);
+          }
+        }
+      } else {
+        // Create new chat_user only if none exists
+        console.log('👤 Creating new chat_user...');
+        const { data: newUser, error: createUserError } = await supabase
+          .from('chat_users')
+          .insert({
+            name: full_name.trim(),
+            phone: phone.trim(),
+            email: email.trim().toLowerCase(),
+            first_name: full_name.trim().split(' ')[0],
+            last_name: full_name.trim().split(' ').slice(1).join(' ') || '',
+            full_name: full_name.trim(),
+            country_code: country_code || '+98',
+            signup_source: 'enrollment',
+            is_approved: true,
+            role: 'user'
+          })
+          .select('id')
+          .single();
+        
+        if (createUserError) {
+          console.error('❌ Error creating chat_user:', createUserError);
+          // If user creation fails due to duplicate, try to find the user again
+          if (createUserError.code === '23505') {
+            const { data: retryUser } = await supabase
+              .from('chat_users')
+              .select('id')
+              .or(`phone.eq.${phone.trim()},email.eq.${email.trim().toLowerCase()}`)
+              .maybeSingle();
+            
+            if (retryUser) {
+              resolvedChatUserId = retryUser.id;
+              console.log('🔗 Found user on retry:', resolvedChatUserId);
+            }
+          } else {
+            throw createUserError;
+          }
+        } else if (newUser) {
+          resolvedChatUserId = newUser.id;
+          console.log('✅ Created new chat_user:', resolvedChatUserId);
+        }
       }
     }
 
