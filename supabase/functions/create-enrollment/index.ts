@@ -64,6 +64,7 @@ Deno.serve(async (req) => {
     // Try to find existing chat_user by phone or email if not provided
     let resolvedChatUserId = chat_user_id;
     if (!resolvedChatUserId) {
+      console.log('🔍 Looking for existing chat_user...');
       const { data: existingUser } = await supabase
         .from('chat_users')
         .select('id, phone, email')
@@ -97,45 +98,91 @@ Deno.serve(async (req) => {
       } else {
         // Create new chat_user only if none exists
         console.log('👤 Creating new chat_user...');
-        const { data: newUser, error: createUserError } = await supabase
-          .from('chat_users')
-          .insert({
-            name: full_name.trim(),
-            phone: phone.trim(),
-            email: email.trim().toLowerCase(),
-            first_name: full_name.trim().split(' ')[0],
-            last_name: full_name.trim().split(' ').slice(1).join(' ') || '',
-            full_name: full_name.trim(),
-            country_code: country_code || '+98',
-            signup_source: 'enrollment',
-            is_approved: true,
-            role: 'user'
-          })
-          .select('id')
-          .single();
-        
-        if (createUserError) {
-          console.error('❌ Error creating chat_user:', createUserError);
-          // If user creation fails due to duplicate, try to find the user again
-          if (createUserError.code === '23505') {
-            const { data: retryUser } = await supabase
-              .from('chat_users')
-              .select('id')
-              .or(`phone.eq.${phone.trim()},email.eq.${email.trim().toLowerCase()}`)
-              .maybeSingle();
-            
-            if (retryUser) {
-              resolvedChatUserId = retryUser.id;
-              console.log('🔗 Found user on retry:', resolvedChatUserId);
+        try {
+          const { data: newUser, error: createUserError } = await supabase
+            .from('chat_users')
+            .insert({
+              name: full_name.trim(),
+              phone: phone.trim(),
+              email: email.trim().toLowerCase(),
+              first_name: full_name.trim().split(' ')[0],
+              last_name: full_name.trim().split(' ').slice(1).join(' ') || '',
+              full_name: full_name.trim(),
+              country_code: country_code || '+98',
+              signup_source: 'enrollment',
+              is_approved: true,
+              role: 'user'
+            })
+            .select('id')
+            .single();
+          
+          if (createUserError) {
+            console.error('❌ Error creating chat_user:', createUserError);
+            // If user creation fails due to duplicate, try to find the user again
+            if (createUserError.code === '23505') {
+              console.log('🔄 Duplicate user detected, searching again...');
+              const { data: retryUser } = await supabase
+                .from('chat_users')
+                .select('id')
+                .or(`phone.eq.${phone.trim()},email.eq.${email.trim().toLowerCase()}`)
+                .maybeSingle();
+              
+              if (retryUser) {
+                resolvedChatUserId = retryUser.id;
+                console.log('🔗 Found user on retry:', resolvedChatUserId);
+              } else {
+                throw new Error('Could not find or create user after duplicate error');
+              }
+            } else {
+              throw createUserError;
             }
-          } else {
-            throw createUserError;
+          } else if (newUser) {
+            resolvedChatUserId = newUser.id;
+            console.log('✅ Created new chat_user:', resolvedChatUserId);
           }
-        } else if (newUser) {
-          resolvedChatUserId = newUser.id;
-          console.log('✅ Created new chat_user:', resolvedChatUserId);
+        } catch (error) {
+          console.error('❌ Failed to create or find user:', error);
+          throw error;
         }
       }
+    }
+
+    // Ensure we have a chat_user_id before proceeding
+    if (!resolvedChatUserId) {
+      throw new Error('Could not resolve or create chat_user');
+    }
+    
+    console.log('👤 Using chat_user_id:', resolvedChatUserId);
+
+    // Check if enrollment already exists for this user and course
+    const { data: existingEnrollment } = await supabase
+      .from('enrollments')
+      .select('id, payment_status')
+      .eq('course_id', course_id)
+      .eq('chat_user_id', resolvedChatUserId)
+      .maybeSingle();
+
+    if (existingEnrollment) {
+      console.log('📋 Found existing enrollment:', existingEnrollment.id);
+      
+      // Return the existing enrollment instead of creating a new one
+      const { data: fullEnrollment } = await supabase
+        .from('enrollments')
+        .select('*')
+        .eq('id', existingEnrollment.id)
+        .single();
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          enrollment: fullEnrollment,
+          message: 'User already enrolled in this course'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      );
     }
 
     // Determine final payment status - free courses should be 'completed'
