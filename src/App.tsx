@@ -112,6 +112,7 @@ import CourseContentManagement from "./pages/Course/CourseContentManagement";
 import CourseCreate from "./pages/Admin/CourseCreate";
 import CourseEdit from "./pages/Admin/CourseEdit";
 import WebinarLanding from "./pages/WebinarLanding";
+import WebinarAdmin from "./pages/WebinarAdmin";
 
 // User Management components
 import UsersOverview from "./pages/UsersOverview";
@@ -345,7 +346,8 @@ const App = () => {
                      <Route path="/app/profile" element={<AppProfile />} />
 
                      {/* Webinar Routes */}
-                     <Route path="/webinar/:slug" element={<WebinarLanding />} />
+        <Route path="/enroll/admin/webinar" element={<WebinarAdmin />} />
+        <Route path="/webinar/:slug" element={<WebinarLanding />} />
 
                     {/* 404 fallback */}
                     <Route path="*" element={<NotFound />} />

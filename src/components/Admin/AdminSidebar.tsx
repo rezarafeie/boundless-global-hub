@@ -55,8 +55,6 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
 }) => {
   // Filter menu items based on user role
   const getFilteredMenuItems = () => {
-    console.log('Current userRole:', userRole, 'isMessengerAdmin:', isMessengerAdmin, 'isSalesAgent:', isSalesAgent);
-    
     // Sales manager gets sales, leads, and crm tabs
     if (userRole === 'sales_manager' && !isMessengerAdmin) {
       return menuItems.filter(item => ['sales', 'leads', 'crm'].includes(item.id));
@@ -73,13 +71,10 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
     }
     
     // Admin and messenger admin get all tabs
-    console.log('Returning all menu items');
     return menuItems;
   };
 
-  console.log('AdminSidebar props - activeView:', activeView, 'onViewChange type:', typeof onViewChange);
   const filteredMenuItems = getFilteredMenuItems();
-  console.log('Filtered menu items:', filteredMenuItems.map(item => item.id));
   return (
     <div className="flex flex-col h-full bg-background border-l border-border" dir="rtl" style={{ direction: 'rtl' }}>
       {/* Header */}
@@ -98,9 +93,7 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
       {/* Menu Items */}
       <ScrollArea className="flex-1 p-3">
         <div className="space-y-1">
-          {filteredMenuItems.map((item, index) => {
-            console.log('Rendering menu item:', item.id, item.label);
-            return (
+          {filteredMenuItems.map((item, index) => (
             <div key={item.id}>
               <Button
                 variant="ghost"
@@ -114,13 +107,11 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
                   ] : "text-muted-foreground hover:text-foreground"
                 )}
                 onClick={() => {
-                  console.log('Sidebar button clicked:', item.id);
-                  console.log('About to call onViewChange with:', item.id);
-                  try {
+                  if (item.id === 'webinars') {
+                    // Navigate to webinar admin page
+                    window.location.href = '/enroll/admin/webinar';
+                  } else {
                     onViewChange(item.id);
-                    console.log('onViewChange called successfully');
-                  } catch (error) {
-                    console.error('Error calling onViewChange:', error);
                   }
                 }}
               >
@@ -129,7 +120,6 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
                   activeView === item.id ? "text-primary" : ""
                 )} />
                 <span className="text-sm text-right flex-1">{item.label}</span>
-                {item.id === 'webinars' && <span className="text-xs text-red-500 ml-1">[WEBINAR]</span>}
                 {activeView === item.id && (
                   <ChevronLeft className="h-4 w-4 text-primary/60" />
                 )}
@@ -142,8 +132,7 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
                 </div>
               )}
             </div>
-            );
-          })}
+          ))}
         </div>
       </ScrollArea>
       
