@@ -448,15 +448,7 @@ const EnrollAdmin: React.FC = () => {
     <div className="flex min-h-screen w-full">
       <AdminSidebar 
         activeView={activeView}
-        onViewChange={(view) => {
-          console.log('Sidebar view changed to:', view);
-          setActiveView(view);
-          console.log('ActiveView state updated to:', view);
-          // Force a re-render to ensure state change is applied
-          setTimeout(() => {
-            console.log('After timeout, activeView is:', activeView);
-          }, 100);
-        }}
+        onViewChange={setActiveView}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         userRole={userRole}
@@ -466,11 +458,186 @@ const EnrollAdmin: React.FC = () => {
       
       <div className="flex-1 p-8">
         {/* Debug indicator */}
-        <div className="fixed top-4 right-4 bg-red-500 text-white p-2 rounded z-50">
-          Current View: {activeView}
+        <div className="fixed top-4 right-4 bg-red-500 text-white p-2 rounded z-50 text-sm">
+          View: {activeView}
         </div>
         
-        {renderContent()}
+        {activeView === 'webinars' && <WebinarManagement />}
+        {activeView === 'tests' && <TestManagement />}
+        {activeView === 'analytics' && <AnalyticsReports />}
+        {activeView === 'sales' && canViewSales && <SalesDashboard />}
+        {(activeView === 'enrollments' || (!['webinars', 'tests', 'analytics', 'sales'].includes(activeView))) && (
+          <Card>
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                مدیریت ثبت‌نام‌ها
+              </CardTitle>
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm" onClick={() => setIsFilterOpen(!isFilterOpen)}>
+                  <Filter className="h-4 w-4 ml-2" />
+                  فیلتر
+                </Button>
+                <Button variant="secondary" size="sm">
+                  <Download className="h-4 w-4 ml-2" />
+                  خروجی اکسل
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isFilterOpen && (
+                <Card className="bg-gray-50 dark:bg-gray-900 mb-6">
+                  <CardHeader>
+                    <CardTitle>فیلترهای جستجو</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">نام و نام خانوادگی</label>
+                      <Input
+                        type="text"
+                        name="fullName"
+                        value={filter.fullName}
+                        onChange={handleFilterChange}
+                        placeholder="جستجو بر اساس نام"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">ایمیل</label>
+                      <Input
+                        type="email"
+                        name="email"
+                        value={filter.email}
+                        onChange={handleFilterChange}
+                        placeholder="جستجو بر اساس ایمیل"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">شماره تلفن</label>
+                      <Input
+                        type="tel"
+                        name="phone"
+                        value={filter.phone}
+                        onChange={handleFilterChange}
+                        placeholder="جستجو بر اساس تلفن"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">وضعیت پرداخت</label>
+                      <Select name="paymentStatus" value={filter.paymentStatus} onValueChange={(value) => setFilter({...filter, paymentStatus: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="همه" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">همه</SelectItem>
+                          <SelectItem value="pending">در انتظار پرداخت</SelectItem>
+                          <SelectItem value="success">موفق</SelectItem>
+                          <SelectItem value="failed">ناموفق</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">دوره</label>
+                      <Select name="courseId" value={filter.courseId} onValueChange={(value) => setFilter({...filter, courseId: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="همه دوره‌ها" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">همه دوره‌ها</SelectItem>
+                          {courses.map(course => (
+                            <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              {loading ? (
+                <div className="text-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                  <p className="text-sm text-muted-foreground">در حال بارگذاری...</p>
+                </div>
+              ) : enrollments.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="h-10 w-10 mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">هیچ ثبت‌نامی یافت نشد.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>
+                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('created_at')}>
+                            نام و نام خانوادگی
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('created_at')}>
+                            ایمیل
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('created_at')}>
+                            تلفن
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          دوره
+                        </TableHead>
+                        <TableHead>
+                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('created_at')}>
+                            وضعیت پرداخت
+                          </Button>
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('payment_amount')}>
+                            مبلغ پرداخت
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button variant="ghost" size="sm" onClick={() => handleSortChange('created_at')}>
+                            تاریخ ثبت‌نام
+                          </Button>
+                        </TableHead>
+                        <TableHead className="text-center">عملیات</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {enrollments.map(enrollment => (
+                        <TableRow key={enrollment.id}>
+                          <TableCell>{enrollment.full_name}</TableCell>
+                          <TableCell>{enrollment.email}</TableCell>
+                          <TableCell>{enrollment.phone}</TableCell>
+                          <TableCell>{enrollment.courses?.title}</TableCell>
+                          <TableCell>
+                            {enrollment.payment_status === 'success' ? (
+                              <Badge variant="outline">موفق</Badge>
+                            ) : enrollment.payment_status === 'pending' ? (
+                              <Badge variant="secondary">در انتظار پرداخت</Badge>
+                            ) : (
+                              <Badge variant="destructive">ناموفق</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">{formatPrice(enrollment.payment_amount)}</TableCell>
+                          <TableCell>{formatDate(enrollment.created_at)}</TableCell>
+                          <TableCell className="text-center">
+                            {canAccessCRM && (
+                              <Button size="sm" onClick={() => handleOpenUserCRM(enrollment)}>
+                                <Eye className="h-4 w-4 ml-2" />
+                                CRM
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
         
         {selectedEnrollment && (
           <Dialog open={isUserCRMPopupOpen} onOpenChange={setIsUserCRMPopupOpen}>
