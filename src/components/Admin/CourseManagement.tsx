@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash2, ExternalLink, Users, TrendingUp, DollarSign, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Edit, Trash2, ExternalLink, Users, TrendingUp, DollarSign, Search, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -195,6 +195,72 @@ const CourseManagement: React.FC = () => {
     }
   }, [debouncedEnrollmentSearch]);
 
+  const exportEnrollmentsToCSV = async (course: Course) => {
+    try {
+      // Fetch all enrollments for this course (no pagination)
+      const { data, error } = await supabase
+        .from('enrollments')
+        .select('*')
+        .eq('course_id', course.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        toast({
+          title: "اطلاع",
+          description: "هیچ ثبت‌نامی برای این دوره وجود ندارد"
+        });
+        return;
+      }
+
+      // Prepare CSV content
+      const headers = ['نام', 'نام خانوادگی', 'تلفن', 'ایمیل', 'تاریخ ثبت‌نام'];
+      const csvContent = [
+        headers.join(','),
+        ...data.map(enrollment => {
+          const fullNameParts = enrollment.full_name.trim().split(' ');
+          const firstName = fullNameParts[0] || '';
+          const lastName = fullNameParts.slice(1).join(' ') || '';
+          const registerDate = new Date(enrollment.created_at).toLocaleDateString('fa-IR');
+          
+          return [
+            `"${firstName}"`,
+            `"${lastName}"`,
+            `"${enrollment.phone}"`,
+            `"${enrollment.email}"`,
+            `"${registerDate}"`
+          ].join(',');
+        })
+      ].join('\n');
+
+      // Create and download the file
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `enrollments-${course.slug}-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "موفق",
+        description: `${data.length} ثبت‌نام دوره "${course.title}" با موفقیت دانلود شد`
+      });
+    } catch (error) {
+      console.error('Error exporting enrollments:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در دانلود ثبت‌نام‌ها",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -275,13 +341,23 @@ const CourseManagement: React.FC = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => handleViewEnrollments(course)}
+                            title="مشاهده ثبت‌نام‌ها"
                           >
                             <Users className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
+                            onClick={() => exportEnrollmentsToCSV(course)}
+                            title="دانلود ثبت‌نام‌ها (CSV)"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => handleEditCourse(course)}
+                            title="ویرایش دوره"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -292,6 +368,7 @@ const CourseManagement: React.FC = () => {
                               const url = `/enroll?course=${course.slug}`;
                               window.open(url, '_blank');
                             }}
+                            title="مشاهده صفحه ثبت‌نام"
                           >
                             <ExternalLink className="h-4 w-4" />
                           </Button>
@@ -300,6 +377,7 @@ const CourseManagement: React.FC = () => {
                             variant="outline"
                             onClick={() => handleDeleteCourse(course.id)}
                             className="text-red-600 hover:text-red-700"
+                            title="حذف دوره"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
