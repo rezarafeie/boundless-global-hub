@@ -97,7 +97,9 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
       {/* Menu Items */}
       <ScrollArea className="flex-1 p-3">
         <div className="space-y-1">
-          {filteredMenuItems.map((item, index) => (
+          {filteredMenuItems.map((item, index) => {
+            console.log('Rendering menu item:', item.id, item.label);
+            return (
             <div key={item.id}>
               <Button
                 variant="ghost"
@@ -120,6 +122,7 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
                   activeView === item.id ? "text-primary" : ""
                 )} />
                 <span className="text-sm text-right flex-1">{item.label}</span>
+                {item.id === 'webinars' && <span className="text-xs text-red-500 ml-1">[WEBINAR]</span>}
                 {activeView === item.id && (
                   <ChevronLeft className="h-4 w-4 text-primary/60" />
                 )}
@@ -132,7 +135,8 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       </ScrollArea>
       
