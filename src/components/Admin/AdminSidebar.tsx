@@ -55,6 +55,8 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
 }) => {
   // Filter menu items based on user role
   const getFilteredMenuItems = () => {
+    console.log('Current userRole:', userRole, 'isMessengerAdmin:', isMessengerAdmin, 'isSalesAgent:', isSalesAgent);
+    
     // Sales manager gets sales, leads, and crm tabs
     if (userRole === 'sales_manager' && !isMessengerAdmin) {
       return menuItems.filter(item => ['sales', 'leads', 'crm'].includes(item.id));
@@ -71,10 +73,12 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
     }
     
     // Admin and messenger admin get all tabs
+    console.log('Returning all menu items');
     return menuItems;
   };
 
   const filteredMenuItems = getFilteredMenuItems();
+  console.log('Filtered menu items:', filteredMenuItems.map(item => item.id));
   return (
     <div className="flex flex-col h-full bg-background border-l border-border" dir="rtl" style={{ direction: 'rtl' }}>
       {/* Header */}
@@ -106,7 +110,10 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
                     "shadow-sm"
                   ] : "text-muted-foreground hover:text-foreground"
                 )}
-                onClick={() => onViewChange(item.id)}
+                onClick={() => {
+                  console.log('Sidebar button clicked:', item.id);
+                  onViewChange(item.id);
+                }}
               >
                 <item.icon className={cn(
                   "h-4 w-4 flex-shrink-0 ml-2",
