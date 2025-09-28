@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +39,7 @@ import TestManagement from '@/components/Admin/TestManagement';
 import AnalyticsReports from '@/components/Admin/AnalyticsReports';
 import WebinarManagement from '@/components/Admin/WebinarManagement';
 import { useUserRole } from '@/hooks/useUserRole';
+import { AdminSidebar } from '@/components/Admin/AdminSidebar';
 
 interface Enrollment {
   id: string;
@@ -75,6 +75,8 @@ const EnrollAdmin: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeView, setActiveView] = useState('enrollments');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [filter, setFilter] = useState<FilterState>({
     fullName: '',
     email: '',
@@ -93,9 +95,11 @@ const EnrollAdmin: React.FC = () => {
   const { role: userRole, loading: roleLoading, isAdmin, canViewSales, canAccessCRM } = useUserRole();
 
   useEffect(() => {
-    fetchEnrollments();
-    fetchCourses();
-  }, [filter, sortOrder, sortBy]);
+    if (activeView === 'enrollments') {
+      fetchEnrollments();
+      fetchCourses();
+    }
+  }, [filter, sortOrder, sortBy, activeView]);
 
   const fetchEnrollments = async () => {
     setLoading(true);
@@ -226,7 +230,6 @@ const EnrollAdmin: React.FC = () => {
     setSelectedEnrollment(null);
   };
 
-
   if (roleLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -248,58 +251,38 @@ const EnrollAdmin: React.FC = () => {
     );
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <Card>
-        <CardHeader className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            مدیریت ثبت‌نام‌ها
-          </CardTitle>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={() => setIsFilterOpen(!isFilterOpen)}>
-              <Filter className="h-4 w-4 ml-2" />
-              فیلتر
-            </Button>
-            <Button variant="secondary" size="sm">
-              <Download className="h-4 w-4 ml-2" />
-              خروجی اکسل
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="list" className="space-y-4">
-            <TabsList className={`grid w-full ${canViewSales ? 'grid-cols-5' : 'grid-cols-4'}`}>
-              <TabsTrigger value="list" className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                ثبت‌نام‌های دوره
-              </TabsTrigger>
-              <TabsTrigger 
-                value="tests" 
-                className="flex items-center gap-2"
-                onClick={() => window.location.href = '/enroll/admin/tests'}
-              >
-                <FileText className="w-4 h-4" />
-                آزمون‌ها
-              </TabsTrigger>
-              <TabsTrigger value="webinars" className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                وبینارها
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
-                گزارش تحلیل
-              </TabsTrigger>
-              {canViewSales && (
-                <TabsTrigger value="sales" className="flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  داشبورد فروش
-                </TabsTrigger>
-              )}
-            </TabsList>
-            <TabsContent value="list" className="space-y-4">
+  const renderContent = () => {
+    switch (activeView) {
+      case 'webinars':
+        return <WebinarManagement />;
+      case 'tests':
+        return <TestManagement />;
+      case 'analytics':
+        return <AnalyticsReports />;
+      case 'sales':
+        return canViewSales ? <SalesDashboard /> : null;
+      default:
+        return (
+          <Card>
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                مدیریت ثبت‌نام‌ها
+              </CardTitle>
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm" onClick={() => setIsFilterOpen(!isFilterOpen)}>
+                  <Filter className="h-4 w-4 ml-2" />
+                  فیلتر
+                </Button>
+                <Button variant="secondary" size="sm">
+                  <Download className="h-4 w-4 ml-2" />
+                  خروجی اکسل
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
               {isFilterOpen && (
-                <Card className="bg-gray-50 dark:bg-gray-900">
+                <Card className="bg-gray-50 dark:bg-gray-900 mb-6">
                   <CardHeader>
                     <CardTitle>فیلترهای جستجو</CardTitle>
                   </CardHeader>
@@ -448,45 +431,52 @@ const EnrollAdmin: React.FC = () => {
                   </Table>
                 </div>
               )}
-            </TabsContent>
-            
-            <TabsContent value="tests" className="space-y-4">
-              <TestManagement />
-            </TabsContent>
-            
-            <TabsContent value="webinars" className="space-y-4">
-              <WebinarManagement />
-            </TabsContent>
-            
-            <TabsContent value="analytics" className="space-y-4">
-              <AnalyticsReports />
-            </TabsContent>
-            
-            <TabsContent value="sales" className="space-y-4">
-              <SalesDashboard />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        );
+    }
+  };
 
-      {/* User CRM Popup */}
-      <Dialog open={isUserCRMPopupOpen} onOpenChange={handleCloseUserCRM}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>CRM کاربر</DialogTitle>
-          </DialogHeader>
-          {selectedEnrollment && (
-            <UserCRM 
-              userId={selectedEnrollment.chat_user_id!}
-              userName={selectedEnrollment.full_name}
-              userPhone={selectedEnrollment.phone}
-              userEmail={selectedEnrollment.email}
-              preselectedCourseId={selectedEnrollment.course_id}
-              preselectedCourseTitle={selectedEnrollment.courses?.title}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+  return (
+    <div className="flex min-h-screen w-full">
+      <AdminSidebar 
+        activeView={activeView}
+        onViewChange={setActiveView}
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        userRole={userRole}
+        isMessengerAdmin={false}
+        isSalesAgent={false}
+      />
+      
+      <div className="flex-1 p-8">
+        {renderContent()}
+        
+        {selectedEnrollment && (
+          <Dialog open={isUserCRMPopupOpen} onOpenChange={setIsUserCRMPopupOpen}>
+            <DialogContent className="max-w-4xl h-[80vh]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  CRM کاربر: {selectedEnrollment.full_name}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 overflow-hidden">
+                {selectedEnrollment.chat_user_id && (
+                  <UserCRM 
+                    userId={selectedEnrollment.chat_user_id}
+                    userName={selectedEnrollment.full_name}
+                    userPhone={selectedEnrollment.phone}
+                    userEmail={selectedEnrollment.email}
+                    preselectedCourseId={selectedEnrollment.course_id}
+                    preselectedCourseTitle={selectedEnrollment.courses?.title}
+                  />
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
     </div>
   );
 };

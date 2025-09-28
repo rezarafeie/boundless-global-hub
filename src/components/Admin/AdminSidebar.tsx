@@ -18,7 +18,8 @@ import {
   Crown,
   TrendingUp,
   MessageSquare,
-  Brain
+  Brain,
+  Calendar
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -35,6 +36,7 @@ const menuItems = [
   { id: 'dashboard', label: 'داشبورد', icon: LayoutDashboard },
   { id: 'courses', label: 'دوره‌ها', icon: BookOpen },
   { id: 'tests', label: 'آزمون‌ها', icon: Brain },
+  { id: 'webinars', label: 'وبینارها', icon: Calendar },
   { id: 'enrollments', label: 'ثبت‌نام‌ها', icon: UserCheck },
   { id: 'sales', label: 'داشبورد فروش', icon: BarChart3 },
   { id: 'leads', label: 'مدیریت لیدها', icon: UserPlus },
