@@ -77,6 +77,7 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
     return menuItems;
   };
 
+  console.log('AdminSidebar props - activeView:', activeView, 'onViewChange type:', typeof onViewChange);
   const filteredMenuItems = getFilteredMenuItems();
   console.log('Filtered menu items:', filteredMenuItems.map(item => item.id));
   return (
@@ -114,7 +115,13 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
                 )}
                 onClick={() => {
                   console.log('Sidebar button clicked:', item.id);
-                  onViewChange(item.id);
+                  console.log('About to call onViewChange with:', item.id);
+                  try {
+                    onViewChange(item.id);
+                    console.log('onViewChange called successfully');
+                  } catch (error) {
+                    console.error('Error calling onViewChange:', error);
+                  }
                 }}
               >
                 <item.icon className={cn(
