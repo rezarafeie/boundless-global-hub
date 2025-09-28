@@ -3345,6 +3345,68 @@ export type Database = {
           },
         ]
       }
+      webinar_entries: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          slug: string
+          start_date: string
+          title: string
+          updated_at: string
+          webinar_link: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          slug: string
+          start_date: string
+          title: string
+          updated_at?: string
+          webinar_link: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          slug?: string
+          start_date?: string
+          title?: string
+          updated_at?: string
+          webinar_link?: string
+        }
+        Relationships: []
+      }
+      webinar_signups: {
+        Row: {
+          id: string
+          mobile_number: string
+          signup_time: string
+          webinar_id: string
+        }
+        Insert: {
+          id?: string
+          mobile_number: string
+          signup_time?: string
+          webinar_id: string
+        }
+        Update: {
+          id?: string
+          mobile_number?: string
+          signup_time?: string
+          webinar_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_signups_webinar_id_fkey"
+            columns: ["webinar_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       sales_agent_performance: {
