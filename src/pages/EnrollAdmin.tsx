@@ -252,8 +252,10 @@ const EnrollAdmin: React.FC = () => {
   }
 
   const renderContent = () => {
+    console.log('Current activeView:', activeView);
     switch (activeView) {
       case 'webinars':
+        console.log('Rendering WebinarManagement');
         return <WebinarManagement />;
       case 'tests':
         return <TestManagement />;
@@ -262,6 +264,7 @@ const EnrollAdmin: React.FC = () => {
       case 'sales':
         return canViewSales ? <SalesDashboard /> : null;
       default:
+        console.log('Rendering default enrollments view');
         return (
           <Card>
             <CardHeader className="flex items-center justify-between">
@@ -441,7 +444,10 @@ const EnrollAdmin: React.FC = () => {
     <div className="flex min-h-screen w-full">
       <AdminSidebar 
         activeView={activeView}
-        onViewChange={setActiveView}
+        onViewChange={(view) => {
+          console.log('Sidebar view changed to:', view);
+          setActiveView(view);
+        }}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         userRole={userRole}
