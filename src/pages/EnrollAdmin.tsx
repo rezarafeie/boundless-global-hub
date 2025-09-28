@@ -452,6 +452,10 @@ const EnrollAdmin: React.FC = () => {
           console.log('Sidebar view changed to:', view);
           setActiveView(view);
           console.log('ActiveView state updated to:', view);
+          // Force a re-render to ensure state change is applied
+          setTimeout(() => {
+            console.log('After timeout, activeView is:', activeView);
+          }, 100);
         }}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -461,6 +465,11 @@ const EnrollAdmin: React.FC = () => {
       />
       
       <div className="flex-1 p-8">
+        {/* Debug indicator */}
+        <div className="fixed top-4 right-4 bg-red-500 text-white p-2 rounded z-50">
+          Current View: {activeView}
+        </div>
+        
         {renderContent()}
         
         {selectedEnrollment && (
