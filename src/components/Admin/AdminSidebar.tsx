@@ -65,9 +65,9 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
       return menuItems.filter(item => ['leads', 'crm'].includes(item.id));
     }
     
-    // Enrollment managers get specific tabs
+    // Enrollment managers get specific tabs including webinars
     if (userRole === 'enrollments_manager' && !isMessengerAdmin) {
-      return menuItems.filter(item => ['enrollments', 'users', 'crm'].includes(item.id));
+      return menuItems.filter(item => ['enrollments', 'users', 'crm', 'webinars'].includes(item.id));
     }
     
     // Admin and messenger admin get all tabs
@@ -119,7 +119,7 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
               </Button>
               
               {/* Clean separators after specific sections */}
-              {(index === 2 || index === 4) && (
+              {(index === 3 || index === 5) && (
                 <div className="my-3">
                   <Separator className="bg-border" />
                 </div>
