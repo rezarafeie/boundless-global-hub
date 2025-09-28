@@ -252,16 +252,20 @@ const EnrollAdmin: React.FC = () => {
   }
 
   const renderContent = () => {
-    console.log('Current activeView:', activeView);
+    console.log('renderContent called with activeView:', activeView);
+    
     switch (activeView) {
       case 'webinars':
-        console.log('Rendering WebinarManagement');
+        console.log('Rendering WebinarManagement component');
         return <WebinarManagement />;
       case 'tests':
+        console.log('Rendering TestManagement component');
         return <TestManagement />;
       case 'analytics':
+        console.log('Rendering AnalyticsReports component');
         return <AnalyticsReports />;
       case 'sales':
+        console.log('Rendering SalesDashboard component');
         return canViewSales ? <SalesDashboard /> : null;
       default:
         console.log('Rendering default enrollments view');
@@ -447,6 +451,7 @@ const EnrollAdmin: React.FC = () => {
         onViewChange={(view) => {
           console.log('Sidebar view changed to:', view);
           setActiveView(view);
+          console.log('ActiveView state updated to:', view);
         }}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
