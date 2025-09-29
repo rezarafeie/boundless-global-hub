@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Users, ArrowLeft, Phone } from 'lucide-react';
+import { Phone, Calendar, Clock, Video } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import WebinarCountdown from '@/components/WebinarCountdown';
 import { useForm } from 'react-hook-form';
 
 interface Webinar {
@@ -30,7 +28,6 @@ const WebinarLanding: React.FC = () => {
   const [webinar, setWebinar] = useState<Webinar | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [signupCount, setSignupCount] = useState(0);
   
   const { register, handleSubmit, formState: { errors }, reset } = useForm<SignupFormData>();
 
@@ -57,7 +54,6 @@ const WebinarLanding: React.FC = () => {
         }
       } else {
         setWebinar(data);
-        fetchSignupCount(data.id);
       }
     } catch (error) {
       console.error('Error fetching webinar:', error);
@@ -71,19 +67,6 @@ const WebinarLanding: React.FC = () => {
     }
   };
 
-  const fetchSignupCount = async (webinarId: string) => {
-    try {
-      const { count, error } = await supabase
-        .from('webinar_signups')
-        .select('*', { count: 'exact', head: true })
-        .eq('webinar_id', webinarId);
-
-      if (error) throw error;
-      setSignupCount(count || 0);
-    } catch (error) {
-      console.error('Error fetching signup count:', error);
-    }
-  };
 
   const validateIranianMobile = (value: string) => {
     // Remove spaces and special characters
@@ -161,11 +144,8 @@ const WebinarLanding: React.FC = () => {
 
       toast({
         title: "موفقیت",
-        description: "ثبت‌نام شما با موفقیت انجام شد. در حال انتقال به وبینار...",
+        description: "در حال انتقال به وبینار...",
       });
-
-      // Update signup count
-      setSignupCount(prev => prev + 1);
       
       // Redirect to webinar link
       setTimeout(() => {
@@ -186,11 +166,8 @@ const WebinarLanding: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg">در حال بارگذاری...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/10">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -199,167 +176,87 @@ const WebinarLanding: React.FC = () => {
     return <Navigate to="/404" replace />;
   }
 
-  const isWebinarStarted = new Date(webinar.start_date) <= new Date();
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-primary/5">
-      <div className="container mx-auto px-4 py-8 max-w-4xl" dir="rtl">
-        {/* Header */}
-        <div className="mb-8">
-          <Button 
-            variant="ghost" 
-            onClick={() => window.history.back()}
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 ml-2" />
-            بازگشت
-          </Button>
-          <Badge variant="secondary" className="mb-4">
-            <Calendar className="h-3 w-3 ml-1" />
-            وبینار آنلاین
-          </Badge>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/10 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <Card className="border-0 shadow-2xl bg-card/95 backdrop-blur">
+          <CardContent className="p-8 text-center space-y-6">
+            {/* Webinar Icon */}
+            <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+              <Video className="h-8 w-8 text-primary" />
+            </div>
+            
+            {/* Title */}
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold text-foreground">
+                {webinar.title}
+              </h1>
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                <span>
+                  {new Date(webinar.start_date).toLocaleDateString('fa-IR', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </span>
+              </div>
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                <span>
+                  {new Date(webinar.start_date).toLocaleTimeString('fa-IR', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              </div>
+            </div>
 
-        {/* Main Content */}
-        <div className="grid lg:grid-cols-5 gap-8">
-          {/* Left Column - Content */}
-          <div className="lg:col-span-3 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl lg:text-3xl font-bold text-right">
-                  {webinar.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {webinar.description && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">درباره این وبینار</h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                      {webinar.description}
-                    </p>
-                  </div>
-                )}
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg">
-                    <Clock className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium">زمان برگزاری</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(webinar.start_date).toLocaleDateString('fa-IR', {
-                          weekday: 'long',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg">
-                    <Users className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium">تعداد ثبت‌نام</p>
-                      <p className="text-sm text-muted-foreground">
-                        {signupCount.toLocaleString('fa-IR')} نفر
-                      </p>
-                    </div>
-                  </div>
+            {/* Form */}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-2">
+                <div className="relative">
+                  <Phone className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    {...register('mobile_number', {
+                      required: 'شماره موبایل الزامی است',
+                      validate: validateIranianMobile
+                    })}
+                    type="tel"
+                    placeholder="09123456789"
+                    className="pr-10 text-left text-center text-lg"
+                    dir="ltr"
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column - Countdown & Signup */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Countdown */}
-            {!isWebinarStarted && (
-              <WebinarCountdown endDate={webinar.start_date} />
-            )}
-
-            {/* Signup Form */}
-            <Card className="border-primary/20 shadow-lg">
-              <CardHeader className="text-center">
-                <CardTitle className="text-xl text-primary">
-                  {isWebinarStarted ? 'ورود به وبینار' : 'ثبت‌نام در وبینار'}
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {isWebinarStarted 
-                    ? 'برای ورود به وبینار شماره موبایل خود را وارد کنید'
-                    : 'شماره موبایل خود را وارد کنید تا از شروع وبینار مطلع شوید'
-                  }
-                </p>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                  <div>
-                    <div className="relative">
-                      <Phone className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        {...register('mobile_number', {
-                          required: 'شماره موبایل الزامی است',
-                          validate: validateIranianMobile
-                        })}
-                        type="tel"
-                        placeholder="09123456789"
-                        className="pr-10 text-left"
-                        dir="ltr"
-                      />
-                    </div>
-                    {errors.mobile_number && (
-                      <p className="text-sm text-destructive mt-1">
-                        {errors.mobile_number.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    size="lg"
-                    disabled={submitting}
-                  >
-                    {submitting ? (
-                      <div className="flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        در حال پردازش...
-                      </div>
-                    ) : (
-                      isWebinarStarted ? 'ورود به وبینار' : 'ثبت‌نام و ورود'
-                    )}
-                  </Button>
-                </form>
-
-                <div className="mt-4 pt-4 border-t text-center">
-                  <p className="text-xs text-muted-foreground">
-                    با ثبت‌نام، شما با {' '}
-                    <span className="text-primary">قوانین و مقررات</span>
-                    {' '} موافقت می‌کنید
+                {errors.mobile_number && (
+                  <p className="text-sm text-destructive">
+                    {errors.mobile_number.message}
                   </p>
-                </div>
-              </CardContent>
-            </Card>
+                )}
+              </div>
 
-            {/* Stats */}
-            <Card className="bg-gradient-to-br from-primary/5 to-primary/10">
-              <CardContent className="p-4 text-center">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-2xl font-bold text-primary">
-                      {signupCount.toLocaleString('fa-IR')}
-                    </div>
-                    <div className="text-xs text-muted-foreground">ثبت‌نام شده</div>
+              <Button 
+                type="submit" 
+                className="w-full h-12 text-lg font-semibold" 
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    در حال پردازش...
                   </div>
-                  <div>
-                    <div className="text-2xl font-bold text-primary">رایگان</div>
-                    <div className="text-xs text-muted-foreground">شرکت در وبینار</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                ) : (
+                  'ورود به وبینار'
+                )}
+              </Button>
+            </form>
+
+            {/* Footer */}
+            <p className="text-xs text-muted-foreground">
+              رایگان • بدون نیاز به ثبت‌نام قبلی
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
