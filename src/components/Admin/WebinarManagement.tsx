@@ -40,6 +40,7 @@ const WebinarManagement: React.FC = () => {
   
   const [formData, setFormData] = useState({
     title: '',
+    slug: '',
     start_date: '',
     webinar_link: '',
     description: ''
@@ -108,10 +109,11 @@ const WebinarManagement: React.FC = () => {
     e.preventDefault();
     
     try {
-      const slug = generateSlug(formData.title);
+      // Use the manually entered slug or generate one from title
+      const finalSlug = formData.slug.trim() || generateSlug(formData.title);
       const webinarData = {
         ...formData,
-        slug,
+        slug: finalSlug,
         description: formData.description || null
       };
 
@@ -142,7 +144,7 @@ const WebinarManagement: React.FC = () => {
 
       setIsCreateModalOpen(false);
       setEditingWebinar(null);
-      setFormData({ title: '', start_date: '', webinar_link: '', description: '' });
+      setFormData({ title: '', slug: '', start_date: '', webinar_link: '', description: '' });
       fetchWebinars();
     } catch (error) {
       console.error('Error saving webinar:', error);
@@ -158,6 +160,7 @@ const WebinarManagement: React.FC = () => {
     setEditingWebinar(webinar);
     setFormData({
       title: webinar.title,
+      slug: webinar.slug,
       start_date: format(new Date(webinar.start_date), 'yyyy-MM-dd\'T\'HH:mm'),
       webinar_link: webinar.webinar_link,
       description: webinar.description || ''
@@ -278,7 +281,7 @@ const WebinarManagement: React.FC = () => {
             <DialogTrigger asChild>
               <Button onClick={() => {
                 setEditingWebinar(null);
-                setFormData({ title: '', start_date: '', webinar_link: '', description: '' });
+                setFormData({ title: '', slug: '', start_date: '', webinar_link: '', description: '' });
               }}>
                 <Plus className="h-4 w-4 ml-2" />
                 ایجاد وبینار جدید
@@ -295,10 +298,35 @@ const WebinarManagement: React.FC = () => {
                   <label className="block text-sm font-medium mb-2">عنوان وبینار</label>
                   <Input
                     value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    onChange={(e) => {
+                      const newTitle = e.target.value;
+                      setFormData({
+                        ...formData, 
+                        title: newTitle,
+                        // Auto-generate slug only if slug is empty and this is not an edit
+                        slug: !editingWebinar && !formData.slug ? generateSlug(newTitle) : formData.slug
+                      });
+                    }}
                     placeholder="عنوان وبینار را وارد کنید"
                     required
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    آدرس URL (اسلاگ)
+                    <span className="text-xs text-muted-foreground mr-2">
+                      - در صورت خالی گذاشتن، خودکار از عنوان تولید می‌شود
+                    </span>
+                  </label>
+                  <Input
+                    value={formData.slug}
+                    onChange={(e) => setFormData({...formData, slug: e.target.value})}
+                    placeholder={generateSlug(formData.title) || "webinar-slug"}
+                    dir="ltr"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    لینک صفحه وبینار: /webinar/{formData.slug || generateSlug(formData.title)}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">تاریخ و زمان شروع</label>
