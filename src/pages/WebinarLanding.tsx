@@ -3,7 +3,7 @@ import { useParams, Navigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Phone, Calendar } from 'lucide-react';
+import { Phone, Calendar, Video } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
@@ -181,13 +181,9 @@ const WebinarLanding: React.FC = () => {
       <div className="w-full max-w-md">
         <Card className="border-0 shadow-2xl bg-card/95 backdrop-blur">
           <CardContent className="p-8 text-center space-y-6">
-            {/* Website Logo */}
-            <div className="w-20 h-20 mx-auto mb-2">
-              <img 
-                src="/lovable-uploads/f3ccf762-5b2a-4b10-bd9c-c03d041733c0.png" 
-                alt="Website Logo" 
-                className="w-full h-full object-contain"
-              />
+            {/* Webinar Icon */}
+            <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-2">
+              <Video className="h-8 w-8 text-primary" />
             </div>
             
             {/* Title */}
