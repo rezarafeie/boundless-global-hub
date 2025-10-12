@@ -187,8 +187,10 @@ const WebinarRegistration: React.FC = () => {
 
               {webinar.telegram_channel_link && (
                 <div className="space-y-3 pt-4 border-t">
-                  <p className="text-sm text-muted-foreground">
-                    برای دریافت اطلاعات بیشتر، به کانال تلگرام ما بپیوندید:
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    برای دریافت اطلاعات بیشتر، لینک ورود و پیش نیاز های وبینار حتما در کانال مخصوص وبینار عضو شوید
+                    <br />
+                    <strong className="text-destructive">توجه:</strong> عضویت در کانال تلگرام وبینار ضروری و واجب میباشد. در صورت عضو نشدن وبینار را از دست خواهید داد
                   </p>
                   <Button 
                     asChild
@@ -207,14 +209,6 @@ const WebinarRegistration: React.FC = () => {
                   </Button>
                 </div>
               )}
-
-              <div className="pt-4">
-                <Link to={`/webinar/${webinar.slug}/login`}>
-                  <Button variant="outline" className="w-full">
-                    ورود به وبینار
-                  </Button>
-                </Link>
-              </div>
             </CardContent>
           </Card>
         </div>
@@ -244,12 +238,14 @@ const WebinarRegistration: React.FC = () => {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
-                    day: 'numeric'
+                    day: 'numeric',
+                    timeZone: 'Asia/Tehran'
                   })}
                   {' • '}
                   {new Date(webinar.start_date).toLocaleTimeString('fa-IR', {
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    timeZone: 'Asia/Tehran'
                   })}
                 </span>
               </div>
@@ -309,17 +305,6 @@ const WebinarRegistration: React.FC = () => {
                 </Button>
               </form>
 
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">
-                  قبلاً ثبت‌نام کرده‌اید؟{' '}
-                  <Link 
-                    to={`/webinar/${webinar.slug}/login`} 
-                    className="text-primary hover:underline font-medium"
-                  >
-                    ورود به وبینار
-                  </Link>
-                </p>
-              </div>
             </div>
           </CardContent>
         </Card>
