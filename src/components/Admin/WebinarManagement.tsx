@@ -142,8 +142,17 @@ const WebinarManagement: React.FC = () => {
     try {
       // Use the manually entered slug or generate one from title
       const finalSlug = formData.slug.trim() || generateSlug(formData.title);
+      
+      // Convert Tehran time to UTC for storage
+      // The datetime-local input gives us a string in format: "2024-01-15T20:00"
+      // We need to treat this as Tehran time and convert to UTC
+      const localDate = new Date(formData.start_date);
+      // Tehran is UTC+3:30, so subtract 3.5 hours to get UTC
+      const utcDate = new Date(localDate.getTime() - (3.5 * 60 * 60 * 1000));
+      
       const webinarData = {
         ...formData,
+        start_date: utcDate.toISOString(),
         slug: finalSlug,
         description: formData.description || null,
         telegram_channel_link: formData.telegram_channel_link || null
@@ -190,10 +199,16 @@ const WebinarManagement: React.FC = () => {
 
   const handleEdit = (webinar: Webinar) => {
     setEditingWebinar(webinar);
+    
+    // Convert UTC time from database to Tehran time for editing
+    const utcDate = new Date(webinar.start_date);
+    // Tehran is UTC+3:30, so add 3.5 hours
+    const tehranDate = new Date(utcDate.getTime() + (3.5 * 60 * 60 * 1000));
+    
     setFormData({
       title: webinar.title,
       slug: webinar.slug,
-      start_date: format(new Date(webinar.start_date), 'yyyy-MM-dd\'T\'HH:mm'),
+      start_date: format(tehranDate, 'yyyy-MM-dd\'T\'HH:mm'),
       webinar_link: webinar.webinar_link,
       description: webinar.description || '',
       telegram_channel_link: webinar.telegram_channel_link || ''
@@ -484,6 +499,116 @@ const WebinarManagement: React.FC = () => {
                     })}
                   </TableBody>
                 </Table>
+              )}
+            </TabsContent>
+
+            <TabsContent value="registrations" className="space-y-4">
+              {!selectedWebinarId ? (
+                <div className="text-center py-8">
+                  <Users className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-lg font-medium">وبیناری انتخاب نشده</p>
+                  <p className="text-sm text-muted-foreground">برای مشاهده ثبت‌نام‌ها، از تب وبینارها روی "مشاهده آمار" کلیک کنید</p>
+                </div>
+              ) : registrations.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-lg font-medium">هیچ ثبت‌نامی یافت نشد</p>
+                  <p className="text-sm text-muted-foreground">هنوز کسی در این وبینار ثبت‌نام نکرده است</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium">
+                      {webinars.find(w => w.id === selectedWebinarId)?.title} - ثبت نام ها
+                      <span className="text-sm text-muted-foreground mr-2">({registrations.length} نفر)</span>
+                    </h3>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => exportData(
+                        registrations, 
+                        webinars.find(w => w.id === selectedWebinarId)?.title || 'webinar',
+                        'registrations'
+                      )}
+                    >
+                      <Download className="h-4 w-4 ml-2" />
+                      دانلود CSV
+                    </Button>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ردیف</TableHead>
+                        <TableHead>شماره موبایل</TableHead>
+                        <TableHead>زمان ثبت‌نام</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {registrations.map((registration, index) => (
+                        <TableRow key={registration.id}>
+                          <TableCell>{index + 1}</TableCell>
+                          <TableCell dir="ltr" className="text-right">{registration.mobile_number}</TableCell>
+                          <TableCell>{format(new Date(registration.registered_at), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="entries" className="space-y-4">
+              {!selectedWebinarId ? (
+                <div className="text-center py-8">
+                  <Users className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-lg font-medium">وبیناری انتخاب نشده</p>
+                  <p className="text-sm text-muted-foreground">برای مشاهده ورودها، از تب وبینارها روی "مشاهده آمار" کلیک کنید</p>
+                </div>
+              ) : entries.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-lg font-medium">هیچ ورودی یافت نشد</p>
+                  <p className="text-sm text-muted-foreground">هنوز کسی وارد این وبینار نشده است</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium">
+                      {webinars.find(w => w.id === selectedWebinarId)?.title} - ورود ها
+                      <span className="text-sm text-muted-foreground mr-2">({entries.length} نفر)</span>
+                    </h3>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => exportData(
+                        entries, 
+                        webinars.find(w => w.id === selectedWebinarId)?.title || 'webinar',
+                        'entries'
+                      )}
+                    >
+                      <Download className="h-4 w-4 ml-2" />
+                      دانلود CSV
+                    </Button>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ردیف</TableHead>
+                        <TableHead>شماره موبایل</TableHead>
+                        <TableHead>زمان ورود</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {entries.map((entry, index) => (
+                        <TableRow key={entry.id}>
+                          <TableCell>{index + 1}</TableCell>
+                          <TableCell dir="ltr" className="text-right">{entry.mobile_number}</TableCell>
+                          <TableCell>{format(new Date(entry.signup_time), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </TabsContent>
           </Tabs>
