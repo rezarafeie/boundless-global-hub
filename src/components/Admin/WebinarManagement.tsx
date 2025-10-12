@@ -19,6 +19,7 @@ interface Webinar {
   start_date: string;
   webinar_link: string;
   description: string | null;
+  telegram_channel_link: string | null;
   created_at: string;
 }
 
@@ -29,10 +30,18 @@ interface WebinarSignup {
   webinar_id: string;
 }
 
+interface WebinarRegistration {
+  id: string;
+  mobile_number: string;
+  registered_at: string;
+  webinar_id: string;
+}
+
 const WebinarManagement: React.FC = () => {
   const { toast } = useToast();
   const [webinars, setWebinars] = useState<Webinar[]>([]);
-  const [signups, setSignups] = useState<WebinarSignup[]>([]);
+  const [registrations, setRegistrations] = useState<WebinarRegistration[]>([]);
+  const [entries, setEntries] = useState<WebinarSignup[]>([]);
   const [selectedWebinarId, setSelectedWebinarId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -43,7 +52,8 @@ const WebinarManagement: React.FC = () => {
     slug: '',
     start_date: '',
     webinar_link: '',
-    description: ''
+    description: '',
+    telegram_channel_link: ''
   });
 
   useEffect(() => {
@@ -52,7 +62,8 @@ const WebinarManagement: React.FC = () => {
 
   useEffect(() => {
     if (selectedWebinarId) {
-      fetchSignups(selectedWebinarId);
+      fetchRegistrations(selectedWebinarId);
+      fetchEntries(selectedWebinarId);
     }
   }, [selectedWebinarId]);
 
@@ -77,7 +88,27 @@ const WebinarManagement: React.FC = () => {
     }
   };
 
-  const fetchSignups = async (webinarId: string) => {
+  const fetchRegistrations = async (webinarId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('webinar_registrations')
+        .select('*')
+        .eq('webinar_id', webinarId)
+        .order('registered_at', { ascending: false });
+
+      if (error) throw error;
+      setRegistrations(data || []);
+    } catch (error) {
+      console.error('Error fetching registrations:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در دریافت ثبت‌نام‌ها",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const fetchEntries = async (webinarId: string) => {
     try {
       const { data, error } = await supabase
         .from('webinar_signups')
@@ -86,12 +117,12 @@ const WebinarManagement: React.FC = () => {
         .order('signup_time', { ascending: false });
 
       if (error) throw error;
-      setSignups(data || []);
+      setEntries(data || []);
     } catch (error) {
-      console.error('Error fetching signups:', error);
+      console.error('Error fetching entries:', error);
       toast({
         title: "خطا",
-        description: "خطا در دریافت ثبت‌نام‌ها",
+        description: "خطا در دریافت ورودها",
         variant: "destructive"
       });
     }
@@ -114,7 +145,8 @@ const WebinarManagement: React.FC = () => {
       const webinarData = {
         ...formData,
         slug: finalSlug,
-        description: formData.description || null
+        description: formData.description || null,
+        telegram_channel_link: formData.telegram_channel_link || null
       };
 
       if (editingWebinar) {
@@ -144,7 +176,7 @@ const WebinarManagement: React.FC = () => {
 
       setIsCreateModalOpen(false);
       setEditingWebinar(null);
-      setFormData({ title: '', slug: '', start_date: '', webinar_link: '', description: '' });
+      setFormData({ title: '', slug: '', start_date: '', webinar_link: '', description: '', telegram_channel_link: '' });
       fetchWebinars();
     } catch (error) {
       console.error('Error saving webinar:', error);
@@ -163,7 +195,8 @@ const WebinarManagement: React.FC = () => {
       slug: webinar.slug,
       start_date: format(new Date(webinar.start_date), 'yyyy-MM-dd\'T\'HH:mm'),
       webinar_link: webinar.webinar_link,
-      description: webinar.description || ''
+      description: webinar.description || '',
+      telegram_channel_link: webinar.telegram_channel_link || ''
     });
     setIsCreateModalOpen(true);
   };
@@ -197,30 +230,23 @@ const WebinarManagement: React.FC = () => {
     }
   };
 
-  const exportSignups = async (webinarId: string, webinarTitle: string) => {
+  const exportData = async (data: any[], webinarTitle: string, type: 'registrations' | 'entries') => {
     try {
-      const { data, error } = await supabase
-        .from('webinar_signups')
-        .select('mobile_number, signup_time')
-        .eq('webinar_id', webinarId)
-        .order('signup_time', { ascending: false });
-
-      if (error) throw error;
-
       if (!data || data.length === 0) {
         toast({
           title: "اطلاع",
-          description: "هیچ ثبت‌نامی برای این وبینار یافت نشد",
+          description: "هیچ داده‌ای برای خروجی یافت نشد",
           variant: "default"
         });
         return;
       }
 
+      const timeField = type === 'registrations' ? 'registered_at' : 'signup_time';
       const csvContent = [
-        ['شماره موبایل', 'زمان ثبت‌نام'],
-        ...data.map(signup => [
-          signup.mobile_number,
-          format(new Date(signup.signup_time), 'yyyy/MM/dd HH:mm:ss')
+        ['شماره موبایل', type === 'registrations' ? 'زمان ثبت‌نام' : 'زمان ورود'],
+        ...data.map(item => [
+          item.mobile_number,
+          format(new Date(item[timeField]), 'yyyy/MM/dd HH:mm:ss')
         ])
       ].map(row => row.join(',')).join('\n');
 
@@ -228,7 +254,7 @@ const WebinarManagement: React.FC = () => {
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', `webinar_signups_${webinarTitle}_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+      link.setAttribute('download', `webinar_${type}_${webinarTitle}_${format(new Date(), 'yyyy-MM-dd')}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
@@ -239,7 +265,7 @@ const WebinarManagement: React.FC = () => {
         description: "فایل CSV با موفقیت دانلود شد"
       });
     } catch (error) {
-      console.error('Error exporting signups:', error);
+      console.error('Error exporting data:', error);
       toast({
         title: "خطا",
         description: "خطا در دانلود فایل",
@@ -281,7 +307,7 @@ const WebinarManagement: React.FC = () => {
             <DialogTrigger asChild>
               <Button onClick={() => {
                 setEditingWebinar(null);
-                setFormData({ title: '', slug: '', start_date: '', webinar_link: '', description: '' });
+                setFormData({ title: '', slug: '', start_date: '', webinar_link: '', description: '', telegram_channel_link: '' });
               }}>
                 <Plus className="h-4 w-4 ml-2" />
                 ایجاد وبینار جدید
@@ -356,6 +382,16 @@ const WebinarManagement: React.FC = () => {
                     rows={3}
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">لینک کانال تلگرام (اختیاری)</label>
+                  <Input
+                    type="url"
+                    value={formData.telegram_channel_link}
+                    onChange={(e) => setFormData({...formData, telegram_channel_link: e.target.value})}
+                    placeholder="https://t.me/your_channel"
+                    dir="ltr"
+                  />
+                </div>
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>
                     لغو
@@ -372,7 +408,8 @@ const WebinarManagement: React.FC = () => {
           <Tabs defaultValue="webinars" className="space-y-4">
             <TabsList>
               <TabsTrigger value="webinars">وبینارها</TabsTrigger>
-              <TabsTrigger value="signups">ثبت‌نام‌ها</TabsTrigger>
+              <TabsTrigger value="registrations">ثبت نام ها</TabsTrigger>
+              <TabsTrigger value="entries">ورود ها</TabsTrigger>
             </TabsList>
             
             <TabsContent value="webinars" className="space-y-4">
@@ -424,11 +461,12 @@ const WebinarManagement: React.FC = () => {
                               size="sm"
                               onClick={() => {
                                 setSelectedWebinarId(webinar.id);
-                                fetchSignups(webinar.id);
+                                fetchRegistrations(webinar.id);
+                                fetchEntries(webinar.id);
                               }}
                             >
                               <Users className="h-4 w-4 ml-1" />
-                              مشاهده ثبت‌نام‌ها
+                              مشاهده آمار
                             </Button>
                           </TableCell>
                           <TableCell>
@@ -446,59 +484,6 @@ const WebinarManagement: React.FC = () => {
                     })}
                   </TableBody>
                 </Table>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="signups" className="space-y-4">
-              {selectedWebinarId ? (
-                <>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium">
-                      ثبت‌نام‌های وبینار: {webinars.find(w => w.id === selectedWebinarId)?.title}
-                    </h3>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        const webinar = webinars.find(w => w.id === selectedWebinarId);
-                        if (webinar) {
-                          exportSignups(selectedWebinarId, webinar.title);
-                        }
-                      }}
-                    >
-                      <Download className="h-4 w-4 ml-2" />
-                      دانلود CSV
-                    </Button>
-                  </div>
-                  {signups.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Users className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-                      <p className="text-lg font-medium">هیچ ثبت‌نامی یافت نشد</p>
-                    </div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>شماره موبایل</TableHead>
-                          <TableHead>زمان ثبت‌نام</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {signups.map((signup) => (
-                          <TableRow key={signup.id}>
-                            <TableCell>{signup.mobile_number}</TableCell>
-                            <TableCell>{formatDate(signup.signup_time)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  <Users className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium">وبیناری انتخاب نشده</p>
-                  <p className="text-sm text-muted-foreground">برای مشاهده ثبت‌نام‌ها، ابتدا یک وبینار انتخاب کنید</p>
-                </div>
               )}
             </TabsContent>
           </Tabs>

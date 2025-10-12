@@ -22,7 +22,7 @@ interface SignupFormData {
   mobile_number: string;
 }
 
-const WebinarLanding: React.FC = () => {
+const WebinarLogin: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { toast } = useToast();
   const [webinar, setWebinar] = useState<Webinar | null>(null);
@@ -47,7 +47,6 @@ const WebinarLanding: React.FC = () => {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // No rows returned
           setWebinar(null);
         } else {
           throw error;
@@ -69,10 +68,7 @@ const WebinarLanding: React.FC = () => {
 
 
   const validateIranianMobile = (value: string) => {
-    // Remove spaces and special characters
     const cleaned = value.replace(/[\s\-\(\)]/g, '');
-    
-    // Check Iranian mobile number patterns
     const iranianMobileRegex = /^(\+98|0098|98|0)?9[0-9]{9}$/;
     
     if (!iranianMobileRegex.test(cleaned)) {
@@ -83,17 +79,14 @@ const WebinarLanding: React.FC = () => {
   };
 
   const normalizePhoneNumber = (phone: string): string => {
-    // Remove all non-digit characters
     let cleaned = phone.replace(/\D/g, '');
     
-    // Remove country code prefixes
     if (cleaned.startsWith('98')) {
       cleaned = cleaned.substring(2);
     } else if (cleaned.startsWith('0098')) {
       cleaned = cleaned.substring(4);
     }
     
-    // Add leading 0 if not present
     if (!cleaned.startsWith('0') && cleaned.length === 10) {
       cleaned = '0' + cleaned;
     }
@@ -127,7 +120,6 @@ const WebinarLanding: React.FC = () => {
           description: "این شماره قبلاً در وبینار ثبت‌نام شده است",
           variant: "default"
         });
-        // Still redirect to webinar
         window.location.href = webinar.webinar_link;
         return;
       }
@@ -147,7 +139,6 @@ const WebinarLanding: React.FC = () => {
         description: "در حال انتقال به وبینار...",
       });
       
-      // Redirect to webinar link
       setTimeout(() => {
         window.location.href = webinar.webinar_link;
       }, 1000);
@@ -181,12 +172,10 @@ const WebinarLanding: React.FC = () => {
       <div className="w-full max-w-md">
         <Card className="border-0 shadow-2xl bg-card/95 backdrop-blur">
           <CardContent className="p-8 text-center space-y-6">
-            {/* Webinar Icon */}
             <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-2">
               <Video className="h-8 w-8 text-primary" />
             </div>
             
-            {/* Title */}
             <div className="space-y-2">
               <h1 className="text-2xl font-bold text-foreground">
                 {webinar.title}
@@ -203,7 +192,6 @@ const WebinarLanding: React.FC = () => {
               </div>
             </div>
 
-            {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <div className="relative">
@@ -242,7 +230,6 @@ const WebinarLanding: React.FC = () => {
               </Button>
             </form>
 
-            {/* Instructions */}
             <p className="text-xs text-muted-foreground text-center leading-relaxed">
               شماره تلفن خود را وارد کنید و روی دکمه ورود به وبینار بزنید و در صفحه باز شده روی دکمه ورود به عنوان میهمان کلیک کنید
             </p>
@@ -253,4 +240,4 @@ const WebinarLanding: React.FC = () => {
   );
 };
 
-export default WebinarLanding;
+export default WebinarLogin;

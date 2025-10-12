@@ -111,7 +111,8 @@ import ShortLinkRedirect from "./pages/ShortLinkRedirect";
 import CourseContentManagement from "./pages/Course/CourseContentManagement";
 import CourseCreate from "./pages/Admin/CourseCreate";
 import CourseEdit from "./pages/Admin/CourseEdit";
-import WebinarLanding from "./pages/WebinarLanding";
+import WebinarLogin from "./pages/WebinarLogin";
+import WebinarRegistration from "./pages/WebinarRegistration";
 import WebinarAdmin from "./pages/WebinarAdmin";
 
 // User Management components
@@ -347,7 +348,8 @@ const App = () => {
 
                      {/* Webinar Routes */}
         <Route path="/enroll/admin/webinar" element={<WebinarAdmin />} />
-        <Route path="/webinar/:slug" element={<WebinarLanding />} />
+        <Route path="/webinar/:slug" element={<WebinarRegistration />} />
+        <Route path="/webinar/:slug/login" element={<WebinarLogin />} />
 
                     {/* 404 fallback */}
                     <Route path="*" element={<NotFound />} />

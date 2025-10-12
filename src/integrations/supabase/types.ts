@@ -3352,6 +3352,7 @@ export type Database = {
           id: string
           slug: string
           start_date: string
+          telegram_channel_link: string | null
           title: string
           updated_at: string
           webinar_link: string
@@ -3362,6 +3363,7 @@ export type Database = {
           id?: string
           slug: string
           start_date: string
+          telegram_channel_link?: string | null
           title: string
           updated_at?: string
           webinar_link: string
@@ -3372,11 +3374,44 @@ export type Database = {
           id?: string
           slug?: string
           start_date?: string
+          telegram_channel_link?: string | null
           title?: string
           updated_at?: string
           webinar_link?: string
         }
         Relationships: []
+      }
+      webinar_registrations: {
+        Row: {
+          created_at: string | null
+          id: string
+          mobile_number: string
+          registered_at: string | null
+          webinar_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          mobile_number: string
+          registered_at?: string | null
+          webinar_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          mobile_number?: string
+          registered_at?: string | null
+          webinar_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_registrations_webinar_id_fkey"
+            columns: ["webinar_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       webinar_signups: {
         Row: {
