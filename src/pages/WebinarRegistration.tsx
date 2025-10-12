@@ -7,6 +7,7 @@ import { Phone, Calendar, Video, CheckCircle, ExternalLink } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
+import { enhancedWebhookManager } from '@/lib/enhancedWebhookManager';
 
 interface Webinar {
   id: string;
@@ -141,6 +142,17 @@ const WebinarRegistration: React.FC = () => {
         title: "موفقیت",
         description: "ثبت‌نام شما با موفقیت انجام شد",
       });
+
+      // Send webhook for webinar registration
+      try {
+        await enhancedWebhookManager.sendWebinarRegistration(webinar, {
+          mobile_number: normalizedPhone,
+          registered_at: new Date().toISOString(),
+          webinar_id: webinar.id
+        });
+      } catch (webhookError) {
+        console.error('Failed to send webinar registration webhook:', webhookError);
+      }
 
     } catch (error) {
       console.error('Error submitting registration:', error);

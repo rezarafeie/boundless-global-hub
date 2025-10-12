@@ -10,7 +10,9 @@ export type WebhookEventType =
   | 'user_created'
   | 'email_linked_existing_account'
   | 'sso_access_link_generated'
-  | 'rafiei_player_license_generated';
+  | 'rafiei_player_license_generated'
+  | 'webinar_registration'
+  | 'webinar_login';
 
 interface WebhookPayload {
   event_type: WebhookEventType;
@@ -354,6 +356,22 @@ class EnhancedWebhookManager {
       event_type: 'rafiei_player_license_generated',
       timestamp: new Date().toISOString(),
       data: { enrollment, user: enhancedUser, course: enhancedCourse, license }
+    });
+  }
+
+  async sendWebinarRegistration(webinar: any, registration: any) {
+    await this.sendWebhook('webinar_registration', {
+      event_type: 'webinar_registration',
+      timestamp: new Date().toISOString(),
+      data: { webinar, registration }
+    });
+  }
+
+  async sendWebinarLogin(webinar: any, entry: any) {
+    await this.sendWebhook('webinar_login', {
+      event_type: 'webinar_login',
+      timestamp: new Date().toISOString(),
+      data: { webinar, entry }
     });
   }
 }

@@ -23,7 +23,9 @@ const WEBHOOK_EVENTS = [
   { value: 'user_created', label: 'کاربر جدید' },
   { value: 'email_linked_existing_account', label: 'لینک ایمیل به حساب موجود' },
   { value: 'sso_access_link_generated', label: 'تولید لینک دسترسی SSO' },
-  { value: 'rafiei_player_license_generated', label: 'تولید لایسنس پلیر رفیعی' }
+  { value: 'rafiei_player_license_generated', label: 'تولید لایسنس پلیر رفیعی' },
+  { value: 'webinar_registration', label: 'ثبت نام وبینار' },
+  { value: 'webinar_login', label: 'ورود به وبینار' }
 ];
 
 const DEFAULT_BODY_TEMPLATE = {

@@ -7,6 +7,7 @@ import { Phone, Calendar, Video } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
+import { enhancedWebhookManager } from '@/lib/enhancedWebhookManager';
 
 interface Webinar {
   id: string;
@@ -138,6 +139,17 @@ const WebinarLogin: React.FC = () => {
         title: "موفقیت",
         description: "در حال انتقال به وبینار...",
       });
+
+      // Send webhook for webinar login
+      try {
+        await enhancedWebhookManager.sendWebinarLogin(webinar, {
+          mobile_number: normalizedPhone,
+          signup_time: new Date().toISOString(),
+          webinar_id: webinar.id
+        });
+      } catch (webhookError) {
+        console.error('Failed to send webinar login webhook:', webhookError);
+      }
       
       setTimeout(() => {
         window.location.href = webinar.webinar_link;
