@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Plus, Edit, Trash2, Users, Download, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,9 +42,11 @@ const WebinarManagement: React.FC = () => {
   const [registrations, setRegistrations] = useState<WebinarRegistration[]>([]);
   const [entries, setEntries] = useState<WebinarSignup[]>([]);
   const [registrationCounts, setRegistrationCounts] = useState<Record<string, number>>({});
-  const [selectedWebinarId, setSelectedWebinarId] = useState<string>('');
+  const [selectedWebinarTitle, setSelectedWebinarTitle] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isRegistrationsModalOpen, setIsRegistrationsModalOpen] = useState(false);
+  const [isEntriesModalOpen, setIsEntriesModalOpen] = useState(false);
   const [editingWebinar, setEditingWebinar] = useState<Webinar | null>(null);
   
   const [formData, setFormData] = useState({
@@ -61,12 +62,17 @@ const WebinarManagement: React.FC = () => {
     fetchWebinars();
   }, []);
 
-  useEffect(() => {
-    if (selectedWebinarId) {
-      fetchRegistrations(selectedWebinarId);
-      fetchEntries(selectedWebinarId);
-    }
-  }, [selectedWebinarId]);
+  const openRegistrationsModal = async (webinarId: string, webinarTitle: string) => {
+    setSelectedWebinarTitle(webinarTitle);
+    setIsRegistrationsModalOpen(true);
+    await fetchRegistrations(webinarId);
+  };
+
+  const openEntriesModal = async (webinarId: string, webinarTitle: string) => {
+    setSelectedWebinarTitle(webinarTitle);
+    setIsEntriesModalOpen(true);
+    await fetchEntries(webinarId);
+  };
 
   const fetchWebinars = async () => {
     try {
@@ -159,14 +165,8 @@ const WebinarManagement: React.FC = () => {
     e.preventDefault();
     
     try {
-      // Use the manually entered slug or generate one from title
       const finalSlug = formData.slug.trim() || generateSlug(formData.title);
-      
-      // Convert Tehran time to UTC for storage
-      // The datetime-local input gives us a string in format: "2024-01-15T20:00"
-      // We need to treat this as Tehran time and convert to UTC
       const localDate = new Date(formData.start_date);
-      // Tehran is UTC+3:30, so subtract 3.5 hours to get UTC
       const utcDate = new Date(localDate.getTime() - (3.5 * 60 * 60 * 1000));
       
       const webinarData = {
@@ -219,9 +219,7 @@ const WebinarManagement: React.FC = () => {
   const handleEdit = (webinar: Webinar) => {
     setEditingWebinar(webinar);
     
-    // Convert UTC time from database to Tehran time for editing
     const utcDate = new Date(webinar.start_date);
-    // Tehran is UTC+3:30, so add 3.5 hours
     const tehranDate = new Date(utcDate.getTime() + (3.5 * 60 * 60 * 1000));
     
     setFormData({
@@ -363,7 +361,6 @@ const WebinarManagement: React.FC = () => {
                       setFormData({
                         ...formData, 
                         title: newTitle,
-                        // Auto-generate slug only if slug is empty and this is not an edit
                         slug: !editingWebinar && !formData.slug ? generateSlug(newTitle) : formData.slug
                       });
                     }}
@@ -439,193 +436,196 @@ const WebinarManagement: React.FC = () => {
           </Dialog>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="webinars" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="webinars">وبینارها</TabsTrigger>
-              <TabsTrigger value="registrations">ثبت نام ها</TabsTrigger>
-              <TabsTrigger value="entries">ورود ها</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="webinars" className="space-y-4">
-              {loading ? (
-                <div className="text-center py-8">
-                  <p>در حال بارگذاری...</p>
-                </div>
-              ) : webinars.length === 0 ? (
-                <div className="text-center py-8">
-                  <Calendar className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium">هیچ وبیناری یافت نشد</p>
-                  <p className="text-sm text-muted-foreground">برای شروع، وبینار جدیدی ایجاد کنید</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>عنوان</TableHead>
-                      <TableHead>تاریخ شروع</TableHead>
-                      <TableHead>وضعیت</TableHead>
-                      <TableHead>لینک عمومی</TableHead>
-                      <TableHead className="text-center">تعداد ثبت‌نام</TableHead>
-                      <TableHead className="text-center">عملیات</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {webinars.map((webinar) => {
-                      const status = getWebinarStatus(webinar.start_date);
-                      return (
-                        <TableRow key={webinar.id}>
-                          <TableCell className="font-medium">{webinar.title}</TableCell>
-                          <TableCell>{formatDate(webinar.start_date)}</TableCell>
-                          <TableCell>
-                            <Badge variant={status.variant}>{status.label}</Badge>
-                          </TableCell>
-                          <TableCell>
+          <div className="space-y-4">
+            {loading ? (
+              <div className="text-center py-8">
+                <p>در حال بارگذاری...</p>
+              </div>
+            ) : webinars.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+                <p className="text-lg font-medium">هیچ وبیناری یافت نشد</p>
+                <p className="text-sm text-muted-foreground">برای شروع، وبینار جدیدی ایجاد کنید</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>عنوان</TableHead>
+                    <TableHead>تاریخ شروع</TableHead>
+                    <TableHead>وضعیت</TableHead>
+                    <TableHead>لینک عمومی</TableHead>
+                    <TableHead className="text-center">تعداد ثبت‌نام</TableHead>
+                    <TableHead className="text-center">آمار</TableHead>
+                    <TableHead className="text-center">عملیات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {webinars.map((webinar) => {
+                    const status = getWebinarStatus(webinar.start_date);
+                    return (
+                      <TableRow key={webinar.id}>
+                        <TableCell className="font-medium">{webinar.title}</TableCell>
+                        <TableCell>{formatDate(webinar.start_date)}</TableCell>
+                        <TableCell>
+                          <Badge variant={status.variant}>{status.label}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => window.open(`/webinar/${webinar.slug}`, '_blank')}
+                          >
+                            <ExternalLink className="h-4 w-4 ml-1" />
+                            مشاهده صفحه
+                          </Button>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="secondary" className="text-lg">
+                            {registrationCounts[webinar.id] || 0}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-center gap-1">
                             <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => window.open(`/webinar/${webinar.slug}`, '_blank')}
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => openRegistrationsModal(webinar.id, webinar.title)}
                             >
-                              <ExternalLink className="h-4 w-4 ml-1" />
-                              مشاهده صفحه
+                              <Users className="h-4 w-4 ml-1" />
+                              ثبت‌نام‌ها
                             </Button>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <Badge variant="secondary" className="text-lg">
-                                {registrationCounts[webinar.id] || 0}
-                              </Badge>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex justify-center gap-1">
-                              <Button size="sm" variant="outline" onClick={() => handleEdit(webinar)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => handleDelete(webinar.id)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </TabsContent>
-
-            <TabsContent value="registrations" className="space-y-4">
-              {!selectedWebinarId ? (
-                <div className="text-center py-8">
-                  <Users className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium">وبیناری انتخاب نشده</p>
-                  <p className="text-sm text-muted-foreground">برای مشاهده ثبت‌نام‌ها، از تب وبینارها روی "مشاهده آمار" کلیک کنید</p>
-                </div>
-              ) : registrations.length === 0 ? (
-                <div className="text-center py-8">
-                  <Users className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium">هیچ ثبت‌نامی یافت نشد</p>
-                  <p className="text-sm text-muted-foreground">هنوز کسی در این وبینار ثبت‌نام نکرده است</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">
-                      {webinars.find(w => w.id === selectedWebinarId)?.title} - ثبت نام ها
-                      <span className="text-sm text-muted-foreground mr-2">({registrations.length} نفر)</span>
-                    </h3>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => exportData(
-                        registrations, 
-                        webinars.find(w => w.id === selectedWebinarId)?.title || 'webinar',
-                        'registrations'
-                      )}
-                    >
-                      <Download className="h-4 w-4 ml-2" />
-                      دانلود CSV
-                    </Button>
-                  </div>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ردیف</TableHead>
-                        <TableHead>شماره موبایل</TableHead>
-                        <TableHead>زمان ثبت‌نام</TableHead>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => openEntriesModal(webinar.id, webinar.title)}
+                            >
+                              <Users className="h-4 w-4 ml-1" />
+                              ورودها
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-center gap-1">
+                            <Button size="sm" variant="outline" onClick={() => handleEdit(webinar)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => handleDelete(webinar.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {registrations.map((registration, index) => (
-                        <TableRow key={registration.id}>
-                          <TableCell>{index + 1}</TableCell>
-                          <TableCell dir="ltr" className="text-right">{registration.mobile_number}</TableCell>
-                          <TableCell>{format(new Date(registration.registered_at), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="entries" className="space-y-4">
-              {!selectedWebinarId ? (
-                <div className="text-center py-8">
-                  <Users className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium">وبیناری انتخاب نشده</p>
-                  <p className="text-sm text-muted-foreground">برای مشاهده ورودها، از تب وبینارها روی "مشاهده آمار" کلیک کنید</p>
-                </div>
-              ) : entries.length === 0 ? (
-                <div className="text-center py-8">
-                  <Users className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium">هیچ ورودی یافت نشد</p>
-                  <p className="text-sm text-muted-foreground">هنوز کسی وارد این وبینار نشده است</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">
-                      {webinars.find(w => w.id === selectedWebinarId)?.title} - ورود ها
-                      <span className="text-sm text-muted-foreground mr-2">({entries.length} نفر)</span>
-                    </h3>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => exportData(
-                        entries, 
-                        webinars.find(w => w.id === selectedWebinarId)?.title || 'webinar',
-                        'entries'
-                      )}
-                    >
-                      <Download className="h-4 w-4 ml-2" />
-                      دانلود CSV
-                    </Button>
-                  </div>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ردیف</TableHead>
-                        <TableHead>شماره موبایل</TableHead>
-                        <TableHead>زمان ورود</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {entries.map((entry, index) => (
-                        <TableRow key={entry.id}>
-                          <TableCell>{index + 1}</TableCell>
-                          <TableCell dir="ltr" className="text-right">{entry.mobile_number}</TableCell>
-                          <TableCell>{format(new Date(entry.signup_time), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </div>
         </CardContent>
       </Card>
+
+      {/* Registrations Modal */}
+      <Dialog open={isRegistrationsModalOpen} onOpenChange={setIsRegistrationsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>{selectedWebinarTitle} - ثبت نام ها</span>
+              {registrations.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => exportData(registrations, selectedWebinarTitle, 'registrations')}
+                >
+                  <Download className="h-4 w-4 ml-2" />
+                  دانلود CSV
+                </Button>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {registrations.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+              <p className="text-lg font-medium">هیچ ثبت‌نامی یافت نشد</p>
+              <p className="text-sm text-muted-foreground">هنوز کسی در این وبینار ثبت‌نام نکرده است</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">تعداد کل: {registrations.length} نفر</p>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ردیف</TableHead>
+                    <TableHead>شماره موبایل</TableHead>
+                    <TableHead>زمان ثبت‌نام</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {registrations.map((registration, index) => (
+                    <TableRow key={registration.id}>
+                      <TableCell>{index + 1}</TableCell>
+                      <TableCell dir="ltr" className="text-right">{registration.mobile_number}</TableCell>
+                      <TableCell>{format(new Date(registration.registered_at), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Entries Modal */}
+      <Dialog open={isEntriesModalOpen} onOpenChange={setIsEntriesModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>{selectedWebinarTitle} - ورود ها</span>
+              {entries.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => exportData(entries, selectedWebinarTitle, 'entries')}
+                >
+                  <Download className="h-4 w-4 ml-2" />
+                  دانلود CSV
+                </Button>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {entries.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+              <p className="text-lg font-medium">هیچ ورودی یافت نشد</p>
+              <p className="text-sm text-muted-foreground">هنوز کسی وارد این وبینار نشده است</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">تعداد کل: {entries.length} نفر</p>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ردیف</TableHead>
+                    <TableHead>شماره موبایل</TableHead>
+                    <TableHead>زمان ورود</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {entries.map((entry, index) => (
+                    <TableRow key={entry.id}>
+                      <TableCell>{index + 1}</TableCell>
+                      <TableCell dir="ltr" className="text-right">{entry.mobile_number}</TableCell>
+                      <TableCell>{format(new Date(entry.signup_time), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
