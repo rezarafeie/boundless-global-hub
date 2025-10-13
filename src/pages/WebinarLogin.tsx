@@ -140,15 +140,30 @@ const WebinarLogin: React.FC = () => {
         description: "در حال انتقال به وبینار...",
       });
 
-      // Send webhook for webinar login
+      // Send webhook directly to Make.com
       try {
-        await enhancedWebhookManager.sendWebinarLogin(webinar, {
+        const webhookUrl = 'https://hook.us1.make.com/v8w9f6i37sca42qt1g1mwng1dt1xh616';
+        const webhookPayload = {
+          webinar_title: webinar.title,
+          webinar_id: webinar.id,
+          webinar_slug: webinar.slug,
+          webinar_start_date: webinar.start_date,
           mobile_number: normalizedPhone,
-          signup_time: new Date().toISOString(),
-          webinar_id: webinar.id
+          login_time: new Date().toISOString(),
+          event_type: 'webinar_login'
+        };
+
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookPayload)
         });
+
+        console.log('Webhook sent successfully:', webhookPayload);
       } catch (webhookError) {
-        console.error('Failed to send webinar login webhook:', webhookError);
+        console.error('Failed to send webhook:', webhookError);
       }
       
       setTimeout(() => {

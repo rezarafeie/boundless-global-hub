@@ -143,15 +143,30 @@ const WebinarRegistration: React.FC = () => {
         description: "ثبت‌نام شما با موفقیت انجام شد",
       });
 
-      // Send webhook for webinar registration
+      // Send webhook directly to Make.com
       try {
-        await enhancedWebhookManager.sendWebinarRegistration(webinar, {
+        const webhookUrl = 'https://hook.us1.make.com/v8w9f6i37sca42qt1g1mwng1dt1xh616';
+        const webhookPayload = {
+          webinar_title: webinar.title,
+          webinar_id: webinar.id,
+          webinar_slug: webinar.slug,
+          webinar_start_date: webinar.start_date,
           mobile_number: normalizedPhone,
           registered_at: new Date().toISOString(),
-          webinar_id: webinar.id
+          event_type: 'webinar_registration'
+        };
+
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookPayload)
         });
+
+        console.log('Webhook sent successfully:', webhookPayload);
       } catch (webhookError) {
-        console.error('Failed to send webinar registration webhook:', webhookError);
+        console.error('Failed to send webhook:', webhookError);
       }
 
     } catch (error) {

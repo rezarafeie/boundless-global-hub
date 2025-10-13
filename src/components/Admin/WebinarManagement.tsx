@@ -42,6 +42,7 @@ const WebinarManagement: React.FC = () => {
   const [webinars, setWebinars] = useState<Webinar[]>([]);
   const [registrations, setRegistrations] = useState<WebinarRegistration[]>([]);
   const [entries, setEntries] = useState<WebinarSignup[]>([]);
+  const [registrationCounts, setRegistrationCounts] = useState<Record<string, number>>({});
   const [selectedWebinarId, setSelectedWebinarId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -76,6 +77,24 @@ const WebinarManagement: React.FC = () => {
 
       if (error) throw error;
       setWebinars(data || []);
+
+      // Fetch registration counts for all webinars
+      if (data && data.length > 0) {
+        const counts: Record<string, number> = {};
+        await Promise.all(
+          data.map(async (webinar) => {
+            const { count, error: countError } = await supabase
+              .from('webinar_registrations')
+              .select('*', { count: 'exact', head: true })
+              .eq('webinar_id', webinar.id);
+            
+            if (!countError) {
+              counts[webinar.id] = count || 0;
+            }
+          })
+        );
+        setRegistrationCounts(counts);
+      }
     } catch (error) {
       console.error('Error fetching webinars:', error);
       toast({
@@ -446,7 +465,7 @@ const WebinarManagement: React.FC = () => {
                       <TableHead>تاریخ شروع</TableHead>
                       <TableHead>وضعیت</TableHead>
                       <TableHead>لینک عمومی</TableHead>
-                      <TableHead>تعداد ثبت‌نام</TableHead>
+                      <TableHead className="text-center">تعداد ثبت‌نام</TableHead>
                       <TableHead className="text-center">عملیات</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -470,19 +489,12 @@ const WebinarManagement: React.FC = () => {
                               مشاهده صفحه
                             </Button>
                           </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedWebinarId(webinar.id);
-                                fetchRegistrations(webinar.id);
-                                fetchEntries(webinar.id);
-                              }}
-                            >
-                              <Users className="h-4 w-4 ml-1" />
-                              مشاهده آمار
-                            </Button>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <Badge variant="secondary" className="text-lg">
+                                {registrationCounts[webinar.id] || 0}
+                              </Badge>
+                            </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex justify-center gap-1">
