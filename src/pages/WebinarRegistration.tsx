@@ -69,31 +69,27 @@ const WebinarRegistration: React.FC = () => {
     }
   };
 
-  const validateIranianMobile = (value: string) => {
-    const cleaned = value.replace(/[\s\-\(\)]/g, '');
-    const iranianMobileRegex = /^(\+98|0098|98|0)?9[0-9]{9}$/;
-    
-    if (!iranianMobileRegex.test(cleaned)) {
-      return 'شماره موبایل وارد شده معتبر نمی‌باشد';
-    }
-    
-    return true;
-  };
-
   const normalizePhoneNumber = (phone: string): string => {
-    let cleaned = phone.replace(/\D/g, '');
+    // Remove all non-digit and non-plus characters
+    const cleaned = phone.replace(/[^\d+]/g, '');
     
-    if (cleaned.startsWith('98')) {
-      cleaned = cleaned.substring(2);
-    } else if (cleaned.startsWith('0098')) {
-      cleaned = cleaned.substring(4);
+    // If it already has a +, keep it as is
+    if (cleaned.startsWith('+')) {
+      return cleaned;
     }
     
-    if (!cleaned.startsWith('0') && cleaned.length === 10) {
-      cleaned = '0' + cleaned;
+    // If it starts with 00, convert to +
+    if (cleaned.startsWith('00')) {
+      return '+' + cleaned.substring(2);
     }
     
-    return cleaned;
+    // If it starts with 0 (Iranian number), add +98
+    if (cleaned.startsWith('0')) {
+      return '+98' + cleaned.substring(1);
+    }
+    
+    // If no prefix, assume it needs + at the start
+    return '+' + cleaned;
   };
 
   const onSubmit = async (data: RegistrationFormData) => {
@@ -299,11 +295,17 @@ const WebinarRegistration: React.FC = () => {
                     <Phone className="absolute right-3 top-3 h-5 w-5 text-muted-foreground" />
                     <Input
                       {...register('mobile_number', {
-                        required: 'شماره موبایل الزامی است',
-                        validate: validateIranianMobile
+                        required: 'شماره تلفن الزامی است',
+                        validate: (value) => {
+                          const cleaned = value.replace(/[^\d+]/g, '');
+                          if (cleaned.length < 8) {
+                            return 'شماره تلفن باید حداقل ۸ رقم باشد';
+                          }
+                          return true;
+                        }
                       })}
                       type="tel"
-                      placeholder="09123456789"
+                      placeholder="+989123456789"
                       className="pr-10 h-12 text-lg"
                       dir="ltr"
                     />

@@ -24,35 +24,35 @@ const HubBanner = () => {
                       <Network className="w-6 h-6" />
                     </div>
                     <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                      🌟 هاب بدون مرز
+                      🤖 سامانه هوشمند آموزشی
                     </h2>
                   </div>
                   
                   <p className="text-lg text-slate-600 dark:text-slate-300 mb-6">
-                    مرکز ارتباطات، پیام‌رسان، اطلاعیه‌ها و جلسات تصویری آکادمی رفیعی
+                    اولین سیستم مدیریت یادگیری هوشمند در جهان با قابلیت تولید دوره، مسیر یادگیری، درس‌ها، گفتگو و تماس با هوش مصنوعی، تست‌ها، ارزیابی‌ها، تکالیف و بیشتر
                   </p>
                   
                   <div className="flex flex-wrap justify-center lg:justify-start gap-4 mb-6">
                     <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                       <MessageCircle className="w-4 h-4" />
-                      <span>پیام‌رسان</span>
+                      <span>گفتگو با AI</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                       <Bell className="w-4 h-4" />
-                      <span>اطلاعیه‌ها</span>
+                      <span>تولید دوره</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                       <Video className="w-4 h-4" />
-                      <span>جلسات تصویری</span>
+                      <span>مسیر یادگیری هوشمند</span>
                     </div>
                   </div>
                   
                   <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                     <Button asChild size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                      <Link to="/hub">
+                      <a href="https://coach.rafiei.co" target="_blank" rel="noopener noreferrer">
                         <Network className="w-4 h-4 mr-2" />
-                        ورود به هاب
-                      </Link>
+                        ورود به سامانه
+                      </a>
                     </Button>
                     <Button asChild variant="outline" size="lg">
                       <Link to="/hub/messenger">
