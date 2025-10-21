@@ -39,6 +39,7 @@ const workTypes = [
 export default function JobApplication() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
@@ -69,19 +70,7 @@ export default function JobApplication() {
       if (error) throw error;
 
       toast.success("درخواست شما با موفقیت ثبت شد!");
-      setFormData({
-        full_name: "",
-        phone: "",
-        age: "",
-        desired_position: "",
-        city: "",
-        work_type: "",
-        self_introduction: "",
-      });
-      
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
+      setIsSubmitted(true);
     } catch (error: any) {
       console.error("Error submitting application:", error);
       toast.error("خطا در ثبت درخواست. لطفاً دوباره تلاش کنید.");
@@ -93,6 +82,64 @@ export default function JobApplication() {
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  // Success message component
+  if (isSubmitted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center" dir="rtl">
+        <div className="container mx-auto max-w-2xl px-4">
+          <div className="bg-card rounded-xl shadow-lg border p-8 text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-green-500/10 rounded-full mb-6">
+              <svg
+                className="w-10 h-10 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold mb-4">درخواست شما ثبت شد!</h2>
+            <p className="text-muted-foreground text-lg mb-8">
+              درخواست همکاری شما با موفقیت ثبت شد. تیم منابع انسانی ما به زودی
+              اطلاعات شما را بررسی کرده و در صورت تایید با شما تماس خواهند گرفت.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                onClick={() => navigate("/")}
+                size="lg"
+              >
+                بازگشت به صفحه اصلی
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsSubmitted(false);
+                  setFormData({
+                    full_name: "",
+                    phone: "",
+                    age: "",
+                    desired_position: "",
+                    city: "",
+                    work_type: "",
+                    self_introduction: "",
+                  });
+                }}
+                variant="outline"
+                size="lg"
+              >
+                ثبت درخواست جدید
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5" dir="rtl">
