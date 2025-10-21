@@ -139,6 +139,9 @@ import AppTests from "./pages/App/AppTests";
 import AppLearning from "./pages/App/AppLearning";
 import AppProfile from "./pages/App/AppProfile";
 
+// Job Application
+import JobApplication from "./pages/JobApplication";
+
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -350,6 +353,9 @@ const App = () => {
         <Route path="/enroll/admin/webinar" element={<WebinarAdmin />} />
         <Route path="/webinar/:slug" element={<WebinarRegistration />} />
         <Route path="/webinar/:slug/login" element={<WebinarLogin />} />
+
+                     {/* Job Application Route */}
+        <Route path="/job" element={<JobApplication />} />
 
                     {/* 404 fallback */}
                     <Route path="*" element={<NotFound />} />

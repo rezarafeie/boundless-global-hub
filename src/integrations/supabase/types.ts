@@ -1644,6 +1644,62 @@ export type Database = {
           },
         ]
       }
+      job_applications: {
+        Row: {
+          admin_notes: string | null
+          age: number
+          assigned_manager: number | null
+          city: string
+          created_at: string
+          desired_position: string
+          full_name: string
+          id: string
+          phone: string
+          self_introduction: string | null
+          status: string | null
+          updated_at: string
+          work_type: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          age: number
+          assigned_manager?: number | null
+          city: string
+          created_at?: string
+          desired_position: string
+          full_name: string
+          id?: string
+          phone: string
+          self_introduction?: string | null
+          status?: string | null
+          updated_at?: string
+          work_type: string
+        }
+        Update: {
+          admin_notes?: string | null
+          age?: number
+          assigned_manager?: number | null
+          city?: string
+          created_at?: string
+          desired_position?: string
+          full_name?: string
+          id?: string
+          phone?: string
+          self_introduction?: string | null
+          status?: string | null
+          updated_at?: string
+          work_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_assigned_manager_fkey"
+            columns: ["assigned_manager"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_assignments: {
         Row: {
           assigned_at: string | null

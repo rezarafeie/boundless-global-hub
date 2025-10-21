@@ -187,3 +187,32 @@ export interface CRMNote {
     slug: string;
   } | null;
 }
+
+export interface JobApplication {
+  id: string;
+  full_name: string;
+  phone: string;
+  age: number;
+  desired_position: string;
+  city: string;
+  work_type: 'remote' | 'hybrid' | 'onsite';
+  self_introduction: string | null;
+  status: 'new' | 'interviewed' | 'hired' | 'rejected';
+  assigned_manager: number | null;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface JobApplicationInsert {
+  full_name: string;
+  phone: string;
+  age: number;
+  desired_position: string;
+  city: string;
+  work_type: 'remote' | 'hybrid' | 'onsite';
+  self_introduction?: string;
+  status?: 'new' | 'interviewed' | 'hired' | 'rejected';
+  assigned_manager?: number;
+  admin_notes?: string;
+}
