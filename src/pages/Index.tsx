@@ -369,8 +369,8 @@ const Index = () => {
   return (
     <MainLayout>
       <Hero />
-      <WebinarBanner />
       <QuickAccess />
+      <WebinarBanner />
       <HubBanner />
 
       {/* Academy Students Statistics Section */}
