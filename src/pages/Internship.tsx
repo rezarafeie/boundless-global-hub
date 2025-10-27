@@ -24,33 +24,33 @@ const departments = [
 const benefits = [
   {
     icon: Briefcase,
-    title: "Real Projects Experience",
-    description: "Work on actual projects that impact real users and businesses"
+    title: "تجربه پروژه‌های واقعی",
+    description: "روی پروژه‌های واقعی کار کنید که بر کاربران و کسب‌وکارهای واقعی تأثیر می‌گذارند"
   },
   {
     icon: Users,
-    title: "Mentorship from Experts",
-    description: "Learn directly from industry professionals and experienced mentors"
+    title: "منتورشیپ از متخصصان",
+    description: "مستقیماً از حرفه‌ای‌های صنعت و منتورهای با تجربه یاد بگیرید"
   },
   {
     icon: TrendingUp,
-    title: "Career Opportunities",
-    description: "High-performing interns have the chance to join our team full-time"
+    title: "فرصت‌های شغلی",
+    description: "کارآموزان برتر فرصت پیوستن به تیم ما به صورت تمام‌وقت را خواهند داشت"
   },
   {
     icon: Globe,
-    title: "Remote & Flexible",
-    description: "Work from anywhere with flexible schedules that fit your lifestyle"
+    title: "دورکاری و انعطاف‌پذیر",
+    description: "از هر جایی با برنامه زمانی منعطف که با سبک زندگی شما سازگار است کار کنید"
   },
   {
     icon: Award,
-    title: "Certification",
-    description: "Receive an official certificate upon successful completion of the program"
+    title: "گواهینامه معتبر",
+    description: "پس از اتمام موفقیت‌آمیز برنامه، گواهینامه رسمی دریافت کنید"
   },
   {
     icon: Star,
-    title: "Build Your Portfolio",
-    description: "Create impressive portfolio pieces with real-world impact"
+    title: "ساخت نمونه‌کارها",
+    description: "نمونه‌کارهای چشمگیر با تأثیر واقعی بسازید"
   }
 ];
 
@@ -142,30 +142,25 @@ export default function Internship() {
   return (
     <MainLayout>
       {/* Hero Section */}
-      <section className="relative min-h-[60vh] bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-slate-900 dark:via-blue-950/30 dark:to-purple-950/20 flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-32 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute -bottom-40 -left-32 w-96 h-96 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }}></div>
-        </div>
-
-        <div className="container mx-auto px-4 py-20 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-6">
-              <Rocket className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-primary">برنامه کارآموزی آکادمی رفیعی</span>
+      <section className="relative py-20 overflow-hidden bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950/20 dark:via-teal-950/20 dark:to-cyan-950/20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800">
+              <Rocket className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">برنامه کارآموزی آکادمی رفیعی</span>
             </div>
             
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-l from-primary via-blue-600 to-purple-600 bg-clip-text text-transparent leading-tight">
-              سفر خود را با آکادمی رفیعی آغاز کنید 🚀
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
+              سفر خود را با آکادمی رفیعی آغاز کنید
             </h1>
             
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
               تجربه واقعی کسب کنید، از متخصصان بیاموزید و حرفه خود را بدون مرز بسازید
             </p>
             
             <Button 
               size="lg" 
-              className="text-lg px-8 py-6"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
               onClick={() => document.getElementById('application-form')?.scrollIntoView({ behavior: 'smooth' })}
             >
               <MessageCircle className="ml-2" />
