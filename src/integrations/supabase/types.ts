@@ -1644,6 +1644,57 @@ export type Database = {
           },
         ]
       }
+      internship_applications: {
+        Row: {
+          admin_notes: string | null
+          age: number
+          assigned_mentor: number | null
+          availability: string
+          city: string
+          created_at: string
+          desired_department: string
+          full_name: string
+          id: string
+          phone: string
+          self_introduction: string | null
+          specialization: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          age: number
+          assigned_mentor?: number | null
+          availability: string
+          city: string
+          created_at?: string
+          desired_department: string
+          full_name: string
+          id?: string
+          phone: string
+          self_introduction?: string | null
+          specialization?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          age?: number
+          assigned_mentor?: number | null
+          availability?: string
+          city?: string
+          created_at?: string
+          desired_department?: string
+          full_name?: string
+          id?: string
+          phone?: string
+          self_introduction?: string | null
+          specialization?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       job_applications: {
         Row: {
           admin_notes: string | null
@@ -3553,22 +3604,13 @@ export type Database = {
         }
         Returns: boolean
       }
-      bytea_to_text: {
-        Args: { data: string }
-        Returns: string
-      }
+      bytea_to_text: { Args: { data: string }; Returns: string }
       check_sales_agent_lead_access: {
         Args: { p_agent_user_id: number; p_enrollment_id: string }
         Returns: boolean
       }
-      cleanup_expired_sso_tokens: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_inactive_sessions: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_expired_sso_tokens: { Args: never; Returns: undefined }
+      cleanup_inactive_sessions: { Args: never; Returns: undefined }
       detect_country_code_from_phone: {
         Args: { phone_number: string }
         Returns: string
@@ -3592,7 +3634,7 @@ export type Database = {
         Returns: boolean
       }
       fix_payment_status_inconsistencies: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           enrollment_id: string
           full_name: string
@@ -3601,14 +3643,8 @@ export type Database = {
           ref_id: string
         }[]
       }
-      generate_lesson_numbers: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      generate_unique_user_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_lesson_numbers: { Args: never; Returns: undefined }
+      generate_unique_user_id: { Args: never; Returns: string }
       get_academy_user_role: {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["academy_user_role"]
@@ -3666,14 +3702,8 @@ export type Database = {
           is_active: boolean
         }[]
       }
-      get_support_unread_count: {
-        Args: { conv_id: number }
-        Returns: number
-      }
-      get_user_avatar_color: {
-        Args: { user_name: string }
-        Returns: string
-      }
+      get_support_unread_count: { Args: { conv_id: number }; Returns: number }
+      get_user_avatar_color: { Args: { user_name: string }; Returns: string }
       get_user_courses_by_phone: {
         Args: { user_phone: string }
         Returns: {
@@ -3739,27 +3769,77 @@ export type Database = {
       http: {
         Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "http_request"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      http_delete: {
-        Args:
-          | { content: string; content_type: string; uri: string }
-          | { uri: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
-      http_get: {
-        Args: { data: Json; uri: string } | { uri: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
+      http_delete:
+        | {
+            Args: { uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { content: string; content_type: string; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+      http_get:
+        | {
+            Args: { uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { data: Json; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       http_head: {
         Args: { uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       http_header: {
         Args: { field: string; value: string }
         Returns: Database["public"]["CompositeTypes"]["http_header"]
+        SetofOptions: {
+          from: "*"
+          to: "http_header"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       http_list_curlopt: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           curlopt: string
           value: string
@@ -3768,21 +3848,45 @@ export type Database = {
       http_patch: {
         Args: { content: string; content_type: string; uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      http_post: {
-        Args:
-          | { content: string; content_type: string; uri: string }
-          | { data: Json; uri: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
+      http_post:
+        | {
+            Args: { content: string; content_type: string; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { data: Json; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       http_put: {
         Args: { content: string; content_type: string; uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      http_reset_curlopt: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      http_reset_curlopt: { Args: never; Returns: boolean }
       http_set_curlopt: {
         Args: { curlopt: string; value: string }
         Returns: boolean
@@ -3791,26 +3895,11 @@ export type Database = {
         Args: { link_slug: string }
         Returns: undefined
       }
-      increment_views: {
-        Args: { announcement_id: number }
-        Returns: undefined
-      }
-      is_academy_admin: {
-        Args: { user_uuid: string }
-        Returns: boolean
-      }
-      is_academy_admin_safe: {
-        Args: { user_uuid: string }
-        Returns: boolean
-      }
-      is_iranian_phone: {
-        Args: { phone_number: string }
-        Returns: boolean
-      }
-      is_sales_manager: {
-        Args: { user_uuid: string }
-        Returns: boolean
-      }
+      increment_views: { Args: { announcement_id: number }; Returns: undefined }
+      is_academy_admin: { Args: { user_uuid: string }; Returns: boolean }
+      is_academy_admin_safe: { Args: { user_uuid: string }; Returns: boolean }
+      is_iranian_phone: { Args: { phone_number: string }; Returns: boolean }
+      is_sales_manager: { Args: { user_uuid: string }; Returns: boolean }
       is_session_valid: {
         Args: { session_token_param: string }
         Returns: boolean
@@ -3850,22 +3939,26 @@ export type Database = {
         Args: { session_token: string }
         Returns: undefined
       }
-      text_to_bytea: {
-        Args: { data: string }
-        Returns: string
-      }
+      text_to_bytea: { Args: { data: string }; Returns: string }
       update_user_presence: {
         Args: { p_is_online?: boolean; p_user_id: number }
         Returns: undefined
       }
-      url_encode: {
-        Args: { input: string }
-        Returns: string
-      }
-      urlencode: {
-        Args: { data: Json } | { string: string } | { string: string }
-        Returns: string
-      }
+      url_encode: { Args: { input: string }; Returns: string }
+      urlencode:
+        | { Args: { data: Json }; Returns: string }
+        | {
+            Args: { string: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+        | {
+            Args: { string: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
       validate_user_session: {
         Args: { session_token_param: string }
         Returns: {
@@ -3943,7 +4036,7 @@ export type Database = {
         value: string | null
       }
       http_request: {
-        method: unknown | null
+        method: unknown
         uri: string | null
         headers: Database["public"]["CompositeTypes"]["http_header"][] | null
         content_type: string | null

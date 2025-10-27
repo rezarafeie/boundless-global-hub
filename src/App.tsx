@@ -141,6 +141,7 @@ import AppProfile from "./pages/App/AppProfile";
 
 // Job Application
 import JobApplication from "./pages/JobApplication";
+import Internship from "./pages/Internship";
 
 const queryClient = new QueryClient();
 
@@ -356,6 +357,7 @@ const App = () => {
 
                      {/* Job Application Route */}
         <Route path="/job" element={<JobApplication />} />
+        <Route path="/internship" element={<Internship />} />
 
                     {/* 404 fallback */}
                     <Route path="*" element={<NotFound />} />

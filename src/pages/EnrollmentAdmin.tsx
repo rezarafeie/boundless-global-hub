@@ -26,6 +26,7 @@ const SalesDashboard = React.lazy(() => import('@/components/Admin/SalesDashboar
 const TestManagement = React.lazy(() => import('@/components/Admin/TestManagement'));
 const WebinarManagement = React.lazy(() => import('@/components/Admin/WebinarManagement'));
 const RecruitmentManagement = React.lazy(() => import('@/components/Admin/RecruitmentManagement'));
+const InternshipManagement = React.lazy(() => import('@/components/Admin/InternshipManagement'));
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -80,7 +81,7 @@ const EnrollmentAdmin: React.FC = () => {
   const navigate = useNavigate();
   const [checkingRole, setCheckingRole] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'sales' | 'leads' | 'users' | 'analytics' | 'settings' | 'crm' | 'recruitment' | 'tests' | 'webinars'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'sales' | 'leads' | 'users' | 'analytics' | 'settings' | 'crm' | 'recruitment' | 'internships' | 'tests' | 'webinars'>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
@@ -317,6 +318,14 @@ const EnrollmentAdmin: React.FC = () => {
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
               <RecruitmentManagement />
+            </Suspense>
+          </ErrorBoundary>
+        );
+      case 'internships':
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <InternshipManagement />
             </Suspense>
           </ErrorBoundary>
         );

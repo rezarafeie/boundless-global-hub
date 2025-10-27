@@ -40,6 +40,7 @@ const menuItems = [
   { id: 'webinars', label: 'وبینارها', icon: Calendar },
   { id: 'enrollments', label: 'ثبت‌نام‌ها', icon: UserCheck },
   { id: 'recruitment', label: 'استخدام', icon: Briefcase },
+  { id: 'internships', label: 'کارآموزی‌ها', icon: Users },
   { id: 'sales', label: 'داشبورد فروش', icon: BarChart3 },
   { id: 'leads', label: 'مدیریت لیدها', icon: UserPlus },
   { id: 'users', label: 'کاربران', icon: Users },
