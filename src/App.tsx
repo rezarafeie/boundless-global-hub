@@ -143,6 +143,9 @@ import AppProfile from "./pages/App/AppProfile";
 import JobApplication from "./pages/JobApplication";
 import Internship from "./pages/Internship";
 
+// PWA Installer
+import PWAInstaller from "./pages/PWAInstaller";
+
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -301,6 +304,9 @@ const App = () => {
                     <Route path="/course/access/boundless-taste" element={<BoundlessTasteAccess />} />
                     <Route path="/course/access/american-business" element={<AmericanBusinessAccess />} />
                     <Route path="/course/access/passive-income" element={<PassiveIncomeAccess />} />
+
+                    {/* PWA Installer */}
+                    <Route path="/install-app" element={<PWAInstaller />} />
 
                     {/* Dashboard */}
                     <Route path="/dashboard" element={<UserDashboard />} />

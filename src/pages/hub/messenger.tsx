@@ -4,8 +4,6 @@ import Messenger from '@/components/Chat/Messenger';
 import { Card, CardContent } from '@/components/ui/card';
 import { WifiOff, MessageCircle, Users } from 'lucide-react';
 import { type MessengerUser } from '@/lib/messengerService';
-import AddToHomeScreenBanner from '@/components/Chat/AddToHomeScreenBanner';
-
 import { isMessengerSubdomain } from '@/utils/subdomainDetection';
 
 interface MessengerPageProps {
@@ -24,13 +22,7 @@ const MessengerPage: React.FC<MessengerPageProps> = ({ currentUser, onUserUpdate
 
   return (
     <div className="h-full overflow-hidden">
-      {/* Show add to home screen banner on messenger subdomain */}
-      {isMessengerSubdomain() && (
-        <AddToHomeScreenBanner />
-      )}
-      
-      
-      <Messenger 
+      <Messenger
         sessionToken={sessionToken}
         currentUser={currentUser}
         onUserUpdate={onUserUpdate}

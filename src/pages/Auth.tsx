@@ -117,6 +117,16 @@ const Auth: React.FC = () => {
 
   // Modified redirect condition - don't redirect if we're in linking mode
   if (isAuthenticated && user && !isLinkingMode) {
+    // Check if app is installed (PWA mode)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isInWebAppiOS = (window.navigator as any).standalone === true;
+    const hasSkippedInstaller = localStorage.getItem('pwa_installer_skipped') === 'true';
+    
+    // If app is not installed and user hasn't skipped, show installer first
+    if (!isStandalone && !isInWebAppiOS && !hasSkippedInstaller) {
+      return <Navigate to="/install-app" replace />;
+    }
+    
     const redirectUrl = localStorage.getItem('auth_redirect') || '/dashboard';
     localStorage.removeItem('auth_redirect');
     return <Navigate to={redirectUrl} replace />;
