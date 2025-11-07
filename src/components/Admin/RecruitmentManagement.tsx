@@ -94,6 +94,10 @@ export default function RecruitmentManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [positionFilter, setPositionFilter] = useState("all");
+  const [workTypeFilter, setWorkTypeFilter] = useState("all");
+  const [cityFilter, setCityFilter] = useState("all");
+  const [minAge, setMinAge] = useState("");
+  const [maxAge, setMaxAge] = useState("");
   const [selectedApplication, setSelectedApplication] =
     useState<JobApplication | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -145,11 +149,21 @@ export default function RecruitmentManagement() {
     },
   });
 
-  const filteredApplications = applications?.filter((app) =>
-    app.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    app.phone.includes(searchTerm) ||
-    app.city.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Get unique cities for filter
+  const uniqueCities = Array.from(new Set(applications?.map(app => app.city) || [])).sort();
+
+  const filteredApplications = applications?.filter((app) => {
+    const matchesSearch = app.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.phone.includes(searchTerm) ||
+      app.city.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesWorkType = workTypeFilter === "all" || app.work_type === workTypeFilter;
+    const matchesCity = cityFilter === "all" || app.city === cityFilter;
+    const matchesMinAge = !minAge || app.age >= parseInt(minAge);
+    const matchesMaxAge = !maxAge || app.age <= parseInt(maxAge);
+
+    return matchesSearch && matchesWorkType && matchesCity && matchesMinAge && matchesMaxAge;
+  });
 
   const handleExportCSV = () => {
     if (!filteredApplications) return;
@@ -208,43 +222,107 @@ export default function RecruitmentManagement() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="جستجو بر اساس نام، شماره یا شهر..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-10"
-          />
+      <div className="space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="جستجو بر اساس نام، شماره یا شهر..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pr-10"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <Filter className="ml-2 h-4 w-4" />
+              <SelectValue placeholder="وضعیت" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+              <SelectItem value="new">جدید</SelectItem>
+              <SelectItem value="interviewed">مصاحبه شده</SelectItem>
+              <SelectItem value="hired">استخدام شده</SelectItem>
+              <SelectItem value="rejected">رد شده</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={positionFilter} onValueChange={setPositionFilter}>
+            <SelectTrigger className="w-full md:w-[200px]">
+              <FileText className="ml-2 h-4 w-4" />
+              <SelectValue placeholder="موقعیت شغلی" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه موقعیت‌ها</SelectItem>
+              {Object.entries(positionLabels).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full md:w-[200px]">
-            <Filter className="ml-2 h-4 w-4" />
-            <SelectValue placeholder="وضعیت" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-            <SelectItem value="new">جدید</SelectItem>
-            <SelectItem value="interviewed">مصاحبه شده</SelectItem>
-            <SelectItem value="hired">استخدام شده</SelectItem>
-            <SelectItem value="rejected">رد شده</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={positionFilter} onValueChange={setPositionFilter}>
-          <SelectTrigger className="w-full md:w-[200px]">
-            <FileText className="ml-2 h-4 w-4" />
-            <SelectValue placeholder="موقعیت شغلی" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">همه موقعیت‌ها</SelectItem>
-            {Object.entries(positionLabels).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        
+        <div className="flex flex-col md:flex-row gap-4">
+          <Select value={workTypeFilter} onValueChange={setWorkTypeFilter}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="نوع همکاری" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه انواع</SelectItem>
+              {Object.entries(workTypeLabels).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select value={cityFilter} onValueChange={setCityFilter}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="شهر" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه شهرها</SelectItem>
+              {uniqueCities.map((city) => (
+                <SelectItem key={city} value={city}>
+                  {city}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <div className="flex gap-2 flex-1">
+            <Input
+              type="number"
+              placeholder="حداقل سن"
+              value={minAge}
+              onChange={(e) => setMinAge(e.target.value)}
+              className="w-full"
+            />
+            <Input
+              type="number"
+              placeholder="حداکثر سن"
+              value={maxAge}
+              onChange={(e) => setMaxAge(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSearchTerm("");
+              setStatusFilter("all");
+              setPositionFilter("all");
+              setWorkTypeFilter("all");
+              setCityFilter("all");
+              setMinAge("");
+              setMaxAge("");
+            }}
+          >
+            پاک کردن فیلترها
+          </Button>
+        </div>
       </div>
 
       {/* Statistics */}

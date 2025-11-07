@@ -68,6 +68,10 @@ export default function InternshipManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
+  const [availabilityFilter, setAvailabilityFilter] = useState<string>("all");
+  const [cityFilter, setCityFilter] = useState<string>("all");
+  const [minAge, setMinAge] = useState("");
+  const [maxAge, setMaxAge] = useState("");
   const [selectedApplication, setSelectedApplication] = useState<InternshipApplication | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -114,12 +118,22 @@ export default function InternshipManagement() {
     },
   });
 
-  // Filter applications based on search
-  const filteredApplications = applications.filter((app) =>
-    app.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    app.phone.includes(searchTerm) ||
-    app.city.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Get unique cities for filter
+  const uniqueCities = Array.from(new Set(applications.map(app => app.city))).sort();
+
+  // Filter applications based on search and filters
+  const filteredApplications = applications.filter((app) => {
+    const matchesSearch = app.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.phone.includes(searchTerm) ||
+      app.city.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesAvailability = availabilityFilter === "all" || app.availability === availabilityFilter;
+    const matchesCity = cityFilter === "all" || app.city === cityFilter;
+    const matchesMinAge = !minAge || app.age >= parseInt(minAge);
+    const matchesMaxAge = !maxAge || app.age <= parseInt(maxAge);
+
+    return matchesSearch && matchesAvailability && matchesCity && matchesMinAge && matchesMaxAge;
+  });
 
   // Export to CSV
   const handleExportCSV = () => {
@@ -188,40 +202,104 @@ export default function InternshipManagement() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1">
-          <Input
-            placeholder="جستجو بر اساس نام، شماره تماس یا شهر..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <Input
+              placeholder="جستجو بر اساس نام، شماره تماس یا شهر..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="فیلتر وضعیت" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+              {Object.entries(statusLabels).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+            <SelectTrigger className="w-full md:w-[200px]">
+              <SelectValue placeholder="فیلتر دپارتمان" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه دپارتمان‌ها</SelectItem>
+              {Object.entries(departmentLabels).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full md:w-48">
-            <SelectValue placeholder="فیلتر وضعیت" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-            {Object.entries(statusLabels).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-          <SelectTrigger className="w-full md:w-48">
-            <SelectValue placeholder="فیلتر دپارتمان" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">همه دپارتمان‌ها</SelectItem>
-            {Object.entries(departmentLabels).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+
+        <div className="flex flex-col md:flex-row gap-4">
+          <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="در دسترس بودن" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه</SelectItem>
+              {Object.entries(availabilityLabels).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select value={cityFilter} onValueChange={setCityFilter}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="شهر" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه شهرها</SelectItem>
+              {uniqueCities.map((city) => (
+                <SelectItem key={city} value={city}>
+                  {city}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <div className="flex gap-2 flex-1">
+            <Input
+              type="number"
+              placeholder="حداقل سن"
+              value={minAge}
+              onChange={(e) => setMinAge(e.target.value)}
+              className="w-full"
+            />
+            <Input
+              type="number"
+              placeholder="حداکثر سن"
+              value={maxAge}
+              onChange={(e) => setMaxAge(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSearchTerm("");
+              setStatusFilter("all");
+              setDepartmentFilter("all");
+              setAvailabilityFilter("all");
+              setCityFilter("all");
+              setMinAge("");
+              setMaxAge("");
+            }}
+          >
+            پاک کردن فیلترها
+          </Button>
+        </div>
       </div>
 
       {/* Table */}
