@@ -59,6 +59,7 @@ const statusLabels: Record<string, string> = {
   interviewed: "مصاحبه شده",
   hired: "استخدام شده",
   rejected: "رد شده",
+  no_answer: "پاسخ نداد",
 };
 
 const statusColors: Record<string, string> = {
@@ -66,6 +67,7 @@ const statusColors: Record<string, string> = {
   interviewed: "bg-yellow-500",
   hired: "bg-green-500",
   rejected: "bg-red-500",
+  no_answer: "bg-orange-500",
 };
 
 const positionLabels: Record<string, string> = {
@@ -223,6 +225,11 @@ export default function RecruitmentManagement() {
 
       {/* Filters */}
       <div className="space-y-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm text-muted-foreground">
+            تعداد رکوردهای فیلتر شده: <span className="font-bold text-foreground">{filteredApplications?.length || 0}</span> از {applications?.length || 0}
+          </p>
+        </div>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />

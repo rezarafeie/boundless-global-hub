@@ -36,6 +36,7 @@ const statusLabels: Record<string, string> = {
   accepted: "پذیرفته شده",
   rejected: "رد شده",
   completed: "تکمیل شده",
+  no_answer: "پاسخ نداد",
 };
 
 const statusColors: Record<string, string> = {
@@ -45,6 +46,7 @@ const statusColors: Record<string, string> = {
   accepted: "bg-green-500",
   rejected: "bg-red-500",
   completed: "bg-gray-500",
+  no_answer: "bg-orange-500",
 };
 
 const departmentLabels: Record<string, string> = {
@@ -203,6 +205,11 @@ export default function InternshipManagement() {
 
       {/* Filters */}
       <div className="space-y-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm text-muted-foreground">
+            تعداد رکوردهای فیلتر شده: <span className="font-bold text-foreground">{filteredApplications.length}</span> از {applications.length}
+          </p>
+        </div>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <Input
