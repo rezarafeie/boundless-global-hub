@@ -22,6 +22,8 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Analyzing course: ${courseId}, Date range: ${startDate} to ${endDate}, Batch size: ${batchSize}, Offset: ${offset}`);
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
@@ -34,15 +36,14 @@ serve(async (req) => {
       dateFilter = `and(created_at.gte.${startDate},created_at.lte.${endDate})`;
     }
 
-    // Get total count first
-    const { count: totalCount } = await supabase
+    // Build the base query with date filters
+    let countQuery = supabase
       .from('enrollments')
       .select('*', { count: 'exact', head: true })
       .eq('course_id', courseId)
       .in('payment_status', ['completed', 'success']);
 
-    // Fetch enrollments batch
-    const { data: enrollments, error: enrollError } = await supabase
+    let enrollmentsQuery = supabase
       .from('enrollments')
       .select(`
         id,
@@ -55,7 +56,19 @@ serve(async (req) => {
         courses!inner(title, slug)
       `)
       .eq('course_id', courseId)
-      .in('payment_status', ['completed', 'success'])
+      .in('payment_status', ['completed', 'success']);
+
+    // Apply date filters if provided
+    if (startDate && endDate) {
+      countQuery = countQuery.gte('created_at', startDate).lte('created_at', endDate);
+      enrollmentsQuery = enrollmentsQuery.gte('created_at', startDate).lte('created_at', endDate);
+    }
+
+    // Get total count first
+    const { count: totalCount } = await countQuery;
+
+    // Fetch enrollments batch
+    const { data: enrollments, error: enrollError } = await enrollmentsQuery
       .order('created_at', { ascending: false })
       .range(offset, offset + batchSize - 1);
 
