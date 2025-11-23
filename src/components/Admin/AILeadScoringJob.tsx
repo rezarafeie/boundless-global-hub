@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Brain, Calendar, Download, TrendingUp, Flame, Snowflake, ThermometerSun, Loader2, User, Phone, Mail, Trophy, Clock, Play, Pause, X, RefreshCw, AlertCircle } from 'lucide-react';
+import { Brain, Calendar, Download, TrendingUp, Flame, Snowflake, ThermometerSun, Loader2, User, Phone, Mail, Trophy, Clock, Play, Pause, X, RefreshCw, AlertCircle, Check, UserPlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -38,10 +39,15 @@ const AILeadScoringJob: React.FC = () => {
   const [dateRange, setDateRange] = useState<string>('7');
   const [currentJob, setCurrentJob] = useState<Job | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [salesAgents, setSalesAgents] = useState<any[]>([]);
+  const [selectedAgent, setSelectedAgent] = useState<string>('');
 
   useEffect(() => {
     fetchCourses();
     fetchActiveJob();
+    fetchSalesAgents();
 
     // Subscribe to job updates
     const channel = supabase
@@ -92,6 +98,22 @@ const AILeadScoringJob: React.FC = () => {
       if (data.course_id) {
         setSelectedCourse(data.course_id);
       }
+    }
+  };
+
+  const fetchSalesAgents = async () => {
+    const { data } = await supabase
+      .from('sales_agents')
+      .select(`
+        id,
+        user_id,
+        is_active,
+        chat_users!inner(id, name, phone)
+      `)
+      .eq('is_active', true);
+
+    if (data) {
+      setSalesAgents(data);
     }
   };
 
@@ -177,51 +199,132 @@ const AILeadScoringJob: React.FC = () => {
     }
   };
 
-  const exportToCSV = () => {
-    if (!currentJob?.results?.leads) return;
+  const exportToCSV = (leadsToExport?: any[]) => {
+    const leads = leadsToExport || (currentJob?.results?.leads || []);
+    if (leads.length === 0) return;
 
-    const headers = [
-      'نام و نام خانوادگی',
-      'شماره تماس',
-      'ایمیل',
-      'دوره',
-      'تاریخ ثبت‌نام',
-      'امتیاز',
-      'وضعیت',
-      'درصد تکمیل',
-      'زمان یادگیری (دقیقه)',
-      'ساعت از آخرین فعالیت',
-      'تعداد درس ثبت‌شده',
-      'تعداد درس تکمیل شده',
-      'گفتگوی پشتیبانی',
-      'تعامل CRM',
-      'دلیل امتیازدهی'
-    ];
+    const csvContent = [
+      ['نام', 'تلفن', 'ایمیل', 'وضعیت', 'امتیاز', 'درصد تکمیل', 'زمان یادگیری', 'آخرین فعالیت', 'تعداد درس کامل', 'کل دروس', 'فعال‌سازی پشتیبانی', 'فعال‌سازی تلگرام'].join(','),
+      ...leads.map((lead: any) => 
+        [
+          lead.full_name,
+          lead.phone,
+          lead.email,
+          lead.status,
+          lead.score,
+          `${lead.metrics.completion_percentage}%`,
+          `${lead.metrics.total_time_minutes} دقیقه`,
+          `${lead.metrics.hours_since_last_activity} ساعت`,
+          lead.metrics.completed_lessons,
+          lead.metrics.total_lessons_in_course || lead.metrics.total_lessons_enrolled,
+          lead.metrics.has_support_activation ? 'بله' : 'خیر',
+          lead.metrics.has_telegram_activation ? 'بله' : 'خیر'
+        ].join(',')
+      )
+    ].join('\n');
 
-    const csvData = currentJob.results.leads.map((lead: any) => [
-      lead.full_name,
-      lead.phone,
-      lead.email,
-      lead.course_name,
-      format(new Date(lead.enrollment_date), 'yyyy-MM-dd'),
-      lead.score,
-      lead.status,
-      `${lead.metrics.completion_percentage}%`,
-      lead.metrics.total_time_minutes,
-      lead.metrics.hours_since_last_activity,
-      lead.metrics.total_lessons_enrolled,
-      lead.metrics.completed_lessons,
-      lead.metrics.has_support_conversation ? 'بله' : 'خیر',
-      lead.metrics.crm_interactions,
-      lead.reasoning
-    ]);
-
-    const csv = [headers, ...csvData].map(row => row.join(',')).join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `lead-scoring-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.download = `lead-analysis-${filterStatus !== 'all' ? filterStatus + '-' : ''}${format(new Date(), 'yyyy-MM-dd')}.csv`;
     link.click();
+  };
+
+  const toggleLeadSelection = (enrollmentId: string) => {
+    const newSelection = new Set(selectedLeads);
+    if (newSelection.has(enrollmentId)) {
+      newSelection.delete(enrollmentId);
+    } else {
+      newSelection.add(enrollmentId);
+    }
+    setSelectedLeads(newSelection);
+  };
+
+  const toggleAllLeads = () => {
+    if (!currentJob?.results?.leads) return;
+    
+    const filteredLeads = getFilteredLeads();
+    if (selectedLeads.size === filteredLeads.length) {
+      setSelectedLeads(new Set());
+    } else {
+      setSelectedLeads(new Set(filteredLeads.map((l: any) => l.enrollment_id)));
+    }
+  };
+
+  const getFilteredLeads = () => {
+    if (!currentJob?.results?.leads) return [];
+    
+    if (filterStatus === 'all') return currentJob.results.leads;
+    return currentJob.results.leads.filter((l: any) => l.status === filterStatus);
+  };
+
+  const assignLeadsToAgent = async () => {
+    if (!selectedAgent || selectedLeads.size === 0) {
+      toast({
+        title: 'خطا',
+        description: 'لطفا یک کارشناس فروش و حداقل یک لید انتخاب کنید',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const agentData = salesAgents.find(a => a.id.toString() === selectedAgent);
+      if (!agentData) return;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('کاربر وارد نشده است');
+
+      // Get current user's chat_users record
+      const { data: chatUser } = await supabase
+        .from('chat_users')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!chatUser) throw new Error('کاربر یافت نشد');
+
+      const enrollmentIds = Array.from(selectedLeads);
+      
+      for (const enrollmentId of enrollmentIds) {
+        await supabase.rpc('assign_lead_to_agent', {
+          p_enrollment_id: enrollmentId,
+          p_agent_user_id: agentData.chat_users.id,
+          p_assigned_by: chatUser.id,
+        });
+      }
+
+      toast({
+        title: 'موفق',
+        description: `${enrollmentIds.length} لید با موفقیت به ${agentData.chat_users.name} واگذار شد`,
+      });
+
+      setSelectedLeads(new Set());
+      setSelectedAgent('');
+    } catch (error: any) {
+      console.error('Error assigning leads:', error);
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در واگذاری لیدها',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const exportSelectedLeads = () => {
+    if (selectedLeads.size === 0) {
+      toast({
+        title: 'خطا',
+        description: 'لطفا حداقل یک لید انتخاب کنید',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const leads = currentJob?.results?.leads.filter((l: any) => 
+      selectedLeads.has(l.enrollment_id)
+    );
+    exportToCSV(leads);
   };
 
   const getStatusIcon = (status: string) => {
@@ -449,6 +552,68 @@ const AILeadScoringJob: React.FC = () => {
             </Card>
           </div>
 
+          {/* Selection and Assignment Controls */}
+          {currentJob?.results?.leads?.length > 0 && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex flex-wrap gap-3 items-center">
+                  <div className="flex items-center gap-2">
+                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="فیلتر وضعیت" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">همه ({currentJob.results.total_analyzed})</SelectItem>
+                        <SelectItem value="HOT">داغ ({currentJob.results.hot_leads})</SelectItem>
+                        <SelectItem value="WARM">گرم ({currentJob.results.warm_leads})</SelectItem>
+                        <SelectItem value="COLD">سرد ({currentJob.results.cold_leads})</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="انتخاب کارشناس فروش" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {salesAgents.map((agent) => (
+                          <SelectItem key={agent.id} value={agent.id.toString()}>
+                            {agent.chat_users.name} ({agent.chat_users.phone})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      onClick={assignLeadsToAgent} 
+                      disabled={selectedLeads.size === 0 || !selectedAgent}
+                      size="sm"
+                    >
+                      <UserPlus className="w-4 h-4 ml-2" />
+                      واگذاری ({selectedLeads.size})
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center gap-2 mr-auto">
+                    <Button 
+                      onClick={exportSelectedLeads} 
+                      variant="outline" 
+                      size="sm"
+                      disabled={selectedLeads.size === 0}
+                    >
+                      <Download className="w-4 h-4 ml-2" />
+                      خروجی انتخاب شده ({selectedLeads.size})
+                    </Button>
+                    <Button onClick={() => exportToCSV()} variant="outline" size="sm">
+                      <Download className="w-4 h-4 ml-2" />
+                      خروجی فیلتر شده ({getFilteredLeads().length})
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Results Table */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -460,17 +625,24 @@ const AILeadScoringJob: React.FC = () => {
                     در حال به‌روزرسانی...
                   </Badge>
                 )}
+                {selectedLeads.size > 0 && (
+                  <Badge variant="secondary">
+                    {selectedLeads.size} انتخاب شده
+                  </Badge>
+                )}
               </div>
-              <Button onClick={exportToCSV} variant="outline" size="sm">
-                <Download className="w-4 h-4 ml-2" />
-                خروجی CSV
-              </Button>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="text-right w-12">
+                        <Checkbox
+                          checked={selectedLeads.size === getFilteredLeads().length && getFilteredLeads().length > 0}
+                          onCheckedChange={toggleAllLeads}
+                        />
+                      </TableHead>
                       <TableHead className="text-right">وضعیت</TableHead>
                       <TableHead className="text-right">امتیاز</TableHead>
                       <TableHead className="text-right">نام</TableHead>
@@ -478,58 +650,87 @@ const AILeadScoringJob: React.FC = () => {
                       <TableHead className="text-right">درصد تکمیل</TableHead>
                       <TableHead className="text-right">زمان یادگیری</TableHead>
                       <TableHead className="text-right">آخرین فعالیت</TableHead>
+                      <TableHead className="text-right">فعال‌سازی</TableHead>
                       <TableHead className="text-right">تعداد درس</TableHead>
                       <TableHead className="text-right">جزئیات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {currentJob.results.leads.map((lead: any) => (
+                    {getFilteredLeads().map((lead: any) => (
                       <React.Fragment key={lead.enrollment_id}>
                         <TableRow 
-                          className="cursor-pointer hover:bg-muted/50"
-                          onClick={() => setExpandedRow(expandedRow === lead.enrollment_id ? null : lead.enrollment_id)}
+                          className="hover:bg-muted/50"
                         >
-                          <TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={selectedLeads.has(lead.enrollment_id)}
+                              onCheckedChange={() => toggleLeadSelection(lead.enrollment_id)}
+                            />
+                          </TableCell>
+                          <TableCell onClick={() => setExpandedRow(expandedRow === lead.enrollment_id ? null : lead.enrollment_id)} className="cursor-pointer">
                             <Badge variant={getStatusBadgeVariant(lead.status)} className="flex items-center gap-1 w-fit">
                               {getStatusIcon(lead.status)}
                               {lead.status}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell onClick={() => setExpandedRow(expandedRow === lead.enrollment_id ? null : lead.enrollment_id)} className="cursor-pointer">
                             <div className="font-bold text-lg">{lead.score}</div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell onClick={() => setExpandedRow(expandedRow === lead.enrollment_id ? null : lead.enrollment_id)} className="cursor-pointer">
                             <div className="flex items-center gap-2">
                               <User className="w-4 h-4 text-muted-foreground" />
                               {lead.full_name}
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell onClick={() => setExpandedRow(expandedRow === lead.enrollment_id ? null : lead.enrollment_id)} className="cursor-pointer">
                             <div className="flex items-center gap-2">
                               <Phone className="w-4 h-4 text-muted-foreground" />
                               {lead.phone}
                             </div>
                           </TableCell>
-                          <TableCell>{lead.metrics.completion_percentage}%</TableCell>
-                          <TableCell>{lead.metrics.total_time_minutes} دقیقه</TableCell>
-                          <TableCell>
+                          <TableCell onClick={() => setExpandedRow(expandedRow === lead.enrollment_id ? null : lead.enrollment_id)} className="cursor-pointer">{lead.metrics.completion_percentage}%</TableCell>
+                          <TableCell onClick={() => setExpandedRow(expandedRow === lead.enrollment_id ? null : lead.enrollment_id)} className="cursor-pointer">{lead.metrics.total_time_minutes} دقیقه</TableCell>
+                          <TableCell onClick={() => setExpandedRow(expandedRow === lead.enrollment_id ? null : lead.enrollment_id)} className="cursor-pointer">
                             <div className="flex items-center gap-1">
                               <Clock className="w-4 h-4 text-muted-foreground" />
                               {lead.metrics.hours_since_last_activity}h
                             </div>
                           </TableCell>
-                          <TableCell>
-                            {lead.metrics.completed_lessons}/{lead.metrics.total_lessons_enrolled}
+                          <TableCell onClick={() => setExpandedRow(expandedRow === lead.enrollment_id ? null : lead.enrollment_id)} className="cursor-pointer">
+                            <div className="flex gap-1">
+                              {lead.metrics.has_support_activation && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Check className="w-3 h-3 ml-1" />
+                                  پشتیبانی
+                                </Badge>
+                              )}
+                              {lead.metrics.has_telegram_activation && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Check className="w-3 h-3 ml-1" />
+                                  تلگرام
+                                </Badge>
+                              )}
+                              {!lead.metrics.has_support_activation && !lead.metrics.has_telegram_activation && (
+                                <span className="text-muted-foreground text-xs">-</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell onClick={() => setExpandedRow(expandedRow === lead.enrollment_id ? null : lead.enrollment_id)} className="cursor-pointer">
+                            {lead.metrics.completed_lessons}/{lead.metrics.total_lessons_in_course}
                           </TableCell>
                           <TableCell>
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => setExpandedRow(expandedRow === lead.enrollment_id ? null : lead.enrollment_id)}
+                            >
                               {expandedRow === lead.enrollment_id ? '▲' : '▼'}
                             </Button>
                           </TableCell>
                         </TableRow>
                         {expandedRow === lead.enrollment_id && (
                           <TableRow>
-                            <TableCell colSpan={9} className="bg-muted/30">
+                            <TableCell colSpan={11} className="bg-muted/30">
                               <div className="p-4 space-y-3">
                                 <div>
                                   <p className="font-semibold mb-1">ایمیل:</p>
@@ -542,12 +743,24 @@ const AILeadScoringJob: React.FC = () => {
                                   <p className="font-semibold mb-1">دلیل امتیازدهی AI:</p>
                                   <p className="text-sm text-muted-foreground">{lead.reasoning}</p>
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                   <Badge variant="outline">
-                                    {lead.metrics.has_support_conversation ? '✓' : '✗'} پشتیبانی
+                                    {lead.metrics.has_support_conversation ? '✓' : '✗'} گفتگوی پشتیبانی
+                                  </Badge>
+                                  <Badge variant="outline">
+                                    {lead.metrics.has_support_activation ? '✓' : '✗'} فعال‌سازی پشتیبانی
+                                  </Badge>
+                                  <Badge variant="outline">
+                                    {lead.metrics.has_telegram_activation ? '✓' : '✗'} عضویت تلگرام
                                   </Badge>
                                   <Badge variant="outline">
                                     {lead.metrics.crm_interactions} تعامل CRM
+                                  </Badge>
+                                  <Badge variant="outline">
+                                    {lead.metrics.lessons_accessed} درس مشاهده شده
+                                  </Badge>
+                                  <Badge variant="outline">
+                                    تاریخ ثبت‌نام: {format(new Date(lead.enrollment_date), 'yyyy/MM/dd')}
                                   </Badge>
                                 </div>
                               </div>
