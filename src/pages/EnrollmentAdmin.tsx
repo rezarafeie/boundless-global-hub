@@ -47,14 +47,14 @@ class ErrorBoundary extends React.Component<
   }
 
   render() {
-    if (this.state.hasError) {
+  if (this.state.hasError) {
       return this.props.fallback || (
-        <Alert className="bg-red-50 border-red-200">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
+        <Alert className="bg-destructive/10 border-destructive/20">
+          <AlertCircle className="h-4 w-4 text-destructive" />
+          <AlertDescription className="text-foreground">
             خطایی در نمایش این بخش رخ داده است. لطفاً صفحه را بازخوانی کنید.
             {this.state.error && (
-              <details className="mt-2 text-xs text-red-600">
+              <details className="mt-2 text-xs text-muted-foreground">
                 <summary>جزئیات خطا</summary>
                 <pre className="mt-1 whitespace-pre-wrap">{this.state.error.message}</pre>
               </details>
@@ -71,7 +71,7 @@ class ErrorBoundary extends React.Component<
 // Loading Component
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center p-8">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
     <span className="mr-2 text-muted-foreground">در حال بارگذاری...</span>
   </div>
 );
@@ -164,9 +164,9 @@ const EnrollmentAdmin: React.FC = () => {
   // Show loading while checking authentication or if not authenticated
   if (isLoading || checkingRole) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">در حال بررسی دسترسی...</p>
         </div>
       </div>
@@ -176,20 +176,20 @@ const EnrollmentAdmin: React.FC = () => {
   // Show access denied if not authenticated or user doesn't have required role
   if (!isAuthenticated || !user || !hasAccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="max-w-md w-full mx-4">
-          <Card className="border-red-200 bg-white/80 backdrop-blur-sm">
+          <Card className="border-destructive/50">
             <CardHeader className="text-center pb-4">
-              <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <Shield className="h-6 w-6 text-red-600" />
+              <div className="mx-auto w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+                <Shield className="h-6 w-6 text-destructive" />
               </div>
-              <CardTitle className="text-red-800">دسترسی محدود</CardTitle>
+              <CardTitle className="text-foreground">دسترسی محدود</CardTitle>
             </CardHeader>
             <CardContent className="text-center space-y-4">
-              <p className="text-red-700">
+              <p className="text-muted-foreground">
                 شما مجوز دسترسی به این بخش را ندارید. این صفحه فقط برای مدیران، مدیران ثبت‌نام‌ها و نمایندگان فروش قابل دسترسی است.
               </p>
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+              <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
                 <p className="font-medium mb-1">نقش‌های مجاز:</p>
                 <ul className="text-right space-y-1">
                   <li>• مدیر سیستم</li>
@@ -385,7 +385,7 @@ const EnrollmentAdmin: React.FC = () => {
             variant="ghost"
             size="icon"
             onClick={() => setIsMobileSidebarOpen(true)}
-            className="pointer-events-auto rounded-full hover:bg-accent dark:hover:bg-accent/50"
+            className="pointer-events-auto rounded-full hover:bg-accent"
           >
             <Menu size={20} className="text-foreground" />
           </Button>
