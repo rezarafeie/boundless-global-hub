@@ -151,34 +151,50 @@ serve(async (req) => {
           // Fetch user IDs from enrollments
           const chatUserIds = enrollments
             .map(e => e.chat_user_id)
-            .filter(id => id !== null);
+            .filter((id): id is number => id !== null);
+
+          console.log(`Fetching progress for ${chatUserIds.length} users in course ${job.course_id}`);
 
           // Fetch lesson progress for these users
-          const { data: lessonProgress } = await supabase
+          const { data: lessonProgress, error: progressError } = await supabase
             .from('user_lesson_progress')
             .select('user_id, course_id, is_completed, total_time_spent, last_viewed_at')
             .eq('course_id', job.course_id)
             .in('user_id', chatUserIds);
 
+          console.log(`Lesson progress fetched: ${lessonProgress?.length || 0} records, error:`, progressError);
+
           // Fetch support conversations
-          const { data: supportConvs } = await supabase
+          const { data: supportConvs, error: supportError } = await supabase
             .from('support_conversations')
             .select('user_id, status, created_at')
             .in('user_id', chatUserIds);
 
+          console.log(`Support conversations fetched: ${supportConvs?.length || 0} records, error:`, supportError);
+
           // Fetch CRM notes
-          const { data: crmNotes } = await supabase
+          const { data: crmNotes, error: crmError } = await supabase
             .from('crm_notes')
             .select('user_id, type, created_at')
+            .eq('course_id', job.course_id)
             .in('user_id', chatUserIds);
 
+          console.log(`CRM notes fetched: ${crmNotes?.length || 0} records, error:`, crmError);
+
           // Build user behavior data
-          const userBehaviorData = enrollments.map(enrollment => {
+          const userBehaviorData = enrollments.map((enrollment, idx) => {
             const userId = enrollment.chat_user_id;
             
             const userLessons = lessonProgress?.filter(lp => lp.user_id === userId) || [];
             const userSupport = supportConvs?.filter(sc => sc.user_id === userId) || [];
             const userCRM = crmNotes?.filter(cn => cn.user_id === userId) || [];
+
+            if (idx === 0) {
+              console.log(`Sample user data - userId: ${userId}, lessons: ${userLessons.length}, support: ${userSupport.length}, crm: ${userCRM.length}`);
+              if (userLessons.length > 0) {
+                console.log('Sample lesson:', JSON.stringify(userLessons[0]));
+              }
+            }
 
             const completedLessons = userLessons.filter(l => l.is_completed).length;
             const totalLessons = userLessons.length;
@@ -197,6 +213,7 @@ serve(async (req) => {
               phone: enrollment.phone,
               enrollment_date: enrollment.created_at,
               course_name: enrollment.courses.title,
+              chat_user_id: userId,
               metrics: {
                 total_lessons_enrolled: totalLessons,
                 completed_lessons: completedLessons,
@@ -208,6 +225,8 @@ serve(async (req) => {
               }
             };
           });
+
+          console.log(`Built behavior data for ${userBehaviorData.length} users. Sample metrics:`, userBehaviorData[0]?.metrics);
 
           // Create ultra-compact summary for AI
           const compactData = userBehaviorData.map((u, idx) => [
