@@ -158,7 +158,7 @@ serve(async (req) => {
           // Fetch lesson progress for these users
           const { data: lessonProgress, error: progressError } = await supabase
             .from('user_lesson_progress')
-            .select('user_id, course_id, is_completed, total_time_spent, last_viewed_at')
+            .select('user_id, course_id, lesson_id, is_completed, total_time_spent, last_accessed_at')
             .eq('course_id', job.course_id)
             .in('user_id', chatUserIds);
 
@@ -200,7 +200,7 @@ serve(async (req) => {
             const totalLessons = userLessons.length;
             const totalTimeSpent = userLessons.reduce((sum, l) => sum + (l.total_time_spent || 0), 0);
             const lastActivity = userLessons.length > 0 
-              ? Math.max(...userLessons.map(l => new Date(l.last_viewed_at || 0).getTime()))
+              ? Math.max(...userLessons.map(l => new Date(l.last_accessed_at || 0).getTime()))
               : 0;
             const hoursSinceLastActivity = lastActivity > 0 
               ? (Date.now() - lastActivity) / (1000 * 60 * 60)
