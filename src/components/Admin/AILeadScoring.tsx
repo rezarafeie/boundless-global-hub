@@ -125,7 +125,7 @@ const AILeadScoring: React.FC = () => {
       toast({
         variant: 'destructive',
         title: 'خطا در تحلیل',
-        description: error.message || 'خطا در تحلیل لیدها'
+        description: error.message || 'خطا در تحلیل لیدها. لطفاً دوباره تلاش کنید.'
       });
     } finally {
       setIsAnalyzing(false);

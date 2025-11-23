@@ -67,10 +67,14 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Processing ${enrollments.length} enrollments for AI analysis`);
+
     // Fetch user IDs from enrollments
     const chatUserIds = enrollments
       .map(e => e.chat_user_id)
       .filter(id => id !== null);
+
+    console.log(`Found ${chatUserIds.length} users with chat IDs`);
 
     // Fetch lesson progress for these users
     const { data: lessonProgress } = await supabase
@@ -145,23 +149,21 @@ serve(async (req) => {
       };
     });
 
-    // Create ultra-compact summary for AI (avoid token limit)
-    // Send only essential numeric metrics without keys
-    const compactData = userBehaviorData.map(u => ({
-      id: u.enrollment_id.slice(0, 8), // Shorter ID
-      n: u.full_name.slice(0, 20), // Truncate name
-      m: [
-        u.metrics.total_lessons_enrolled,
-        u.metrics.completed_lessons,
-        parseFloat(u.metrics.completion_percentage),
-        u.metrics.total_time_minutes,
-        u.metrics.hours_since_last_activity,
-        u.metrics.has_support_conversation ? 1 : 0,
-        u.metrics.crm_interactions,
-        u.metrics.test_taken ? 1 : 0,
-        u.metrics.license_activated ? 1 : 0
-      ]
-    }));
+    // Create ultra-compact summary for AI - only numbers, no text
+    const compactData = userBehaviorData.slice(0, 50).map((u, idx) => [
+      idx, // Use index instead of ID
+      u.metrics.total_lessons_enrolled,
+      u.metrics.completed_lessons,
+      Math.round(parseFloat(u.metrics.completion_percentage)),
+      u.metrics.total_time_minutes,
+      Math.min(u.metrics.hours_since_last_activity, 999),
+      u.metrics.has_support_conversation ? 1 : 0,
+      u.metrics.crm_interactions,
+      u.metrics.test_taken ? 1 : 0,
+      u.metrics.license_activated ? 1 : 0
+    ]);
+
+    console.log(`Prepared compact data for ${compactData.length} leads`);
 
     // Call Lovable AI to analyze and score leads
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -175,59 +177,36 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an AI lead scoring expert. Analyze user behavior data and assign a lead score (0-100) based on:
-- Lesson engagement (completion %, time spent, total lessons enrolled)
-- Recency (hours since last activity)
-- Support activation
-- CRM interactions
-- Test participation
-- License activation
-
-Scoring guidelines:
-- Completion ≥70%: +20 points
-- Total time >40 minutes: +15 points
-- Last activity <48 hours: +15 points
-- Support conversation: +10 points
-- CRM interactions: +5 points per interaction (max +10)
-- Test taken: +10 points
-- License activated: +10 points
-- Total lessons enrolled ≥5: +10 points
-
-Classify leads as:
-- HOT (75-100): High engagement, recent activity
-- WARM (50-74): Moderate engagement
-- COLD (0-49): Low engagement or inactive
-
-Return structured scores and reasoning for each lead.`
+            content: `Score leads 0-100. HOT(75-100), WARM(50-74), COLD(0-49). Score based on: completion%, time, recency, support, CRM, test, license.`
           },
           {
             role: 'user',
-            content: `Analyze ${compactData.length} leads. Format: {id,n,m:[lessons,completed,completion%,minutes,hrs_inactive,support(0/1),crm_count,test(0/1),license(0/1)]}\n\n${JSON.stringify(compactData)}`
+            content: `Score ${compactData.length} leads. Array format: [idx,total_lessons,completed,completion%,minutes,hrs_inactive,support,crm,test,license]\n${JSON.stringify(compactData)}`
           }
         ],
         tools: [{
           type: 'function',
           function: {
             name: 'score_leads',
-            description: 'Score and classify leads based on behavior',
+            description: 'Return lead scores',
             parameters: {
               type: 'object',
               properties: {
-                scored_leads: {
+                scores: {
                   type: 'array',
                   items: {
                     type: 'object',
                     properties: {
-                      enrollment_id: { type: 'string' },
-                      score: { type: 'number', minimum: 0, maximum: 100 },
-                      status: { type: 'string', enum: ['HOT', 'WARM', 'COLD'] },
-                      reasoning: { type: 'string' }
+                      idx: { type: 'number' },
+                      score: { type: 'number' },
+                      status: { type: 'string' },
+                      reason: { type: 'string' }
                     },
-                    required: ['enrollment_id', 'score', 'status', 'reasoning']
+                    required: ['idx', 'score', 'status', 'reason']
                   }
                 }
               },
-              required: ['scored_leads']
+              required: ['scores']
             }
           }
         }],
@@ -260,7 +239,7 @@ Return structured scores and reasoning for each lead.`
     }
 
     const aiResult = await aiResponse.json();
-    console.log('AI Response:', JSON.stringify(aiResult, null, 2));
+    console.log('AI Response received successfully');
 
     // Extract scores from AI response
     const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
@@ -270,19 +249,19 @@ Return structured scores and reasoning for each lead.`
       const args = typeof toolCall.function.arguments === 'string' 
         ? JSON.parse(toolCall.function.arguments)
         : toolCall.function.arguments;
-      scoredLeads = args.scored_leads || [];
+      scoredLeads = args.scores || args.scored_leads || [];
     }
 
-    // Merge AI scores with original data
-    const rankedLeads = userBehaviorData.map(userData => {
-      // Match by shortened ID
-      const shortId = userData.enrollment_id.slice(0, 8);
-      const aiScore = scoredLeads.find(sl => sl.enrollment_id === shortId || sl.enrollment_id === userData.enrollment_id);
+    console.log(`Received scores for ${scoredLeads.length} leads`);
+
+    // Merge AI scores with original data using index
+    const rankedLeads = userBehaviorData.slice(0, 50).map((userData, idx) => {
+      const aiScore = scoredLeads.find(sl => sl.idx === idx || sl.enrollment_id === userData.enrollment_id);
       return {
         ...userData,
         score: aiScore?.score || 0,
         status: aiScore?.status || 'COLD',
-        reasoning: aiScore?.reasoning || 'No AI analysis available'
+        reasoning: aiScore?.reason || aiScore?.reasoning || 'No AI analysis'
       };
     }).sort((a, b) => b.score - a.score);
 
