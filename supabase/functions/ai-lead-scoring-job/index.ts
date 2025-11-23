@@ -155,6 +155,14 @@ serve(async (req) => {
 
           console.log(`Fetching progress for ${chatUserIds.length} users in course ${job.course_id}`);
 
+          // Get total lesson count for this course
+          const { count: totalCourseLessons } = await supabase
+            .from('course_lessons')
+            .select('*', { count: 'exact', head: true })
+            .eq('course_id', job.course_id);
+
+          console.log(`Total lessons in course: ${totalCourseLessons}`);
+
           // Fetch lesson progress for these users
           const { data: lessonProgress, error: progressError } = await supabase
             .from('user_lesson_progress')
@@ -172,6 +180,15 @@ serve(async (req) => {
 
           console.log(`Support conversations fetched: ${supportConvs?.length || 0} records, error:`, supportError);
 
+          // Fetch activation events (support and telegram)
+          const { data: activationEvents, error: activationError } = await supabase
+            .from('user_activity_logs')
+            .select('user_id, event_type, created_at')
+            .in('user_id', chatUserIds)
+            .in('event_type', ['support_activated', 'joined_telegram']);
+
+          console.log(`Activation events fetched: ${activationEvents?.length || 0} records, error:`, activationError);
+
           // Fetch CRM notes
           const { data: crmNotes, error: crmError } = await supabase
             .from('crm_notes')
@@ -187,17 +204,21 @@ serve(async (req) => {
             
             const userLessons = lessonProgress?.filter(lp => lp.user_id === userId) || [];
             const userSupport = supportConvs?.filter(sc => sc.user_id === userId) || [];
+            const userActivations = activationEvents?.filter(ae => ae.user_id === userId) || [];
             const userCRM = crmNotes?.filter(cn => cn.user_id === userId) || [];
 
             if (idx === 0) {
-              console.log(`Sample user data - userId: ${userId}, lessons: ${userLessons.length}, support: ${userSupport.length}, crm: ${userCRM.length}`);
+              console.log(`Sample user data - userId: ${userId}, lessons: ${userLessons.length}, support: ${userSupport.length}, activations: ${userActivations.length}, crm: ${userCRM.length}`);
               if (userLessons.length > 0) {
                 console.log('Sample lesson:', JSON.stringify(userLessons[0]));
+              }
+              if (userActivations.length > 0) {
+                console.log('Sample activation:', JSON.stringify(userActivations[0]));
               }
             }
 
             const completedLessons = userLessons.filter(l => l.is_completed).length;
-            const totalLessons = userLessons.length;
+            const accessedLessons = userLessons.length;
             const totalTimeSpent = userLessons.reduce((sum, l) => sum + (l.total_time_spent || 0), 0);
             const lastActivity = userLessons.length > 0 
               ? Math.max(...userLessons.map(l => new Date(l.last_accessed_at || 0).getTime()))
@@ -205,6 +226,10 @@ serve(async (req) => {
             const hoursSinceLastActivity = lastActivity > 0 
               ? (Date.now() - lastActivity) / (1000 * 60 * 60)
               : 999;
+
+            // Check for support and telegram activation
+            const hasSupportActivation = userActivations.some(ae => ae.event_type === 'support_activated');
+            const hasTelegramActivation = userActivations.some(ae => ae.event_type === 'joined_telegram');
 
             return {
               enrollment_id: enrollment.id,
@@ -215,12 +240,15 @@ serve(async (req) => {
               course_name: enrollment.courses.title,
               chat_user_id: userId,
               metrics: {
-                total_lessons_enrolled: totalLessons,
+                total_lessons_in_course: totalCourseLessons || 0,
+                lessons_accessed: accessedLessons,
                 completed_lessons: completedLessons,
-                completion_percentage: totalLessons > 0 ? (completedLessons / totalLessons * 100).toFixed(1) : 0,
+                completion_percentage: (totalCourseLessons && totalCourseLessons > 0) ? (completedLessons / totalCourseLessons * 100).toFixed(1) : 0,
                 total_time_minutes: Math.round(totalTimeSpent / 60),
                 hours_since_last_activity: Math.round(hoursSinceLastActivity),
                 has_support_conversation: userSupport.length > 0,
+                has_support_activation: hasSupportActivation,
+                has_telegram_activation: hasTelegramActivation,
                 crm_interactions: userCRM.length,
               }
             };
@@ -231,12 +259,15 @@ serve(async (req) => {
           // Create ultra-compact summary for AI
           const compactData = userBehaviorData.map((u, idx) => [
             idx,
-            u.metrics.total_lessons_enrolled,
+            u.metrics.total_lessons_in_course,
+            u.metrics.lessons_accessed,
             u.metrics.completed_lessons,
             Math.round(parseFloat(u.metrics.completion_percentage)),
             u.metrics.total_time_minutes,
             Math.min(u.metrics.hours_since_last_activity, 999),
             u.metrics.has_support_conversation ? 1 : 0,
+            u.metrics.has_support_activation ? 1 : 0,
+            u.metrics.has_telegram_activation ? 1 : 0,
             u.metrics.crm_interactions
           ]);
 
@@ -252,11 +283,11 @@ serve(async (req) => {
               messages: [
                 {
                   role: 'system',
-                  content: `Score leads 0-100. HOT(75-100), WARM(50-74), COLD(0-49). Score based on: completion%, time, recency, support, CRM interactions.`
+                  content: `Score leads 0-100. HOT(75-100), WARM(50-74), COLD(0-49). Score based on: completion%, time spent, recency, lessons accessed, support conversations, support activation, telegram activation, CRM interactions. Higher engagement = higher score.`
                 },
                 {
                   role: 'user',
-                  content: `Score ${compactData.length} leads. Array format: [idx,total_lessons,completed,completion%,minutes,hrs_inactive,support,crm]\n${JSON.stringify(compactData)}`
+                  content: `Score ${compactData.length} leads. Array format: [idx,total_lessons,accessed,completed,completion%,minutes,hrs_inactive,has_support_conv,support_activated,telegram_activated,crm]\n${JSON.stringify(compactData)}`
                 }
               ],
               tools: [{
