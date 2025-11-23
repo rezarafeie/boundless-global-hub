@@ -54,6 +54,7 @@ const AILeadScoring: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<AILeadScoringResult | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [progress, setProgress] = useState({ current: 0, total: 0, percentage: 0 });
 
   useEffect(() => {
     fetchCourses();
@@ -91,34 +92,68 @@ const AILeadScoring: React.FC = () => {
 
     setIsAnalyzing(true);
     setResults(null);
+    setProgress({ current: 0, total: 0, percentage: 0 });
 
     try {
       const endDate = new Date().toISOString();
       const startDate = new Date(Date.now() - parseInt(dateRange) * 24 * 60 * 60 * 1000).toISOString();
 
-      const { data, error } = await supabase.functions.invoke('ai-lead-scoring', {
-        body: {
-          courseId: selectedCourse,
-          startDate,
-          endDate
-        }
-      });
+      const batchSize = 20;
+      let offset = 0;
+      let hasMore = true;
+      let allLeads: LeadScore[] = [];
+      let totalCount = 0;
 
-      if (error) throw error;
-
-      if (data.error) {
-        toast({
-          variant: 'destructive',
-          title: 'خطا',
-          description: data.error
+      while (hasMore) {
+        const { data, error } = await supabase.functions.invoke('ai-lead-scoring', {
+          body: {
+            courseId: selectedCourse,
+            startDate,
+            endDate,
+            batchSize,
+            offset
+          }
         });
-        return;
+
+        if (error) throw error;
+
+        if (data.error) {
+          toast({
+            variant: 'destructive',
+            title: 'خطا',
+            description: data.error
+          });
+          setIsAnalyzing(false);
+          return;
+        }
+
+        allLeads = [...allLeads, ...(data.leads || [])];
+        totalCount = data.totalCount || 0;
+        hasMore = data.hasMore || false;
+        offset = data.nextOffset || offset + batchSize;
+
+        // Update progress
+        const currentProgress = {
+          current: allLeads.length,
+          total: totalCount,
+          percentage: totalCount > 0 ? Math.round((allLeads.length / totalCount) * 100) : 0
+        };
+        setProgress(currentProgress);
+
+        // Show intermediate results
+        const intermediateStats = {
+          leads: allLeads,
+          total_analyzed: allLeads.length,
+          hot_leads: allLeads.filter(l => l.status === 'HOT').length,
+          warm_leads: allLeads.filter(l => l.status === 'WARM').length,
+          cold_leads: allLeads.filter(l => l.status === 'COLD').length,
+        };
+        setResults(intermediateStats);
       }
 
-      setResults(data);
       toast({
         title: 'تحلیل کامل شد',
-        description: `${data.total_analyzed} لید تحلیل شد`
+        description: `${allLeads.length} لید تحلیل شد`
       });
     } catch (error: any) {
       console.error('Error analyzing leads:', error);
@@ -221,7 +256,7 @@ const AILeadScoring: React.FC = () => {
               <CardDescription>
                 تحلیل رفتار کاربران و رتبه‌بندی لیدها بر اساس میزان تعامل، فعالیت اخیر و پیشرفت یادگیری
                 <br />
-                <span className="text-xs text-muted-foreground">توجه: در هر تحلیل حداکثر 50 لید اخیر بررسی می‌شود</span>
+                <span className="text-xs text-muted-foreground">تمامی لیدها در دسته‌های 20 تایی تحلیل می‌شوند</span>
               </CardDescription>
             </div>
           </div>
@@ -293,6 +328,21 @@ const AILeadScoring: React.FC = () => {
               </Button>
             </div>
           </div>
+
+          {isAnalyzing && progress.total > 0 && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>در حال پردازش...</span>
+                <span>{progress.current} از {progress.total} ({progress.percentage}%)</span>
+              </div>
+              <div className="w-full bg-secondary rounded-full h-2">
+                <div 
+                  className="bg-primary h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progress.percentage}%` }}
+                />
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

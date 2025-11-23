@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { courseId, startDate, endDate } = await req.json();
+    const { courseId, startDate, endDate, batchSize = 20, offset = 0 } = await req.json();
 
     if (!courseId) {
       return new Response(
@@ -34,7 +34,14 @@ serve(async (req) => {
       dateFilter = `and(created_at.gte.${startDate},created_at.lte.${endDate})`;
     }
 
-    // Fetch enrollments for the course (limit to 50 for AI analysis)
+    // Get total count first
+    const { count: totalCount } = await supabase
+      .from('enrollments')
+      .select('*', { count: 'exact', head: true })
+      .eq('course_id', courseId)
+      .in('payment_status', ['completed', 'success']);
+
+    // Fetch enrollments batch
     const { data: enrollments, error: enrollError } = await supabase
       .from('enrollments')
       .select(`
@@ -50,7 +57,7 @@ serve(async (req) => {
       .eq('course_id', courseId)
       .in('payment_status', ['completed', 'success'])
       .order('created_at', { ascending: false })
-      .limit(50);
+      .range(offset, offset + batchSize - 1);
 
     if (enrollError) {
       console.error('Error fetching enrollments:', enrollError);
@@ -62,12 +69,17 @@ serve(async (req) => {
 
     if (!enrollments || enrollments.length === 0) {
       return new Response(
-        JSON.stringify({ leads: [], message: 'No enrollments found for this course' }),
+        JSON.stringify({ 
+          leads: [], 
+          message: 'No enrollments found for this batch',
+          totalCount: totalCount || 0,
+          hasMore: false
+        }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Processing ${enrollments.length} enrollments for AI analysis`);
+    console.log(`Processing batch: ${enrollments.length} enrollments (offset: ${offset}, total: ${totalCount})`);
 
     // Fetch user IDs from enrollments
     const chatUserIds = enrollments
@@ -150,7 +162,7 @@ serve(async (req) => {
     });
 
     // Create ultra-compact summary for AI - only numbers, no text
-    const compactData = userBehaviorData.slice(0, 50).map((u, idx) => [
+    const compactData = userBehaviorData.map((u, idx) => [
       idx, // Use index instead of ID
       u.metrics.total_lessons_enrolled,
       u.metrics.completed_lessons,
@@ -255,7 +267,7 @@ serve(async (req) => {
     console.log(`Received scores for ${scoredLeads.length} leads`);
 
     // Merge AI scores with original data using index
-    const rankedLeads = userBehaviorData.slice(0, 50).map((userData, idx) => {
+    const rankedLeads = userBehaviorData.map((userData, idx) => {
       const aiScore = scoredLeads.find(sl => sl.idx === idx || sl.enrollment_id === userData.enrollment_id);
       return {
         ...userData,
@@ -271,7 +283,10 @@ serve(async (req) => {
         total_analyzed: rankedLeads.length,
         hot_leads: rankedLeads.filter(l => l.status === 'HOT').length,
         warm_leads: rankedLeads.filter(l => l.status === 'WARM').length,
-        cold_leads: rankedLeads.filter(l => l.status === 'COLD').length
+        cold_leads: rankedLeads.filter(l => l.status === 'COLD').length,
+        totalCount: totalCount || 0,
+        hasMore: offset + batchSize < (totalCount || 0),
+        nextOffset: offset + batchSize
       }),
       { 
         status: 200, 
