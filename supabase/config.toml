@@ -58,3 +58,6 @@ verify_jwt = false
 
 [functions.track-analytics]
 verify_jwt = false
+
+[functions.ai-lead-scoring]
+verify_jwt = false
