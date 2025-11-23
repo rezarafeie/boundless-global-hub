@@ -220,6 +220,8 @@ const AILeadScoring: React.FC = () => {
               <CardTitle className="text-2xl">امتیازدهی هوشمند لیدها با AI</CardTitle>
               <CardDescription>
                 تحلیل رفتار کاربران و رتبه‌بندی لیدها بر اساس میزان تعامل، فعالیت اخیر و پیشرفت یادگیری
+                <br />
+                <span className="text-xs text-muted-foreground">توجه: در هر تحلیل حداکثر 50 لید اخیر بررسی می‌شود</span>
               </CardDescription>
             </div>
           </div>

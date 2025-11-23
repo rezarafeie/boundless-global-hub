@@ -34,7 +34,7 @@ serve(async (req) => {
       dateFilter = `and(created_at.gte.${startDate},created_at.lte.${endDate})`;
     }
 
-    // Fetch enrollments for the course
+    // Fetch enrollments for the course (limit to 50 for AI analysis)
     const { data: enrollments, error: enrollError } = await supabase
       .from('enrollments')
       .select(`
@@ -49,7 +49,8 @@ serve(async (req) => {
       `)
       .eq('course_id', courseId)
       .in('payment_status', ['completed', 'success'])
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(50);
 
     if (enrollError) {
       console.error('Error fetching enrollments:', enrollError);
@@ -144,11 +145,22 @@ serve(async (req) => {
       };
     });
 
-    // Create compact summary for AI (avoid token limit)
+    // Create ultra-compact summary for AI (avoid token limit)
+    // Send only essential numeric metrics without keys
     const compactData = userBehaviorData.map(u => ({
-      id: u.enrollment_id,
-      name: u.full_name,
-      m: u.metrics // Use single letter keys to reduce tokens
+      id: u.enrollment_id.slice(0, 8), // Shorter ID
+      n: u.full_name.slice(0, 20), // Truncate name
+      m: [
+        u.metrics.total_lessons_enrolled,
+        u.metrics.completed_lessons,
+        parseFloat(u.metrics.completion_percentage),
+        u.metrics.total_time_minutes,
+        u.metrics.hours_since_last_activity,
+        u.metrics.has_support_conversation ? 1 : 0,
+        u.metrics.crm_interactions,
+        u.metrics.test_taken ? 1 : 0,
+        u.metrics.license_activated ? 1 : 0
+      ]
     }));
 
     // Call Lovable AI to analyze and score leads
@@ -190,7 +202,7 @@ Return structured scores and reasoning for each lead.`
           },
           {
             role: 'user',
-            content: `Analyze ${compactData.length} leads. Each has: id, name, m:{total_lessons_enrolled, completed_lessons, completion_percentage, total_time_minutes, hours_since_last_activity, has_support_conversation, crm_interactions, test_taken, license_activated}.\n\nData: ${JSON.stringify(compactData)}`
+            content: `Analyze ${compactData.length} leads. Format: {id,n,m:[lessons,completed,completion%,minutes,hrs_inactive,support(0/1),crm_count,test(0/1),license(0/1)]}\n\n${JSON.stringify(compactData)}`
           }
         ],
         tools: [{
@@ -232,29 +244,18 @@ Return structured scores and reasoning for each lead.`
         errorMessage = 'سرویس AI موقتاً در دسترس نیست. لطفاً چند دقیقه دیگر مجدداً تلاش کنید.';
       } else if (aiResponse.status === 429) {
         errorMessage = 'تعداد درخواست‌ها بیش از حد مجاز است. لطفاً کمی صبر کنید.';
-      } else if (errorText.includes('context length')) {
-        errorMessage = 'حجم داده برای تحلیل بیش از حد است. لطفاً بازه زمانی کوچک‌تری انتخاب کنید.';
+      } else if (aiResponse.status === 402) {
+        errorMessage = 'اعتبار AI تمام شده است. لطفاً اعتبار بیشتری به workspace خود اضافه کنید.';
+      } else if (errorText.includes('context length') || errorText.includes('maximum context')) {
+        errorMessage = 'حجم داده برای تحلیل بیش از حد است. تعداد ثبت‌نام‌ها به 50 محدود شده است.';
       }
       
       return new Response(
         JSON.stringify({ error: errorMessage }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500
+          status: aiResponse.status
         }
-      );
-    }
-      
-      if (aiResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'AI credits exhausted. Please add more credits to your workspace.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({ error: 'AI analysis failed' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -274,7 +275,9 @@ Return structured scores and reasoning for each lead.`
 
     // Merge AI scores with original data
     const rankedLeads = userBehaviorData.map(userData => {
-      const aiScore = scoredLeads.find(sl => sl.enrollment_id === userData.enrollment_id);
+      // Match by shortened ID
+      const shortId = userData.enrollment_id.slice(0, 8);
+      const aiScore = scoredLeads.find(sl => sl.enrollment_id === shortId || sl.enrollment_id === userData.enrollment_id);
       return {
         ...userData,
         score: aiScore?.score || 0,
