@@ -33,8 +33,6 @@ interface LeadScore {
     hours_since_last_activity: number;
     has_support_conversation: boolean;
     crm_interactions: number;
-    test_taken: boolean;
-    license_activated: boolean;
   };
 }
 
@@ -185,8 +183,6 @@ const AILeadScoring: React.FC = () => {
       'تعداد درس تکمیل شده',
       'گفتگوی پشتیبانی',
       'تعامل CRM',
-      'آزمون داده شده',
-      'لایسنس فعال',
       'دلیل امتیازدهی'
     ];
 
@@ -205,8 +201,6 @@ const AILeadScoring: React.FC = () => {
       lead.metrics.completed_lessons,
       lead.metrics.has_support_conversation ? 'بله' : 'خیر',
       lead.metrics.crm_interactions,
-      lead.metrics.test_taken ? 'بله' : 'خیر',
-      lead.metrics.license_activated ? 'بله' : 'خیر',
       lead.reasoning
     ]);
 
@@ -479,12 +473,6 @@ const AILeadScoring: React.FC = () => {
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                   <Badge variant="outline">
                                     {lead.metrics.has_support_conversation ? '✓' : '✗'} پشتیبانی
-                                  </Badge>
-                                  <Badge variant="outline">
-                                    {lead.metrics.test_taken ? '✓' : '✗'} آزمون
-                                  </Badge>
-                                  <Badge variant="outline">
-                                    {lead.metrics.license_activated ? '✓' : '✗'} لایسنس
                                   </Badge>
                                   <Badge variant="outline">
                                     {lead.metrics.crm_interactions} تعامل CRM

@@ -107,19 +107,6 @@ serve(async (req) => {
       .select('user_id, type, created_at')
       .in('user_id', chatUserIds);
 
-    // Fetch test enrollments
-    const { data: testEnrollments } = await supabase
-      .from('test_enrollments')
-      .select('user_id, status')
-      .in('user_id', chatUserIds);
-
-    // Fetch course licenses (for activation/downloads)
-    const { data: licenses } = await supabase
-      .from('course_licenses')
-      .select('user_id, status, activated_at')
-      .eq('course_id', courseId)
-      .in('user_id', chatUserIds);
-
     // Build user behavior data with compact format
     const userBehaviorData = enrollments.map(enrollment => {
       const userId = enrollment.chat_user_id;
@@ -127,8 +114,6 @@ serve(async (req) => {
       const userLessons = lessonProgress?.filter(lp => lp.user_id === userId) || [];
       const userSupport = supportConvs?.filter(sc => sc.user_id === userId) || [];
       const userCRM = crmNotes?.filter(cn => cn.user_id === userId) || [];
-      const userTests = testEnrollments?.filter(te => te.user_id === userId) || [];
-      const userLicense = licenses?.find(l => l.user_id === userId);
 
       const completedLessons = userLessons.filter(l => l.is_completed).length;
       const totalLessons = userLessons.length;
@@ -155,8 +140,6 @@ serve(async (req) => {
           hours_since_last_activity: Math.round(hoursSinceLastActivity),
           has_support_conversation: userSupport.length > 0,
           crm_interactions: userCRM.length,
-          test_taken: userTests.length > 0,
-          license_activated: userLicense?.status === 'active',
         }
       };
     });
@@ -170,9 +153,7 @@ serve(async (req) => {
       u.metrics.total_time_minutes,
       Math.min(u.metrics.hours_since_last_activity, 999),
       u.metrics.has_support_conversation ? 1 : 0,
-      u.metrics.crm_interactions,
-      u.metrics.test_taken ? 1 : 0,
-      u.metrics.license_activated ? 1 : 0
+      u.metrics.crm_interactions
     ]);
 
     console.log(`Prepared compact data for ${compactData.length} leads`);
@@ -189,11 +170,11 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `Score leads 0-100. HOT(75-100), WARM(50-74), COLD(0-49). Score based on: completion%, time, recency, support, CRM, test, license.`
+            content: `Score leads 0-100. HOT(75-100), WARM(50-74), COLD(0-49). Score based on: completion%, time, recency, support, CRM interactions.`
           },
           {
             role: 'user',
-            content: `Score ${compactData.length} leads. Array format: [idx,total_lessons,completed,completion%,minutes,hrs_inactive,support,crm,test,license]\n${JSON.stringify(compactData)}`
+            content: `Score ${compactData.length} leads. Array format: [idx,total_lessons,completed,completion%,minutes,hrs_inactive,support,crm]\n${JSON.stringify(compactData)}`
           }
         ],
         tools: [{
