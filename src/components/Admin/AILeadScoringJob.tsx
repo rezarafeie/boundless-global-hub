@@ -402,7 +402,7 @@ const AILeadScoringJob: React.FC = () => {
       </Card>
 
       {/* Results */}
-      {isCompleted && currentJob?.results && (
+      {currentJob?.results?.leads?.length > 0 && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
@@ -410,7 +410,10 @@ const AILeadScoringJob: React.FC = () => {
                 <div className="text-center">
                   <Trophy className="w-8 h-8 mx-auto mb-2 text-primary" />
                   <p className="text-2xl font-bold">{currentJob.results.total_analyzed}</p>
-                  <p className="text-sm text-muted-foreground">کل لیدهای تحلیل شده</p>
+                  <p className="text-sm text-muted-foreground">
+                    کل لیدهای تحلیل شده
+                    {isRunning && <span className="block text-xs text-primary mt-1">در حال به‌روزرسانی...</span>}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -449,7 +452,15 @@ const AILeadScoringJob: React.FC = () => {
           {/* Results Table */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>نتایج تحلیل</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle>نتایج تحلیل</CardTitle>
+                {isRunning && (
+                  <Badge variant="outline" className="animate-pulse">
+                    <Loader2 className="w-3 h-3 ml-1 animate-spin" />
+                    در حال به‌روزرسانی...
+                  </Badge>
+                )}
+              </div>
               <Button onClick={exportToCSV} variant="outline" size="sm">
                 <Download className="w-4 h-4 ml-2" />
                 خروجی CSV
