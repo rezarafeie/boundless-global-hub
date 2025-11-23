@@ -174,15 +174,15 @@ const AdminDashboard = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">داشبورد مدیریت</h1>
-          <RefreshCw className="w-6 h-6 animate-spin text-blue-500" />
+          <RefreshCw className="w-6 h-6 animate-spin text-primary" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map(i => (
             <Card key={i}>
               <CardContent className="p-6">
                 <div className="animate-pulse">
-                  <div className="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-8 bg-slate-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                  <div className="h-8 bg-muted rounded w-1/2"></div>
                 </div>
               </CardContent>
             </Card>
@@ -204,9 +204,9 @@ const AdminDashboard = () => {
         </div>
         <Card>
           <CardContent className="p-8 text-center">
-            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <p className="text-red-600 mb-2">خطا در بارگذاری داده‌ها</p>
-            <p className="text-sm text-slate-500">{error}</p>
+            <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+            <p className="text-destructive mb-2">خطا در بارگذاری داده‌ها</p>
+            <p className="text-sm text-muted-foreground">{error}</p>
           </CardContent>
         </Card>
       </div>
@@ -230,10 +230,10 @@ const AdminDashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-600">کل کاربران</p>
+                <p className="text-sm font-medium text-muted-foreground">کل کاربران</p>
                 <p className="text-2xl font-bold">{stats.totalUsers}</p>
               </div>
-              <Users className="w-8 h-8 text-blue-500" />
+              <Users className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -242,10 +242,10 @@ const AdminDashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-600">کل پیام‌ها</p>
+                <p className="text-sm font-medium text-muted-foreground">کل پیام‌ها</p>
                 <p className="text-2xl font-bold">{stats.totalMessages}</p>
               </div>
-              <MessageSquare className="w-8 h-8 text-green-500" />
+              <MessageSquare className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -254,10 +254,10 @@ const AdminDashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-600">پیام‌های امروز</p>
+                <p className="text-sm font-medium text-muted-foreground">پیام‌های امروز</p>
                 <p className="text-2xl font-bold">{stats.todayMessages}</p>
               </div>
-              <TrendingUp className="w-8 h-8 text-orange-500" />
+              <TrendingUp className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -266,10 +266,10 @@ const AdminDashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-600">کاربران فعال</p>
+                <p className="text-sm font-medium text-muted-foreground">کاربران فعال</p>
                 <p className="text-2xl font-bold">{stats.activeUsers}</p>
               </div>
-              <Activity className="w-8 h-8 text-purple-500" />
+              <Activity className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -278,10 +278,10 @@ const AdminDashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-600">کل ثبت‌نام‌ها</p>
+                <p className="text-sm font-medium text-muted-foreground">کل ثبت‌نام‌ها</p>
                 <p className="text-2xl font-bold">{stats.totalEnrollments}</p>
               </div>
-              <Users className="w-8 h-8 text-red-500" />
+              <Users className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -299,10 +299,10 @@ const AdminDashboard = () => {
           <CardContent>
             <div className="space-y-3">
               {stats.recentUsers.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                <div key={user.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div>
                     <p className="font-medium">{user.name}</p>
-                    <p className="text-xs text-slate-500">{user.phone}</p>
+                    <p className="text-xs text-muted-foreground">{user.phone}</p>
                   </div>
                   <div className="text-left">
                     <div className="flex items-center gap-2 mb-1">
@@ -310,7 +310,7 @@ const AdminDashboard = () => {
                       {user.bedoun_marz && <Badge variant="secondary" className="text-xs">بدون مرز</Badge>}
                       {user.is_messenger_admin && <Badge variant="destructive" className="text-xs">مدیر</Badge>}
                     </div>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-muted-foreground">
                       <Clock className="w-3 h-3 inline mr-1" />
                       {getTimeAgo(user.created_at)}
                     </p>
@@ -332,14 +332,14 @@ const AdminDashboard = () => {
           <CardContent>
             <div className="space-y-3">
               {stats.recentMessages.map((message) => (
-                <div key={message.id} className="p-3 bg-slate-50 rounded-lg">
+                <div key={message.id} className="p-3 bg-muted rounded-lg">
                   <div className="flex items-start justify-between mb-2">
                     <p className="font-medium text-sm">{message.sender?.name || 'نامشخص'}</p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-muted-foreground">
                       {getTimeAgo(message.created_at)}
                     </p>
                   </div>
-                  <p className="text-sm text-slate-600 line-clamp-2">
+                  <p className="text-sm text-muted-foreground line-clamp-2">
                     {message.message}
                   </p>
                   <div className="flex items-center gap-2 mt-2">
