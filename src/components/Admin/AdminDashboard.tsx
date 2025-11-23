@@ -311,32 +311,32 @@ const AdminDashboard: React.FC = () => {
       title: 'کل درآمد',
       value: formatPrice(stats.totalRevenue),
       icon: DollarSign,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
       loading: loading
     },
     {
       title: 'کل ثبت‌نام‌ها',
       value: stats.totalEnrollments.toLocaleString('fa-IR'),
       icon: Users,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
       loading: loading
     },
     {
       title: 'دوره‌های فعال',
       value: stats.activeCourses.toLocaleString('fa-IR'),
       icon: BookOpen,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
       loading: loading
     },
     {
       title: 'کاربران تایید شده',
       value: stats.approvedUsers.toLocaleString('fa-IR'),
       icon: UserCheck,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
       loading: loading
     }
   ];
@@ -346,8 +346,8 @@ const AdminDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">خانه</h1>
-          <p className="text-gray-600 mt-1">نمای کلی آکادمی رفیعی</p>
+          <h1 className="text-3xl font-bold">خانه</h1>
+          <p className="text-muted-foreground mt-1">نمای کلی آکادمی رفیعی</p>
         </div>
         <Button 
           variant="outline" 
@@ -363,15 +363,15 @@ const AdminDashboard: React.FC = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {dashboardCards.map((card, index) => (
-          <Card key={index} className="border-0 shadow-sm bg-card">
+          <Card key={index}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600 mb-2">{card.title}</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">{card.title}</p>
                   {card.loading ? (
-                    <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-8 bg-muted rounded animate-pulse"></div>
                   ) : (
-                    <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+                    <p className="text-2xl font-bold">{card.value}</p>
                   )}
                 </div>
                 <div className={`w-12 h-12 rounded-lg ${card.bgColor} flex items-center justify-center`}>
@@ -385,10 +385,10 @@ const AdminDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Enrollments */}
-        <Card className="border-0 shadow-sm">
+        <Card>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <Clock className="h-5 w-5 text-blue-600" />
+              <Clock className="h-5 w-5 text-primary" />
               ثبت‌نام‌های اخیر
             </CardTitle>
           </CardHeader>
@@ -396,23 +396,23 @@ const AdminDashboard: React.FC = () => {
             {loading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse"></div>
+                  <div key={i} className="h-16 bg-muted rounded-lg animate-pulse"></div>
                 ))}
               </div>
             ) : stats.recentEnrollments.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 هنوز ثبت‌نامی وجود ندارد
               </div>
             ) : (
               <div className="space-y-3">
                 {stats.recentEnrollments.map((enrollment) => (
-                  <div key={enrollment.id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                  <div key={enrollment.id} className="flex items-start gap-3 p-4 bg-muted rounded-lg hover:bg-muted/80 transition-colors">
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <button
                           onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                          className="font-medium text-blue-600 hover:text-blue-800 hover:underline truncate"
+                          className="font-medium text-primary hover:underline truncate"
                         >
                           {enrollment.full_name}
                         </button>
@@ -420,17 +420,17 @@ const AdminDashboard: React.FC = () => {
                           size="sm"
                           variant="ghost"
                           onClick={() => handleViewEnrollDetails(enrollment.id)}
-                          className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          className="h-6 w-6 p-0 hover:bg-accent"
                           title="مشاهده جزئیات ثبت‌نام"
                         >
                           <Eye className="h-3 w-3" />
                         </Button>
                       </div>
-                      <p className="text-sm text-gray-600 truncate">{enrollment.courses?.title}</p>
+                      <p className="text-sm text-muted-foreground truncate">{enrollment.courses?.title}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-gray-500">{formatDateTime(enrollment.created_at)}</span>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs font-medium text-green-600">{formatPrice(enrollment.payment_amount)}</span>
+                        <span className="text-xs text-muted-foreground">{formatDateTime(enrollment.created_at)}</span>
+                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-xs font-medium text-primary">{formatPrice(enrollment.payment_amount)}</span>
                       </div>
                     </div>
                   </div>
@@ -441,10 +441,10 @@ const AdminDashboard: React.FC = () => {
         </Card>
 
         {/* Popular Courses */}
-        <Card className="border-0 shadow-sm">
+        <Card>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <TrendingUp className="h-5 w-5 text-purple-600" />
+              <TrendingUp className="h-5 w-5 text-primary" />
               دوره‌های محبوب
             </CardTitle>
           </CardHeader>
@@ -452,11 +452,11 @@ const AdminDashboard: React.FC = () => {
             {loading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse"></div>
+                  <div key={i} className="h-16 bg-muted rounded-lg animate-pulse"></div>
                 ))}
               </div>
             ) : stats.popularCourses.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 هنوز دوره‌ای وجود ندارد
               </div>
             ) : (
@@ -465,14 +465,14 @@ const AdminDashboard: React.FC = () => {
                   const enrollmentCount = course.enrollments?.length || 0;
                   
                   return (
-                    <div key={course.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div key={course.id} className="flex items-center justify-between p-4 bg-muted rounded-lg hover:bg-muted/80 transition-colors">
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-900 truncate">{course.title}</h4>
-                        <p className="text-sm text-gray-500">دوره فعال</p>
+                        <h4 className="font-medium truncate">{course.title}</h4>
+                        <p className="text-sm text-muted-foreground">دوره فعال</p>
                       </div>
                       <div className="text-left">
-                        <p className="font-medium text-gray-900">{enrollmentCount} ثبت‌نام</p>
-                        <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                        <p className="font-medium">{enrollmentCount} ثبت‌نام</p>
+                        <Badge variant="secondary">
                           #{index + 1}
                         </Badge>
                       </div>
@@ -487,12 +487,12 @@ const AdminDashboard: React.FC = () => {
 
       {/* Pending Payments Section */}
       {stats.pendingPayments > 0 && (
-        <Card className="border-0 shadow-sm">
+        <Card>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              <AlertTriangle className="h-5 w-5 text-primary" />
               پرداخت‌های در انتظار تایید
-              <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+              <Badge variant="secondary">
                 {stats.pendingPayments}
               </Badge>
             </CardTitle>
@@ -501,11 +501,11 @@ const AdminDashboard: React.FC = () => {
             {loading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse"></div>
+                  <div key={i} className="h-16 bg-muted rounded-lg animate-pulse"></div>
                 ))}
               </div>
             ) : stats.pendingEnrollmentsList.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 هیچ پرداخت در انتظار تاییدی وجود ندارد
               </div>
             ) : (
@@ -513,23 +513,23 @@ const AdminDashboard: React.FC = () => {
                 {/* Mobile Layout - Card-based */}
                 <div className="block md:hidden space-y-3">
                   {stats.pendingEnrollmentsList.map((enrollment) => (
-                    <div key={enrollment.id} className="p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+                    <div key={enrollment.id} className="p-4 bg-muted rounded-lg hover:bg-muted/80 transition-colors">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
                           <button
                             onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                            className="font-medium text-blue-600 hover:text-blue-800 hover:underline truncate block w-full text-right"
+                            className="font-medium text-primary hover:underline truncate block w-full text-right"
                           >
                             {enrollment.full_name}
                           </button>
-                          <p className="text-sm text-gray-600 truncate">{enrollment.courses?.title}</p>
+                          <p className="text-sm text-muted-foreground truncate">{enrollment.courses?.title}</p>
                         </div>
                         <div className="flex gap-1 flex-shrink-0 ml-2">
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleViewEnrollmentDetails(enrollment.id)}
-                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            className="h-8 w-8 p-0 hover:bg-accent"
                             title="جزئیات ثبت‌نام"
                           >
                             <ExternalLink className="h-4 w-4" />
@@ -538,7 +538,7 @@ const AdminDashboard: React.FC = () => {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleApprovePayment(enrollment.id)}
-                            className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                            className="h-8 w-8 p-0 text-primary hover:bg-accent"
                             title="تایید پرداخت"
                           >
                             <CheckCircle className="h-4 w-4" />
@@ -547,7 +547,7 @@ const AdminDashboard: React.FC = () => {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleRejectPayment(enrollment.id)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
                             title="رد پرداخت"
                           >
                             <XCircle className="h-4 w-4" />
@@ -555,8 +555,8 @@ const AdminDashboard: React.FC = () => {
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
-                        <span className="font-medium text-green-600">{formatPrice(enrollment.payment_amount)}</span>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                        <span className="font-medium text-primary">{formatPrice(enrollment.payment_amount)}</span>
                         <span>•</span>
                         <span>{formatDateTime(enrollment.created_at)}</span>
                         {enrollment.receipt_url && (
@@ -565,7 +565,7 @@ const AdminDashboard: React.FC = () => {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-auto p-0 text-xs text-blue-600 hover:text-blue-700"
+                              className="h-auto p-0 text-xs hover:underline"
                               onClick={() => window.open(enrollment.receipt_url, '_blank')}
                             >
                               <ExternalLink className="h-3 w-3 mr-1" />
@@ -581,28 +581,28 @@ const AdminDashboard: React.FC = () => {
                 {/* Desktop Layout - Original cards */}
                 <div className="hidden md:block space-y-3">
                   {stats.pendingEnrollmentsList.map((enrollment) => (
-                    <div key={enrollment.id} className="flex items-start gap-3 p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
+                    <div key={enrollment.id} className="flex items-start gap-3 p-4 bg-muted rounded-lg hover:bg-muted/80 transition-colors">
+                      <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                       
                       <div className="flex-1 min-w-0">
                         <button
                           onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                          className="font-medium text-blue-600 hover:text-blue-800 hover:underline truncate block w-full text-right"
+                          className="font-medium text-primary hover:underline truncate block w-full text-right"
                         >
                           {enrollment.full_name}
                         </button>
-                        <p className="text-sm text-gray-600 truncate">{enrollment.courses?.title}</p>
+                        <p className="text-sm text-muted-foreground truncate">{enrollment.courses?.title}</p>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          <span className="text-xs font-medium text-green-600">{formatPrice(enrollment.payment_amount)}</span>
-                          <span className="text-xs text-gray-400">•</span>
-                          <span className="text-xs text-gray-500">{formatDateTime(enrollment.created_at)}</span>
+                          <span className="text-xs font-medium text-primary">{formatPrice(enrollment.payment_amount)}</span>
+                          <span className="text-xs text-muted-foreground">•</span>
+                          <span className="text-xs text-muted-foreground">{formatDateTime(enrollment.created_at)}</span>
                           {enrollment.receipt_url && (
                             <>
-                              <span className="text-xs text-gray-400">•</span>
+                              <span className="text-xs text-muted-foreground">•</span>
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-auto p-0 text-xs text-blue-600 hover:text-blue-700"
+                                className="h-auto p-0 text-xs hover:underline"
                                 onClick={() => window.open(enrollment.receipt_url, '_blank')}
                               >
                                 <ExternalLink className="h-3 w-3 mr-1" />
@@ -618,7 +618,7 @@ const AdminDashboard: React.FC = () => {
                           size="sm"
                           variant="ghost"
                           onClick={() => handleViewEnrollmentDetails(enrollment.id)}
-                          className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          className="h-8 w-8 p-0 hover:bg-accent"
                           title="جزئیات ثبت‌نام"
                         >
                           <ExternalLink className="h-4 w-4" />
@@ -627,7 +627,7 @@ const AdminDashboard: React.FC = () => {
                           size="sm"
                           variant="ghost"
                           onClick={() => handleApprovePayment(enrollment.id)}
-                          className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                          className="h-8 w-8 p-0 text-primary hover:bg-accent"
                           title="تایید پرداخت"
                         >
                           <CheckCircle className="h-4 w-4" />
@@ -636,7 +636,7 @@ const AdminDashboard: React.FC = () => {
                           size="sm"
                           variant="ghost"
                           onClick={() => handleRejectPayment(enrollment.id)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
                           title="رد پرداخت"
                         >
                           <XCircle className="h-4 w-4" />
@@ -648,10 +648,10 @@ const AdminDashboard: React.FC = () => {
                 
                 {stats.pendingPayments > 5 && (
                   <div className="text-center pt-4">
-                    <p className="text-sm text-gray-500 mb-2">
+                    <p className="text-sm text-muted-foreground mb-2">
                       {stats.pendingPayments - 5} پرداخت دیگر در انتظار تایید... 
                     </p>
-                    <Button variant="ghost" size="sm" className="text-orange-600 hover:text-orange-700">
+                    <Button variant="ghost" size="sm">
                       <ArrowUpRight className="h-4 w-4 mr-1" />
                       مشاهده همه
                     </Button>
