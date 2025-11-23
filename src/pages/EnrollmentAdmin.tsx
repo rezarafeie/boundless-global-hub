@@ -22,7 +22,6 @@ const AnalyticsReports = React.lazy(() => import('@/components/Admin/AnalyticsRe
 const AdminSettingsPanel = React.lazy(() => import('@/components/Admin/AdminSettingsPanel'));
 const EnrollmentCRM = React.lazy(() => import('@/components/Admin/EnrollmentCRM').then(module => ({ default: module.EnrollmentCRM })));
 const LeadManagement = React.lazy(() => import('@/components/Admin/LeadManagement'));
-const AILeadScoring = React.lazy(() => import('@/components/Admin/AILeadScoring'));
 const SalesDashboard = React.lazy(() => import('@/components/Admin/SalesDashboard'));
 const TestManagement = React.lazy(() => import('@/components/Admin/TestManagement'));
 const WebinarManagement = React.lazy(() => import('@/components/Admin/WebinarManagement'));
@@ -82,7 +81,7 @@ const EnrollmentAdmin: React.FC = () => {
   const navigate = useNavigate();
   const [checkingRole, setCheckingRole] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'sales' | 'leads' | 'ai-scoring' | 'users' | 'analytics' | 'settings' | 'crm' | 'recruitment' | 'internships' | 'tests' | 'webinars'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'sales' | 'leads' | 'users' | 'analytics' | 'settings' | 'crm' | 'recruitment' | 'internships' | 'tests' | 'webinars'>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
@@ -279,14 +278,6 @@ const EnrollmentAdmin: React.FC = () => {
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
               <LeadManagement />
-            </Suspense>
-          </ErrorBoundary>
-        );
-      case 'ai-scoring':
-        return (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingSpinner />}>
-              <AILeadScoring />
             </Suspense>
           </ErrorBoundary>
         );

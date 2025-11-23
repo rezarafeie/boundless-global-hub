@@ -43,7 +43,6 @@ const menuItems = [
   { id: 'internships', label: 'کارآموزی‌ها', icon: Users },
   { id: 'sales', label: 'داشبورد فروش', icon: BarChart3 },
   { id: 'leads', label: 'مدیریت لیدها', icon: UserPlus },
-  { id: 'ai-scoring', label: '📊 امتیازدهی AI', icon: Brain },
   { id: 'users', label: 'کاربران', icon: Users },
   { id: 'analytics', label: 'آنالیتیکس', icon: TrendingUp },
   { id: 'crm', label: 'CRM', icon: MessageSquare },
@@ -59,12 +58,12 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
 }) => {
   // Filter menu items based on user role
   const getFilteredMenuItems = () => {
-    // Sales manager gets sales, leads, ai-scoring, and crm tabs
+    // Sales manager gets sales, leads, and crm tabs
     if (userRole === 'sales_manager' && !isMessengerAdmin) {
-      return menuItems.filter(item => ['sales', 'leads', 'ai-scoring', 'crm'].includes(item.id));
+      return menuItems.filter(item => ['sales', 'leads', 'crm'].includes(item.id));
     }
     
-    // Sales agent gets only leads and crm tabs (no AI scoring)
+    // Sales agent gets only leads and crm tabs
     if (isSalesAgent && !isMessengerAdmin && userRole !== 'sales_manager') {
       return menuItems.filter(item => ['leads', 'crm'].includes(item.id));
     }
