@@ -458,7 +458,7 @@ const EnrollAdmin: React.FC = () => {
       
       <div className="flex-1 p-8">
         {/* Debug indicator */}
-        <div className="fixed top-4 right-4 bg-red-500 text-white p-2 rounded z-50 text-sm">
+        <div className="fixed top-4 right-4 bg-destructive text-destructive-foreground p-2 rounded z-50 text-sm">
           View: {activeView}
         </div>
         
@@ -486,7 +486,7 @@ const EnrollAdmin: React.FC = () => {
             </CardHeader>
             <CardContent>
               {isFilterOpen && (
-                <Card className="bg-gray-50 dark:bg-gray-900 mb-6">
+                <Card className="bg-muted mb-6">
                   <CardHeader>
                     <CardTitle>فیلترهای جستجو</CardTitle>
                   </CardHeader>
