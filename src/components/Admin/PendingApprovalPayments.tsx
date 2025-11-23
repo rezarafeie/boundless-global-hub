@@ -226,7 +226,7 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
       <Card>
         <CardContent className="p-6">
           <div className="text-center py-8">
-            <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto"></div>
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
             <p className="text-muted-foreground mt-2">در حال بارگذاری...</p>
           </div>
         </CardContent>
@@ -239,10 +239,10 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-orange-500" />
+            <Clock className="h-5 w-5 text-primary" />
             پرداخت‌های در انتظار تایید
             {pendingEnrollments.length > 0 && (
-              <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+              <Badge variant="secondary">
                 {pendingEnrollments.length}
               </Badge>
             )}
@@ -251,8 +251,8 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
         <CardContent>
           {pendingEnrollments.length === 0 ? (
             <div className="text-center py-8">
-              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-              <h3 className="font-semibold text-green-700 mb-2">عالی! همه پرداخت‌ها بررسی شده</h3>
+              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-primary" />
+              <h3 className="font-semibold mb-2">عالی! همه پرداخت‌ها بررسی شده</h3>
               <p className="text-muted-foreground">در حال حاضر هیچ پرداخت دستی در انتظار تایید نیست</p>
               <p className="text-sm text-muted-foreground mt-2">
                 پرداخت‌های دستی جدید که نیاز به تایید دارند در اینجا نمایش داده خواهند شد
@@ -282,7 +282,7 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
                               <User className="h-4 w-4" />
                               <button
                                 onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                                className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                                className="font-medium text-primary hover:underline"
                               >
                                 {enrollment.full_name}
                               </button>
@@ -329,7 +329,6 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
                               size="sm"
                               variant="outline"
                               onClick={() => handleViewEnrollDetails(enrollment.id)}
-                              className="text-blue-600 hover:text-blue-700"
                               title="مشاهده ثبت‌نام"
                             >
                               <Eye className="h-4 w-4" />
@@ -338,7 +337,6 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
                               size="sm"
                               variant="outline"
                               onClick={() => handleViewEnrollmentDetails(enrollment.id)}
-                              className="text-purple-600 hover:text-purple-700"
                               title="جزئیات ثبت‌نام"
                             >
                               <ExternalLink className="h-4 w-4" />
@@ -347,7 +345,7 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
                               size="sm"
                               variant="outline"
                               onClick={() => handleApprove(enrollment.id)}
-                              className="text-green-600 hover:text-green-700"
+                              className="text-primary hover:bg-primary/10"
                               title="تایید پرداخت"
                             >
                               <CheckCircle className="h-4 w-4" />
@@ -356,7 +354,7 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
                               size="sm"
                               variant="outline"
                               onClick={() => handleReject(enrollment.id)}
-                              className="text-red-600 hover:text-red-700"
+                              className="text-destructive hover:bg-destructive/10"
                               title="رد پرداخت"
                             >
                               <XCircle className="h-4 w-4" />
@@ -372,33 +370,33 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
               {/* Mobile Cards */}
               <div className="md:hidden space-y-4">
                 {pendingEnrollments.map((enrollment) => (
-                  <Card key={enrollment.id} className="border border-orange-200">
-                    <CardContent className="p-4 space-y-3">
-                      {/* User Info */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                            <button
-                              onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                              className="font-medium text-blue-600 hover:text-blue-800 hover:underline truncate"
-                            >
-                              {enrollment.full_name}
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                            <Mail className="h-3 w-3 flex-shrink-0" />
-                            <span className="truncate">{enrollment.email}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Phone className="h-3 w-3 flex-shrink-0" />
-                            <span>{enrollment.phone}</span>
-                          </div>
+                <Card key={enrollment.id} className="border border-border">
+                  <CardContent className="p-4 space-y-3">
+                    {/* User Info */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <button
+                            onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
+                            className="font-medium text-primary hover:underline truncate"
+                          >
+                            {enrollment.full_name}
+                          </button>
                         </div>
-                        <Badge variant="secondary" className="bg-orange-100 text-orange-700 flex-shrink-0">
-                          در انتظار
-                        </Badge>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                          <Mail className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{enrollment.email}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Phone className="h-3 w-3 flex-shrink-0" />
+                          <span>{enrollment.phone}</span>
+                        </div>
                       </div>
+                      <Badge variant="secondary" className="flex-shrink-0">
+                        در انتظار
+                      </Badge>
+                    </div>
 
                       {/* Course and Amount */}
                       <div className="border-t pt-3">
@@ -421,7 +419,7 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-auto p-0 text-xs text-blue-600 hover:text-blue-700"
+                              className="h-auto p-0 text-xs hover:underline"
                               onClick={() => window.open(enrollment.receipt_url!, '_blank')}
                             >
                               <ExternalLink className="h-3 w-3 mr-1" />
@@ -438,7 +436,7 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
                             size="sm"
                             variant="outline"
                             onClick={() => handleViewEnrollDetails(enrollment.id)}
-                            className="text-blue-600 hover:text-blue-700 flex-1 min-w-0"
+                            className="flex-1 min-w-0"
                           >
                             <Eye className="h-4 w-4 mr-1" />
                             <span className="truncate">مشاهده</span>
@@ -447,7 +445,7 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
                             size="sm"
                             variant="outline"
                             onClick={() => handleViewEnrollmentDetails(enrollment.id)}
-                            className="text-purple-600 hover:text-purple-700 flex-1 min-w-0"
+                            className="flex-1 min-w-0"
                           >
                             <ExternalLink className="h-4 w-4 mr-1" />
                             <span className="truncate">جزئیات</span>
@@ -457,7 +455,8 @@ const PendingApprovalPayments: React.FC<PendingApprovalPaymentsProps> = ({ onRef
                           <Button
                             size="sm"
                             onClick={() => handleApprove(enrollment.id)}
-                            className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                            className="flex-1"
+                            variant="default"
                           >
                             <CheckCircle className="h-4 w-4 mr-1" />
                             تایید

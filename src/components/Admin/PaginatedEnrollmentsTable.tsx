@@ -198,12 +198,12 @@ const PaginatedEnrollmentsTable: React.FC = () => {
     switch (enrollment.payment_status) {
       case 'completed':
       case 'success':
-        return <Badge className="bg-green-100 text-green-800">تکمیل شده</Badge>;
+        return <Badge variant="default">تکمیل شده</Badge>;
       case 'failed':
       case 'cancelled_payment':
         return <Badge variant="destructive">ناموفق</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">در انتظار</Badge>;
+        return <Badge variant="secondary">در انتظار</Badge>;
       default:
         return <Badge variant="secondary">{enrollment.payment_status}</Badge>;
     }
@@ -216,7 +216,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
       case 'zarinpal':
         return <Badge variant="outline">زرین‌پال</Badge>;
       case 'manual':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700">دستی</Badge>;
+        return <Badge variant="outline">دستی</Badge>;
       default:
         return <Badge variant="outline">{method}</Badge>;
     }
@@ -227,7 +227,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
       <Card>
         <CardContent className="p-6">
           <div className="text-center py-8">
-            <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto"></div>
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
             <p className="text-muted-foreground mt-2">در حال بارگذاری...</p>
           </div>
         </CardContent>
@@ -284,7 +284,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                 </div>
                 {searchLoading && (
                   <div className="flex justify-center py-1">
-                    <div className="animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"></div>
+                    <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
                   </div>
                 )}
               </div>
@@ -329,7 +329,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                 </div>
                 {searchLoading && (
                   <div className="flex justify-center py-1">
-                    <div className="animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"></div>
+                    <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
                   </div>
                 )}
               </div>
@@ -441,7 +441,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                           <TableCell>
                             <button
                               onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                              className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-right"
+                              className="font-medium text-primary hover:underline text-right"
                             >
                               {enrollment.full_name}
                             </button>
@@ -527,7 +527,7 @@ const PaginatedEnrollmentsTable: React.FC = () => {
                           <div className="flex items-center justify-between">
                             <button
                               onClick={() => handleViewUserDetails(enrollment.chat_user_id)}
-                              className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
+                              className="font-medium text-primary hover:underline text-left"
                             >
                               {enrollment.full_name}
                             </button>
