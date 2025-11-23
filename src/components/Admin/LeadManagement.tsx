@@ -47,6 +47,7 @@ import DealsPipeline from './DealsPipeline';
 import SalesAgentDealsPipeline from './SalesAgentDealsPipeline';
 import { FollowUpsManagement } from './FollowUpsManagement';
 import AILeadScoring from './AILeadScoring';
+import AILeadScoringJob from './AILeadScoringJob';
 
 interface Lead {
   enrollment_id: string;
@@ -1887,7 +1888,7 @@ const LeadManagement: React.FC = () => {
             ) : activeTab === 'followups' ? (
               <FollowUpsManagement />
             ) : activeTab === 'ai-scoring' ? (
-              <AILeadScoring />
+              <AILeadScoringJob />
             ) : activeTab === 'pipeline' ? (
               // Show appropriate pipeline component based on user role
               (isAdmin || isSalesManager) ? <DealsPipeline /> : <SalesAgentDealsPipeline />
