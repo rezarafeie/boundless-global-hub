@@ -1751,6 +1751,69 @@ export type Database = {
           },
         ]
       }
+      lead_analysis_jobs: {
+        Row: {
+          completed_at: string | null
+          course_id: string
+          created_at: string
+          created_by: number | null
+          end_date: string | null
+          error_message: string | null
+          id: string
+          progress_current: number
+          progress_total: number
+          results: Json | null
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          course_id: string
+          created_at?: string
+          created_by?: number | null
+          end_date?: string | null
+          error_message?: string | null
+          id?: string
+          progress_current?: number
+          progress_total?: number
+          results?: Json | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          course_id?: string
+          created_at?: string
+          created_by?: number | null
+          end_date?: string | null
+          error_message?: string | null
+          id?: string
+          progress_current?: number
+          progress_total?: number
+          results?: Json | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_analysis_jobs_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_analysis_jobs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_assignments: {
         Row: {
           assigned_at: string | null

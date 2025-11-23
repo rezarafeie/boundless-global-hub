@@ -61,3 +61,6 @@ verify_jwt = false
 
 [functions.ai-lead-scoring]
 verify_jwt = false
+
+[functions.ai-lead-scoring-job]
+verify_jwt = false
