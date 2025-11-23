@@ -76,8 +76,8 @@ const BorderlessHubAdmin = () => {
   // Show loading while checking authentication or if not authenticated
   if (isLoading || checkingRole) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600">
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary">
         </div>
       </div>
     );
@@ -86,17 +86,17 @@ const BorderlessHubAdmin = () => {
   // Show access denied if not authenticated or user doesn't have required role
   if (!isAuthenticated || !user || !hasAccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
           <div className="mb-4">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-red-600" />
+            <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-8 h-8 text-destructive" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-bold text-foreground mb-2">
             دسترسی محدود
           </h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-muted-foreground mb-6">
             شما دسترسی لازم برای مشاهده این صفحه را ندارید. این بخش فقط برای مدیران سیستم قابل دسترس است.
           </p>
           <Button onClick={() => navigate('/')} variant="outline">
@@ -158,19 +158,19 @@ const BorderlessHubAdmin = () => {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 pt-20">
+      <div className="min-h-screen bg-background pt-20">
         {/* Clean Header */}
-        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-sm border-b">
+        <div className="bg-card/80 backdrop-blur-sm shadow-sm border-b border-border">
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <Settings className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Settings className="w-6 h-6 text-primary" />
               </div>
               <div className="flex-1">
-                <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
+                <h1 className="text-2xl font-bold text-foreground">
                   مرکز کنترل بدون مرز
                 </h1>
-                <p className="text-slate-600 dark:text-slate-300 text-sm">
+                <p className="text-muted-foreground text-sm">
                   پنل مدیریت کامل سیستم Hub و Messenger
                 </p>
               </div>
@@ -236,10 +236,10 @@ const BorderlessHubAdmin = () => {
             <Button
               onClick={handleSupportLogin}
               variant="outline"
-              className="flex items-center gap-2 bg-green-50 hover:bg-green-100 dark:bg-green-950 dark:hover:bg-green-900 border-green-200 dark:border-green-800"
+              className="flex items-center gap-2 border-primary/50 hover:bg-primary/10"
             >
-              <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
-              <span className="text-green-700 dark:text-green-300">ورود به پنل پشتیبانی</span>
+              <Shield className="w-4 h-4 text-primary" />
+              <span className="text-foreground">ورود به پنل پشتیبانی</span>
             </Button>
           </div>
         </div>
