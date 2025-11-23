@@ -46,6 +46,7 @@ import UserEditModal from './UserEditModal';
 import DealsPipeline from './DealsPipeline';
 import SalesAgentDealsPipeline from './SalesAgentDealsPipeline';
 import { FollowUpsManagement } from './FollowUpsManagement';
+import AILeadScoring from './AILeadScoring';
 
 interface Lead {
   enrollment_id: string;
@@ -146,7 +147,7 @@ const LeadManagement: React.FC = () => {
   const [adminLoading, setAdminLoading] = useState(false);
   const [assignLoading, setAssignLoading] = useState<string | null>(null);
   const [removeLoading, setRemoveLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'admin' | 'distribution' | 'pipeline' | 'followups'>(
+  const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'admin' | 'distribution' | 'pipeline' | 'followups' | 'ai-scoring'>(
     (isAdmin || isSalesManager) ? 'admin' : 'available'
   );
   const [searchTerm, setSearchTerm] = useState('');
@@ -1319,15 +1320,24 @@ const LeadManagement: React.FC = () => {
                         <Share2 className="h-4 w-4" />
                         توزیع لید
                       </Button>
-                      <Button
-                        variant={activeTab === 'pipeline' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setActiveTab('pipeline')}
-                        className="w-full sm:w-auto text-sm whitespace-nowrap flex items-center gap-1"
-                      >
-                        <Target className="h-4 w-4" />
-                        پایپ‌لاین فروش
-                      </Button>
+                       <Button
+                         variant={activeTab === 'pipeline' ? 'default' : 'ghost'}
+                         size="sm"
+                         onClick={() => setActiveTab('pipeline')}
+                         className="w-full sm:w-auto text-sm whitespace-nowrap flex items-center gap-1"
+                       >
+                         <Target className="h-4 w-4" />
+                         پایپ‌لاین فروش
+                       </Button>
+                       <Button
+                         variant={activeTab === 'ai-scoring' ? 'default' : 'ghost'}
+                         size="sm"
+                         onClick={() => setActiveTab('ai-scoring')}
+                         className="w-full sm:w-auto text-sm whitespace-nowrap flex items-center gap-1"
+                       >
+                         <BarChart3 className="h-4 w-4" />
+                         امتیازدهی AI
+                       </Button>
                    </>
                  )}
               </div>
@@ -1876,6 +1886,8 @@ const LeadManagement: React.FC = () => {
               <LeadDistributionSystem />
             ) : activeTab === 'followups' ? (
               <FollowUpsManagement />
+            ) : activeTab === 'ai-scoring' ? (
+              <AILeadScoring />
             ) : activeTab === 'pipeline' ? (
               // Show appropriate pipeline component based on user role
               (isAdmin || isSalesManager) ? <DealsPipeline /> : <SalesAgentDealsPipeline />

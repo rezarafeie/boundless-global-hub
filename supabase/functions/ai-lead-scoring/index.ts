@@ -227,12 +227,23 @@ Return structured scores and reasoning for each lead.`
       const errorText = await aiResponse.text();
       console.error('AI gateway error:', aiResponse.status, errorText);
       
-      if (aiResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      let errorMessage = 'خطا در تحلیل AI';
+      if (aiResponse.status === 503) {
+        errorMessage = 'سرویس AI موقتاً در دسترس نیست. لطفاً چند دقیقه دیگر مجدداً تلاش کنید.';
+      } else if (aiResponse.status === 429) {
+        errorMessage = 'تعداد درخواست‌ها بیش از حد مجاز است. لطفاً کمی صبر کنید.';
+      } else if (errorText.includes('context length')) {
+        errorMessage = 'حجم داده برای تحلیل بیش از حد است. لطفاً بازه زمانی کوچک‌تری انتخاب کنید.';
       }
+      
+      return new Response(
+        JSON.stringify({ error: errorMessage }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
+        }
+      );
+    }
       
       if (aiResponse.status === 402) {
         return new Response(
