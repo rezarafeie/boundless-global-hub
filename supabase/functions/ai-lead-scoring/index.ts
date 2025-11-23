@@ -103,7 +103,7 @@ serve(async (req) => {
       .eq('course_id', courseId)
       .in('user_id', chatUserIds);
 
-    // Build user behavior data
+    // Build user behavior data with compact format
     const userBehaviorData = enrollments.map(enrollment => {
       const userId = enrollment.chat_user_id;
       
@@ -144,6 +144,13 @@ serve(async (req) => {
       };
     });
 
+    // Create compact summary for AI (avoid token limit)
+    const compactData = userBehaviorData.map(u => ({
+      id: u.enrollment_id,
+      name: u.full_name,
+      m: u.metrics // Use single letter keys to reduce tokens
+    }));
+
     // Call Lovable AI to analyze and score leads
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -183,7 +190,7 @@ Return structured scores and reasoning for each lead.`
           },
           {
             role: 'user',
-            content: `Analyze these ${userBehaviorData.length} leads and provide scoring:\n\n${JSON.stringify(userBehaviorData, null, 2)}`
+            content: `Analyze ${compactData.length} leads. Each has: id, name, m:{total_lessons_enrolled, completed_lessons, completion_percentage, total_time_minutes, hours_since_last_activity, has_support_conversation, crm_interactions, test_taken, license_activated}.\n\nData: ${JSON.stringify(compactData)}`
           }
         ],
         tools: [{
