@@ -316,9 +316,9 @@ const SalesDashboard: React.FC = () => {
               <div className="text-2xl font-bold">{salesStats ? formatPrice(salesStats.revenue_today) : '0 تومان'}</div>
               <div className="flex items-center text-xs text-muted-foreground">
                 {todayRevenueYesterdayTrend.isPositive ? (
-                  <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
+                  <TrendingUp className="h-3 w-3 text-primary mr-1" />
                 ) : (
-                  <TrendingDown className="h-3 w-3 text-red-500 mr-1" />
+                  <TrendingDown className="h-3 w-3 text-destructive mr-1" />
                 )}
                 {todayRevenueYesterdayTrend.percentage.toFixed(1)}% نسبت به دیروز
               </div>
@@ -334,9 +334,9 @@ const SalesDashboard: React.FC = () => {
               <div className="text-2xl font-bold">{salesStats?.enrollments_today || 0}</div>
               <div className="flex items-center text-xs text-muted-foreground">
                 {todayEnrollmentsYesterdayTrend.isPositive ? (
-                  <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
+                  <TrendingUp className="h-3 w-3 text-primary mr-1" />
                 ) : (
-                  <TrendingDown className="h-3 w-3 text-red-500 mr-1" />
+                  <TrendingDown className="h-3 w-3 text-destructive mr-1" />
                 )}
                 {todayEnrollmentsYesterdayTrend.percentage.toFixed(1)}% نسبت به دیروز
               </div>
@@ -381,30 +381,30 @@ const SalesDashboard: React.FC = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">لیدهای واگذار شده امروز</CardTitle>
-              <UserCheck className="h-4 w-4 text-blue-500" />
+              <UserCheck className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{salesStats?.leads_assigned_today || 0}</div>
+              <div className="text-2xl font-bold text-primary">{salesStats?.leads_assigned_today || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">لیدهای بدون واگذاری</CardTitle>
-              <AlertCircle className="h-4 w-4 text-orange-500" />
+              <AlertCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{uniqueUnassignedLeads}</div>
+              <div className="text-2xl font-bold">{uniqueUnassignedLeads}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">لیدهای دست نخورده</CardTitle>
-              <AlertCircle className="h-4 w-4 text-red-500" />
+              <AlertCircle className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{salesStats?.untouched_leads_total || 0}</div>
+              <div className="text-2xl font-bold text-destructive">{salesStats?.untouched_leads_total || 0}</div>
             </CardContent>
           </Card>
         </div>
@@ -598,7 +598,7 @@ const SalesDashboard: React.FC = () => {
                         <Badge variant="default">{agent.crm_activities_count}</Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="default" className="bg-green-100 text-green-800">
+                        <Badge variant="default">
                           {agent.successful_conversions}
                         </Badge>
                       </TableCell>
