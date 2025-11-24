@@ -64,3 +64,6 @@ verify_jwt = false
 
 [functions.ai-lead-scoring-job]
 verify_jwt = false
+
+[functions.analyze-smart-test]
+verify_jwt = false

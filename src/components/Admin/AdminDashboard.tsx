@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Users, 
   BookOpen, 
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import SmartTestLeadsTab from './SmartTestLeadsTab';
 
 interface DashboardStats {
   totalRevenue: number;
@@ -360,8 +362,18 @@ const AdminDashboard: React.FC = () => {
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview">نمای کلی</TabsTrigger>
+          <TabsTrigger value="smart-test-leads" className="gap-2">
+            <Users className="h-4 w-4" />
+            لیدهای تست هوشمند
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {dashboardCards.map((card, index) => (
           <Card key={index}>
             <CardContent className="p-6">
@@ -662,6 +674,12 @@ const AdminDashboard: React.FC = () => {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+
+        <TabsContent value="smart-test-leads">
+          <SmartTestLeadsTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
