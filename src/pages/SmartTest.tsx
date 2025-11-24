@@ -93,9 +93,10 @@ const SmartTest = () => {
 
       // Generate unique token
       const token = crypto.randomUUID();
+      console.log('Generated token:', token);
 
       // Save to database
-      const { error: dbError } = await supabase
+      const { data: insertData, error: dbError } = await supabase
         .from('smart_test_submissions')
         .insert({
           ...answers,
@@ -105,9 +106,17 @@ const SmartTest = () => {
           ai_response_text: analysis.personality_analysis,
           score: analysis.score,
           result_token: token,
-        });
+        })
+        .select()
+        .single();
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Database error:', dbError);
+        throw dbError;
+      }
+
+      console.log('Saved to database:', insertData);
+      console.log('Navigating to results with token:', token);
 
       // Navigate to results
       navigate(`/smart-test/results?token=${token}`);
@@ -258,15 +267,25 @@ const SmartTest = () => {
               className="text-lg p-6"
             />
             <div className="space-y-3">
-              <p className="text-lg text-muted-foreground">درآمد ماهیانه‌ات چقدره؟ (تومان)</p>
-              <Input
-                type="number"
-                placeholder="مثلا: 10000000"
-                value={answers.monthly_income || ''}
-                onChange={(e) => updateAnswer('monthly_income', parseInt(e.target.value) || null)}
-                className="text-lg p-6 text-left"
-                dir="ltr"
-              />
+              <p className="text-lg text-muted-foreground">درآمد ماهیانه‌ات چقدره؟</p>
+              <div className="grid grid-cols-1 gap-3">
+                {[
+                  { label: 'زیر ۵ میلیون تومان', value: 5000000 },
+                  { label: '۵ تا ۱۰ میلیون تومان', value: 7500000 },
+                  { label: '۱۰ تا ۲۰ میلیون تومان', value: 15000000 },
+                  { label: '۲۰ تا ۵۰ میلیون تومان', value: 35000000 },
+                  { label: 'بیشتر از ۵۰ میلیون تومان', value: 75000000 }
+                ].map(option => (
+                  <Button
+                    key={option.value}
+                    variant={answers.monthly_income === option.value ? 'default' : 'outline'}
+                    onClick={() => updateAnswer('monthly_income', option.value)}
+                    className="py-4 text-base"
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         );
@@ -322,8 +341,11 @@ const SmartTest = () => {
               {[
                 'کسب درآمد دلاری',
                 'مهاجرت',
+                'راه‌اندازی فروشگاه آنلاین (ایکامرس)',
+                'دراپشیپینگ و تجارت بین‌المللی',
+                'ساخت و فروش محصولات دیجیتال',
+                'فریلنسری و کار آزاد',
                 'رشد شخصی',
-                'راه‌اندازی کسب‌وکار',
                 'استقلال مالی',
                 'تغییر شغل'
               ].map(goal => (
@@ -347,14 +369,19 @@ const SmartTest = () => {
             <h2 className="text-3xl font-bold text-foreground">چقدر وقت داری؟ ⏰</h2>
             <p className="text-muted-foreground">روزی چند ساعت میتونی وقت بذاری؟</p>
             <div className="grid grid-cols-1 gap-3">
-              {['کمتر از 1 ساعت', '1 تا 3 ساعت', 'بیشتر از 3 ساعت'].map(time => (
+              {[
+                { label: 'کمتر از ۱ ساعت (مشغله زیاد)', value: 'کمتر از 1 ساعت' },
+                { label: '۱ تا ۳ ساعت (متوسط)', value: '1 تا 3 ساعت' },
+                { label: '۳ تا ۵ ساعت (خوب)', value: '3 تا 5 ساعت' },
+                { label: 'بیشتر از ۵ ساعت (تمام‌وقت)', value: 'بیشتر از 5 ساعت' }
+              ].map(time => (
                 <Button
-                  key={time}
-                  variant={answers.daily_study_time === time ? 'default' : 'outline'}
-                  onClick={() => updateAnswer('daily_study_time', time)}
+                  key={time.value}
+                  variant={answers.daily_study_time === time.value ? 'default' : 'outline'}
+                  onClick={() => updateAnswer('daily_study_time', time.value)}
                   className="py-6 text-lg"
                 >
-                  {time}
+                  {time.label}
                 </Button>
               ))}
             </div>
@@ -367,7 +394,14 @@ const SmartTest = () => {
             <h2 className="text-3xl font-bold text-foreground">چطوری دوست داری یاد بگیری؟ 📱</h2>
             <p className="text-muted-foreground">میتونی چند تا انتخاب کنی</p>
             <div className="grid grid-cols-1 gap-3">
-              {['ویدیوهای آموزشی', 'چت با هوش مصنوعی', 'تمرین‌های عملی', 'جلسات زنده'].map(pref => (
+              {[
+                'ویدیوهای آموزشی',
+                'چت با هوش مصنوعی',
+                'تمرین‌های عملی',
+                'جلسات زنده',
+                'مطالعه متن و کتاب',
+                'مشاوره یک‌به‌یک'
+              ].map(pref => (
                 <Button
                   key={pref}
                   variant={answers.learning_preference.includes(pref) ? 'default' : 'outline'}
@@ -389,14 +423,25 @@ const SmartTest = () => {
             <div className="space-y-4">
               <div>
                 <p className="text-lg text-muted-foreground mb-3">چقدر میتونی برای آموزشت سرمایه‌گذاری کنی؟</p>
-                <Input
-                  type="number"
-                  placeholder="مبلغ به تومان"
-                  value={answers.education_budget || ''}
-                  onChange={(e) => updateAnswer('education_budget', parseInt(e.target.value) || null)}
-                  className="text-lg p-6 text-left"
-                  dir="ltr"
-                />
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    { label: 'کمتر از ۱ میلیون تومان', value: 500000 },
+                    { label: '۱ تا ۳ میلیون تومان', value: 2000000 },
+                    { label: '۳ تا ۵ میلیون تومان', value: 4000000 },
+                    { label: '۵ تا ۱۰ میلیون تومان', value: 7500000 },
+                    { label: '۱۰ تا ۲۰ میلیون تومان', value: 15000000 },
+                    { label: 'بیشتر از ۲۰ میلیون تومان', value: 25000000 }
+                  ].map(option => (
+                    <Button
+                      key={option.value}
+                      variant={answers.education_budget === option.value ? 'default' : 'outline'}
+                      onClick={() => updateAnswer('education_budget', option.value)}
+                      className="py-4 text-base"
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
               <div>
                 <p className="text-lg text-muted-foreground mb-3">آماده‌ای برای سرمایه‌گذاری روی خودت؟</p>
@@ -413,7 +458,7 @@ const SmartTest = () => {
                     onClick={() => updateAnswer('willing_to_invest', false)}
                     className="py-6 text-lg"
                   >
-                    نه، فعلا نه
+                    فعلا نه
                   </Button>
                 </div>
               </div>
