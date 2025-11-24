@@ -286,13 +286,20 @@ const AILeadScoringJob: React.FC = () => {
 
       const enrollmentIds = Array.from(selectedLeads);
       
-      for (const enrollmentId of enrollmentIds) {
-        await supabase.rpc('assign_lead_to_agent', {
-          p_enrollment_id: enrollmentId,
-          p_agent_user_id: agentData.chat_users.id,
-          p_assigned_by: chatUser.id,
-        });
-      }
+      // Insert assignments into lead_assignments table
+      const assignments = enrollmentIds.map(enrollmentId => ({
+        enrollment_id: enrollmentId,
+        sales_agent_id: agentData.chat_users.id,
+        assigned_by: chatUser.id,
+        assignment_type: 'manual',
+        status: 'assigned'
+      }));
+
+      const { error: insertError } = await supabase
+        .from('lead_assignments')
+        .insert(assignments);
+
+      if (insertError) throw insertError;
 
       toast({
         title: 'موفق',
