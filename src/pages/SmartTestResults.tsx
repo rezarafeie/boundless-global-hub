@@ -30,8 +30,8 @@ const SmartTestResults = () => {
   useEffect(() => {
     const fetchResults = async () => {
       if (!token) {
-        toast.error('توکن نامعتبر است');
-        navigate('/smart-test');
+        toast.error('لینک نتایج معتبر نیست. لطفا ابتدا تست را تکمیل کنید.');
+        setTimeout(() => navigate('/smart-test'), 2000);
         return;
       }
 
@@ -40,9 +40,15 @@ const SmartTestResults = () => {
           .from('smart_test_submissions')
           .select('*')
           .eq('result_token', token)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
+        
+        if (!data) {
+          toast.error('نتیجه‌ای با این لینک یافت نشد. لطفا دوباره تست را انجام دهید.');
+          setTimeout(() => navigate('/smart-test'), 2000);
+          return;
+        }
         
         // Parse the ai_analysis if it's a string
         if (data && typeof data.ai_analysis === 'string') {
@@ -52,8 +58,8 @@ const SmartTestResults = () => {
         setResult(data as any);
       } catch (error) {
         console.error('Error fetching results:', error);
-        toast.error('خطا در دریافت نتایج');
-        navigate('/smart-test');
+        toast.error('خطا در دریافت نتایج. لطفا دوباره تلاش کنید.');
+        setTimeout(() => navigate('/smart-test'), 2000);
       } finally {
         setIsLoading(false);
       }
