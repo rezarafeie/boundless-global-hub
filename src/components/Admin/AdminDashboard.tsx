@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import SmartTestLeadsTab from './SmartTestLeadsTab';
 
 interface DashboardStats {
   totalRevenue: number;
@@ -365,10 +364,6 @@ const AdminDashboard: React.FC = () => {
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview">نمای کلی</TabsTrigger>
-          <TabsTrigger value="smart-test-leads" className="gap-2">
-            <Users className="h-4 w-4" />
-            لیدهای تست هوشمند
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -674,10 +669,6 @@ const AdminDashboard: React.FC = () => {
           </CardContent>
         </Card>
       )}
-        </TabsContent>
-
-        <TabsContent value="smart-test-leads">
-          <SmartTestLeadsTab />
         </TabsContent>
       </Tabs>
     </div>
