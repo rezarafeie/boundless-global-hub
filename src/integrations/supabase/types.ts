@@ -2675,6 +2675,117 @@ export type Database = {
         }
         Relationships: []
       }
+      smart_test_submissions: {
+        Row: {
+          age: number | null
+          ai_analysis: Json | null
+          ai_response_text: string | null
+          assigned_to: number | null
+          created_at: string | null
+          current_job: string | null
+          daily_study_time: string | null
+          education_budget: number | null
+          education_level: string | null
+          email: string | null
+          english_level: string | null
+          freelance_experience: boolean | null
+          full_name: string
+          gender: string | null
+          goals: string[] | null
+          id: string
+          learning_preference: string[] | null
+          likes_job: boolean | null
+          monthly_income: number | null
+          phone: string
+          province: string | null
+          recommended_course_slug: string | null
+          recommended_course_title: string | null
+          result_token: string | null
+          score: number | null
+          status: string | null
+          updated_at: string | null
+          user_id: number | null
+          willing_to_invest: boolean | null
+        }
+        Insert: {
+          age?: number | null
+          ai_analysis?: Json | null
+          ai_response_text?: string | null
+          assigned_to?: number | null
+          created_at?: string | null
+          current_job?: string | null
+          daily_study_time?: string | null
+          education_budget?: number | null
+          education_level?: string | null
+          email?: string | null
+          english_level?: string | null
+          freelance_experience?: boolean | null
+          full_name: string
+          gender?: string | null
+          goals?: string[] | null
+          id?: string
+          learning_preference?: string[] | null
+          likes_job?: boolean | null
+          monthly_income?: number | null
+          phone: string
+          province?: string | null
+          recommended_course_slug?: string | null
+          recommended_course_title?: string | null
+          result_token?: string | null
+          score?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: number | null
+          willing_to_invest?: boolean | null
+        }
+        Update: {
+          age?: number | null
+          ai_analysis?: Json | null
+          ai_response_text?: string | null
+          assigned_to?: number | null
+          created_at?: string | null
+          current_job?: string | null
+          daily_study_time?: string | null
+          education_budget?: number | null
+          education_level?: string | null
+          email?: string | null
+          english_level?: string | null
+          freelance_experience?: boolean | null
+          full_name?: string
+          gender?: string | null
+          goals?: string[] | null
+          id?: string
+          learning_preference?: string[] | null
+          likes_job?: boolean | null
+          monthly_income?: number | null
+          phone?: string
+          province?: string | null
+          recommended_course_slug?: string | null
+          recommended_course_title?: string | null
+          result_token?: string | null
+          score?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: number | null
+          willing_to_invest?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smart_test_submissions_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "smart_test_submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sso_tokens: {
         Row: {
           course_slug: string

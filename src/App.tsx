@@ -107,6 +107,10 @@ import MessengerProfile from "./pages/MessengerProfile";
 // Short link redirect page
 import ShortLinkRedirect from "./pages/ShortLinkRedirect";
 
+// Smart Test pages
+import SmartTest from "./pages/SmartTest";
+import SmartTestResults from "./pages/SmartTestResults";
+
 // Import the new component
 import CourseContentManagement from "./pages/Course/CourseContentManagement";
 import CourseCreate from "./pages/Admin/CourseCreate";
@@ -246,6 +250,10 @@ const App = () => {
                     <Route path="/enroll/admin/course/:courseId" element={<CourseManagement />} />
                     <Route path="/enroll/admin/course/:courseId/lessons" element={<CourseContentManagement />} />
                     <Route path="/enroll/reject" element={<EnrollReject />} />
+                    
+                    {/* Smart Test routes */}
+                    <Route path="/smart-test" element={<SmartTest />} />
+                    <Route path="/smart-test/results" element={<SmartTestResults />} />
                     
                     {/* User Management routes */}
                     <Route path="/enroll/admin/users" element={<UsersOverview />} />
