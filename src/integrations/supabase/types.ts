@@ -397,6 +397,65 @@ export type Database = {
         }
         Relationships: []
       }
+      black_friday_discounts: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          discount_percentage: number
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          discount_percentage: number
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          discount_percentage?: number
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "black_friday_discounts_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: true
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      black_friday_settings: {
+        Row: {
+          created_at: string | null
+          end_date: string
+          id: number
+          is_enabled: boolean | null
+          start_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_date: string
+          id?: number
+          is_enabled?: boolean | null
+          start_date: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string
+          id?: number
+          is_enabled?: boolean | null
+          start_date?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           created_at: string | null
