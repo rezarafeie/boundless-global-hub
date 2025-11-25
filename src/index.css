@@ -103,6 +103,29 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
+
+  /* Black Friday Theme */
+  .black-friday-mode {
+    --background: 0 0% 5%;
+    --foreground: 45 100% 60%;
+    --card: 0 0% 8%;
+    --card-foreground: 45 100% 60%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 45 100% 60%;
+    --primary: 45 100% 55%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 45 80% 20%;
+    --secondary-foreground: 45 100% 60%;
+    --muted: 45 20% 15%;
+    --muted-foreground: 45 50% 70%;
+    --accent: 45 100% 50%;
+    --accent-foreground: 0 0% 5%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 45 50% 20%;
+    --input: 45 30% 15%;
+    --ring: 45 100% 60%;
+  }
 }
 
 @layer base {

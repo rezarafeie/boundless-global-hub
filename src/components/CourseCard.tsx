@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User, Clock, Users, CheckCircle, ArrowLeft, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useBlackFridayContext } from "@/contexts/BlackFridayContext";
+import BlackFridayBadge from "@/components/BlackFriday/BlackFridayBadge";
 
 interface CourseCardProps {
   title: string;
@@ -46,6 +48,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
 }) => {
   const { translations } = useLanguage();
   const navigate = useNavigate();
+  const { isActive: isBlackFridayActive, getCourseDiscount } = useBlackFridayContext();
+  
+  // Get Black Friday discount for this course if active
+  const blackFridayDiscount = isBlackFridayActive && slug ? getCourseDiscount(slug) : 0;
 
   // Get an appropriate icon based on the course title
   const getCourseIcon = () => {
@@ -118,6 +124,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
             >
               {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
             </Badge>
+            {/* Black Friday Badge */}
+            {blackFridayDiscount > 0 && (
+              <BlackFridayBadge discount={blackFridayDiscount} className="text-xs scale-75" />
+            )}
           </div>
         </div>
         

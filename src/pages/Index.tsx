@@ -13,9 +13,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Star, Zap, Clock, Play, BookOpen, Users, Award, ArrowRight } from "lucide-react";
 import { TetherlandService } from "@/lib/tetherlandService";
+import { useBlackFridayContext } from "@/contexts/BlackFridayContext";
+import BlackFridayBanner from "@/components/BlackFriday/BlackFridayBanner";
 
 const Index = () => {
   const { translations } = useLanguage();
+  const { isActive: isBlackFridayActive, settings: blackFridaySettings } = useBlackFridayContext();
   const [featuredCourses, setFeaturedCourses] = useState<any[]>([]);
   const [boundlessCourses, setBoundlessCourses] = useState<any[]>([]);
   const [totalCoursesCount, setTotalCoursesCount] = useState<number>(0);
@@ -367,6 +370,11 @@ const Index = () => {
 
   return (
     <MainLayout>
+      {/* Black Friday Banner */}
+      {isBlackFridayActive && blackFridaySettings?.end_date && (
+        <BlackFridayBanner endDate={blackFridaySettings.end_date} />
+      )}
+      
       <Hero />
       <QuickAccess />
       <HubBanner />

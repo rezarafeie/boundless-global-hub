@@ -7,6 +7,7 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import { BlackFridayProvider } from "./contexts/BlackFridayContext";
 import { shouldShowMessengerOnly, shouldShowShortlinkOnly } from "./utils/subdomainDetection";
 
 // Import all pages
@@ -213,10 +214,11 @@ const App = () => {
           <LanguageProvider>
             <NotificationProvider>
               <AuthProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <AnalyticsTracker />
-                  <Routes>
+                <BlackFridayProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <AnalyticsTracker />
+                    <Routes>
                     {/* Main pages */}
                     <Route path="/" element={<Index />} />
                     <Route path="/start" element={<Start />} />
@@ -371,6 +373,7 @@ const App = () => {
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </TooltipProvider>
+              </BlackFridayProvider>
               </AuthProvider>
             </NotificationProvider>
           </LanguageProvider>
