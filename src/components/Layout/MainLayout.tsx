@@ -10,6 +10,8 @@ import OfflineDetector from "@/components/OfflineDetector";
 import NotificationErrorBoundary from "@/components/NotificationErrorBoundary";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNotificationHeight } from "@/hooks/useNotificationHeight";
+import BlackFridayBanner from "@/components/BlackFriday/BlackFridayBanner";
+import { useBlackFridayContext } from "@/contexts/BlackFridayContext";
 
 
 interface MainLayoutProps {
@@ -18,6 +20,7 @@ interface MainLayoutProps {
 
 const MainLayout = ({ children }: MainLayoutProps) => {
   const { direction } = useLanguage();
+  const { isActive: isBlackFridayActive, settings: blackFridaySettings } = useBlackFridayContext();
   
   // Safe hook usage with error boundary
   let location;
@@ -66,6 +69,9 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   return (
     <div className={`flex min-h-screen flex-col bg-background text-foreground dark:bg-background dark:text-foreground`} dir={direction}>
       <Header />
+      {isBlackFridayActive && blackFridaySettings?.end_date && (
+        <BlackFridayBanner endDate={blackFridaySettings.end_date} />
+      )}
       <NotificationErrorBoundary>
         <LiveWarModeBanner />
         <PopupNotification />

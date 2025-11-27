@@ -9,6 +9,9 @@ import { motion } from "framer-motion";
 import IframeModal from "@/components/IframeModal";
 import { useCourseSettings } from "@/hooks/useCourseSettings";
 import MobileStickyButton from "@/components/MobileStickyButton";
+import { useBlackFridayContext } from '@/contexts/BlackFridayContext';
+import CourseDiscountBanner from '@/components/BlackFriday/CourseDiscountBanner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BoundlessTasteEnhancedProps {
   title: string;
@@ -32,10 +35,35 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
   courseSlug
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [courseId, setCourseId] = useState<string | null>(null);
+  const { isActive: isBlackFridayActive, getCourseDiscount } = useBlackFridayContext();
+  const blackFridayDiscount = courseId ? getCourseDiscount(courseId) : 0;
   const {
     getEnrollUrl,
     loading: courseSettingsLoading
   } = useCourseSettings(courseSlug || '');
+
+  // Fetch course ID on mount
+  React.useEffect(() => {
+    const fetchCourseId = async () => {
+      if (!courseSlug) return;
+      try {
+        const { data, error } = await supabase
+          .from('courses')
+          .select('id')
+          .eq('slug', courseSlug)
+          .single();
+        
+        if (data && !error) {
+          setCourseId(data.id);
+        }
+      } catch (error) {
+        console.error('Error fetching course ID:', error);
+      }
+    };
+    
+    fetchCourseId();
+  }, [courseSlug]);
 
   // Set countdown target for 7 days from now
   const targetDate = new Date();
@@ -155,6 +183,13 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
 
   return (
     <MainLayout>
+      {/* Black Friday Discount Banner */}
+      {isBlackFridayActive && blackFridayDiscount > 0 && (
+        <div className="container mx-auto px-4 pt-8">
+          <CourseDiscountBanner discount={blackFridayDiscount} courseName={title} />
+        </div>
+      )}
+
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-background via-background/95 to-primary/5 pt-20 pb-12 overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMiI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-40"></div>

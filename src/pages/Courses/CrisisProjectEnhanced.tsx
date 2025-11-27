@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import MainLayout from "@/components/Layout/MainLayout";
 import SectionTitle from "@/components/SectionTitle";
 import DirectEnrollmentForm from "@/components/Course/DirectEnrollmentForm";
+import { useBlackFridayContext } from '@/contexts/BlackFridayContext';
+import CourseDiscountBanner from '@/components/BlackFriday/CourseDiscountBanner';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Shield, 
   TrendingUp, 
@@ -43,10 +46,40 @@ const CrisisProjectEnhanced = ({
   iframeUrl,
   courseSlug = "crisis"
 }: CrisisProjectEnhancedProps) => {
+  const [courseId, setCourseId] = useState<string | null>(null);
+  const { isActive: isBlackFridayActive, getCourseDiscount } = useBlackFridayContext();
+  const blackFridayDiscount = courseId ? getCourseDiscount(courseId) : 0;
+
+  useEffect(() => {
+    const fetchCourseId = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('courses')
+          .select('id')
+          .eq('slug', courseSlug)
+          .single();
+        
+        if (data && !error) {
+          setCourseId(data.id);
+        }
+      } catch (error) {
+        console.error('Error fetching course ID:', error);
+      }
+    };
+    
+    fetchCourseId();
+  }, [courseSlug]);
 
   return (
     <MainLayout>
       <div className="min-h-screen bg-background">
+        {/* Black Friday Discount Banner */}
+        {isBlackFridayActive && blackFridayDiscount > 0 && (
+          <div className="container mx-auto px-4 pt-8">
+            <CourseDiscountBanner discount={blackFridayDiscount} courseName="پروژه بحران" />
+          </div>
+        )}
+        
         {/* Hero Section */}
         <section className="relative py-20 px-4 text-center overflow-hidden bg-card/50">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMiI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-40"></div>

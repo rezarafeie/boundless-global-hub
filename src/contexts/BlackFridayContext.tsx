@@ -13,17 +13,7 @@ const BlackFridayContext = createContext<BlackFridayContextType | undefined>(und
 export const BlackFridayProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isActive, settings, discounts, getCourseDiscount } = useBlackFriday();
 
-  useEffect(() => {
-    if (isActive) {
-      document.documentElement.classList.add('black-friday-mode');
-    } else {
-      document.documentElement.classList.remove('black-friday-mode');
-    }
-
-    return () => {
-      document.documentElement.classList.remove('black-friday-mode');
-    };
-  }, [isActive]);
+  // Color-changing functionality removed as per user request
 
   return (
     <BlackFridayContext.Provider value={{ isActive, settings, discounts: discounts || [], getCourseDiscount }}>
