@@ -39,6 +39,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import SectionTitle from "@/components/SectionTitle";
 import InstructorProfile from "@/components/InstructorProfile";
 import AparatPlayer from "@/components/AparatPlayer";
+import { useBlackFridayContext } from '@/contexts/BlackFridayContext';
+import CourseDiscountBanner from '@/components/BlackFriday/CourseDiscountBanner';
+import { supabase } from '@/integrations/supabase/client';
 
 
 const BoundlessLanding = () => {
@@ -46,6 +49,9 @@ const BoundlessLanding = () => {
   const [currentHeadline, setCurrentHeadline] = useState({ title: "", subtitle: "" });
   const [isLoaded, setIsLoaded] = useState(false);
   const { translations } = useLanguage();
+  const [courseId, setCourseId] = useState<string | null>(null);
+  const { isActive: isBlackFridayActive, getCourseDiscount } = useBlackFridayContext();
+  const blackFridayDiscount = courseId ? getCourseDiscount(courseId) : 0;
   
   // Hardcoded enrollment URL
   const enrollmentUrl = '/enroll/?course=boundless';
@@ -105,6 +111,27 @@ const BoundlessLanding = () => {
     }, 100);
 
     return () => clearTimeout(timer);
+  }, []);
+
+  // Fetch course ID on mount
+  useEffect(() => {
+    const fetchCourseId = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('courses')
+          .select('id')
+          .eq('slug', 'boundless')
+          .single();
+        
+        if (data && !error) {
+          setCourseId(data.id);
+        }
+      } catch (error) {
+        console.error('Error fetching course ID:', error);
+      }
+    };
+    
+    fetchCourseId();
   }, []);
 
   const courseContent = [
@@ -200,6 +227,13 @@ const BoundlessLanding = () => {
   return (
     <MainLayout>
       <div className="min-h-screen bg-background">
+        {/* Black Friday Discount Banner */}
+        {isBlackFridayActive && blackFridayDiscount > 0 && (
+          <div className="container max-w-6xl mx-auto px-4 pt-8">
+            <CourseDiscountBanner discount={blackFridayDiscount} courseName="شروع بدون مرز" />
+          </div>
+        )}
+        
         {/* Enhanced Hero Section with Rotating Headlines */}
         <section className="relative py-20 md:py-28 overflow-hidden">
           {/* Enhanced Vibrant Background with Stronger Glow */}

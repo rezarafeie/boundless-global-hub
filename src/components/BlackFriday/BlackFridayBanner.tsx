@@ -8,11 +8,16 @@ interface BlackFridayBannerProps {
 }
 
 const BlackFridayBanner: React.FC<BlackFridayBannerProps> = ({ endDate }) => {
+  const handleClick = () => {
+    window.location.href = 'https://rafiei.co/blackfriday';
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative bg-gradient-to-r from-black via-yellow-900/20 to-black border-y-4 border-yellow-500 py-8 px-4 overflow-hidden"
+      onClick={handleClick}
+      className="relative bg-gradient-to-r from-black via-yellow-900/20 to-black border-y-4 border-yellow-500 py-8 px-4 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
     >
       {/* Animated background effects */}
       <div className="absolute inset-0 overflow-hidden">
