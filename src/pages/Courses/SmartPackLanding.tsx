@@ -600,9 +600,14 @@ const SmartPackLanding = () => {
   return (
     <MainLayout>
       {/* Black Friday Discount Banner */}
-      {isBlackFridayActive && blackFridayDiscount > 0 && (
+      {isBlackFridayActive && blackFridayDiscount > 0 && course && (
         <div className="container max-w-6xl mx-auto px-4 pt-8">
-          <CourseDiscountBanner discount={blackFridayDiscount} courseName="پک هوشمند کسب‌وکار" />
+          <CourseDiscountBanner 
+            discount={blackFridayDiscount} 
+            courseName="پک هوشمند کسب‌وکار"
+            originalPrice={originalRialPrice || course.price}
+            courseSlug={course.slug}
+          />
         </div>
       )}
 

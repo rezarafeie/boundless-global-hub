@@ -21,6 +21,7 @@ import EnrollmentCountdown from '@/components/EnrollmentCountdown';
 import SaleBadge from '@/components/SaleBadge';
 import PrelaunchBadge from '@/components/PrelaunchBadge';
 import SaleCountdownTimer from '@/components/SaleCountdownTimer';
+import { useBlackFridayContext } from '@/contexts/BlackFridayContext';
 
 interface Course {
   id: string;
@@ -78,6 +79,10 @@ const Enroll: React.FC = () => {
   const [prelaunchPrice, setPrelaunchPrice] = useState<number | null>(null);
   const [isOnPrelaunch, setIsOnPrelaunch] = useState(false);
   
+  // Black Friday discount integration
+  const { isActive: isBlackFridayActive, getCourseDiscount } = useBlackFridayContext();
+  const [blackFridayDiscount, setBlackFridayDiscount] = useState<number>(0);
+  
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -86,8 +91,9 @@ const Enroll: React.FC = () => {
     countryCode: '+98'
   });
 
-  // Calculate if the course is free (either original price is 0 or 100% discount)
-  const isFree = course?.price === 0 || test?.price === 0 || discountedPrice === 0 || salePrice === 0 || prelaunchPrice === 0;
+  // Calculate if the course is free (considering all discount types including Black Friday)
+  const isFree = course?.price === 0 || test?.price === 0 || discountedPrice === 0 || salePrice === 0 || prelaunchPrice === 0 || 
+    (blackFridayDiscount >= 100 && isBlackFridayActive);
 
   useEffect(() => {
     if (courseSlug) {
@@ -98,6 +104,15 @@ const Enroll: React.FC = () => {
       setLoading(false);
     }
   }, [courseSlug, testSlug]);
+
+  // Fetch Black Friday discount for the course
+  useEffect(() => {
+    if (course?.id && isBlackFridayActive) {
+      const discount = getCourseDiscount(course.id);
+      setBlackFridayDiscount(discount);
+      console.log('Black Friday discount for course:', discount);
+    }
+  }, [course, isBlackFridayActive, getCourseDiscount]);
 
   // Auto-fill form data when user is authenticated and has required data
   useEffect(() => {
@@ -492,13 +507,16 @@ const Enroll: React.FC = () => {
         
         let paymentAmount = basePrice;
         
-        // PRIORITY ORDER: Pre-launch FIRST, then Sale price, then discount, then base
+        // PRIORITY ORDER: Pre-launch FIRST, then Sale price, then Black Friday, then discount, then base
         if (isOnPrelaunch && prelaunchPrice !== null) {
           paymentAmount = prelaunchPrice;
           console.log('🚀 PRE-LAUNCH ACTIVE - Using pre-launch price for payment:', prelaunchPrice);
         } else if (isOnSale && salePrice !== null) {
           paymentAmount = salePrice;
           console.log('🏷️ SALE ACTIVE - Using sale price for payment:', salePrice);
+        } else if (isBlackFridayActive && blackFridayDiscount > 0) {
+          paymentAmount = basePrice * (1 - blackFridayDiscount / 100);
+          console.log('🎁 BLACK FRIDAY ACTIVE - Using Black Friday discount:', blackFridayDiscount, '% - Final price:', paymentAmount);
         } else if (discountedPrice !== null) {
           paymentAmount = discountedPrice;
           console.log('🎯 Using discount price for payment:', discountedPrice);

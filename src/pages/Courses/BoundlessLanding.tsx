@@ -50,6 +50,7 @@ const BoundlessLanding = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const { translations } = useLanguage();
   const [courseId, setCourseId] = useState<string | null>(null);
+  const [coursePrice, setCoursePrice] = useState<number>(0);
   const { isActive: isBlackFridayActive, getCourseDiscount } = useBlackFridayContext();
   const blackFridayDiscount = courseId ? getCourseDiscount(courseId) : 0;
   
@@ -113,25 +114,26 @@ const BoundlessLanding = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Fetch course ID on mount
+  // Fetch course ID and price on mount
   useEffect(() => {
-    const fetchCourseId = async () => {
+    const fetchCourseData = async () => {
       try {
         const { data, error } = await supabase
           .from('courses')
-          .select('id')
+          .select('id, price')
           .eq('slug', 'boundless')
           .single();
         
         if (data && !error) {
           setCourseId(data.id);
+          setCoursePrice(data.price);
         }
       } catch (error) {
-        console.error('Error fetching course ID:', error);
+        console.error('Error fetching course data:', error);
       }
     };
     
-    fetchCourseId();
+    fetchCourseData();
   }, []);
 
   const courseContent = [
@@ -227,12 +229,17 @@ const BoundlessLanding = () => {
   return (
     <MainLayout>
       <div className="min-h-screen bg-background">
-        {/* Black Friday Discount Banner */}
-        {isBlackFridayActive && blackFridayDiscount > 0 && (
-          <div className="container max-w-6xl mx-auto px-4 pt-8">
-            <CourseDiscountBanner discount={blackFridayDiscount} courseName="شروع بدون مرز" />
-          </div>
-        )}
+      {/* Black Friday Discount Banner */}
+      {isBlackFridayActive && blackFridayDiscount > 0 && courseId && (
+        <div className="container max-w-6xl mx-auto px-4 pt-8">
+          <CourseDiscountBanner 
+            discount={blackFridayDiscount} 
+            courseName="شروع بدون مرز"
+            originalPrice={coursePrice}
+            courseSlug="boundless"
+          />
+        </div>
+      )}
         
         {/* Enhanced Hero Section with Rotating Headlines */}
         <section className="relative py-20 md:py-28 overflow-hidden">

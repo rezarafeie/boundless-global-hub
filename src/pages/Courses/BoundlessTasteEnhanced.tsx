@@ -36,6 +36,7 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [courseId, setCourseId] = useState<string | null>(null);
+  const [coursePrice, setCoursePrice] = useState<number>(0);
   const { isActive: isBlackFridayActive, getCourseDiscount } = useBlackFridayContext();
   const blackFridayDiscount = courseId ? getCourseDiscount(courseId) : 0;
   const {
@@ -43,26 +44,27 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
     loading: courseSettingsLoading
   } = useCourseSettings(courseSlug || '');
 
-  // Fetch course ID on mount
+  // Fetch course ID and price on mount
   React.useEffect(() => {
-    const fetchCourseId = async () => {
+    const fetchCourseData = async () => {
       if (!courseSlug) return;
       try {
         const { data, error } = await supabase
           .from('courses')
-          .select('id')
+          .select('id, price')
           .eq('slug', courseSlug)
           .single();
         
         if (data && !error) {
           setCourseId(data.id);
+          setCoursePrice(data.price);
         }
       } catch (error) {
-        console.error('Error fetching course ID:', error);
+        console.error('Error fetching course:', error);
       }
     };
     
-    fetchCourseId();
+    fetchCourseData();
   }, [courseSlug]);
 
   // Set countdown target for 7 days from now
@@ -184,9 +186,14 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
   return (
     <MainLayout>
       {/* Black Friday Discount Banner */}
-      {isBlackFridayActive && blackFridayDiscount > 0 && (
+      {isBlackFridayActive && blackFridayDiscount > 0 && courseId && courseSlug && (
         <div className="container mx-auto px-4 pt-8">
-          <CourseDiscountBanner discount={blackFridayDiscount} courseName={title} />
+          <CourseDiscountBanner 
+            discount={blackFridayDiscount} 
+            courseName={title}
+            originalPrice={coursePrice}
+            courseSlug={courseSlug}
+          />
         </div>
       )}
 

@@ -74,9 +74,14 @@ const CrisisProjectEnhanced = ({
     <MainLayout>
       <div className="min-h-screen bg-background">
         {/* Black Friday Discount Banner */}
-        {isBlackFridayActive && blackFridayDiscount > 0 && (
+        {isBlackFridayActive && blackFridayDiscount > 0 && courseId && (
           <div className="container mx-auto px-4 pt-8">
-            <CourseDiscountBanner discount={blackFridayDiscount} courseName="پروژه بحران" />
+            <CourseDiscountBanner 
+              discount={blackFridayDiscount} 
+              courseName="پروژه بحران"
+              originalPrice={10000000}
+              courseSlug={courseSlug}
+            />
           </div>
         )}
         
