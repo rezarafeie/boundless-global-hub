@@ -5,8 +5,8 @@ import MainLayout from "@/components/Layout/MainLayout";
 import CheckoutForm from "@/components/CheckoutForm";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useBlackFridayContext } from "@/contexts/BlackFridayContext";
-import BlackFridayBanner from "@/components/BlackFriday/BlackFridayBanner";
 import BlackFridayCountdown from "@/components/BlackFriday/BlackFridayCountdown";
+import { Zap, Sparkles } from "lucide-react";
 
 const Checkout = () => {
   const { courseSlug } = useParams();
@@ -45,25 +45,33 @@ const Checkout = () => {
 
   return (
     <MainLayout>
-      {/* Black Friday Banner */}
+      {/* Black Friday Special Banner */}
       {isBlackFridayActive && blackFridaySettings?.end_date && (
-        <BlackFridayBanner endDate={blackFridaySettings.end_date} />
+        <div className="bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 border-b-4 border-yellow-500/50 py-6">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-right">
+              <div className="flex items-center gap-3">
+                <Zap className="h-8 w-8 text-yellow-400 fill-yellow-400" />
+                <div>
+                  <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                    BLACK FRIDAY
+                    <Sparkles className="h-5 w-5 text-yellow-400" />
+                  </h2>
+                  <p className="text-sm text-zinc-300">تخفیف ویژه برای ثبت‌نام</p>
+                </div>
+              </div>
+              <BlackFridayCountdown endDate={blackFridaySettings.end_date} />
+            </div>
+          </div>
+        </div>
       )}
       
-      <div className={`container py-16 ${isBlackFridayActive ? 'bg-gradient-to-b from-black/5 to-transparent' : ''}`}>
+      <div className="container py-16">
         <div className="text-center mb-8">
-          {isBlackFridayActive && (
-            <div className="mb-6 flex justify-center">
-              <BlackFridayCountdown 
-                endDate={blackFridaySettings?.end_date || ''} 
-                className="scale-90"
-              />
-            </div>
-          )}
-          <h1 className={`text-3xl font-bold mb-4 ${isBlackFridayActive ? 'text-yellow-600' : ''}`}>
+          <h1 className="text-3xl font-bold mb-4">
             {isBlackFridayActive ? '🔥 پرداخت با تخفیف ویژه بلک فرایدی' : 'خرید دوره'}
           </h1>
-          <p className={isBlackFridayActive ? 'text-yellow-700 font-semibold' : 'text-gray-600'}>
+          <p className="text-muted-foreground">
             {isBlackFridayActive 
               ? '⚡ فرصت استثنایی برای ثبت‌نام با تخفیف - زمان محدود!'
               : 'فقط چند قدم تا دسترسی کامل به دوره'

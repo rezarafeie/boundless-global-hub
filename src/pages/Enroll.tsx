@@ -669,6 +669,8 @@ const Enroll: React.FC = () => {
                                         ? formatPrice(prelaunchPrice)
                                         : isOnSale && salePrice !== null
                                           ? formatPrice(salePrice)
+                                          : isBlackFridayActive && blackFridayDiscount > 0 && course
+                                            ? formatPrice((course.use_dollar_price && finalRialPrice ? finalRialPrice : course.price) * (1 - blackFridayDiscount / 100))
                                           : discountedPrice !== null 
                                             ? formatPrice(discountedPrice)
                                             : course?.use_dollar_price && finalRialPrice 
@@ -677,7 +679,7 @@ const Enroll: React.FC = () => {
                                     }
                                  </span>
                                   {/* Show original price if discounted */}
-                                  {((test && discountAmount > 0) || (!test && (isOnPrelaunch && prelaunchPrice !== null || isOnSale && salePrice !== null || discountAmount > 0))) && (
+                                  {((test && discountAmount > 0) || (!test && (isOnPrelaunch && prelaunchPrice !== null || isOnSale && salePrice !== null || (isBlackFridayActive && blackFridayDiscount > 0) || discountAmount > 0))) && (
                                      <div className="text-sm text-muted-foreground line-through mt-1">
                                        {test 
                                          ? formatPrice(test.price)
@@ -687,6 +689,14 @@ const Enroll: React.FC = () => {
                                        }
                                      </div>
                                   )}
+                                
+                                {/* Black Friday Badge */}
+                                {!isOnPrelaunch && !isOnSale && isBlackFridayActive && blackFridayDiscount > 0 && (
+                                  <div className="inline-flex items-center gap-2 mt-2 px-3 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold rounded-full">
+                                    <Zap className="h-3 w-3 fill-current" />
+                                    BLACK FRIDAY - {blackFridayDiscount}% تخفیف
+                                  </div>
+                                )}
                                 
                                 {/* Pre-launch Price in USD if applicable */}
                                 {isOnPrelaunch && course.use_dollar_price && (course as any).pre_launch_price && (
