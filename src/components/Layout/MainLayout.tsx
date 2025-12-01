@@ -70,11 +70,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     <div className={`flex min-h-screen flex-col bg-background text-foreground dark:bg-background dark:text-foreground`} dir={direction}>
       <Header />
       
-      {/* Black Friday Banner - Shows only on home page */}
-      {isBlackFridayActive && blackFridaySettings?.end_date && location.pathname === '/' && (
-        <BlackFridayBanner endDate={blackFridaySettings.end_date} />
-      )}
-      
       <NotificationErrorBoundary>
         <LiveWarModeBanner />
         <PopupNotification />
