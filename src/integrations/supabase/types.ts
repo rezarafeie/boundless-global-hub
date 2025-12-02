@@ -1224,6 +1224,47 @@ export type Database = {
           },
         ]
       }
+      daily_reports: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          notes: string | null
+          report_date: string
+          role: string
+          updated_at: string
+          user_id: number
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id?: string
+          notes?: string | null
+          report_date?: string
+          role: string
+          updated_at?: string
+          user_id: number
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          notes?: string | null
+          report_date?: string
+          role?: string
+          updated_at?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_reports_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_activities: {
         Row: {
           admin_id: number
@@ -2586,6 +2627,56 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      report_ai_analysis: {
+        Row: {
+          accuracy_score: number | null
+          analysis_date: string
+          anomalies: string[] | null
+          created_at: string
+          highlights: string[] | null
+          id: string
+          motivation: string | null
+          platform_metrics: Json | null
+          raw_analysis: string | null
+          suggestions: string[] | null
+          user_id: number | null
+        }
+        Insert: {
+          accuracy_score?: number | null
+          analysis_date: string
+          anomalies?: string[] | null
+          created_at?: string
+          highlights?: string[] | null
+          id?: string
+          motivation?: string | null
+          platform_metrics?: Json | null
+          raw_analysis?: string | null
+          suggestions?: string[] | null
+          user_id?: number | null
+        }
+        Update: {
+          accuracy_score?: number | null
+          analysis_date?: string
+          anomalies?: string[] | null
+          created_at?: string
+          highlights?: string[] | null
+          id?: string
+          motivation?: string | null
+          platform_metrics?: Json | null
+          raw_analysis?: string | null
+          suggestions?: string[] | null
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_ai_analysis_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       room_memberships: {
         Row: {
