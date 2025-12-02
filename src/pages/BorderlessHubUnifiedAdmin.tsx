@@ -31,6 +31,7 @@ import { chatUserAdminService } from '@/lib/chatUserAdmin';
 import UserEditModal from '@/components/Admin/UserEditModal';
 import MessengerAdminSection from '@/components/Admin/MessengerAdminSection';
 import NotificationManagementSection from '@/components/Admin/NotificationManagementSection';
+import DailyReportsTab from '@/components/Admin/DailyReportsTab';
 
 const BorderlessHubUnifiedAdmin: React.FC = () => {
   const { toast } = useToast();
@@ -320,7 +321,7 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
 
           {/* Main Content */}
           <Tabs defaultValue="users" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 h-auto">
+            <TabsList className="grid w-full grid-cols-4 h-auto">
               <TabsTrigger 
                 value="users" 
                 className="flex flex-col items-center gap-2 py-4"
@@ -341,6 +342,13 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
               >
                 <Bell className="w-5 h-5" />
                 <span>مدیریت اعلان‌ها</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="daily-reports" 
+                className="flex flex-col items-center gap-2 py-4"
+              >
+                <Calendar className="w-5 h-5" />
+                <span>گزارشات روزانه</span>
               </TabsTrigger>
             </TabsList>
 
@@ -559,6 +567,10 @@ const BorderlessHubUnifiedAdmin: React.FC = () => {
 
             <TabsContent value="notifications" className="space-y-6">
               <NotificationManagementSection />
+            </TabsContent>
+
+            <TabsContent value="daily-reports" className="space-y-6">
+              <DailyReportsTab />
             </TabsContent>
           </Tabs>
 
