@@ -20,7 +20,8 @@ import {
   MessageSquare,
   Brain,
   Calendar,
-  Briefcase
+  Briefcase,
+  ClipboardList
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -43,6 +44,7 @@ const menuItems = [
   { id: 'internships', label: 'کارآموزی‌ها', icon: Users },
   { id: 'sales', label: 'داشبورد فروش', icon: BarChart3 },
   { id: 'leads', label: 'مدیریت لیدها', icon: UserPlus },
+  { id: 'daily-reports', label: 'گزارشات روزانه', icon: ClipboardList },
   { id: 'users', label: 'کاربران', icon: Users },
   { id: 'analytics', label: 'آنالیتیکس', icon: TrendingUp },
   { id: 'crm', label: 'CRM', icon: MessageSquare },
