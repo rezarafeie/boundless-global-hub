@@ -1077,23 +1077,47 @@ const Enroll: React.FC = () => {
                            <Loader2 className="h-6 w-6 animate-spin ml-2" />
                            در حال پردازش...
                          </>
-                       ) : (
-                          <>
-                              <CreditCard className="h-6 w-6 ml-2" />
-                              پرداخت آنلاین {test 
-                                ? (discountedPrice !== null ? formatPrice(discountedPrice) : formatPrice(test.price))
-                               : isOnPrelaunch && prelaunchPrice !== null
-                                 ? formatPrice(prelaunchPrice)
-                                 : isOnSale && salePrice !== null
-                                   ? formatPrice(salePrice)
-                                   : discountedPrice !== null 
-                                     ? formatPrice(discountedPrice)
-                                     : course?.use_dollar_price && finalRialPrice 
-                                       ? TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان'
-                                       : formatPrice(course?.price || 0)
-                             }
-                          </>
-                        )}
+                        ) : (
+                           <>
+                               <CreditCard className="h-6 w-6 ml-2" />
+                               پرداخت آنلاین {(() => {
+                                 // For tests
+                                 if (test) {
+                                   return discountedPrice !== null ? formatPrice(discountedPrice) : formatPrice(test.price);
+                                 }
+                                 
+                                 // For courses - check coupon discount first (highest priority)
+                                 if (discountedPrice !== null) {
+                                   return formatPrice(discountedPrice);
+                                 }
+                                 
+                                 // Pre-launch price
+                                 if (isOnPrelaunch && prelaunchPrice !== null) {
+                                   return formatPrice(prelaunchPrice);
+                                 }
+                                 
+                                 // Sale price
+                                 if (isOnSale && salePrice !== null) {
+                                   return formatPrice(salePrice);
+                                 }
+                                 
+                                 // Black Friday discount
+                                 if (isBlackFridayActive && blackFridayDiscount > 0 && course) {
+                                   const basePrice = course.use_dollar_price && finalRialPrice ? finalRialPrice : course.price;
+                                   const blackFridayPrice = Math.round(basePrice * (1 - blackFridayDiscount / 100));
+                                   return formatPrice(blackFridayPrice);
+                                 }
+                                 
+                                 // Dollar course regular price
+                                 if (course?.use_dollar_price && finalRialPrice) {
+                                   return TetherlandService.formatIRRAmount(finalRialPrice) + ' تومان';
+                                 }
+                                 
+                                 // Regular price
+                                 return formatPrice(course?.price || 0);
+                               })()}
+                           </>
+                         )}
                      </Button>
                    )}
                  </form>
