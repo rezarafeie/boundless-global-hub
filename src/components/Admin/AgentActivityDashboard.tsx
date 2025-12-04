@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Users, 
   Phone, 
-  TrendingUp,
-  Target,
   Award,
   Loader2,
   Activity,
@@ -43,8 +42,9 @@ const AgentActivityDashboard: React.FC = () => {
   
   const [agentStats, setAgentStats] = useState<AgentStats[]>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [dateRange, setDateRange] = useState<string>('7d');
+  const [hasLoaded, setHasLoaded] = useState(false);
   
   // Summary stats
   const [summary, setSummary] = useState({
@@ -53,10 +53,6 @@ const AgentActivityDashboard: React.FC = () => {
     totalCalls: 0,
     totalSales: 0
   });
-
-  useEffect(() => {
-    fetchData();
-  }, [dateRange]);
 
   const getDateFilter = () => {
     const now = new Date();
@@ -70,6 +66,7 @@ const AgentActivityDashboard: React.FC = () => {
 
   const fetchData = async () => {
     setLoading(true);
+    setHasLoaded(true);
     try {
       const dateFilter = getDateFilter();
 
@@ -265,21 +262,62 @@ const AgentActivityDashboard: React.FC = () => {
     );
   }
 
+  if (!hasLoaded) {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">داشبورد عملکرد کارشناسان</h2>
+          <div className="flex gap-2 items-center">
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="24h">۲۴ ساعت اخیر</SelectItem>
+                <SelectItem value="7d">۷ روز اخیر</SelectItem>
+                <SelectItem value="30d">۳۰ روز اخیر</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={fetchData} className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              مشاهده گزارش
+            </Button>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="py-20">
+            <div className="flex flex-col items-center justify-center text-muted-foreground">
+              <BarChart3 className="h-12 w-12 mb-4 opacity-50" />
+              <p className="text-lg font-medium">بازه زمانی را انتخاب کنید</p>
+              <p className="text-sm">سپس روی "مشاهده گزارش" کلیک کنید</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Date Range Filter */}
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-semibold">داشبورد عملکرد کارشناسان</h2>
-        <Select value={dateRange} onValueChange={setDateRange}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="24h">۲۴ ساعت اخیر</SelectItem>
-            <SelectItem value="7d">۷ روز اخیر</SelectItem>
-            <SelectItem value="30d">۳۰ روز اخیر</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2 items-center">
+          <Select value={dateRange} onValueChange={setDateRange}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="24h">۲۴ ساعت اخیر</SelectItem>
+              <SelectItem value="7d">۷ روز اخیر</SelectItem>
+              <SelectItem value="30d">۳۰ روز اخیر</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={fetchData} variant="outline" size="sm" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            بروزرسانی
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}

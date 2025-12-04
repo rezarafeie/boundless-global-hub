@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,19 +14,18 @@ import {
   MessageSquare,
   Search, 
   Loader2,
-  Clock,
   CheckCircle,
   AlertCircle,
   Plus,
   Calendar,
   User,
-  FileText
+  FileText,
+  RefreshCw
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns-jalali';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDebounce } from '@/hooks/use-debounce';
 
 interface Lead {
   id: string;
@@ -97,22 +96,17 @@ const SalesAgentLeads: React.FC = () => {
     untouched: 0
   });
 
-  const debouncedSearch = useDebounce(searchTerm, 300);
-
-  useEffect(() => {
-    if (user?.messengerData?.id) {
-      fetchLeads();
-    }
-  }, [user?.messengerData?.id, debouncedSearch, crmFilter]);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const fetchLeads = async () => {
     if (!user?.messengerData?.id) return;
     
     setLoading(true);
+    setHasLoaded(true);
     try {
       const agentId = user.messengerData.id;
 
-      // Fetch assignments for this agent
+      // Fetch assignments for this agent with limit
       const { data: assignments, error: assignError } = await supabase
         .from('lead_assignments')
         .select(`
@@ -183,8 +177,8 @@ const SalesAgentLeads: React.FC = () => {
       // Apply filters
       let filteredLeads = processedLeads;
 
-      if (debouncedSearch) {
-        const search = debouncedSearch.toLowerCase();
+      if (searchTerm) {
+        const search = searchTerm.toLowerCase();
         filteredLeads = filteredLeads.filter(l => 
           l.full_name.toLowerCase().includes(search) ||
           l.phone.includes(search) ||
@@ -397,6 +391,10 @@ const SalesAgentLeads: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+            <Button onClick={fetchLeads} disabled={loading} className="gap-2">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              بارگذاری
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -407,6 +405,11 @@ const SalesAgentLeads: React.FC = () => {
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : !hasLoaded ? (
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+              <User className="h-12 w-12 mb-4 opacity-50" />
+              <p className="text-lg font-medium">برای مشاهده لیدها روی "بارگذاری" کلیک کنید</p>
             </div>
           ) : (
             <Table>

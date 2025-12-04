@@ -17,16 +17,13 @@ import {
   Percent,
   Brain,
   Phone,
-  Mail,
-  Calendar,
   CheckCircle,
   AlertCircle,
-  RefreshCw
+  Filter
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns-jalali';
-import { useDebounce } from '@/hooks/use-debounce';
 
 interface Lead {
   id: string;
@@ -96,19 +93,15 @@ const SimplifiedLeadManagement: React.FC = () => {
     unassigned: 0
   });
 
-  const debouncedSearch = useDebounce(searchTerm, 300);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
     fetchInitialData();
   }, []);
 
-  useEffect(() => {
-    fetchLeads();
-  }, [debouncedSearch, selectedCourse, statusFilter, agentFilter, dateFrom, dateTo]);
-
   const fetchInitialData = async () => {
     await Promise.all([fetchCourses(), fetchAgents()]);
-    await fetchLeads();
+    // Don't auto-load leads - wait for user to click "Load"
   };
 
   const fetchCourses = async () => {
@@ -139,7 +132,15 @@ const SimplifiedLeadManagement: React.FC = () => {
   };
 
   const fetchLeads = async () => {
+    if (!selectedCourse || selectedCourse === 'all') {
+      // Require course selection
+      setLeads([]);
+      setStats({ total: 0, assigned: 0, unassigned: 0 });
+      return;
+    }
+    
     setLoading(true);
+    setHasLoaded(true);
     try {
       // Fetch enrollments
       let query = supabase
@@ -156,12 +157,9 @@ const SimplifiedLeadManagement: React.FC = () => {
           chat_user_id,
           courses!inner(title)
         `)
-        .in('payment_status', ['success', 'completed', 'pending'])
-        .order('created_at', { ascending: false });
-
-      if (selectedCourse !== 'all') {
-        query = query.eq('course_id', selectedCourse);
-      }
+        .eq('course_id', selectedCourse)
+        .order('created_at', { ascending: false })
+        .limit(500);
 
       if (dateFrom) {
         query = query.gte('created_at', dateFrom);
@@ -171,8 +169,8 @@ const SimplifiedLeadManagement: React.FC = () => {
         query = query.lte('created_at', dateTo + 'T23:59:59');
       }
 
-      if (debouncedSearch) {
-        query = query.or(`full_name.ilike.%${debouncedSearch}%,phone.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%`);
+      if (searchTerm) {
+        query = query.or(`full_name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
       }
 
       const { data: enrollments, error } = await query;
@@ -559,15 +557,20 @@ const SimplifiedLeadManagement: React.FC = () => {
             <div className="w-[140px]">
               <Label className="text-xs text-muted-foreground mb-1 block">تا تاریخ</Label>
               <Input
-                type="date"
+              type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
               />
             </div>
 
-            {/* Refresh */}
-            <Button variant="outline" size="icon" onClick={fetchLeads} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            {/* Load Button */}
+            <Button 
+              onClick={fetchLeads} 
+              disabled={loading || !selectedCourse || selectedCourse === 'all'}
+              className="gap-2"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Filter className="h-4 w-4" />}
+              بارگذاری
             </Button>
           </div>
 
@@ -607,6 +610,12 @@ const SimplifiedLeadManagement: React.FC = () => {
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : !hasLoaded ? (
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+              <Filter className="h-12 w-12 mb-4 opacity-50" />
+              <p className="text-lg font-medium">دوره مورد نظر را انتخاب کنید</p>
+              <p className="text-sm">سپس روی دکمه "بارگذاری" کلیک کنید</p>
             </div>
           ) : (
             <Table>
