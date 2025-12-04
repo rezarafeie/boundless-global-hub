@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Plus, FileText, Eye, Search, Calendar, User, Phone, Mail, X, Trash2, Edit } from 'lucide-react';
+import { Plus, FileText, Eye, Search, Calendar, User, Phone, Mail, X, Trash2, Edit, Copy, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 
 interface Invoice {
@@ -59,6 +60,7 @@ interface Product {
 }
 
 export const AccountingInvoices: React.FC = () => {
+  const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -267,15 +269,14 @@ export const AccountingInvoices: React.FC = () => {
     }
   };
 
-  const handleViewInvoice = async (invoice: Invoice) => {
-    setSelectedInvoice(invoice);
-    setIsViewOpen(true);
-    // Fetch invoice items
-    const { data } = await supabase
-      .from('invoice_items')
-      .select('*')
-      .eq('invoice_id', invoice.id);
-    setInvoiceItems(data || []);
+  const handleViewInvoice = (invoice: Invoice) => {
+    navigate(`/enroll/admin/invoice/${invoice.id}`);
+  };
+
+  const copyInvoiceLink = (invoice: Invoice) => {
+    const link = `${window.location.origin}/invoice/${invoice.id}`;
+    navigator.clipboard.writeText(link);
+    toast.success('لینک فاکتور کپی شد');
   };
 
   const handleEditInvoice = (invoice: Invoice) => {
@@ -780,16 +781,19 @@ export const AccountingInvoices: React.FC = () => {
                     <TableCell className="hidden sm:table-cell text-sm">{format(new Date(invoice.created_at), 'yyyy/MM/dd')}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
+                        <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)} title="مشاهده">
                           <Eye className="h-4 w-4" />
                         </Button>
+                        <Button variant="ghost" size="sm" onClick={() => copyInvoiceLink(invoice)} title="کپی لینک">
+                          <Copy className="h-4 w-4" />
+                        </Button>
                         {canEditInvoice(invoice) && (
-                          <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)}>
+                          <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)} title="ویرایش">
                             <Edit className="h-4 w-4" />
                           </Button>
                         )}
                         {canDeleteInvoice(invoice) && (
-                          <Button variant="ghost" size="sm" onClick={() => setDeleteInvoice(invoice)} className="text-destructive hover:text-destructive">
+                          <Button variant="ghost" size="sm" onClick={() => setDeleteInvoice(invoice)} className="text-destructive hover:text-destructive" title="حذف">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         )}

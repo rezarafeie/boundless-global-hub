@@ -70,3 +70,9 @@ verify_jwt = false
 
 [functions.ai-weekly-analysis]
 verify_jwt = false
+
+[functions.invoice-zarinpal-payment]
+verify_jwt = false
+
+[functions.invoice-zarinpal-verify]
+verify_jwt = false
