@@ -9,8 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Plus, FileText, Eye, Search, Calendar, User, Phone, Mail, X } from 'lucide-react';
+import { Plus, FileText, Eye, Search, Calendar, User, Phone, Mail, X, Trash2, Edit } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 
 interface Invoice {
@@ -27,6 +28,14 @@ interface Invoice {
   created_at: string;
   customer?: { name: string; phone: string };
   agent?: { name: string } | null;
+}
+
+interface InvoiceItem {
+  id: string;
+  description: string;
+  unit_price: number;
+  quantity: number;
+  total_price: number;
 }
 
 interface Customer {
@@ -59,6 +68,11 @@ export const AccountingInvoices: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [deleteInvoice, setDeleteInvoice] = useState<Invoice | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: number; role: string; is_messenger_admin: boolean } | null>(null);
   
   // Customer search state
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
@@ -87,6 +101,27 @@ export const AccountingInvoices: React.FC = () => {
     description: ''
   });
 
+  // Check if user can edit/delete invoice
+  const canEditInvoice = (invoice: Invoice) => {
+    if (!currentUser) return false;
+    // Admins and sales admins can edit all
+    if (currentUser.is_messenger_admin || currentUser.role === 'sales_admin' || currentUser.role === 'admin') {
+      return true;
+    }
+    // Sales agents can only delete their own
+    return invoice.sales_agent_id === currentUser.id;
+  };
+
+  const canDeleteInvoice = (invoice: Invoice) => {
+    if (!currentUser) return false;
+    // Admins and sales admins can delete all
+    if (currentUser.is_messenger_admin || currentUser.role === 'sales_admin' || currentUser.role === 'admin') {
+      return true;
+    }
+    // Sales agents can only delete their own
+    return invoice.sales_agent_id === currentUser.id;
+  };
+
   // Filter customers based on search
   const filteredCustomers = useMemo(() => {
     if (!customerSearchTerm.trim()) return [];
@@ -100,6 +135,16 @@ export const AccountingInvoices: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+    // Get current user info
+    const sessionData = localStorage.getItem('messenger_session');
+    if (sessionData) {
+      const session = JSON.parse(sessionData);
+      setCurrentUser({
+        id: session?.user?.id,
+        role: session?.user?.role || 'user',
+        is_messenger_admin: session?.user?.is_messenger_admin || false
+      });
+    }
   }, []);
 
   const fetchData = async () => {
@@ -229,6 +274,66 @@ export const AccountingInvoices: React.FC = () => {
     } catch (error) {
       console.error('Error creating invoice:', error);
       toast.error('خطا در ایجاد فاکتور');
+    }
+  };
+
+  const handleViewInvoice = async (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setIsViewOpen(true);
+    // Fetch invoice items
+    const { data } = await supabase
+      .from('invoice_items')
+      .select('*')
+      .eq('invoice_id', invoice.id);
+    setInvoiceItems(data || []);
+  };
+
+  const handleEditInvoice = (invoice: Invoice) => {
+    setSelectedInvoice({ ...invoice });
+    setIsEditOpen(true);
+  };
+
+  const handleUpdateInvoice = async () => {
+    if (!selectedInvoice) return;
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .update({
+          status: selectedInvoice.status,
+          paid_amount: selectedInvoice.paid_amount,
+          notes: selectedInvoice.notes
+        })
+        .eq('id', selectedInvoice.id);
+      
+      if (error) throw error;
+      
+      toast.success('فاکتور با موفقیت بروزرسانی شد');
+      setIsEditOpen(false);
+      fetchData();
+    } catch (error) {
+      console.error('Error updating invoice:', error);
+      toast.error('خطا در بروزرسانی فاکتور');
+    }
+  };
+
+  const handleDeleteInvoice = async () => {
+    if (!deleteInvoice) return;
+    try {
+      // Delete invoice items first
+      await supabase.from('invoice_items').delete().eq('invoice_id', deleteInvoice.id);
+      // Delete installments if any
+      await supabase.from('installments').delete().eq('invoice_id', deleteInvoice.id);
+      // Delete the invoice
+      const { error } = await supabase.from('invoices').delete().eq('id', deleteInvoice.id);
+      
+      if (error) throw error;
+      
+      toast.success('فاکتور با موفقیت حذف شد');
+      setDeleteInvoice(null);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      toast.error('خطا در حذف فاکتور');
     }
   };
 
@@ -666,9 +771,21 @@ export const AccountingInvoices: React.FC = () => {
                     </TableCell>
                     <TableCell>{format(new Date(invoice.created_at), 'yyyy/MM/dd')}</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedInvoice(invoice)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {canEditInvoice(invoice) && (
+                          <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {canDeleteInvoice(invoice) && (
+                          <Button variant="ghost" size="sm" onClick={() => setDeleteInvoice(invoice)} className="text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -677,6 +794,161 @@ export const AccountingInvoices: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* View Invoice Dialog */}
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="max-w-lg" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-right">جزئیات فاکتور</DialogTitle>
+          </DialogHeader>
+          {selectedInvoice && (
+            <div className="space-y-4 text-right">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">شماره فاکتور</Label>
+                  <p className="font-mono font-semibold">{selectedInvoice.invoice_number}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">تاریخ</Label>
+                  <p>{format(new Date(selectedInvoice.created_at), 'yyyy/MM/dd')}</p>
+                </div>
+              </div>
+              
+              <div className="border-t pt-4">
+                <Label className="text-muted-foreground">مشتری</Label>
+                <p className="font-semibold">{selectedInvoice.customer?.name}</p>
+                <p className="text-sm text-muted-foreground">{selectedInvoice.customer?.phone}</p>
+              </div>
+
+              {selectedInvoice.agent && (
+                <div>
+                  <Label className="text-muted-foreground">فروشنده</Label>
+                  <p>{selectedInvoice.agent.name}</p>
+                </div>
+              )}
+
+              <div className="border-t pt-4">
+                <Label className="text-muted-foreground">آیتم‌ها</Label>
+                {invoiceItems.length > 0 ? (
+                  <div className="mt-2 space-y-2">
+                    {invoiceItems.map(item => (
+                      <div key={item.id} className="flex justify-between items-center p-2 bg-muted rounded">
+                        <span>{item.description}</span>
+                        <span className="font-semibold">{Number(item.total_price).toLocaleString()} تومان</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm mt-1">بدون آیتم</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 border-t pt-4">
+                <div>
+                  <Label className="text-muted-foreground">مبلغ کل</Label>
+                  <p className="font-semibold text-lg">{Number(selectedInvoice.total_amount).toLocaleString()} تومان</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">پرداخت شده</Label>
+                  <p className="font-semibold text-lg text-green-500">{Number(selectedInvoice.paid_amount).toLocaleString()} تومان</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div>
+                  <Label className="text-muted-foreground">وضعیت</Label>
+                  <div className="mt-1">{getStatusBadge(selectedInvoice.status)}</div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">نوع پرداخت</Label>
+                  <p>{selectedInvoice.is_installment ? 'اقساطی' : 
+                    selectedInvoice.payment_type === 'online' ? 'آنلاین' :
+                    selectedInvoice.payment_type === 'card_to_card' ? 'کارت به کارت' : 'دستی'}</p>
+                </div>
+              </div>
+
+              {selectedInvoice.notes && (
+                <div className="border-t pt-4">
+                  <Label className="text-muted-foreground">یادداشت</Label>
+                  <p className="text-sm mt-1">{selectedInvoice.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Invoice Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-right">ویرایش فاکتور</DialogTitle>
+          </DialogHeader>
+          {selectedInvoice && (
+            <div className="space-y-4 text-right">
+              <div>
+                <Label className="text-right block">وضعیت</Label>
+                <Select 
+                  value={selectedInvoice.status} 
+                  onValueChange={(v) => setSelectedInvoice({...selectedInvoice, status: v})}
+                >
+                  <SelectTrigger className="text-right">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unpaid">پرداخت نشده</SelectItem>
+                    <SelectItem value="partially_paid">پرداخت جزئی</SelectItem>
+                    <SelectItem value="paid">پرداخت شده</SelectItem>
+                    <SelectItem value="cancelled">لغو شده</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-right block">مبلغ پرداخت شده</Label>
+                <Input
+                  type="number"
+                  value={selectedInvoice.paid_amount}
+                  onChange={(e) => setSelectedInvoice({...selectedInvoice, paid_amount: parseFloat(e.target.value) || 0})}
+                  className="text-right"
+                />
+              </div>
+
+              <div>
+                <Label className="text-right block">یادداشت</Label>
+                <Textarea
+                  value={selectedInvoice.notes || ''}
+                  onChange={(e) => setSelectedInvoice({...selectedInvoice, notes: e.target.value})}
+                  className="text-right"
+                  rows={3}
+                />
+              </div>
+
+              <Button className="w-full" onClick={handleUpdateInvoice}>
+                ذخیره تغییرات
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteInvoice} onOpenChange={(open) => !open && setDeleteInvoice(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-right">آیا از حذف فاکتور مطمئن هستید؟</AlertDialogTitle>
+            <AlertDialogDescription className="text-right">
+              فاکتور شماره {deleteInvoice?.invoice_number} حذف خواهد شد. این عمل قابل بازگشت نیست.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel>انصراف</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteInvoice} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              حذف
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
