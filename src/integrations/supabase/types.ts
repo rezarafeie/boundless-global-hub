@@ -2069,7 +2069,10 @@ export type Database = {
           is_installment: boolean
           notes: string | null
           paid_amount: number
+          payment_review_status: string | null
           payment_type: string
+          receipt_url: string | null
+          rejection_reason: string | null
           sales_agent_id: number | null
           status: string
           total_amount: number
@@ -2085,7 +2088,10 @@ export type Database = {
           is_installment?: boolean
           notes?: string | null
           paid_amount?: number
+          payment_review_status?: string | null
           payment_type?: string
+          receipt_url?: string | null
+          rejection_reason?: string | null
           sales_agent_id?: number | null
           status?: string
           total_amount?: number
@@ -2101,7 +2107,10 @@ export type Database = {
           is_installment?: boolean
           notes?: string | null
           paid_amount?: number
+          payment_review_status?: string | null
           payment_type?: string
+          receipt_url?: string | null
+          rejection_reason?: string | null
           sales_agent_id?: number | null
           status?: string
           total_amount?: number

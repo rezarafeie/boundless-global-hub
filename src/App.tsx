@@ -149,6 +149,11 @@ import JobApplication from "./pages/JobApplication";
 import Internship from "./pages/Internship";
 import DailyReport from "./pages/DailyReport";
 
+// Invoice pages
+import InvoiceView from "./pages/InvoiceView";
+import InvoiceAdmin from "./pages/InvoiceAdmin";
+import InvoicePaymentCallback from "./pages/InvoicePaymentCallback";
+
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -370,6 +375,11 @@ const App = () => {
         <Route path="/job" element={<JobApplication />} />
         <Route path="/internship" element={<Internship />} />
                     <Route path="/report" element={<DailyReport />} />
+
+                    {/* Invoice Routes */}
+                    <Route path="/invoice/:invoiceId" element={<InvoiceView />} />
+                    <Route path="/invoice/:invoiceId/callback" element={<InvoicePaymentCallback />} />
+                    <Route path="/enroll/admin/invoice/:invoiceId" element={<InvoiceAdmin />} />
 
                     {/* 404 fallback */}
                     <Route path="*" element={<NotFound />} />
