@@ -81,14 +81,29 @@ export const AccountingInvoices: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showCustomerResults, setShowCustomerResults] = useState(false);
 
-  // Predefined services
-  const predefinedServices = [
-    { id: 'company_registration', name: 'ثبت شرکت', price: 0 },
-    { id: 'bank_account', name: 'افتتاح حساب', price: 0 },
-    { id: 'sim_card', name: 'سیم کارت', price: 0 },
-    { id: 'digital_services', name: 'خدمات دیجیتال', price: 0 },
-    { id: 'other', name: 'سایر', price: 0 },
-  ];
+  // Predefined services that should exist in the database
+  const predefinedServiceNames = ['ثبت شرکت', 'افتتاح حساب', 'سیم کارت', 'خدمات دیجیتال', 'سایر'];
+
+  const ensurePredefinedServices = async () => {
+    const { data: existingProducts } = await supabase
+      .from('products')
+      .select('name')
+      .in('name', predefinedServiceNames);
+
+    const existingNames = existingProducts?.map(p => p.name) || [];
+    const missingServices = predefinedServiceNames.filter(name => !existingNames.includes(name));
+
+    if (missingServices.length > 0) {
+      await supabase.from('products').insert(
+        missingServices.map(name => ({
+          name,
+          type: 'service',
+          price: 0,
+          is_active: true
+        }))
+      );
+    }
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -142,6 +157,9 @@ export const AccountingInvoices: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Ensure predefined services exist in products table
+      await ensurePredefinedServices();
+      
       const [invoicesRes, customersRes, coursesRes, productsRes] = await Promise.all([
         supabase.from('invoices').select('*').order('created_at', { ascending: false }),
         supabase.from('chat_users').select('id, name, phone, email'),
@@ -214,8 +232,8 @@ export const AccountingInvoices: React.FC = () => {
         const selectedCourse = courses.find(c => c.id === formData.product_id);
         itemDescription = selectedCourse?.title || 'دوره';
       } else {
-        const selectedService = predefinedServices.find(s => s.id === formData.product_id);
-        itemDescription = selectedService?.name || 'خدمات';
+        const selectedProduct = products.find(p => p.id === formData.product_id);
+        itemDescription = selectedProduct?.name || 'خدمات';
       }
       
       // Add custom description if provided
@@ -529,11 +547,11 @@ export const AccountingInvoices: React.FC = () => {
                               amount: selectedCourse ? selectedCourse.price.toString() : ''
                             });
                           } else {
-                            const selectedService = predefinedServices.find(s => s.id === v);
+                            const selectedProduct = products.find(p => p.id === v);
                             setFormData({
                               ...formData, 
                               product_id: v,
-                              amount: selectedService?.price ? selectedService.price.toString() : formData.amount
+                              amount: selectedProduct?.price ? selectedProduct.price.toString() : formData.amount
                             });
                           }
                         }}>
@@ -547,9 +565,9 @@ export const AccountingInvoices: React.FC = () => {
                                     {c.title} - {c.price.toLocaleString()} تومان
                                   </SelectItem>
                                 ))
-                              : predefinedServices.map(s => (
-                                  <SelectItem key={s.id} value={s.id}>
-                                    {s.name}
+                              : products.map(p => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.name} {p.price > 0 ? `- ${p.price.toLocaleString()} تومان` : ''}
                                   </SelectItem>
                                 ))
                             }

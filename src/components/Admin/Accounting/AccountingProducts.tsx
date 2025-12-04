@@ -50,13 +50,47 @@ export const AccountingProducts: React.FC = () => {
     is_active: true
   });
 
+  // Predefined services that should exist in the database
+  const predefinedServices = [
+    { name: 'ثبت شرکت', type: 'service', price: 0 },
+    { name: 'افتتاح حساب', type: 'service', price: 0 },
+    { name: 'سیم کارت', type: 'service', price: 0 },
+    { name: 'خدمات دیجیتال', type: 'service', price: 0 },
+    { name: 'سایر', type: 'service', price: 0 },
+  ];
+
   useEffect(() => {
     fetchData();
   }, []);
 
+  const ensurePredefinedServices = async () => {
+    // Check which services already exist
+    const { data: existingProducts } = await supabase
+      .from('products')
+      .select('name')
+      .in('name', predefinedServices.map(s => s.name));
+
+    const existingNames = existingProducts?.map(p => p.name) || [];
+    const missingServices = predefinedServices.filter(s => !existingNames.includes(s.name));
+
+    if (missingServices.length > 0) {
+      await supabase.from('products').insert(
+        missingServices.map(s => ({
+          name: s.name,
+          type: s.type,
+          price: s.price,
+          is_active: true
+        }))
+      );
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Ensure predefined services exist
+      await ensurePredefinedServices();
+
       const [productsRes, coursesRes] = await Promise.all([
         supabase.from('products').select('*').order('created_at', { ascending: false }),
         supabase.from('courses').select('id, title, description, price, is_active, created_at').order('created_at', { ascending: false })
