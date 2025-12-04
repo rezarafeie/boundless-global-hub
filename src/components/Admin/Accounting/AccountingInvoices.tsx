@@ -367,9 +367,9 @@ export const AccountingInvoices: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">مدیریت فاکتورها</h1>
+    <div className="space-y-6 p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="text-xl md:text-2xl font-bold">مدیریت فاکتورها</h1>
         <Dialog open={isCreateOpen} onOpenChange={(open) => {
           setIsCreateOpen(open);
           if (!open) {
@@ -379,7 +379,7 @@ export const AccountingInvoices: React.FC = () => {
           }
         }}>
           <DialogTrigger asChild>
-            <Button>
+            <Button size="sm" className="w-full sm:w-auto">
               <Plus className="ml-2 h-4 w-4" />
               فاکتور جدید
             </Button>
@@ -669,7 +669,7 @@ export const AccountingInvoices: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <div className="flex-1">
           <div className="relative">
             <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -682,7 +682,7 @@ export const AccountingInvoices: React.FC = () => {
           </div>
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="وضعیت" />
           </SelectTrigger>
           <SelectContent>
@@ -696,52 +696,52 @@ export const AccountingInvoices: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{invoices.length}</div>
-            <p className="text-muted-foreground">کل فاکتورها</p>
+          <CardContent className="pt-4 md:pt-6">
+            <div className="text-lg md:text-2xl font-bold">{invoices.length}</div>
+            <p className="text-xs md:text-sm text-muted-foreground">کل فاکتورها</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-500">
+          <CardContent className="pt-4 md:pt-6">
+            <div className="text-lg md:text-2xl font-bold text-green-500">
               {invoices.filter(i => i.status === 'paid').length}
             </div>
-            <p className="text-muted-foreground">پرداخت شده</p>
+            <p className="text-xs md:text-sm text-muted-foreground">پرداخت شده</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-red-500">
+          <CardContent className="pt-4 md:pt-6">
+            <div className="text-lg md:text-2xl font-bold text-red-500">
               {invoices.filter(i => i.status === 'unpaid').length}
             </div>
-            <p className="text-muted-foreground">پرداخت نشده</p>
+            <p className="text-xs md:text-sm text-muted-foreground">پرداخت نشده</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">
+          <CardContent className="pt-4 md:pt-6">
+            <div className="text-lg md:text-2xl font-bold">
               {invoices.reduce((sum, i) => sum + Number(i.total_amount), 0).toLocaleString()}
             </div>
-            <p className="text-muted-foreground">مجموع (تومان)</p>
+            <p className="text-xs md:text-sm text-muted-foreground">مجموع (تومان)</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Invoices Table */}
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>شماره فاکتور</TableHead>
-                <TableHead>مشتری</TableHead>
+                <TableHead>فاکتور</TableHead>
+                <TableHead className="hidden md:table-cell">مشتری</TableHead>
                 <TableHead>مبلغ</TableHead>
-                <TableHead>پرداخت شده</TableHead>
+                <TableHead className="hidden sm:table-cell">پرداختی</TableHead>
                 <TableHead>وضعیت</TableHead>
-                <TableHead>نوع پرداخت</TableHead>
-                <TableHead>تاریخ</TableHead>
+                <TableHead className="hidden md:table-cell">نوع</TableHead>
+                <TableHead className="hidden sm:table-cell">تاریخ</TableHead>
                 <TableHead>عملیات</TableHead>
               </TableRow>
             </TableHeader>
@@ -761,20 +761,23 @@ export const AccountingInvoices: React.FC = () => {
               ) : (
                 filteredInvoices.map(invoice => (
                   <TableRow key={invoice.id}>
-                    <TableCell className="font-mono">{invoice.invoice_number}</TableCell>
-                    <TableCell>
-                      <div>{invoice.customer?.name}</div>
-                      <div className="text-sm text-muted-foreground">{invoice.customer?.phone}</div>
+                    <TableCell className="font-mono text-xs md:text-sm">
+                      <div>{invoice.invoice_number}</div>
+                      <div className="text-muted-foreground md:hidden">{invoice.customer?.name}</div>
                     </TableCell>
-                    <TableCell>{Number(invoice.total_amount).toLocaleString()} تومان</TableCell>
-                    <TableCell>{Number(invoice.paid_amount).toLocaleString()} تومان</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <div className="text-sm">{invoice.customer?.name}</div>
+                      <div className="text-xs text-muted-foreground">{invoice.customer?.phone}</div>
+                    </TableCell>
+                    <TableCell className="text-xs md:text-sm">{Number(invoice.total_amount).toLocaleString()}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-xs md:text-sm">{Number(invoice.paid_amount).toLocaleString()}</TableCell>
                     <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell text-sm">
                       {invoice.is_installment ? 'اقساطی' : 
                         invoice.payment_type === 'online' ? 'آنلاین' :
-                        invoice.payment_type === 'card_to_card' ? 'کارت به کارت' : 'دستی'}
+                        invoice.payment_type === 'card_to_card' ? 'کارت' : 'دستی'}
                     </TableCell>
-                    <TableCell>{format(new Date(invoice.created_at), 'yyyy/MM/dd')}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-sm">{format(new Date(invoice.created_at), 'yyyy/MM/dd')}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>

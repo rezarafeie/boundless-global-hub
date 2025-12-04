@@ -251,15 +251,15 @@ export const AccountingCommissions: React.FC = () => {
   const totalPaid = commissionPayments.reduce((sum, cp) => sum + Number(cp.amount), 0);
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">مدیریت کمیسیون‌ها</h1>
-        <div className="flex gap-2">
+    <div className="space-y-6 p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="text-xl md:text-2xl font-bold">مدیریت کمیسیون‌ها</h1>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Dialog open={isRateDialogOpen} onOpenChange={setIsRateDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline">
-                <Plus className="ml-2 h-4 w-4" />
-                تعریف نرخ
+              <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
+                <Plus className="ml-1 md:ml-2 h-4 w-4" />
+                <span className="text-xs md:text-sm">تعریف نرخ</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -324,9 +324,9 @@ export const AccountingCommissions: React.FC = () => {
 
           <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <CreditCard className="ml-2 h-4 w-4" />
-                پرداخت کمیسیون
+              <Button size="sm" className="flex-1 sm:flex-none">
+                <CreditCard className="ml-1 md:ml-2 h-4 w-4" />
+                <span className="text-xs md:text-sm">پرداخت کمیسیون</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -399,7 +399,7 @@ export const AccountingCommissions: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
