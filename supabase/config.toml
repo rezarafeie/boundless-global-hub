@@ -67,3 +67,6 @@ verify_jwt = false
 
 [functions.analyze-smart-test]
 verify_jwt = false
+
+[functions.ai-weekly-analysis]
+verify_jwt = false

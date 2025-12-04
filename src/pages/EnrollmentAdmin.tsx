@@ -28,7 +28,7 @@ const WebinarManagement = React.lazy(() => import('@/components/Admin/WebinarMan
 const RecruitmentManagement = React.lazy(() => import('@/components/Admin/RecruitmentManagement'));
 const InternshipManagement = React.lazy(() => import('@/components/Admin/InternshipManagement'));
 const DailyReportsTab = React.lazy(() => import('@/components/Admin/DailyReportsTab'));
-const AccountingInvoices = React.lazy(() => import('@/components/Admin/Accounting/AccountingInvoices'));
+const AccountingTabs = React.lazy(() => import('@/components/Admin/Accounting/AccountingTabs'));
 const AccountingCommissions = React.lazy(() => import('@/components/Admin/Accounting/AccountingCommissions'));
 const AccountingReports = React.lazy(() => import('@/components/Admin/Accounting/AccountingReports'));
 const AccountingProducts = React.lazy(() => import('@/components/Admin/Accounting/AccountingProducts'));
@@ -347,7 +347,7 @@ const EnrollmentAdmin: React.FC = () => {
         return (
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
-              <AccountingInvoices />
+              <AccountingTabs />
             </Suspense>
           </ErrorBoundary>
         );

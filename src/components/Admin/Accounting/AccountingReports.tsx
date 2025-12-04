@@ -3,8 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, DollarSign, TrendingUp, Users, ShoppingCart } from 'lucide-react';
+import { Download, DollarSign, TrendingUp, Users, ShoppingCart, Brain, Lightbulb, AlertTriangle, CheckCircle } from 'lucide-react';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns-jalali';
 
 interface ReportData {
@@ -20,11 +21,25 @@ interface ReportData {
   pendingCommissions: number;
 }
 
+interface AIAnalysis {
+  id: string;
+  analysis_date: string;
+  accuracy_score: number;
+  highlights: string[];
+  anomalies: string[];
+  suggestions: string[];
+  motivation: string;
+  raw_analysis: string;
+  platform_metrics: any;
+  created_at: string;
+}
+
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00C49F', '#FFBB28'];
 
 export const AccountingReports: React.FC = () => {
   const [period, setPeriod] = useState<string>('month');
   const [loading, setLoading] = useState(true);
+  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null);
   const [reportData, setReportData] = useState<ReportData>({
     totalRevenue: 0,
     totalInvoices: 0,
@@ -40,7 +55,25 @@ export const AccountingReports: React.FC = () => {
 
   useEffect(() => {
     fetchReportData();
+    fetchAIAnalysis();
   }, [period]);
+
+  const fetchAIAnalysis = async () => {
+    try {
+      const { data } = await supabase
+        .from('report_ai_analysis')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (data) {
+        setAiAnalysis(data as AIAnalysis);
+      }
+    } catch (error) {
+      console.log('No AI analysis available yet');
+    }
+  };
 
   const getDateRange = () => {
     const now = new Date();
@@ -233,6 +266,61 @@ export const AccountingReports: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* AI Analysis Section */}
+      {aiAnalysis && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-primary" />
+              تحلیل هوشمند هفتگی
+              <Badge variant="outline" className="mr-auto">
+                {aiAnalysis.analysis_date}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {aiAnalysis.highlights?.length > 0 && (
+              <div>
+                <h4 className="font-semibold flex items-center gap-2 mb-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  نکات مثبت
+                </h4>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  {aiAnalysis.highlights.map((h, i) => <li key={i}>{h}</li>)}
+                </ul>
+              </div>
+            )}
+            {aiAnalysis.anomalies?.length > 0 && (
+              <div>
+                <h4 className="font-semibold flex items-center gap-2 mb-2">
+                  <AlertTriangle className="h-4 w-4 text-orange-500" />
+                  هشدارها
+                </h4>
+                <ul className="list-disc list-inside space-y-1 text-sm text-orange-700 dark:text-orange-400">
+                  {aiAnalysis.anomalies.map((a, i) => <li key={i}>{a}</li>)}
+                </ul>
+              </div>
+            )}
+            {aiAnalysis.suggestions?.length > 0 && (
+              <div>
+                <h4 className="font-semibold flex items-center gap-2 mb-2">
+                  <Lightbulb className="h-4 w-4 text-yellow-500" />
+                  پیشنهادات
+                </h4>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  {aiAnalysis.suggestions.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+            )}
+            {aiAnalysis.motivation && (
+              <div className="p-3 bg-primary/10 rounded-lg text-center italic">
+                {aiAnalysis.motivation}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Daily Revenue Chart */}
