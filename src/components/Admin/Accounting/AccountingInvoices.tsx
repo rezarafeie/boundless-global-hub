@@ -101,25 +101,15 @@ export const AccountingInvoices: React.FC = () => {
     description: ''
   });
 
-  // Check if user can edit/delete invoice
+  // Check if user can edit/delete invoice - for admin panel, allow all users to edit/delete
   const canEditInvoice = (invoice: Invoice) => {
-    if (!currentUser) return false;
-    // Admins and sales admins can edit all
-    if (currentUser.is_messenger_admin || currentUser.role === 'sales_admin' || currentUser.role === 'admin') {
-      return true;
-    }
-    // Sales agents can only delete their own
-    return invoice.sales_agent_id === currentUser.id;
+    // In admin panel, show edit for all users
+    return true;
   };
 
   const canDeleteInvoice = (invoice: Invoice) => {
-    if (!currentUser) return false;
-    // Admins and sales admins can delete all
-    if (currentUser.is_messenger_admin || currentUser.role === 'sales_admin' || currentUser.role === 'admin') {
-      return true;
-    }
-    // Sales agents can only delete their own
-    return invoice.sales_agent_id === currentUser.id;
+    // In admin panel, show delete for all users
+    return true;
   };
 
   // Filter customers based on search
@@ -797,138 +787,166 @@ export const AccountingInvoices: React.FC = () => {
 
       {/* View Invoice Dialog */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="max-w-lg" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="text-right">جزئیات فاکتور</DialogTitle>
-          </DialogHeader>
-          {selectedInvoice && (
-            <div className="space-y-4 text-right">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-muted-foreground">شماره فاکتور</Label>
-                  <p className="font-mono font-semibold">{selectedInvoice.invoice_number}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">تاریخ</Label>
-                  <p>{format(new Date(selectedInvoice.created_at), 'yyyy/MM/dd')}</p>
-                </div>
+        <DialogContent className="max-w-none w-screen h-[100dvh] max-h-[100dvh] m-0 p-0 rounded-none border-0 z-[100]" dir="rtl">
+          <div className="flex flex-col h-[100dvh] max-h-[100dvh] text-right bg-background">
+            <DialogHeader className="px-4 sm:px-6 py-4 border-b bg-background shrink-0">
+              <div className="flex items-center justify-between flex-row-reverse">
+                <Button variant="ghost" size="icon" onClick={() => setIsViewOpen(false)}>
+                  <X className="h-5 w-5" />
+                </Button>
+                <DialogTitle className="text-lg sm:text-xl">جزئیات فاکتور</DialogTitle>
               </div>
-              
-              <div className="border-t pt-4">
-                <Label className="text-muted-foreground">مشتری</Label>
-                <p className="font-semibold">{selectedInvoice.customer?.name}</p>
-                <p className="text-sm text-muted-foreground">{selectedInvoice.customer?.phone}</p>
-              </div>
-
-              {selectedInvoice.agent && (
-                <div>
-                  <Label className="text-muted-foreground">فروشنده</Label>
-                  <p>{selectedInvoice.agent.name}</p>
-                </div>
-              )}
-
-              <div className="border-t pt-4">
-                <Label className="text-muted-foreground">آیتم‌ها</Label>
-                {invoiceItems.length > 0 ? (
-                  <div className="mt-2 space-y-2">
-                    {invoiceItems.map(item => (
-                      <div key={item.id} className="flex justify-between items-center p-2 bg-muted rounded">
-                        <span>{item.description}</span>
-                        <span className="font-semibold">{Number(item.total_price).toLocaleString()} تومان</span>
+            </DialogHeader>
+            
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+              {selectedInvoice && (
+                <div className="max-w-2xl mx-auto space-y-4">
+                  <Card>
+                    <CardContent className="pt-6 space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-muted-foreground">شماره فاکتور</Label>
+                          <p className="font-mono font-semibold">{selectedInvoice.invoice_number}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">تاریخ</Label>
+                          <p>{format(new Date(selectedInvoice.created_at), 'yyyy/MM/dd')}</p>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-sm mt-1">بدون آیتم</p>
-                )}
-              </div>
+                      
+                      <div className="border-t pt-4">
+                        <Label className="text-muted-foreground">مشتری</Label>
+                        <p className="font-semibold">{selectedInvoice.customer?.name}</p>
+                        <p className="text-sm text-muted-foreground">{selectedInvoice.customer?.phone}</p>
+                      </div>
 
-              <div className="grid grid-cols-2 gap-4 border-t pt-4">
-                <div>
-                  <Label className="text-muted-foreground">مبلغ کل</Label>
-                  <p className="font-semibold text-lg">{Number(selectedInvoice.total_amount).toLocaleString()} تومان</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">پرداخت شده</Label>
-                  <p className="font-semibold text-lg text-green-500">{Number(selectedInvoice.paid_amount).toLocaleString()} تومان</p>
-                </div>
-              </div>
+                      {selectedInvoice.agent && (
+                        <div>
+                          <Label className="text-muted-foreground">فروشنده</Label>
+                          <p>{selectedInvoice.agent.name}</p>
+                        </div>
+                      )}
 
-              <div className="flex items-center gap-4">
-                <div>
-                  <Label className="text-muted-foreground">وضعیت</Label>
-                  <div className="mt-1">{getStatusBadge(selectedInvoice.status)}</div>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">نوع پرداخت</Label>
-                  <p>{selectedInvoice.is_installment ? 'اقساطی' : 
-                    selectedInvoice.payment_type === 'online' ? 'آنلاین' :
-                    selectedInvoice.payment_type === 'card_to_card' ? 'کارت به کارت' : 'دستی'}</p>
-                </div>
-              </div>
+                      <div className="border-t pt-4">
+                        <Label className="text-muted-foreground">آیتم‌ها</Label>
+                        {invoiceItems.length > 0 ? (
+                          <div className="mt-2 space-y-2">
+                            {invoiceItems.map(item => (
+                              <div key={item.id} className="flex justify-between items-center p-2 bg-muted rounded">
+                                <span>{item.description}</span>
+                                <span className="font-semibold">{Number(item.total_price).toLocaleString()} تومان</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground text-sm mt-1">بدون آیتم</p>
+                        )}
+                      </div>
 
-              {selectedInvoice.notes && (
-                <div className="border-t pt-4">
-                  <Label className="text-muted-foreground">یادداشت</Label>
-                  <p className="text-sm mt-1">{selectedInvoice.notes}</p>
+                      <div className="grid grid-cols-2 gap-4 border-t pt-4">
+                        <div>
+                          <Label className="text-muted-foreground">مبلغ کل</Label>
+                          <p className="font-semibold text-lg">{Number(selectedInvoice.total_amount).toLocaleString()} تومان</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">پرداخت شده</Label>
+                          <p className="font-semibold text-lg text-green-500">{Number(selectedInvoice.paid_amount).toLocaleString()} تومان</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <Label className="text-muted-foreground">وضعیت</Label>
+                          <div className="mt-1">{getStatusBadge(selectedInvoice.status)}</div>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">نوع پرداخت</Label>
+                          <p>{selectedInvoice.is_installment ? 'اقساطی' : 
+                            selectedInvoice.payment_type === 'online' ? 'آنلاین' :
+                            selectedInvoice.payment_type === 'card_to_card' ? 'کارت به کارت' : 'دستی'}</p>
+                        </div>
+                      </div>
+
+                      {selectedInvoice.notes && (
+                        <div className="border-t pt-4">
+                          <Label className="text-muted-foreground">یادداشت</Label>
+                          <p className="text-sm mt-1">{selectedInvoice.notes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
               )}
             </div>
-          )}
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Edit Invoice Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-md" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="text-right">ویرایش فاکتور</DialogTitle>
-          </DialogHeader>
-          {selectedInvoice && (
-            <div className="space-y-4 text-right">
-              <div>
-                <Label className="text-right block">وضعیت</Label>
-                <Select 
-                  value={selectedInvoice.status} 
-                  onValueChange={(v) => setSelectedInvoice({...selectedInvoice, status: v})}
-                >
-                  <SelectTrigger className="text-right">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unpaid">پرداخت نشده</SelectItem>
-                    <SelectItem value="partially_paid">پرداخت جزئی</SelectItem>
-                    <SelectItem value="paid">پرداخت شده</SelectItem>
-                    <SelectItem value="cancelled">لغو شده</SelectItem>
-                  </SelectContent>
-                </Select>
+        <DialogContent className="max-w-none w-screen h-[100dvh] max-h-[100dvh] m-0 p-0 rounded-none border-0 z-[100]" dir="rtl">
+          <div className="flex flex-col h-[100dvh] max-h-[100dvh] text-right bg-background">
+            <DialogHeader className="px-4 sm:px-6 py-4 border-b bg-background shrink-0">
+              <div className="flex items-center justify-between flex-row-reverse">
+                <Button variant="ghost" size="icon" onClick={() => setIsEditOpen(false)}>
+                  <X className="h-5 w-5" />
+                </Button>
+                <DialogTitle className="text-lg sm:text-xl">ویرایش فاکتور</DialogTitle>
               </div>
-              
-              <div>
-                <Label className="text-right block">مبلغ پرداخت شده</Label>
-                <Input
-                  type="number"
-                  value={selectedInvoice.paid_amount}
-                  onChange={(e) => setSelectedInvoice({...selectedInvoice, paid_amount: parseFloat(e.target.value) || 0})}
-                  className="text-right"
-                />
-              </div>
+            </DialogHeader>
+            
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+              {selectedInvoice && (
+                <div className="max-w-2xl mx-auto space-y-4">
+                  <Card>
+                    <CardContent className="pt-6 space-y-4">
+                      <div>
+                        <Label className="text-right block">وضعیت</Label>
+                        <Select 
+                          value={selectedInvoice.status} 
+                          onValueChange={(v) => setSelectedInvoice({...selectedInvoice, status: v})}
+                        >
+                          <SelectTrigger className="text-right">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="z-[150]">
+                            <SelectItem value="unpaid">پرداخت نشده</SelectItem>
+                            <SelectItem value="partially_paid">پرداخت جزئی</SelectItem>
+                            <SelectItem value="paid">پرداخت شده</SelectItem>
+                            <SelectItem value="cancelled">لغو شده</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-right block">مبلغ پرداخت شده</Label>
+                        <Input
+                          type="number"
+                          value={selectedInvoice.paid_amount}
+                          onChange={(e) => setSelectedInvoice({...selectedInvoice, paid_amount: parseFloat(e.target.value) || 0})}
+                          className="text-right"
+                        />
+                      </div>
 
-              <div>
-                <Label className="text-right block">یادداشت</Label>
-                <Textarea
-                  value={selectedInvoice.notes || ''}
-                  onChange={(e) => setSelectedInvoice({...selectedInvoice, notes: e.target.value})}
-                  className="text-right"
-                  rows={3}
-                />
-              </div>
+                      <div>
+                        <Label className="text-right block">یادداشت</Label>
+                        <Textarea
+                          value={selectedInvoice.notes || ''}
+                          onChange={(e) => setSelectedInvoice({...selectedInvoice, notes: e.target.value})}
+                          className="text-right"
+                          rows={3}
+                        />
+                      </div>
 
-              <Button className="w-full" onClick={handleUpdateInvoice}>
-                ذخیره تغییرات
-              </Button>
+                      <Button className="w-full" onClick={handleUpdateInvoice}>
+                        ذخیره تغییرات
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </DialogContent>
       </Dialog>
 
