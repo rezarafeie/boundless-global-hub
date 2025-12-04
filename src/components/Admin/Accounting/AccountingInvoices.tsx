@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { Plus, FileText, Eye, Search, Calendar, User, Phone, Mail, X } from 'lucide-react';
 import { format } from 'date-fns-jalali';
@@ -254,7 +253,7 @@ export const AccountingInvoices: React.FC = () => {
               فاکتور جدید
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-none w-screen h-screen m-0 p-0 rounded-none" dir="rtl">
+          <DialogContent className="max-w-none w-screen h-screen m-0 p-0 rounded-none overflow-hidden" dir="rtl">
             <div className="flex flex-col h-full text-right">
               <DialogHeader className="px-4 sm:px-6 py-4 border-b bg-background shrink-0">
                 <div className="flex items-center justify-between flex-row-reverse">
@@ -265,7 +264,7 @@ export const AccountingInvoices: React.FC = () => {
                 </div>
               </DialogHeader>
               
-              <ScrollArea className="flex-1 p-4 sm:p-6">
+              <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 -webkit-overflow-scrolling-touch">
                 <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
                   {/* Customer Search Section */}
                   <Card>
@@ -513,7 +512,7 @@ export const AccountingInvoices: React.FC = () => {
                     </Button>
                   </div>
                 </div>
-              </ScrollArea>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
