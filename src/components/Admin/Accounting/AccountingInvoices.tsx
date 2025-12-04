@@ -65,6 +65,15 @@ export const AccountingInvoices: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showCustomerResults, setShowCustomerResults] = useState(false);
 
+  // Predefined services
+  const predefinedServices = [
+    { id: 'company_registration', name: 'ثبت شرکت', price: 0 },
+    { id: 'bank_account', name: 'افتتاح حساب', price: 0 },
+    { id: 'sim_card', name: 'سیم کارت', price: 0 },
+    { id: 'digital_services', name: 'خدمات دیجیتال', price: 0 },
+    { id: 'other', name: 'سایر', price: 0 },
+  ];
+
   // Form state
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -74,7 +83,8 @@ export const AccountingInvoices: React.FC = () => {
     payment_type: 'online',
     is_installment: false,
     installment_count: 2,
-    notes: ''
+    notes: '',
+    description: ''
   });
 
   // Filter customers based on search
@@ -162,15 +172,25 @@ export const AccountingInvoices: React.FC = () => {
       if (error) throw error;
 
       // Create invoice item
-      const selectedProduct = formData.product_type === 'course'
-        ? courses.find(c => c.id === formData.product_id)
-        : products.find(p => p.id === formData.product_id);
+      let itemDescription = '';
+      if (formData.product_type === 'course') {
+        const selectedCourse = courses.find(c => c.id === formData.product_id);
+        itemDescription = selectedCourse?.title || 'دوره';
+      } else {
+        const selectedService = predefinedServices.find(s => s.id === formData.product_id);
+        itemDescription = selectedService?.name || 'خدمات';
+      }
+      
+      // Add custom description if provided
+      if (formData.description) {
+        itemDescription = `${itemDescription} - ${formData.description}`;
+      }
 
       await supabase.from('invoice_items').insert({
         invoice_id: invoice.id,
         course_id: formData.product_type === 'course' ? formData.product_id : null,
-        product_id: formData.product_type !== 'course' ? formData.product_id : null,
-        description: selectedProduct ? (formData.product_type === 'course' ? (selectedProduct as Course).title : (selectedProduct as Product).name) : 'محصول',
+        product_id: null,
+        description: itemDescription,
         unit_price: parseFloat(formData.amount),
         total_price: parseFloat(formData.amount)
       });
@@ -202,7 +222,8 @@ export const AccountingInvoices: React.FC = () => {
         payment_type: 'online',
         is_installment: false,
         installment_count: 2,
-        notes: ''
+        notes: '',
+        description: ''
       });
       fetchData();
     } catch (error) {
@@ -253,8 +274,8 @@ export const AccountingInvoices: React.FC = () => {
               فاکتور جدید
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-none w-screen h-screen m-0 p-0 rounded-none overflow-hidden" dir="rtl">
-            <div className="flex flex-col h-full text-right">
+          <DialogContent className="max-w-none w-screen h-[100dvh] max-h-[100dvh] m-0 p-0 rounded-none border-0" dir="rtl">
+            <div className="flex flex-col h-[100dvh] max-h-[100dvh] text-right">
               <DialogHeader className="px-4 sm:px-6 py-4 border-b bg-background shrink-0">
                 <div className="flex items-center justify-between flex-row-reverse">
                   <Button variant="ghost" size="icon" onClick={() => setIsCreateOpen(false)}>
@@ -264,7 +285,7 @@ export const AccountingInvoices: React.FC = () => {
                 </div>
               </DialogHeader>
               
-              <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 -webkit-overflow-scrolling-touch">
+              <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6" style={{ WebkitOverflowScrolling: 'touch' }}>
                 <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
                   {/* Customer Search Section */}
                   <Card>
@@ -375,7 +396,7 @@ export const AccountingInvoices: React.FC = () => {
                     <CardContent className="space-y-4">
                       <div>
                         <Label className="text-right block">نوع محصول</Label>
-                        <Select value={formData.product_type} onValueChange={v => setFormData({...formData, product_type: v, product_id: ''})}>
+                        <Select value={formData.product_type} onValueChange={v => setFormData({...formData, product_type: v, product_id: '', amount: ''})}>
                           <SelectTrigger className="text-right">
                             <SelectValue />
                           </SelectTrigger>
@@ -387,19 +408,26 @@ export const AccountingInvoices: React.FC = () => {
                       </div>
 
                       <div>
-                        <Label className="text-right block">محصول</Label>
+                        <Label className="text-right block">{formData.product_type === 'course' ? 'دوره' : 'نوع خدمات'}</Label>
                         <Select value={formData.product_id} onValueChange={v => {
-                          const selectedItem = formData.product_type === 'course' 
-                            ? courses.find(c => c.id === v)
-                            : products.find(p => p.id === v);
-                          setFormData({
-                            ...formData, 
-                            product_id: v,
-                            amount: selectedItem ? selectedItem.price.toString() : ''
-                          });
+                          if (formData.product_type === 'course') {
+                            const selectedCourse = courses.find(c => c.id === v);
+                            setFormData({
+                              ...formData, 
+                              product_id: v,
+                              amount: selectedCourse ? selectedCourse.price.toString() : ''
+                            });
+                          } else {
+                            const selectedService = predefinedServices.find(s => s.id === v);
+                            setFormData({
+                              ...formData, 
+                              product_id: v,
+                              amount: selectedService?.price ? selectedService.price.toString() : formData.amount
+                            });
+                          }
                         }}>
                           <SelectTrigger className="text-right">
-                            <SelectValue placeholder="انتخاب محصول" />
+                            <SelectValue placeholder={formData.product_type === 'course' ? 'انتخاب دوره' : 'انتخاب خدمات'} />
                           </SelectTrigger>
                           <SelectContent>
                             {formData.product_type === 'course' 
@@ -408,9 +436,9 @@ export const AccountingInvoices: React.FC = () => {
                                     {c.title} - {c.price.toLocaleString()} تومان
                                   </SelectItem>
                                 ))
-                              : products.map(p => (
-                                  <SelectItem key={p.id} value={p.id}>
-                                    {p.name} - {p.price.toLocaleString()} تومان
+                              : predefinedServices.map(s => (
+                                  <SelectItem key={s.id} value={s.id}>
+                                    {s.name}
                                   </SelectItem>
                                 ))
                             }
@@ -425,6 +453,18 @@ export const AccountingInvoices: React.FC = () => {
                           value={formData.amount}
                           onChange={e => setFormData({...formData, amount: e.target.value})}
                           className="text-base sm:text-lg font-semibold text-right"
+                          placeholder="مبلغ را وارد کنید"
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="text-right block">توضیحات (اختیاری)</Label>
+                        <Textarea 
+                          value={formData.description}
+                          onChange={e => setFormData({...formData, description: e.target.value})}
+                          placeholder="جزئیات بیشتر درباره محصول یا خدمات..."
+                          rows={2}
+                          className="text-right"
                         />
                       </div>
                     </CardContent>
