@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { FileText, ArrowRight, CheckCircle, Clock, XCircle, AlertCircle, Loader2, Image as ImageIcon, Copy, ExternalLink, User, Phone, Mail, Edit, Trash2 } from 'lucide-react';
+import { FileText, ArrowRight, CheckCircle, Clock, XCircle, AlertCircle, Loader2, Image as ImageIcon, Copy, ExternalLink, User, Phone, Mail, Edit, Trash2, Upload } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 
 interface Invoice {
@@ -58,6 +58,8 @@ export default function InvoiceAdmin() {
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (invoiceId) {
@@ -180,6 +182,61 @@ export default function InvoiceAdmin() {
     const link = `${window.location.origin}/invoice/${invoice?.id}`;
     navigator.clipboard.writeText(link);
     toast.success('لینک فاکتور کپی شد');
+  };
+
+  const handleUploadReceipt = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !invoice) return;
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      toast.error('لطفا فقط فایل تصویری آپلود کنید');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('حجم فایل نباید بیشتر از 5 مگابایت باشد');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `receipts/${invoice.id}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('invoice-receipts')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('invoice-receipts')
+        .getPublicUrl(fileName);
+
+      // Update invoice with receipt URL and set to pending review
+      const { error: updateError } = await supabase
+        .from('invoices')
+        .update({
+          receipt_url: urlData.publicUrl,
+          payment_review_status: 'pending_review'
+        })
+        .eq('id', invoice.id);
+
+      if (updateError) throw updateError;
+
+      toast.success('رسید با موفقیت آپلود شد');
+      fetchInvoice();
+    } catch (error) {
+      console.error('Error uploading receipt:', error);
+      toast.error('خطا در آپلود رسید');
+    }
+
+    setUploading(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const getStatusBadge = () => {
@@ -447,6 +504,59 @@ export default function InvoiceAdmin() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Admin Upload Receipt Section - Only show if not paid */}
+        {invoice.status !== 'paid' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Upload className="h-5 w-5" />
+                آپلود رسید پرداخت
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                از این بخش می‌توانید رسید پرداخت مشتری را آپلود کنید.
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleUploadReceipt}
+                className="hidden"
+              />
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="w-full"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    در حال آپلود...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-2" />
+                    {invoice.receipt_url ? 'تغییر رسید' : 'آپلود رسید'}
+                  </>
+                )}
+              </Button>
+              {invoice.receipt_url && (
+                <div className="mt-4">
+                  <p className="text-sm text-muted-foreground mb-2">رسید فعلی:</p>
+                  <img
+                    src={invoice.receipt_url}
+                    alt="رسید پرداخت"
+                    className="max-w-full max-h-48 object-contain rounded-lg border cursor-pointer"
+                    onClick={() => window.open(invoice.receipt_url!, '_blank')}
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Notes */}
         {invoice.notes && (
