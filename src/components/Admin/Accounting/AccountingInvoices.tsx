@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,8 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { Plus, FileText, Eye, Search, Calendar } from 'lucide-react';
+import { Plus, FileText, Eye, Search, Calendar, User, Phone, Mail, X } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 
 interface Invoice {
@@ -33,6 +34,7 @@ interface Customer {
   id: number;
   name: string;
   phone: string;
+  email?: string | null;
 }
 
 interface Course {
@@ -58,6 +60,11 @@ export const AccountingInvoices: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  
+  // Customer search state
+  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [showCustomerResults, setShowCustomerResults] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -71,6 +78,17 @@ export const AccountingInvoices: React.FC = () => {
     notes: ''
   });
 
+  // Filter customers based on search
+  const filteredCustomers = useMemo(() => {
+    if (!customerSearchTerm.trim()) return [];
+    const term = customerSearchTerm.toLowerCase();
+    return customers.filter(c => 
+      c.name?.toLowerCase().includes(term) ||
+      c.phone?.includes(term) ||
+      c.email?.toLowerCase().includes(term)
+    ).slice(0, 10);
+  }, [customers, customerSearchTerm]);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -80,7 +98,7 @@ export const AccountingInvoices: React.FC = () => {
     try {
       const [invoicesRes, customersRes, coursesRes, productsRes] = await Promise.all([
         supabase.from('invoices').select('*').order('created_at', { ascending: false }),
-        supabase.from('chat_users').select('id, name, phone').eq('is_approved', true),
+        supabase.from('chat_users').select('id, name, phone, email'),
         supabase.from('courses').select('id, title, price').eq('is_active', true),
         supabase.from('products').select('*').eq('is_active', true)
       ]);
@@ -222,137 +240,277 @@ export const AccountingInvoices: React.FC = () => {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">مدیریت فاکتورها</h1>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <Dialog open={isCreateOpen} onOpenChange={(open) => {
+          setIsCreateOpen(open);
+          if (!open) {
+            setCustomerSearchTerm('');
+            setSelectedCustomer(null);
+            setShowCustomerResults(false);
+          }
+        }}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="ml-2 h-4 w-4" />
               فاکتور جدید
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>ایجاد فاکتور جدید</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>مشتری</Label>
-                <Select value={formData.customer_id} onValueChange={v => setFormData({...formData, customer_id: v})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="انتخاب مشتری" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map(c => (
-                      <SelectItem key={c.id} value={c.id.toString()}>
-                        {c.name} - {c.phone}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>نوع محصول</Label>
-                <Select value={formData.product_type} onValueChange={v => setFormData({...formData, product_type: v, product_id: ''})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="course">دوره آموزشی</SelectItem>
-                    <SelectItem value="service">خدمات</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>محصول</Label>
-                <Select value={formData.product_id} onValueChange={v => {
-                  const selectedItem = formData.product_type === 'course' 
-                    ? courses.find(c => c.id === v)
-                    : products.find(p => p.id === v);
-                  setFormData({
-                    ...formData, 
-                    product_id: v,
-                    amount: selectedItem ? selectedItem.price.toString() : ''
-                  });
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="انتخاب محصول" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {formData.product_type === 'course' 
-                      ? courses.map(c => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.title} - {c.price.toLocaleString()} تومان
-                          </SelectItem>
-                        ))
-                      : products.map(p => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name} - {p.price.toLocaleString()} تومان
-                          </SelectItem>
-                        ))
-                    }
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>مبلغ (تومان)</Label>
-                <Input 
-                  type="number"
-                  value={formData.amount}
-                  onChange={e => setFormData({...formData, amount: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <Label>نوع پرداخت</Label>
-                <Select value={formData.payment_type} onValueChange={v => setFormData({...formData, payment_type: v})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="online">آنلاین</SelectItem>
-                    <SelectItem value="card_to_card">کارت به کارت</SelectItem>
-                    <SelectItem value="manual">دستی</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input 
-                  type="checkbox"
-                  id="is_installment"
-                  checked={formData.is_installment}
-                  onChange={e => setFormData({...formData, is_installment: e.target.checked})}
-                  className="rounded"
-                />
-                <Label htmlFor="is_installment">پرداخت اقساطی</Label>
-              </div>
-
-              {formData.is_installment && (
-                <div>
-                  <Label>تعداد اقساط</Label>
-                  <Input 
-                    type="number"
-                    min="2"
-                    max="12"
-                    value={formData.installment_count}
-                    onChange={e => setFormData({...formData, installment_count: parseInt(e.target.value)})}
-                  />
+          <DialogContent className="max-w-none w-screen h-screen m-0 p-0 rounded-none">
+            <div className="flex flex-col h-full">
+              <DialogHeader className="px-6 py-4 border-b bg-background shrink-0">
+                <div className="flex items-center justify-between">
+                  <DialogTitle className="text-xl">ایجاد فاکتور جدید</DialogTitle>
+                  <Button variant="ghost" size="icon" onClick={() => setIsCreateOpen(false)}>
+                    <X className="h-5 w-5" />
+                  </Button>
                 </div>
-              )}
+              </DialogHeader>
+              
+              <ScrollArea className="flex-1 p-6">
+                <div className="max-w-2xl mx-auto space-y-6">
+                  {/* Customer Search Section */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        انتخاب مشتری
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {selectedCustomer ? (
+                        <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                          <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                              <User className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-semibold">{selectedCustomer.name}</p>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {selectedCustomer.phone}
+                                </span>
+                                {selectedCustomer.email && (
+                                  <span className="flex items-center gap-1">
+                                    <Mail className="h-3 w-3" />
+                                    {selectedCustomer.email}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedCustomer(null);
+                              setFormData({...formData, customer_id: ''});
+                              setCustomerSearchTerm('');
+                            }}
+                          >
+                            تغییر
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <div className="relative">
+                            <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="جستجو با نام، شماره تلفن یا ایمیل..."
+                              value={customerSearchTerm}
+                              onChange={e => {
+                                setCustomerSearchTerm(e.target.value);
+                                setShowCustomerResults(true);
+                              }}
+                              onFocus={() => setShowCustomerResults(true)}
+                              className="pr-10"
+                            />
+                          </div>
+                          
+                          {showCustomerResults && customerSearchTerm && (
+                            <div className="absolute z-50 w-full mt-1 bg-background border rounded-lg shadow-lg max-h-64 overflow-auto">
+                              {filteredCustomers.length === 0 ? (
+                                <div className="p-4 text-center text-muted-foreground">
+                                  مشتری یافت نشد
+                                </div>
+                              ) : (
+                                filteredCustomers.map(customer => (
+                                  <button
+                                    key={customer.id}
+                                    className="w-full p-3 text-right hover:bg-muted flex items-center gap-3 border-b last:border-0"
+                                    onClick={() => {
+                                      setSelectedCustomer(customer);
+                                      setFormData({...formData, customer_id: customer.id.toString()});
+                                      setShowCustomerResults(false);
+                                      setCustomerSearchTerm('');
+                                    }}
+                                  >
+                                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                                      <User className="h-5 w-5 text-muted-foreground" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium truncate">{customer.name}</p>
+                                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                        <span>{customer.phone}</span>
+                                        {customer.email && <span className="truncate">{customer.email}</span>}
+                                      </div>
+                                    </div>
+                                  </button>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
 
-              <div>
-                <Label>یادداشت</Label>
-                <Textarea 
-                  value={formData.notes}
-                  onChange={e => setFormData({...formData, notes: e.target.value})}
-                />
-              </div>
+                  {/* Product Selection */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        محصول / خدمات
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label>نوع محصول</Label>
+                        <Select value={formData.product_type} onValueChange={v => setFormData({...formData, product_type: v, product_id: ''})}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="course">دوره آموزشی</SelectItem>
+                            <SelectItem value="service">خدمات</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-              <Button className="w-full" onClick={handleCreateInvoice}>
-                ایجاد فاکتور
-              </Button>
+                      <div>
+                        <Label>محصول</Label>
+                        <Select value={formData.product_id} onValueChange={v => {
+                          const selectedItem = formData.product_type === 'course' 
+                            ? courses.find(c => c.id === v)
+                            : products.find(p => p.id === v);
+                          setFormData({
+                            ...formData, 
+                            product_id: v,
+                            amount: selectedItem ? selectedItem.price.toString() : ''
+                          });
+                        }}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="انتخاب محصول" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {formData.product_type === 'course' 
+                              ? courses.map(c => (
+                                  <SelectItem key={c.id} value={c.id}>
+                                    {c.title} - {c.price.toLocaleString()} تومان
+                                  </SelectItem>
+                                ))
+                              : products.map(p => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.name} - {p.price.toLocaleString()} تومان
+                                  </SelectItem>
+                                ))
+                            }
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>مبلغ (تومان)</Label>
+                        <Input 
+                          type="number"
+                          value={formData.amount}
+                          onChange={e => setFormData({...formData, amount: e.target.value})}
+                          className="text-lg font-semibold"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Payment Options */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Calendar className="h-5 w-5" />
+                        نحوه پرداخت
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label>نوع پرداخت</Label>
+                        <Select value={formData.payment_type} onValueChange={v => setFormData({...formData, payment_type: v})}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="online">آنلاین</SelectItem>
+                            <SelectItem value="card_to_card">کارت به کارت</SelectItem>
+                            <SelectItem value="manual">دستی</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="checkbox"
+                          id="is_installment"
+                          checked={formData.is_installment}
+                          onChange={e => setFormData({...formData, is_installment: e.target.checked})}
+                          className="rounded"
+                        />
+                        <Label htmlFor="is_installment">پرداخت اقساطی</Label>
+                      </div>
+
+                      {formData.is_installment && (
+                        <div>
+                          <Label>تعداد اقساط</Label>
+                          <Input 
+                            type="number"
+                            min="2"
+                            max="12"
+                            value={formData.installment_count}
+                            onChange={e => setFormData({...formData, installment_count: parseInt(e.target.value)})}
+                          />
+                          {formData.amount && (
+                            <p className="text-sm text-muted-foreground mt-2">
+                              مبلغ هر قسط: {(parseFloat(formData.amount) / formData.installment_count).toLocaleString()} تومان
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Notes */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">یادداشت</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Textarea 
+                        value={formData.notes}
+                        onChange={e => setFormData({...formData, notes: e.target.value})}
+                        placeholder="توضیحات اضافی..."
+                        rows={3}
+                      />
+                    </CardContent>
+                  </Card>
+
+                  {/* Submit Button */}
+                  <div className="pb-6">
+                    <Button 
+                      className="w-full h-12 text-lg" 
+                      onClick={handleCreateInvoice}
+                      disabled={!selectedCustomer || !formData.product_id || !formData.amount}
+                    >
+                      ایجاد فاکتور
+                    </Button>
+                  </div>
+                </div>
+              </ScrollArea>
             </div>
           </DialogContent>
         </Dialog>
