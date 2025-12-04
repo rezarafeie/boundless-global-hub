@@ -97,8 +97,9 @@ export const AccountingCommissions: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Fetch sales agents - users with sales roles OR admins
       const [agentsRes, coursesRes, productsRes, ratesRes, earnedRes, paymentsRes] = await Promise.all([
-        supabase.from('chat_users').select('id, name, phone').or('role.eq.sales_agent,role.eq.sales_manager,is_messenger_admin.eq.true'),
+        supabase.from('chat_users').select('id, name, phone').or('role.in.(sales_agent,sales_manager,admin),is_messenger_admin.eq.true'),
         supabase.from('courses').select('id, title').eq('is_active', true),
         supabase.from('products').select('id, name').eq('is_active', true),
         supabase.from('agent_commissions').select('*').eq('is_active', true),
