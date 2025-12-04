@@ -22,6 +22,9 @@ const AnalyticsReports = React.lazy(() => import('@/components/Admin/AnalyticsRe
 const AdminSettingsPanel = React.lazy(() => import('@/components/Admin/AdminSettingsPanel'));
 const EnrollmentCRM = React.lazy(() => import('@/components/Admin/EnrollmentCRM').then(module => ({ default: module.EnrollmentCRM })));
 const LeadManagement = React.lazy(() => import('@/components/Admin/LeadManagement'));
+const SimplifiedLeadManagement = React.lazy(() => import('@/components/Admin/SimplifiedLeadManagement'));
+const SalesAgentLeads = React.lazy(() => import('@/components/Admin/SalesAgentLeads'));
+const AgentActivityDashboard = React.lazy(() => import('@/components/Admin/AgentActivityDashboard'));
 const SalesDashboard = React.lazy(() => import('@/components/Admin/SalesDashboard'));
 const TestManagement = React.lazy(() => import('@/components/Admin/TestManagement'));
 const WebinarManagement = React.lazy(() => import('@/components/Admin/WebinarManagement'));
@@ -280,12 +283,30 @@ const EnrollmentAdmin: React.FC = () => {
           </ErrorBoundary>
         );
       case 'leads':
+        // Sales agents see simplified lead view with just their leads
+        if (isSalesAgent && !isMessengerAdmin) {
+          return (
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <SalesAgentLeads />
+              </Suspense>
+            </ErrorBoundary>
+          );
+        }
+        // Admins and sales managers see simplified lead distribution + activity dashboard
         return (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingSpinner />}>
-              <LeadManagement />
-            </Suspense>
-          </ErrorBoundary>
+          <div className="space-y-6">
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <AgentActivityDashboard />
+              </Suspense>
+            </ErrorBoundary>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <SimplifiedLeadManagement />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
         );
       case 'users':
         return (
