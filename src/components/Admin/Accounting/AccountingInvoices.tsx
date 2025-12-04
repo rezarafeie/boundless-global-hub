@@ -27,6 +27,8 @@ interface Invoice {
   is_installment: boolean;
   notes: string | null;
   created_at: string;
+  payment_review_status: string | null;
+  receipt_url: string | null;
   customer?: { name: string; phone: string };
   agent?: { name: string } | null;
 }
@@ -361,18 +363,27 @@ export const AccountingInvoices: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
+  const getStatusBadge = (invoice: Invoice) => {
+    // Check payment_review_status first
+    if (invoice.payment_review_status === 'pending_review') {
+      return <Badge className="bg-yellow-500">در انتظار تایید</Badge>;
+    }
+    if (invoice.payment_review_status === 'rejected') {
+      return <Badge className="bg-orange-500">رد شده</Badge>;
+    }
+    
+    // Then check regular status
+    switch (invoice.status) {
       case 'paid':
         return <Badge className="bg-green-500">پرداخت شده</Badge>;
       case 'partially_paid':
-        return <Badge className="bg-yellow-500">پرداخت جزئی</Badge>;
+        return <Badge className="bg-blue-500">پرداخت جزئی</Badge>;
       case 'unpaid':
         return <Badge className="bg-red-500">پرداخت نشده</Badge>;
       case 'cancelled':
         return <Badge variant="secondary">لغو شده</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline">{invoice.status}</Badge>;
     }
   };
 
@@ -790,7 +801,7 @@ export const AccountingInvoices: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-xs md:text-sm">{Number(invoice.total_amount).toLocaleString()}</TableCell>
                     <TableCell className="hidden sm:table-cell text-xs md:text-sm">{Number(invoice.paid_amount).toLocaleString()}</TableCell>
-                    <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                    <TableCell>{getStatusBadge(invoice)}</TableCell>
                     <TableCell className="hidden md:table-cell text-sm">
                       {invoice.is_installment ? 'اقساطی' : 
                         invoice.payment_type === 'online' ? 'آنلاین' :
@@ -897,7 +908,7 @@ export const AccountingInvoices: React.FC = () => {
                       <div className="flex items-center gap-4">
                         <div>
                           <Label className="text-muted-foreground">وضعیت</Label>
-                          <div className="mt-1">{getStatusBadge(selectedInvoice.status)}</div>
+                          <div className="mt-1">{getStatusBadge(selectedInvoice)}</div>
                         </div>
                         <div>
                           <Label className="text-muted-foreground">نوع پرداخت</Label>
