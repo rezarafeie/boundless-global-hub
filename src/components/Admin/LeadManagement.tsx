@@ -457,7 +457,8 @@ const LeadManagement: React.FC = () => {
           created_at: enrollment.created_at,
           assigned_to_agent: agent?.user?.name || null,
           assignment_status: assignment?.status || null,
-          assigned_at: assignment?.assigned_at || null
+          assigned_at: assignment?.assigned_at || null,
+          assigned_agent_id: assignment?.sales_agent_id || null
         };
       });
 
@@ -467,9 +468,10 @@ const LeadManagement: React.FC = () => {
           // Only show unassigned leads
           formattedLeads = formattedLeads.filter(lead => !lead.assigned_to_agent);
         } else {
-          // Show only leads assigned to the specific agent
+          // Show only leads assigned to the specific agent using agent ID
+          const agentIdFilter = parseInt(selectedAgent);
           formattedLeads = formattedLeads.filter(lead => 
-            lead.assigned_to_agent && lead.assigned_to_agent.includes(selectedAgent)
+            (lead as any).assigned_agent_id === agentIdFilter
           );
         }
         
