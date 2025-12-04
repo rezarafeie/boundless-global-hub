@@ -309,21 +309,36 @@ export const AccountingInvoices: React.FC = () => {
   const handleDeleteInvoice = async () => {
     if (!deleteInvoice) return;
     try {
-      // Delete invoice items first
-      await supabase.from('invoice_items').delete().eq('invoice_id', deleteInvoice.id);
+      // Delete payment records first
+      const { error: paymentError } = await supabase.from('payment_records').delete().eq('invoice_id', deleteInvoice.id);
+      if (paymentError) console.warn('Payment records delete warning:', paymentError);
+      
+      // Delete earned commissions
+      const { error: commError } = await supabase.from('earned_commissions').delete().eq('invoice_id', deleteInvoice.id);
+      if (commError) console.warn('Earned commissions delete warning:', commError);
+      
+      // Delete invoice items
+      const { error: itemsError } = await supabase.from('invoice_items').delete().eq('invoice_id', deleteInvoice.id);
+      if (itemsError) console.warn('Invoice items delete warning:', itemsError);
+      
       // Delete installments if any
-      await supabase.from('installments').delete().eq('invoice_id', deleteInvoice.id);
+      const { error: installmentsError } = await supabase.from('installments').delete().eq('invoice_id', deleteInvoice.id);
+      if (installmentsError) console.warn('Installments delete warning:', installmentsError);
+      
       // Delete the invoice
       const { error } = await supabase.from('invoices').delete().eq('id', deleteInvoice.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Invoice delete error:', error);
+        throw error;
+      }
       
       toast.success('فاکتور با موفقیت حذف شد');
       setDeleteInvoice(null);
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting invoice:', error);
-      toast.error('خطا در حذف فاکتور');
+      toast.error(`خطا در حذف فاکتور: ${error?.message || 'Unknown error'}`);
     }
   };
 
@@ -787,11 +802,11 @@ export const AccountingInvoices: React.FC = () => {
 
       {/* View Invoice Dialog */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="max-w-none w-screen h-[100dvh] max-h-[100dvh] m-0 p-0 rounded-none border-0 z-[100]" dir="rtl">
+        <DialogContent className="max-w-none w-screen h-[100dvh] max-h-[100dvh] m-0 p-0 rounded-none border-0 z-[9999]" dir="rtl">
           <div className="flex flex-col h-[100dvh] max-h-[100dvh] text-right bg-background">
-            <DialogHeader className="px-4 sm:px-6 py-4 border-b bg-background shrink-0">
+            <DialogHeader className="px-4 sm:px-6 py-4 border-b bg-background shrink-0 relative z-10">
               <div className="flex items-center justify-between flex-row-reverse">
-                <Button variant="ghost" size="icon" onClick={() => setIsViewOpen(false)}>
+                <Button variant="ghost" size="icon" onClick={() => setIsViewOpen(false)} className="relative z-20">
                   <X className="h-5 w-5" />
                 </Button>
                 <DialogTitle className="text-lg sm:text-xl">جزئیات فاکتور</DialogTitle>
@@ -884,11 +899,11 @@ export const AccountingInvoices: React.FC = () => {
 
       {/* Edit Invoice Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-none w-screen h-[100dvh] max-h-[100dvh] m-0 p-0 rounded-none border-0 z-[100]" dir="rtl">
+        <DialogContent className="max-w-none w-screen h-[100dvh] max-h-[100dvh] m-0 p-0 rounded-none border-0 z-[9999]" dir="rtl">
           <div className="flex flex-col h-[100dvh] max-h-[100dvh] text-right bg-background">
-            <DialogHeader className="px-4 sm:px-6 py-4 border-b bg-background shrink-0">
+            <DialogHeader className="px-4 sm:px-6 py-4 border-b bg-background shrink-0 relative z-10">
               <div className="flex items-center justify-between flex-row-reverse">
-                <Button variant="ghost" size="icon" onClick={() => setIsEditOpen(false)}>
+                <Button variant="ghost" size="icon" onClick={() => setIsEditOpen(false)} className="relative z-20">
                   <X className="h-5 w-5" />
                 </Button>
                 <DialogTitle className="text-lg sm:text-xl">ویرایش فاکتور</DialogTitle>
@@ -952,7 +967,7 @@ export const AccountingInvoices: React.FC = () => {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteInvoice} onOpenChange={(open) => !open && setDeleteInvoice(null)}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent dir="rtl" className="z-[10000]">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-right">آیا از حذف فاکتور مطمئن هستید؟</AlertDialogTitle>
             <AlertDialogDescription className="text-right">
@@ -961,7 +976,13 @@ export const AccountingInvoices: React.FC = () => {
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
             <AlertDialogCancel>انصراف</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteInvoice} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteInvoice();
+              }} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               حذف
             </AlertDialogAction>
           </AlertDialogFooter>
