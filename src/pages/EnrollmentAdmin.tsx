@@ -28,6 +28,11 @@ const WebinarManagement = React.lazy(() => import('@/components/Admin/WebinarMan
 const RecruitmentManagement = React.lazy(() => import('@/components/Admin/RecruitmentManagement'));
 const InternshipManagement = React.lazy(() => import('@/components/Admin/InternshipManagement'));
 const DailyReportsTab = React.lazy(() => import('@/components/Admin/DailyReportsTab'));
+const AccountingInvoices = React.lazy(() => import('@/components/Admin/Accounting/AccountingInvoices'));
+const AccountingCommissions = React.lazy(() => import('@/components/Admin/Accounting/AccountingCommissions'));
+const AccountingReports = React.lazy(() => import('@/components/Admin/Accounting/AccountingReports'));
+const AccountingProducts = React.lazy(() => import('@/components/Admin/Accounting/AccountingProducts'));
+const SalesAgentDashboard = React.lazy(() => import('@/components/Admin/Accounting/SalesAgentDashboard'));
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -82,7 +87,7 @@ const EnrollmentAdmin: React.FC = () => {
   const navigate = useNavigate();
   const [checkingRole, setCheckingRole] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'sales' | 'leads' | 'users' | 'analytics' | 'settings' | 'crm' | 'recruitment' | 'internships' | 'tests' | 'webinars' | 'daily-reports'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'sales' | 'leads' | 'users' | 'analytics' | 'settings' | 'crm' | 'recruitment' | 'internships' | 'tests' | 'webinars' | 'daily-reports' | 'accounting'>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
@@ -335,6 +340,14 @@ const EnrollmentAdmin: React.FC = () => {
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
               <TestManagement />
+            </Suspense>
+          </ErrorBoundary>
+        );
+      case 'accounting':
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <AccountingInvoices />
             </Suspense>
           </ErrorBoundary>
         );

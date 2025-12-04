@@ -218,6 +218,61 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_commissions: {
+        Row: {
+          agent_id: number
+          commission_percent: number
+          course_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          product_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          agent_id: number
+          commission_percent?: number
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          product_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: number
+          commission_percent?: number
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          product_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_commissions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_commissions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_commissions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       analytics_daily_reports: {
         Row: {
           avg_session_duration: number
@@ -757,6 +812,57 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      commission_payments: {
+        Row: {
+          agent_id: number
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          paid_at: string
+          paid_by: number | null
+          payment_method: string | null
+          reference_number: string | null
+        }
+        Insert: {
+          agent_id: number
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string
+          paid_by?: number | null
+          payment_method?: string | null
+          reference_number?: string | null
+        }
+        Update: {
+          agent_id?: number
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string
+          paid_by?: number | null
+          payment_method?: string | null
+          reference_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_payments_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_payments_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       course_click_logs: {
         Row: {
@@ -1447,6 +1553,58 @@ export type Database = {
           },
         ]
       }
+      earned_commissions: {
+        Row: {
+          agent_id: number
+          amount: number
+          commission_payment_id: string | null
+          created_at: string
+          id: string
+          invoice_id: string
+          status: string
+        }
+        Insert: {
+          agent_id: number
+          amount?: number
+          commission_payment_id?: string | null
+          created_at?: string
+          id?: string
+          invoice_id: string
+          status?: string
+        }
+        Update: {
+          agent_id?: number
+          amount?: number
+          commission_payment_id?: string | null
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "earned_commissions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earned_commissions_commission_payment_id_fkey"
+            columns: ["commission_payment_id"]
+            isOneToOne: false
+            referencedRelation: "commission_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earned_commissions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_logs: {
         Row: {
           course_id: string | null
@@ -1744,6 +1902,53 @@ export type Database = {
           },
         ]
       }
+      installments: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string
+          id: string
+          installment_number: number
+          invoice_id: string
+          notes: string | null
+          paid_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          due_date: string
+          id?: string
+          installment_number?: number
+          invoice_id: string
+          notes?: string | null
+          paid_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          installment_number?: number
+          invoice_id?: string
+          notes?: string | null
+          paid_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       internship_applications: {
         Row: {
           admin_notes: string | null
@@ -1794,6 +1999,137 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      invoice_items: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          product_id: string | null
+          quantity: number
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          product_id?: string | null
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          product_id?: string | null
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          created_at: string
+          customer_id: number
+          due_date: string | null
+          enrollment_id: string | null
+          id: string
+          invoice_number: string
+          is_installment: boolean
+          notes: string | null
+          paid_amount: number
+          payment_type: string
+          sales_agent_id: number | null
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: number
+          due_date?: string | null
+          enrollment_id?: string | null
+          id?: string
+          invoice_number: string
+          is_installment?: boolean
+          notes?: string | null
+          paid_amount?: number
+          payment_type?: string
+          sales_agent_id?: number | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: number
+          due_date?: string | null
+          enrollment_id?: string | null
+          id?: string
+          invoice_number?: string
+          is_installment?: boolean
+          notes?: string | null
+          paid_amount?: number
+          payment_type?: string
+          sales_agent_id?: number | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_sales_agent_id_fkey"
+            columns: ["sales_agent_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       job_applications: {
         Row: {
@@ -2391,6 +2727,67 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_records: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          installment_id: string | null
+          invoice_id: string
+          notes: string | null
+          paid_at: string
+          payment_method: string
+          recorded_by: number | null
+          reference_number: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          installment_id?: string | null
+          invoice_id: string
+          notes?: string | null
+          paid_at?: string
+          payment_method?: string
+          recorded_by?: number | null
+          reference_number?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          installment_id?: string | null
+          invoice_id?: string
+          notes?: string | null
+          paid_at?: string
+          payment_method?: string
+          recorded_by?: number | null
+          reference_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_records_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "installments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_records_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_records_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_verification_logs: {
         Row: {
           created_at: string | null
@@ -2597,6 +2994,50 @@ export type Database = {
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price?: number
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
             referencedColumns: ["id"]
           },
         ]
@@ -3967,6 +4408,7 @@ export type Database = {
           ref_id: string
         }[]
       }
+      generate_invoice_number: { Args: never; Returns: string }
       generate_lesson_numbers: { Args: never; Returns: undefined }
       generate_unique_user_id: { Args: never; Returns: string }
       get_academy_user_role: {

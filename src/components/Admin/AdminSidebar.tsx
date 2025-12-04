@@ -21,7 +21,8 @@ import {
   Brain,
   Calendar,
   Briefcase,
-  ClipboardList
+  ClipboardList,
+  Calculator
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -45,6 +46,7 @@ const menuItems = [
   { id: 'sales', label: 'داشبورد فروش', icon: BarChart3 },
   { id: 'leads', label: 'مدیریت لیدها', icon: UserPlus },
   { id: 'daily-reports', label: 'گزارشات روزانه', icon: ClipboardList },
+  { id: 'accounting', label: 'حسابداری', icon: Calculator },
   { id: 'users', label: 'کاربران', icon: Users },
   { id: 'analytics', label: 'آنالیتیکس', icon: TrendingUp },
   { id: 'crm', label: 'CRM', icon: MessageSquare },
