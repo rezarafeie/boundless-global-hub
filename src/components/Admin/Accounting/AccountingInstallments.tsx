@@ -9,9 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Calendar, CreditCard, AlertCircle, CheckCircle, Clock, X, Phone, User } from 'lucide-react';
+import { Calendar, CreditCard, AlertCircle, CheckCircle, Clock, X, Phone, User, Plus } from 'lucide-react';
 import { format, differenceInDays, isPast } from 'date-fns-jalali';
 
 interface Installment {
@@ -34,22 +33,25 @@ interface Installment {
   };
 }
 
-interface PaymentRecord {
+interface Invoice {
   id: string;
-  invoice_id: string;
-  amount: number;
-  payment_method: string;
-  payment_date: string;
-  reference_number: string | null;
-  notes: string | null;
+  invoice_number: string;
+  customer_id: number;
+  total_amount: number;
+  paid_amount: number;
+  is_installment: boolean;
+  status: string;
 }
 
 export const AccountingInstallments: React.FC = () => {
   const [installments, setInstallments] = useState<Installment[]>([]);
+  const [installmentInvoices, setInstallmentInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInstallment, setSelectedInstallment] = useState<Installment | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedInvoice, setSelectedInvoice] = useState<string>('');
   
   const [paymentForm, setPaymentForm] = useState({
     amount: '',
@@ -58,9 +60,43 @@ export const AccountingInstallments: React.FC = () => {
     notes: ''
   });
 
+  const [createForm, setCreateForm] = useState({
+    invoice_id: '',
+    count: '3',
+  });
+
   useEffect(() => {
     fetchInstallments();
+    fetchInstallmentInvoices();
   }, []);
+
+  const fetchInstallmentInvoices = async () => {
+    try {
+      // Fetch invoices that are installment type but don't have installments yet
+      const { data: invoices } = await supabase
+        .from('invoices')
+        .select('id, invoice_number, customer_id, total_amount, paid_amount, is_installment, status')
+        .eq('is_installment', true);
+
+      if (invoices) {
+        // Check which ones don't have installments
+        const invoicesWithoutInstallments = [];
+        for (const inv of invoices) {
+          const { count } = await supabase
+            .from('installments')
+            .select('*', { count: 'exact', head: true })
+            .eq('invoice_id', inv.id);
+          
+          if (!count || count === 0) {
+            invoicesWithoutInstallments.push(inv);
+          }
+        }
+        setInstallmentInvoices(invoicesWithoutInstallments);
+      }
+    } catch (error) {
+      console.error('Error fetching installment invoices:', error);
+    }
+  };
 
   const fetchInstallments = async () => {
     setLoading(true);
@@ -73,7 +109,7 @@ export const AccountingInstallments: React.FC = () => {
       if (error) throw error;
 
       // Enrich with invoice and customer data
-      if (installmentsData) {
+      if (installmentsData && installmentsData.length > 0) {
         const enriched = await Promise.all(
           installmentsData.map(async (inst) => {
             const { data: invoice } = await supabase
@@ -99,12 +135,54 @@ export const AccountingInstallments: React.FC = () => {
           })
         );
         setInstallments(enriched);
+      } else {
+        setInstallments([]);
       }
     } catch (error) {
       console.error('Error fetching installments:', error);
       toast.error('خطا در دریافت اطلاعات اقساط');
     }
     setLoading(false);
+  };
+
+  const handleCreateInstallments = async () => {
+    if (!createForm.invoice_id || !createForm.count) {
+      toast.error('لطفا فاکتور و تعداد اقساط را انتخاب کنید');
+      return;
+    }
+
+    try {
+      const invoice = installmentInvoices.find(i => i.id === createForm.invoice_id);
+      if (!invoice) return;
+
+      const count = parseInt(createForm.count);
+      const installmentAmount = (Number(invoice.total_amount) - Number(invoice.paid_amount)) / count;
+      const installments = [];
+      
+      for (let i = 0; i < count; i++) {
+        const dueDate = new Date();
+        dueDate.setMonth(dueDate.getMonth() + i);
+        installments.push({
+          invoice_id: createForm.invoice_id,
+          installment_number: i + 1,
+          amount: installmentAmount,
+          due_date: dueDate.toISOString(),
+          status: 'pending'
+        });
+      }
+
+      const { error } = await supabase.from('installments').insert(installments);
+      if (error) throw error;
+
+      toast.success('اقساط با موفقیت ایجاد شد');
+      setIsCreateDialogOpen(false);
+      setCreateForm({ invoice_id: '', count: '3' });
+      fetchInstallments();
+      fetchInstallmentInvoices();
+    } catch (error) {
+      console.error('Error creating installments:', error);
+      toast.error('خطا در ایجاد اقساط');
+    }
   };
 
   const handlePayInstallment = async () => {
@@ -201,64 +279,78 @@ export const AccountingInstallments: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">مدیریت اقساط</h1>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">همه</SelectItem>
-            <SelectItem value="pending">در انتظار</SelectItem>
-            <SelectItem value="paid">پرداخت شده</SelectItem>
-            <SelectItem value="overdue">عقب افتاده</SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="space-y-6 p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="text-xl md:text-2xl font-bold">مدیریت اقساط</h1>
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          {installmentInvoices.length > 0 && (
+            <Button 
+              size="sm"
+              variant="outline"
+              onClick={() => setIsCreateDialogOpen(true)}
+              className="flex-1 sm:flex-none"
+            >
+              <Plus className="h-4 w-4 ml-1" />
+              <span className="hidden xs:inline">ایجاد اقساط</span>
+              <span className="xs:hidden">اقساط</span>
+            </Button>
+          )}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه</SelectItem>
+              <SelectItem value="pending">در انتظار</SelectItem>
+              <SelectItem value="paid">پرداخت شده</SelectItem>
+              <SelectItem value="overdue">عقب افتاده</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <Calendar className="h-8 w-8 text-blue-500" />
+          <CardContent className="pt-4 md:pt-6">
+            <div className="flex items-center gap-2 md:gap-4">
+              <Calendar className="h-6 w-6 md:h-8 md:w-8 text-blue-500" />
               <div>
-                <div className="text-2xl font-bold">{stats.total}</div>
-                <p className="text-muted-foreground">کل اقساط</p>
+                <div className="text-lg md:text-2xl font-bold">{stats.total}</div>
+                <p className="text-xs md:text-sm text-muted-foreground">کل اقساط</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <Clock className="h-8 w-8 text-orange-500" />
+          <CardContent className="pt-4 md:pt-6">
+            <div className="flex items-center gap-2 md:gap-4">
+              <Clock className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
               <div>
-                <div className="text-2xl font-bold">{stats.pending}</div>
-                <p className="text-muted-foreground">در انتظار پرداخت</p>
+                <div className="text-lg md:text-2xl font-bold">{stats.pending}</div>
+                <p className="text-xs md:text-sm text-muted-foreground">در انتظار</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <AlertCircle className="h-8 w-8 text-red-500" />
+          <CardContent className="pt-4 md:pt-6">
+            <div className="flex items-center gap-2 md:gap-4">
+              <AlertCircle className="h-6 w-6 md:h-8 md:w-8 text-red-500" />
               <div>
-                <div className="text-2xl font-bold text-red-500">{stats.overdue}</div>
-                <p className="text-muted-foreground">عقب افتاده</p>
+                <div className="text-lg md:text-2xl font-bold text-red-500">{stats.overdue}</div>
+                <p className="text-xs md:text-sm text-muted-foreground">عقب افتاده</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <CreditCard className="h-8 w-8 text-green-500" />
+          <CardContent className="pt-4 md:pt-6">
+            <div className="flex items-center gap-2 md:gap-4">
+              <CreditCard className="h-6 w-6 md:h-8 md:w-8 text-green-500" />
               <div>
-                <div className="text-2xl font-bold">{stats.totalPending.toLocaleString()}</div>
-                <p className="text-muted-foreground">مبلغ در انتظار</p>
+                <div className="text-lg md:text-2xl font-bold">{stats.totalPending.toLocaleString()}</div>
+                <p className="text-xs md:text-sm text-muted-foreground">مبلغ در انتظار</p>
               </div>
             </div>
           </CardContent>
@@ -268,14 +360,14 @@ export const AccountingInstallments: React.FC = () => {
       {/* Overdue Alert */}
       {stats.overdue > 0 && (
         <Card className="border-red-500 bg-red-50 dark:bg-red-950/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <AlertCircle className="h-6 w-6 text-red-500" />
+          <CardContent className="pt-4 md:pt-6">
+            <div className="flex items-center gap-3 md:gap-4">
+              <AlertCircle className="h-5 w-5 md:h-6 md:w-6 text-red-500 shrink-0" />
               <div>
-                <p className="font-semibold text-red-700 dark:text-red-400">
+                <p className="font-semibold text-red-700 dark:text-red-400 text-sm md:text-base">
                   {stats.overdue} قسط با مبلغ {stats.overdueAmount.toLocaleString()} تومان عقب افتاده است
                 </p>
-                <p className="text-sm text-red-600 dark:text-red-500">لطفا با مشتریان تماس بگیرید</p>
+                <p className="text-xs md:text-sm text-red-600 dark:text-red-500">لطفا با مشتریان تماس بگیرید</p>
               </div>
             </div>
           </CardContent>
@@ -284,15 +376,15 @@ export const AccountingInstallments: React.FC = () => {
 
       {/* Installments Table */}
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>فاکتور</TableHead>
-                <TableHead>مشتری</TableHead>
-                <TableHead>شماره قسط</TableHead>
+                <TableHead className="hidden md:table-cell">مشتری</TableHead>
+                <TableHead>قسط</TableHead>
                 <TableHead>مبلغ</TableHead>
-                <TableHead>سررسید</TableHead>
+                <TableHead className="hidden sm:table-cell">سررسید</TableHead>
                 <TableHead>وضعیت</TableHead>
                 <TableHead>عملیات</TableHead>
               </TableRow>
@@ -304,27 +396,39 @@ export const AccountingInstallments: React.FC = () => {
                 </TableRow>
               ) : filteredInstallments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">قسطی یافت نشد</TableCell>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    {installments.length === 0 ? (
+                      <div className="space-y-2">
+                        <p>قسطی یافت نشد</p>
+                        {installmentInvoices.length > 0 && (
+                          <Button size="sm" variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
+                            <Plus className="h-4 w-4 ml-1" />
+                            ایجاد اقساط برای فاکتورهای اقساطی
+                          </Button>
+                        )}
+                      </div>
+                    ) : 'قسطی با این فیلتر یافت نشد'}
+                  </TableCell>
                 </TableRow>
               ) : (
                 filteredInstallments.map(installment => (
                   <TableRow key={installment.id} className={isPast(new Date(installment.due_date)) && installment.status !== 'paid' ? 'bg-red-50 dark:bg-red-950/20' : ''}>
-                    <TableCell className="font-mono">{installment.invoice?.invoice_number || '-'}</TableCell>
-                    <TableCell>
+                    <TableCell className="font-mono text-xs md:text-sm">{installment.invoice?.invoice_number || '-'}</TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <div>
-                          <div>{installment.invoice?.customer?.name || '-'}</div>
-                          <div className="text-sm text-muted-foreground flex items-center gap-1">
+                          <div className="text-sm">{installment.invoice?.customer?.name || '-'}</div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-1">
                             <Phone className="h-3 w-3" />
                             {installment.invoice?.customer?.phone || '-'}
                           </div>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>قسط {installment.installment_number}</TableCell>
-                    <TableCell>{Number(installment.amount).toLocaleString()} تومان</TableCell>
-                    <TableCell>{format(new Date(installment.due_date), 'yyyy/MM/dd')}</TableCell>
+                    <TableCell className="text-sm">قسط {installment.installment_number}</TableCell>
+                    <TableCell className="text-xs md:text-sm">{Number(installment.amount).toLocaleString()}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-sm">{format(new Date(installment.due_date), 'yyyy/MM/dd')}</TableCell>
                     <TableCell>{getStatusBadge(installment.status, installment.due_date)}</TableCell>
                     <TableCell>
                       {installment.status !== 'paid' && (
@@ -335,13 +439,14 @@ export const AccountingInstallments: React.FC = () => {
                             setPaymentForm({ ...paymentForm, amount: installment.amount.toString() });
                             setIsPaymentDialogOpen(true);
                           }}
+                          className="text-xs"
                         >
-                          <CreditCard className="h-4 w-4 mr-1" />
-                          ثبت پرداخت
+                          <CreditCard className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                          <span className="hidden md:inline">ثبت پرداخت</span>
                         </Button>
                       )}
                       {installment.status === 'paid' && installment.paid_at && (
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           {format(new Date(installment.paid_at), 'yyyy/MM/dd')}
                         </span>
                       )}
@@ -353,6 +458,57 @@ export const AccountingInstallments: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Create Installments Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-md z-[9999]" dir="rtl">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle>ایجاد اقساط</DialogTitle>
+              <Button variant="ghost" size="icon" onClick={() => setIsCreateDialogOpen(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label>فاکتور اقساطی</Label>
+              <Select value={createForm.invoice_id} onValueChange={v => setCreateForm({...createForm, invoice_id: v})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="انتخاب فاکتور" />
+                </SelectTrigger>
+                <SelectContent className="z-[10000]">
+                  {installmentInvoices.map(inv => (
+                    <SelectItem key={inv.id} value={inv.id}>
+                      {inv.invoice_number} - {Number(inv.total_amount).toLocaleString()} تومان
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>تعداد اقساط</Label>
+              <Select value={createForm.count} onValueChange={v => setCreateForm({...createForm, count: v})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="z-[10000]">
+                  {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => (
+                    <SelectItem key={n} value={n.toString()}>{n} قسط</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button className="w-full" onClick={handleCreateInstallments}>
+              <Plus className="h-4 w-4 mr-2" />
+              ایجاد اقساط
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Payment Dialog */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>

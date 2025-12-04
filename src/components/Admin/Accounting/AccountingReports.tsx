@@ -198,12 +198,12 @@ export const AccountingReports: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">گزارشات مالی</h1>
-        <div className="flex gap-4">
+    <div className="space-y-6 p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="text-xl md:text-2xl font-bold">گزارشات مالی</h1>
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -212,15 +212,15 @@ export const AccountingReports: React.FC = () => {
               <SelectItem value="quarter">سه ماه اخیر</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={exportToCSV}>
-            <Download className="ml-2 h-4 w-4" />
-            خروجی CSV
+          <Button variant="outline" size="sm" onClick={exportToCSV} className="flex-1 sm:flex-none">
+            <Download className="ml-1 md:ml-2 h-4 w-4" />
+            <span className="text-xs md:text-sm">خروجی CSV</span>
           </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">

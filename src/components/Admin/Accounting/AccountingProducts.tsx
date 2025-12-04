@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, Edit, Package } from 'lucide-react';
+import { Plus, Edit, Package, BookOpen, Briefcase } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -24,11 +25,22 @@ interface Product {
   created_at: string;
 }
 
+interface Course {
+  id: string;
+  title: string;
+  description: string | null;
+  price: number;
+  is_active: boolean;
+  created_at: string;
+}
+
 export const AccountingProducts: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [activeTab, setActiveTab] = useState('courses');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -39,22 +51,22 @@ export const AccountingProducts: React.FC = () => {
   });
 
   useEffect(() => {
-    fetchProducts();
+    fetchData();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const [productsRes, coursesRes] = await Promise.all([
+        supabase.from('products').select('*').order('created_at', { ascending: false }),
+        supabase.from('courses').select('id, title, description, price, is_active, created_at').order('created_at', { ascending: false })
+      ]);
 
-      if (error) throw error;
-      setProducts((data as Product[]) || []);
+      if (productsRes.data) setProducts(productsRes.data as Product[]);
+      if (coursesRes.data) setCourses(coursesRes.data);
     } catch (error) {
-      console.error('Error fetching products:', error);
-      toast.error('خطا در دریافت محصولات');
+      console.error('Error fetching data:', error);
+      toast.error('خطا در دریافت اطلاعات');
     }
     setLoading(false);
   };
@@ -98,7 +110,7 @@ export const AccountingProducts: React.FC = () => {
       setIsDialogOpen(false);
       setEditingProduct(null);
       setFormData({ name: '', description: '', type: 'service', price: '', is_active: true });
-      fetchProducts();
+      fetchData();
     } catch (error) {
       console.error('Error saving product:', error);
       toast.error('خطا در ذخیره محصول');
@@ -125,7 +137,7 @@ export const AccountingProducts: React.FC = () => {
         .eq('id', product.id);
 
       if (error) throw error;
-      fetchProducts();
+      fetchData();
     } catch (error) {
       console.error('Error toggling product:', error);
       toast.error('خطا در تغییر وضعیت');
@@ -145,10 +157,14 @@ export const AccountingProducts: React.FC = () => {
     }
   };
 
+  const totalProducts = products.length + courses.length;
+  const activeProducts = products.filter(p => p.is_active).length + courses.filter(c => c.is_active).length;
+  const inactiveProducts = products.filter(p => !p.is_active).length + courses.filter(c => !c.is_active).length;
+
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">مدیریت محصولات و خدمات</h1>
+    <div className="space-y-6 p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="text-xl md:text-2xl font-bold">مدیریت محصولات و خدمات</h1>
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
           setIsDialogOpen(open);
           if (!open) {
@@ -157,18 +173,18 @@ export const AccountingProducts: React.FC = () => {
           }
         }}>
           <DialogTrigger asChild>
-            <Button>
+            <Button size="sm" className="w-full sm:w-auto">
               <Plus className="ml-2 h-4 w-4" />
-              محصول جدید
+              خدمات جدید
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editingProduct ? 'ویرایش محصول' : 'افزودن محصول جدید'}</DialogTitle>
+              <DialogTitle>{editingProduct ? 'ویرایش خدمات' : 'افزودن خدمات جدید'}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>نام محصول</Label>
+                <Label>نام خدمات</Label>
                 <Input 
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
@@ -210,7 +226,7 @@ export const AccountingProducts: React.FC = () => {
                 <Label>فعال</Label>
               </div>
               <Button className="w-full" onClick={handleSubmit}>
-                {editingProduct ? 'ذخیره تغییرات' : 'افزودن محصول'}
+                {editingProduct ? 'ذخیره تغییرات' : 'افزودن خدمات'}
               </Button>
             </div>
           </DialogContent>
@@ -218,93 +234,159 @@ export const AccountingProducts: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3 md:gap-4">
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <Package className="h-8 w-8 text-blue-500" />
+          <CardContent className="pt-4 md:pt-6">
+            <div className="flex items-center gap-2 md:gap-4">
+              <Package className="h-6 w-6 md:h-8 md:w-8 text-blue-500" />
               <div>
-                <div className="text-2xl font-bold">{products.length}</div>
-                <p className="text-muted-foreground">کل محصولات</p>
+                <div className="text-lg md:text-2xl font-bold">{totalProducts}</div>
+                <p className="text-xs md:text-sm text-muted-foreground">کل محصولات</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-500">
-              {products.filter(p => p.is_active).length}
+          <CardContent className="pt-4 md:pt-6">
+            <div className="text-lg md:text-2xl font-bold text-green-500">
+              {activeProducts}
             </div>
-            <p className="text-muted-foreground">فعال</p>
+            <p className="text-xs md:text-sm text-muted-foreground">فعال</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-gray-500">
-              {products.filter(p => !p.is_active).length}
+          <CardContent className="pt-4 md:pt-6">
+            <div className="text-lg md:text-2xl font-bold text-gray-500">
+              {inactiveProducts}
             </div>
-            <p className="text-muted-foreground">غیرفعال</p>
+            <p className="text-xs md:text-sm text-muted-foreground">غیرفعال</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Products Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>نام</TableHead>
-                <TableHead>نوع</TableHead>
-                <TableHead>قیمت</TableHead>
-                <TableHead>وضعیت</TableHead>
-                <TableHead>عملیات</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
-                    در حال بارگذاری...
-                  </TableCell>
-                </TableRow>
-              ) : products.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    محصولی یافت نشد
-                  </TableCell>
-                </TableRow>
-              ) : (
-                products.map(product => (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <div className="font-medium">{product.name}</div>
-                      {product.description && (
-                        <div className="text-sm text-muted-foreground truncate max-w-xs">
-                          {product.description}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>{getTypeBadge(product.type)}</TableCell>
-                    <TableCell>{Number(product.price).toLocaleString()} تومان</TableCell>
-                    <TableCell>
-                      <Switch 
-                        checked={product.is_active}
-                        onCheckedChange={() => toggleActive(product)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(product)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+      {/* Tabs for Courses and Services */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full md:w-auto grid grid-cols-2 md:inline-flex">
+          <TabsTrigger value="courses" className="flex items-center gap-1 md:gap-2">
+            <BookOpen className="h-4 w-4" />
+            <span className="text-xs md:text-sm">دوره‌ها ({courses.length})</span>
+          </TabsTrigger>
+          <TabsTrigger value="services" className="flex items-center gap-1 md:gap-2">
+            <Briefcase className="h-4 w-4" />
+            <span className="text-xs md:text-sm">خدمات ({products.length})</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="courses">
+          <Card>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>نام دوره</TableHead>
+                    <TableHead className="hidden md:table-cell">توضیحات</TableHead>
+                    <TableHead>قیمت</TableHead>
+                    <TableHead>وضعیت</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8">
+                        در حال بارگذاری...
+                      </TableCell>
+                    </TableRow>
+                  ) : courses.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        دوره‌ای یافت نشد
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    courses.map(course => (
+                      <TableRow key={course.id}>
+                        <TableCell>
+                          <div className="font-medium text-sm">{course.title}</div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {course.description && (
+                            <div className="text-sm text-muted-foreground truncate max-w-xs">
+                              {course.description}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm">{Number(course.price).toLocaleString()} تومان</TableCell>
+                        <TableCell>
+                          <Badge className={course.is_active ? 'bg-green-500' : 'bg-gray-500'}>
+                            {course.is_active ? 'فعال' : 'غیرفعال'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="services">
+          <Card>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>نام</TableHead>
+                    <TableHead className="hidden md:table-cell">نوع</TableHead>
+                    <TableHead>قیمت</TableHead>
+                    <TableHead>وضعیت</TableHead>
+                    <TableHead>عملیات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8">
+                        در حال بارگذاری...
+                      </TableCell>
+                    </TableRow>
+                  ) : products.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        خدماتی یافت نشد - از دکمه "خدمات جدید" برای اضافه کردن استفاده کنید
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    products.map(product => (
+                      <TableRow key={product.id}>
+                        <TableCell>
+                          <div className="font-medium text-sm">{product.name}</div>
+                          <div className="text-xs text-muted-foreground truncate max-w-[150px] md:hidden">
+                            {product.description}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">{getTypeBadge(product.type)}</TableCell>
+                        <TableCell className="text-sm">{Number(product.price).toLocaleString()}</TableCell>
+                        <TableCell>
+                          <Switch 
+                            checked={product.is_active}
+                            onCheckedChange={() => toggleActive(product)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="sm" onClick={() => handleEdit(product)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
