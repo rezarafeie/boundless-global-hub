@@ -254,45 +254,45 @@ export const AccountingInvoices: React.FC = () => {
               فاکتور جدید
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-none w-screen h-screen m-0 p-0 rounded-none">
-            <div className="flex flex-col h-full">
-              <DialogHeader className="px-6 py-4 border-b bg-background shrink-0">
-                <div className="flex items-center justify-between">
-                  <DialogTitle className="text-xl">ایجاد فاکتور جدید</DialogTitle>
+          <DialogContent className="max-w-none w-screen h-screen m-0 p-0 rounded-none" dir="rtl">
+            <div className="flex flex-col h-full text-right">
+              <DialogHeader className="px-4 sm:px-6 py-4 border-b bg-background shrink-0">
+                <div className="flex items-center justify-between flex-row-reverse">
                   <Button variant="ghost" size="icon" onClick={() => setIsCreateOpen(false)}>
                     <X className="h-5 w-5" />
                   </Button>
+                  <DialogTitle className="text-lg sm:text-xl">ایجاد فاکتور جدید</DialogTitle>
                 </div>
               </DialogHeader>
               
-              <ScrollArea className="flex-1 p-6">
-                <div className="max-w-2xl mx-auto space-y-6">
+              <ScrollArea className="flex-1 p-4 sm:p-6">
+                <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
                   {/* Customer Search Section */}
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <User className="h-5 w-5" />
+                    <CardHeader className="pb-2 sm:pb-4">
+                      <CardTitle className="text-base sm:text-lg flex items-center gap-2 flex-row-reverse justify-end">
                         انتخاب مشتری
+                        <User className="h-5 w-5" />
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {selectedCustomer ? (
-                        <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                          <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                              <User className="h-6 w-6 text-primary" />
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 sm:p-4 bg-muted rounded-lg">
+                          <div className="flex items-center gap-3 sm:gap-4 flex-row-reverse w-full sm:w-auto">
+                            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <User className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                             </div>
-                            <div>
-                              <p className="font-semibold">{selectedCustomer.name}</p>
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                  <Phone className="h-3 w-3" />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm sm:text-base">{selectedCustomer.name}</p>
+                              <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1 flex-row-reverse">
                                   {selectedCustomer.phone}
+                                  <Phone className="h-3 w-3" />
                                 </span>
                                 {selectedCustomer.email && (
-                                  <span className="flex items-center gap-1">
-                                    <Mail className="h-3 w-3" />
+                                  <span className="flex items-center gap-1 flex-row-reverse">
                                     {selectedCustomer.email}
+                                    <Mail className="h-3 w-3" />
                                   </span>
                                 )}
                               </div>
@@ -301,6 +301,7 @@ export const AccountingInvoices: React.FC = () => {
                           <Button 
                             variant="ghost" 
                             size="sm"
+                            className="w-full sm:w-auto"
                             onClick={() => {
                               setSelectedCustomer(null);
                               setFormData({...formData, customer_id: ''});
@@ -322,7 +323,7 @@ export const AccountingInvoices: React.FC = () => {
                                 setShowCustomerResults(true);
                               }}
                               onFocus={() => setShowCustomerResults(true)}
-                              className="pr-10"
+                              className="pr-10 text-right"
                             />
                           </div>
                           
@@ -336,7 +337,7 @@ export const AccountingInvoices: React.FC = () => {
                                 filteredCustomers.map(customer => (
                                   <button
                                     key={customer.id}
-                                    className="w-full p-3 text-right hover:bg-muted flex items-center gap-3 border-b last:border-0"
+                                    className="w-full p-3 text-right hover:bg-muted flex items-center gap-3 flex-row-reverse border-b last:border-0"
                                     onClick={() => {
                                       setSelectedCustomer(customer);
                                       setFormData({...formData, customer_id: customer.id.toString()});
@@ -347,9 +348,9 @@ export const AccountingInvoices: React.FC = () => {
                                     <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0">
                                       <User className="h-5 w-5 text-muted-foreground" />
                                     </div>
-                                    <div className="flex-1 min-w-0">
+                                    <div className="flex-1 min-w-0 text-right">
                                       <p className="font-medium truncate">{customer.name}</p>
-                                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
                                         <span>{customer.phone}</span>
                                         {customer.email && <span className="truncate">{customer.email}</span>}
                                       </div>
@@ -366,17 +367,17 @@ export const AccountingInvoices: React.FC = () => {
 
                   {/* Product Selection */}
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
+                    <CardHeader className="pb-2 sm:pb-4">
+                      <CardTitle className="text-base sm:text-lg flex items-center gap-2 flex-row-reverse justify-end">
                         محصول / خدمات
+                        <FileText className="h-5 w-5" />
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div>
-                        <Label>نوع محصول</Label>
+                        <Label className="text-right block">نوع محصول</Label>
                         <Select value={formData.product_type} onValueChange={v => setFormData({...formData, product_type: v, product_id: ''})}>
-                          <SelectTrigger>
+                          <SelectTrigger className="text-right">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -387,7 +388,7 @@ export const AccountingInvoices: React.FC = () => {
                       </div>
 
                       <div>
-                        <Label>محصول</Label>
+                        <Label className="text-right block">محصول</Label>
                         <Select value={formData.product_id} onValueChange={v => {
                           const selectedItem = formData.product_type === 'course' 
                             ? courses.find(c => c.id === v)
@@ -398,7 +399,7 @@ export const AccountingInvoices: React.FC = () => {
                             amount: selectedItem ? selectedItem.price.toString() : ''
                           });
                         }}>
-                          <SelectTrigger>
+                          <SelectTrigger className="text-right">
                             <SelectValue placeholder="انتخاب محصول" />
                           </SelectTrigger>
                           <SelectContent>
@@ -419,12 +420,12 @@ export const AccountingInvoices: React.FC = () => {
                       </div>
 
                       <div>
-                        <Label>مبلغ (تومان)</Label>
+                        <Label className="text-right block">مبلغ (تومان)</Label>
                         <Input 
                           type="number"
                           value={formData.amount}
                           onChange={e => setFormData({...formData, amount: e.target.value})}
-                          className="text-lg font-semibold"
+                          className="text-base sm:text-lg font-semibold text-right"
                         />
                       </div>
                     </CardContent>
@@ -432,17 +433,17 @@ export const AccountingInvoices: React.FC = () => {
 
                   {/* Payment Options */}
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Calendar className="h-5 w-5" />
+                    <CardHeader className="pb-2 sm:pb-4">
+                      <CardTitle className="text-base sm:text-lg flex items-center gap-2 flex-row-reverse justify-end">
                         نحوه پرداخت
+                        <Calendar className="h-5 w-5" />
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div>
-                        <Label>نوع پرداخت</Label>
+                        <Label className="text-right block">نوع پرداخت</Label>
                         <Select value={formData.payment_type} onValueChange={v => setFormData({...formData, payment_type: v})}>
-                          <SelectTrigger>
+                          <SelectTrigger className="text-right">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -453,7 +454,8 @@ export const AccountingInvoices: React.FC = () => {
                         </Select>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-row-reverse justify-end">
+                        <Label htmlFor="is_installment">پرداخت اقساطی</Label>
                         <input 
                           type="checkbox"
                           id="is_installment"
@@ -461,21 +463,21 @@ export const AccountingInvoices: React.FC = () => {
                           onChange={e => setFormData({...formData, is_installment: e.target.checked})}
                           className="rounded"
                         />
-                        <Label htmlFor="is_installment">پرداخت اقساطی</Label>
                       </div>
 
                       {formData.is_installment && (
                         <div>
-                          <Label>تعداد اقساط</Label>
+                          <Label className="text-right block">تعداد اقساط</Label>
                           <Input 
                             type="number"
                             min="2"
                             max="12"
                             value={formData.installment_count}
                             onChange={e => setFormData({...formData, installment_count: parseInt(e.target.value)})}
+                            className="text-right"
                           />
                           {formData.amount && (
-                            <p className="text-sm text-muted-foreground mt-2">
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-2 text-right">
                               مبلغ هر قسط: {(parseFloat(formData.amount) / formData.installment_count).toLocaleString()} تومان
                             </p>
                           )}
@@ -486,8 +488,8 @@ export const AccountingInvoices: React.FC = () => {
 
                   {/* Notes */}
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">یادداشت</CardTitle>
+                    <CardHeader className="pb-2 sm:pb-4">
+                      <CardTitle className="text-base sm:text-lg text-right">یادداشت</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <Textarea 
@@ -495,14 +497,15 @@ export const AccountingInvoices: React.FC = () => {
                         onChange={e => setFormData({...formData, notes: e.target.value})}
                         placeholder="توضیحات اضافی..."
                         rows={3}
+                        className="text-right"
                       />
                     </CardContent>
                   </Card>
 
                   {/* Submit Button */}
-                  <div className="pb-6">
+                  <div className="pb-4 sm:pb-6">
                     <Button 
-                      className="w-full h-12 text-lg" 
+                      className="w-full h-10 sm:h-12 text-base sm:text-lg" 
                       onClick={handleCreateInvoice}
                       disabled={!selectedCustomer || !formData.product_id || !formData.amount}
                     >
