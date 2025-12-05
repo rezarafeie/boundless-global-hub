@@ -25,7 +25,8 @@ import {
   CreditCard,
   Key,
   Activity,
-  DollarSign
+  DollarSign,
+  X
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -111,6 +112,7 @@ const SalesAgentLeads: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [crmFilter, setCrmFilter] = useState<string>('all');
   const [courseFilter, setCourseFilter] = useState<string>('all');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all');
   const [courses, setCourses] = useState<Course[]>([]);
   
   // Lead detail/CRM states
@@ -303,8 +305,18 @@ const SalesAgentLeads: React.FC = () => {
       filteredLeads = filteredLeads.filter(l => l.crm_status !== 'none');
     }
 
+    if (paymentStatusFilter !== 'all') {
+      if (paymentStatusFilter === 'paid') {
+        filteredLeads = filteredLeads.filter(l => l.payment_status === 'completed' || l.payment_status === 'success');
+      } else if (paymentStatusFilter === 'pending') {
+        filteredLeads = filteredLeads.filter(l => l.payment_status === 'pending');
+      } else if (paymentStatusFilter === 'failed') {
+        filteredLeads = filteredLeads.filter(l => l.payment_status === 'failed');
+      }
+    }
+
     setLeads(filteredLeads);
-  }, [allLeads, searchTerm, courseFilter, crmFilter]);
+  }, [allLeads, searchTerm, courseFilter, crmFilter, paymentStatusFilter]);
 
   const openLeadDetail = async (lead: Lead) => {
     setSelectedLead(lead);
@@ -498,7 +510,7 @@ const SalesAgentLeads: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="w-[180px]">
+            <div className="w-[160px]">
               <Label className="text-xs text-muted-foreground mb-1 block">دوره</Label>
               <Select value={courseFilter} onValueChange={setCourseFilter}>
                 <SelectTrigger>
@@ -514,7 +526,21 @@ const SalesAgentLeads: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="w-[180px]">
+            <div className="w-[160px]">
+              <Label className="text-xs text-muted-foreground mb-1 block">وضعیت پرداخت</Label>
+              <Select value={paymentStatusFilter} onValueChange={setPaymentStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه</SelectItem>
+                  <SelectItem value="paid">پرداخت شده ✅</SelectItem>
+                  <SelectItem value="pending">در انتظار ⏳</SelectItem>
+                  <SelectItem value="failed">ناموفق ❌</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-[160px]">
               <Label className="text-xs text-muted-foreground mb-1 block">وضعیت CRM</Label>
               <Select value={crmFilter} onValueChange={setCrmFilter}>
                 <SelectTrigger>
@@ -608,129 +634,147 @@ const SalesAgentLeads: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Lead Detail Modal */}
-      <Dialog open={showLeadDetail} onOpenChange={setShowLeadDetail}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              {selectedLead?.full_name}
-              {selectedLead && (
-                <span className="mr-2">{getPaymentStatusBadge(selectedLead.payment_status)}</span>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          
-          {selectedLead && (
-            <div className="space-y-4">
-              {/* Quick Info */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <a href={`tel:${formatPhone(selectedLead.phone)}`} className="text-primary hover:underline text-sm">
-                    {formatPhone(selectedLead.phone)}
-                  </a>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm truncate">{selectedLead.email}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm truncate">{selectedLead.course_title}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{selectedLead.payment_amount?.toLocaleString()} تومان</span>
-                </div>
+      {/* Lead Detail Modal - Full Screen */}
+      {showLeadDetail && (
+        <div className="fixed inset-0 top-16 z-50 bg-background overflow-y-auto" dir="rtl">
+          <div className="container mx-auto p-4 pb-24">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4 sticky top-0 bg-background py-2 border-b">
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                <h2 className="text-lg font-semibold">{selectedLead?.full_name}</h2>
+                {selectedLead && (
+                  <span className="mr-2">{getPaymentStatusBadge(selectedLead.payment_status)}</span>
+                )}
               </div>
-
-              {/* Add Note Button */}
-              <Button 
-                onClick={() => setShowAddNote(true)}
-                className="w-full gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                ثبت فعالیت جدید
+              <Button variant="ghost" size="icon" onClick={() => setShowLeadDetail(false)}>
+                <X className="h-5 w-5" />
               </Button>
-
-              {/* User Details Tabs */}
-              {userLoading ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : selectedUser ? (
-                <Tabs defaultValue="overview" className="w-full">
-                  <TabsList className="grid w-full grid-cols-6 h-auto">
-                    <TabsTrigger value="overview" className="flex items-center gap-1 text-xs px-2 py-2">
-                      <User className="h-3 w-3" />
-                      <span className="hidden sm:inline">اطلاعات</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="enrollments" className="flex items-center gap-1 text-xs px-2 py-2">
-                      <CreditCard className="h-3 w-3" />
-                      <span className="hidden sm:inline">ثبت‌نام‌ها</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="licenses" className="flex items-center gap-1 text-xs px-2 py-2">
-                      <Key className="h-3 w-3" />
-                      <span className="hidden sm:inline">لایسنس‌ها</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="crm" className="flex items-center gap-1 text-xs px-2 py-2">
-                      <MessageSquare className="h-3 w-3" />
-                      <span className="hidden sm:inline">CRM</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="financials" className="flex items-center gap-1 text-xs px-2 py-2">
-                      <DollarSign className="h-3 w-3" />
-                      <span className="hidden sm:inline">مالی</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="activity" className="flex items-center gap-1 text-xs px-2 py-2">
-                      <Activity className="h-3 w-3" />
-                      <span className="hidden sm:inline">فعالیت</span>
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="overview" className="mt-4">
-                    <UserOverview user={selectedUser} />
-                  </TabsContent>
-                  
-                  <TabsContent value="enrollments" className="mt-4">
-                    <UserEnrollments userId={selectedUser.id} />
-                  </TabsContent>
-                  
-                  <TabsContent value="licenses" className="mt-4">
-                    <UserLicenses userId={selectedUser.id} userPhone={selectedUser.phone} />
-                  </TabsContent>
-                  
-                  <TabsContent value="crm" className="mt-4">
-                    <UserCRM 
-                      userId={selectedUser.id} 
-                      userName={selectedUser.name}
-                      userPhone={selectedUser.phone}
-                      userEmail={selectedUser.email || ''}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="financials" className="mt-4">
-                    <UserFinancialHistory userId={selectedUser.id} />
-                  </TabsContent>
-                  
-                  <TabsContent value="activity" className="mt-4">
-                    <UserActivity userId={selectedUser.id} />
-                  </TabsContent>
-                </Tabs>
-              ) : selectedLead.chat_user_id === null ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>این لید هنوز به کاربر پیام‌رسان متصل نشده است</p>
-                  <p className="text-sm mt-2">اطلاعات کامل کاربر پس از ورود به سیستم پیام‌رسان در دسترس خواهد بود</p>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  خطا در بارگذاری اطلاعات کاربر
-                </div>
-              )}
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            
+            {selectedLead && (
+              <div className="space-y-4">
+                {/* Quick Info */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <a href={`tel:${formatPhone(selectedLead.phone)}`} className="text-primary hover:underline text-sm">
+                      {formatPhone(selectedLead.phone)}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm truncate">{selectedLead.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm truncate">{selectedLead.course_title}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{selectedLead.payment_amount?.toLocaleString()} تومان</span>
+                  </div>
+                </div>
+
+                {/* Add Note Button */}
+                <Button 
+                  onClick={() => setShowAddNote(true)}
+                  className="w-full gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  ثبت فعالیت جدید
+                </Button>
+
+                {/* User Details Tabs */}
+                {userLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : selectedUser ? (
+                  <Tabs defaultValue="overview" className="w-full">
+                    <TabsList className="grid w-full grid-cols-6 h-auto">
+                      <TabsTrigger value="overview" className="flex items-center gap-1 text-xs px-2 py-2">
+                        <User className="h-3 w-3" />
+                        <span className="hidden sm:inline">اطلاعات</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="enrollments" className="flex items-center gap-1 text-xs px-2 py-2">
+                        <CreditCard className="h-3 w-3" />
+                        <span className="hidden sm:inline">ثبت‌نام‌ها</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="licenses" className="flex items-center gap-1 text-xs px-2 py-2">
+                        <Key className="h-3 w-3" />
+                        <span className="hidden sm:inline">لایسنس‌ها</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="crm" className="flex items-center gap-1 text-xs px-2 py-2">
+                        <MessageSquare className="h-3 w-3" />
+                        <span className="hidden sm:inline">CRM</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="financials" className="flex items-center gap-1 text-xs px-2 py-2">
+                        <DollarSign className="h-3 w-3" />
+                        <span className="hidden sm:inline">مالی</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="activity" className="flex items-center gap-1 text-xs px-2 py-2">
+                        <Activity className="h-3 w-3" />
+                        <span className="hidden sm:inline">فعالیت</span>
+                      </TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="overview" className="mt-4">
+                      <UserOverview user={selectedUser} />
+                    </TabsContent>
+                    
+                    <TabsContent value="enrollments" className="mt-4">
+                      <UserEnrollments userId={selectedUser.id} />
+                    </TabsContent>
+                    
+                    <TabsContent value="licenses" className="mt-4">
+                      <UserLicenses userId={selectedUser.id} userPhone={selectedUser.phone} />
+                    </TabsContent>
+                    
+                    <TabsContent value="crm" className="mt-4">
+                      <UserCRM 
+                        userId={selectedUser.id} 
+                        userName={selectedUser.name}
+                        userPhone={selectedUser.phone}
+                        userEmail={selectedUser.email || ''}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="financials" className="mt-4">
+                      <UserFinancialHistory userId={selectedUser.id} />
+                    </TabsContent>
+                    
+                    <TabsContent value="activity" className="mt-4">
+                      <UserActivity userId={selectedUser.id} />
+                    </TabsContent>
+                  </Tabs>
+                ) : selectedLead.chat_user_id === null ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>این لید هنوز به کاربر پیام‌رسان متصل نشده است</p>
+                    <p className="text-sm mt-2">اطلاعات کامل کاربر پس از ورود به سیستم پیام‌رسان در دسترس خواهد بود</p>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    خطا در بارگذاری اطلاعات کاربر
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Fixed Close Button at Bottom */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
+              <Button 
+                variant="outline" 
+                className="w-full gap-2"
+                onClick={() => setShowLeadDetail(false)}
+              >
+                <X className="h-4 w-4" />
+                بستن
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Note Modal */}
       <Dialog open={showAddNote} onOpenChange={setShowAddNote}>
