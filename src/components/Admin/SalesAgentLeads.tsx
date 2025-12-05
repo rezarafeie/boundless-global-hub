@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Phone, 
   Mail, 
@@ -20,12 +21,22 @@ import {
   Calendar,
   User,
   FileText,
-  RefreshCw
+  RefreshCw,
+  CreditCard,
+  Key,
+  Activity,
+  DollarSign
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns-jalali';
 import { useAuth } from '@/contexts/AuthContext';
+import { UserOverview } from '@/components/Admin/UserProfile/UserOverview';
+import { UserEnrollments } from '@/components/Admin/UserProfile/UserEnrollments';
+import { UserLicenses } from '@/components/Admin/UserProfile/UserLicenses';
+import UserCRM from '@/components/Admin/UserProfile/UserCRM';
+import { UserActivity } from '@/components/Admin/UserProfile/UserActivity';
+import UserFinancialHistory from '@/components/Admin/UserProfile/UserFinancialHistory';
 
 interface Lead {
   id: string;
@@ -36,6 +47,7 @@ interface Lead {
   course_title: string;
   course_id: string;
   payment_amount: number;
+  payment_status: string;
   assigned_at: string;
   chat_user_id: number | null;
   crm_status: 'none' | 'has_notes' | 'has_calls';
@@ -71,6 +83,24 @@ interface Course {
   title: string;
 }
 
+interface UserData {
+  id: number;
+  name: string;
+  email?: string;
+  phone: string;
+  created_at: string;
+  last_seen?: string;
+  is_approved: boolean;
+  is_messenger_admin: boolean;
+  bedoun_marz_approved: boolean;
+  signup_source?: string;
+  user_id?: string;
+  first_name?: string;
+  last_name?: string;
+  country_code?: string;
+  [key: string]: any;
+}
+
 const SalesAgentLeads: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -85,6 +115,8 @@ const SalesAgentLeads: React.FC = () => {
   
   // Lead detail/CRM states
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [userLoading, setUserLoading] = useState(false);
   const [showLeadDetail, setShowLeadDetail] = useState(false);
   const [crmNotes, setCrmNotes] = useState<CRMNote[]>([]);
   const [notesLoading, setNotesLoading] = useState(false);
@@ -148,6 +180,7 @@ const SalesAgentLeads: React.FC = () => {
             phone,
             chat_user_id,
             payment_amount,
+            payment_status,
             course_id,
             courses!inner(id, title)
           )
@@ -209,6 +242,7 @@ const SalesAgentLeads: React.FC = () => {
           course_title: enrollment?.courses?.title || '',
           course_id: enrollment?.course_id || '',
           payment_amount: enrollment?.payment_amount || 0,
+          payment_status: enrollment?.payment_status || 'pending',
           assigned_at: a.assigned_at,
           chat_user_id: chatUserId,
           crm_status: crmStatus,
@@ -274,23 +308,51 @@ const SalesAgentLeads: React.FC = () => {
 
   const openLeadDetail = async (lead: Lead) => {
     setSelectedLead(lead);
+    setSelectedUser(null);
     setShowLeadDetail(true);
     
     if (lead.chat_user_id) {
+      setUserLoading(true);
       setNotesLoading(true);
       try {
-        const { data } = await supabase
-          .from('crm_notes')
-          .select('*')
-          .eq('user_id', lead.chat_user_id)
-          .order('created_at', { ascending: false });
+        // Fetch user data and CRM notes in parallel
+        const [userResult, notesResult] = await Promise.all([
+          supabase
+            .from('chat_users')
+            .select('*')
+            .eq('id', lead.chat_user_id)
+            .single(),
+          supabase
+            .from('crm_notes')
+            .select('*')
+            .eq('user_id', lead.chat_user_id)
+            .order('created_at', { ascending: false })
+        ]);
         
-        setCrmNotes(data || []);
+        if (userResult.data) {
+          setSelectedUser(userResult.data as UserData);
+        }
+        setCrmNotes(notesResult.data || []);
       } catch (error) {
-        console.error('Error fetching CRM notes:', error);
+        console.error('Error fetching lead details:', error);
       } finally {
+        setUserLoading(false);
         setNotesLoading(false);
       }
+    }
+  };
+
+  const getPaymentStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+      case 'success':
+        return <Badge className="bg-green-500/20 text-green-700 border-green-500/30">پرداخت شده</Badge>;
+      case 'pending':
+        return <Badge variant="outline" className="bg-yellow-500/20 text-yellow-700 border-yellow-500/30">در انتظار</Badge>;
+      case 'failed':
+        return <Badge variant="destructive">ناموفق</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
@@ -487,6 +549,7 @@ const SalesAgentLeads: React.FC = () => {
                   <TableHead>نام</TableHead>
                   <TableHead>تلفن</TableHead>
                   <TableHead>دوره</TableHead>
+                  <TableHead>وضعیت پرداخت</TableHead>
                   <TableHead>مبلغ</TableHead>
                   <TableHead>تاریخ واگذاری</TableHead>
                   <TableHead>عملیات</TableHead>
@@ -495,7 +558,7 @@ const SalesAgentLeads: React.FC = () => {
               <TableBody>
                 {leads.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
                       لیدی یافت نشد
                     </TableCell>
                   </TableRow>
@@ -517,6 +580,7 @@ const SalesAgentLeads: React.FC = () => {
                         </a>
                       </TableCell>
                       <TableCell className="max-w-[150px] truncate">{lead.course_title}</TableCell>
+                      <TableCell>{getPaymentStatusBadge(lead.payment_status)}</TableCell>
                       <TableCell>{lead.payment_amount?.toLocaleString()} تومان</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {formatDate(lead.assigned_at)}
@@ -546,35 +610,38 @@ const SalesAgentLeads: React.FC = () => {
 
       {/* Lead Detail Modal */}
       <Dialog open={showLeadDetail} onOpenChange={setShowLeadDetail}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
               {selectedLead?.full_name}
+              {selectedLead && (
+                <span className="mr-2">{getPaymentStatusBadge(selectedLead.payment_status)}</span>
+              )}
             </DialogTitle>
           </DialogHeader>
           
           {selectedLead && (
             <div className="space-y-4">
-              {/* Contact Info */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+              {/* Quick Info */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
-                  <a href={`tel:${formatPhone(selectedLead.phone)}`} className="text-primary hover:underline">
+                  <a href={`tel:${formatPhone(selectedLead.phone)}`} className="text-primary hover:underline text-sm">
                     {formatPhone(selectedLead.phone)}
                   </a>
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{selectedLead.email}</span>
+                  <span className="text-sm truncate">{selectedLead.email}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{selectedLead.course_title}</span>
+                  <span className="text-sm truncate">{selectedLead.course_title}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{formatDate(selectedLead.assigned_at)}</span>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">{selectedLead.payment_amount?.toLocaleString()} تومان</span>
                 </div>
               </div>
 
@@ -587,43 +654,79 @@ const SalesAgentLeads: React.FC = () => {
                 ثبت فعالیت جدید
               </Button>
 
-              {/* CRM Notes */}
-              <div>
-                <h4 className="font-medium mb-3 flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4" />
-                  سابقه فعالیت‌ها
-                </h4>
-                
-                {notesLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : crmNotes.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    هنوز فعالیتی ثبت نشده است
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {crmNotes.map(note => (
-                      <div key={note.id} className="p-3 border rounded-lg">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary">{getNoteTypeLabel(note.type)}</Badge>
-                            <Badge variant="outline">{note.status}</Badge>
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(note.created_at)}
-                          </span>
-                        </div>
-                        <p className="text-sm whitespace-pre-wrap">{note.content}</p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          ثبت توسط: {note.created_by}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* User Details Tabs */}
+              {userLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : selectedUser ? (
+                <Tabs defaultValue="overview" className="w-full">
+                  <TabsList className="grid w-full grid-cols-6 h-auto">
+                    <TabsTrigger value="overview" className="flex items-center gap-1 text-xs px-2 py-2">
+                      <User className="h-3 w-3" />
+                      <span className="hidden sm:inline">اطلاعات</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="enrollments" className="flex items-center gap-1 text-xs px-2 py-2">
+                      <CreditCard className="h-3 w-3" />
+                      <span className="hidden sm:inline">ثبت‌نام‌ها</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="licenses" className="flex items-center gap-1 text-xs px-2 py-2">
+                      <Key className="h-3 w-3" />
+                      <span className="hidden sm:inline">لایسنس‌ها</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="crm" className="flex items-center gap-1 text-xs px-2 py-2">
+                      <MessageSquare className="h-3 w-3" />
+                      <span className="hidden sm:inline">CRM</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="financials" className="flex items-center gap-1 text-xs px-2 py-2">
+                      <DollarSign className="h-3 w-3" />
+                      <span className="hidden sm:inline">مالی</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="activity" className="flex items-center gap-1 text-xs px-2 py-2">
+                      <Activity className="h-3 w-3" />
+                      <span className="hidden sm:inline">فعالیت</span>
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="overview" className="mt-4">
+                    <UserOverview user={selectedUser} />
+                  </TabsContent>
+                  
+                  <TabsContent value="enrollments" className="mt-4">
+                    <UserEnrollments userId={selectedUser.id} />
+                  </TabsContent>
+                  
+                  <TabsContent value="licenses" className="mt-4">
+                    <UserLicenses userId={selectedUser.id} userPhone={selectedUser.phone} />
+                  </TabsContent>
+                  
+                  <TabsContent value="crm" className="mt-4">
+                    <UserCRM 
+                      userId={selectedUser.id} 
+                      userName={selectedUser.name}
+                      userPhone={selectedUser.phone}
+                      userEmail={selectedUser.email || ''}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="financials" className="mt-4">
+                    <UserFinancialHistory userId={selectedUser.id} />
+                  </TabsContent>
+                  
+                  <TabsContent value="activity" className="mt-4">
+                    <UserActivity userId={selectedUser.id} />
+                  </TabsContent>
+                </Tabs>
+              ) : selectedLead.chat_user_id === null ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>این لید هنوز به کاربر پیام‌رسان متصل نشده است</p>
+                  <p className="text-sm mt-2">اطلاعات کامل کاربر پس از ورود به سیستم پیام‌رسان در دسترس خواهد بود</p>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  خطا در بارگذاری اطلاعات کاربر
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
