@@ -350,7 +350,7 @@ export default function InvoiceView() {
           <div className="bg-gradient-to-l from-slate-800 to-slate-900 text-white p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <img src={rafieiLogo} alt="Logo" className="h-16 w-16 object-contain invert" />
+                <img src={rafieiLogo} alt="Logo" className="h-16 w-16 object-contain" />
                 <div>
                   <h1 className="text-2xl font-bold">{COMPANY_INFO.name}</h1>
                   <p className="text-slate-300 text-sm">{COMPANY_INFO.website}</p>
