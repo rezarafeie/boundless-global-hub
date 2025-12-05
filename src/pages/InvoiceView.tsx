@@ -16,7 +16,7 @@ import {
 import { format } from 'date-fns-jalali';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import rafieiLogo from '@/assets/rafiei-logo.png';
+import rafieiLogo from '@/assets/rafiei-invoice-logo.png';
 
 interface Invoice {
   id: string;
@@ -58,10 +58,10 @@ const SUPABASE_URL = "https://ihhetvwuhqohbfgkqoxw.supabase.co";
 // Company info
 const COMPANY_INFO = {
   name: 'آکادمی رفیعی',
-  phone: '021-12345678',
-  email: 'info@rafiei.co',
+  phone: '021-28427131',
+  email: 'sales@rafiei.co',
   website: 'rafiei.co',
-  address: 'تهران، خیابان ولیعصر، پلاک ۱۲۳'
+  address: 'تهران , محمودیه , خیابان سالار'
 };
 
 export default function InvoiceView() {
@@ -528,8 +528,7 @@ export default function InvoiceView() {
 
           {/* Footer */}
           <div className="bg-slate-100 px-6 py-4 text-center text-xs text-slate-500">
-            <p>این فاکتور به صورت الکترونیکی صادر شده و معتبر می‌باشد.</p>
-            <p className="mt-1">{COMPANY_INFO.website} | {COMPANY_INFO.email}</p>
+            <p>{COMPANY_INFO.website} | {COMPANY_INFO.email}</p>
           </div>
         </div>
 
