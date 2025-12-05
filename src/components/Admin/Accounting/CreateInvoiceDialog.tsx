@@ -502,13 +502,20 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
               </Card>
 
               {/* Submit Button */}
-              <div className="pb-4 sm:pb-6">
+              <div className="pb-4 sm:pb-6 space-y-3">
                 <Button 
                   className="w-full h-10 sm:h-12 text-base sm:text-lg" 
                   onClick={handleCreateInvoice}
                   disabled={!selectedCustomer || !formData.product_id || !formData.amount}
                 >
                   ایجاد فاکتور
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="w-full h-10 sm:h-12 text-base sm:text-lg" 
+                  onClick={handleClose}
+                >
+                  بستن
                 </Button>
               </div>
             </div>
