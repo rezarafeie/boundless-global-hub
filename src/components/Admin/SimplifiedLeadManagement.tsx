@@ -45,6 +45,7 @@ interface Agent {
   id: number;
   name: string;
   phone: string;
+  lead_count?: number;
 }
 
 interface Course {
@@ -58,6 +59,12 @@ interface PercentageAllocation {
   percentage: number;
 }
 
+interface AgentLeadCount {
+  agent_id: number;
+  agent_name: string;
+  count: number;
+}
+
 const SimplifiedLeadManagement: React.FC = () => {
   const { toast } = useToast();
   
@@ -68,6 +75,7 @@ const SimplifiedLeadManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [aiScoreLoading, setAiScoreLoading] = useState(false);
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -85,6 +93,7 @@ const SimplifiedLeadManagement: React.FC = () => {
   // Modal states
   const [showManualAssign, setShowManualAssign] = useState(false);
   const [showPercentageAssign, setShowPercentageAssign] = useState(false);
+  const [showAiScore, setShowAiScore] = useState(false);
   const [selectedAgentForManual, setSelectedAgentForManual] = useState<string>('');
   const [percentageAllocations, setPercentageAllocations] = useState<PercentageAllocation[]>([]);
   
@@ -94,6 +103,9 @@ const SimplifiedLeadManagement: React.FC = () => {
     assigned: 0,
     unassigned: 0
   });
+  
+  // Agent lead counts
+  const [agentLeadCounts, setAgentLeadCounts] = useState<AgentLeadCount[]>([]);
 
   const [hasLoaded, setHasLoaded] = useState(false);
 
@@ -243,7 +255,8 @@ const SimplifiedLeadManagement: React.FC = () => {
       
       // Update stats based on all processed leads (before agent filter)
       const allLeads = (enrollments || []).map(e => ({
-        is_assigned: !!assignmentMap.get(e.id)
+        is_assigned: !!assignmentMap.get(e.id),
+        agent_id: assignmentMap.get(e.id) || null
       }));
       const totalAssigned = allLeads.filter(l => l.is_assigned).length;
       setStats({
@@ -251,6 +264,25 @@ const SimplifiedLeadManagement: React.FC = () => {
         assigned: totalAssigned,
         unassigned: allLeads.length - totalAssigned
       });
+
+      // Calculate lead counts per agent
+      const agentCounts = new Map<number, number>();
+      allLeads.forEach(l => {
+        if (l.agent_id) {
+          agentCounts.set(l.agent_id, (agentCounts.get(l.agent_id) || 0) + 1);
+        }
+      });
+      
+      const counts: AgentLeadCount[] = agents
+        .map(a => ({
+          agent_id: a.id,
+          agent_name: a.name,
+          count: agentCounts.get(a.id) || 0
+        }))
+        .filter(c => c.count > 0)
+        .sort((a, b) => b.count - a.count);
+      
+      setAgentLeadCounts(counts);
 
       toast({
         title: "بارگذاری شد",
@@ -266,6 +298,65 @@ const SimplifiedLeadManagement: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAiScoreLeads = async () => {
+    if (!selectedCourse) {
+      toast({
+        title: "خطا",
+        description: "لطفاً ابتدا دوره را انتخاب کنید",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const leadsToScore = selectedLeads.length > 0 
+      ? leads.filter(l => selectedLeads.includes(l.id))
+      : leads.filter(l => !l.is_assigned);
+
+    if (leadsToScore.length === 0) {
+      toast({
+        title: "خطا", 
+        description: "لیدی برای امتیازدهی وجود ندارد",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setAiScoreLoading(true);
+    try {
+      // Create a new AI analysis job
+      const { data: job, error: jobError } = await supabase
+        .from('lead_analysis_jobs')
+        .insert({
+          course_id: selectedCourse,
+          status: 'pending',
+          progress_current: 0,
+          progress_total: leadsToScore.length,
+          start_date: dateFrom || null,
+          end_date: dateTo || null
+        })
+        .select()
+        .single();
+
+      if (jobError) throw jobError;
+
+      toast({
+        title: "شروع شد",
+        description: `تحلیل هوش مصنوعی برای ${leadsToScore.length} لید شروع شد. شناسه کار: ${job.id.slice(0, 8)}`,
+      });
+
+      setShowAiScore(false);
+    } catch (error) {
+      console.error('Error starting AI analysis:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در شروع تحلیل هوش مصنوعی",
+        variant: "destructive"
+      });
+    } finally {
+      setAiScoreLoading(false);
     }
   };
 
@@ -473,7 +564,7 @@ const SimplifiedLeadManagement: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-green-500/30 bg-green-500/5">
           <CardContent className="p-2 md:p-4">
             <div className="flex items-center gap-2 md:gap-3">
               <div className="p-1.5 md:p-2 bg-green-500/10 rounded-lg">
@@ -481,12 +572,12 @@ const SimplifiedLeadManagement: React.FC = () => {
               </div>
               <div>
                 <p className="text-xs md:text-sm text-muted-foreground">واگذار شده</p>
-                <p className="text-lg md:text-2xl font-bold">{stats.assigned}</p>
+                <p className="text-lg md:text-2xl font-bold text-green-600">{stats.assigned}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-orange-500/30 bg-orange-500/5">
           <CardContent className="p-2 md:p-4">
             <div className="flex items-center gap-2 md:gap-3">
               <div className="p-1.5 md:p-2 bg-orange-500/10 rounded-lg">
@@ -494,12 +585,45 @@ const SimplifiedLeadManagement: React.FC = () => {
               </div>
               <div>
                 <p className="text-xs md:text-sm text-muted-foreground">واگذار نشده</p>
-                <p className="text-lg md:text-2xl font-bold">{stats.unassigned}</p>
+                <p className="text-lg md:text-2xl font-bold text-orange-600">{stats.unassigned}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Agent Lead Distribution - Only show after loading */}
+      {hasLoaded && agentLeadCounts.length > 0 && (
+        <Card>
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              توزیع لیدها بین کارشناسان
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex flex-wrap gap-2">
+              {agentLeadCounts.map(ac => (
+                <Badge 
+                  key={ac.agent_id} 
+                  variant="outline" 
+                  className="text-xs md:text-sm py-1.5 px-3 cursor-pointer hover:bg-muted"
+                  onClick={() => setAgentFilter(ac.agent_id.toString())}
+                >
+                  {ac.agent_name}: <span className="font-bold mr-1">{ac.count}</span> لید
+                </Badge>
+              ))}
+              <Badge 
+                variant="outline" 
+                className="text-xs md:text-sm py-1.5 px-3 border-orange-500/50 text-orange-600 cursor-pointer hover:bg-orange-500/10"
+                onClick={() => setStatusFilter('unassigned')}
+              >
+                بدون کارشناس: <span className="font-bold mr-1">{stats.unassigned}</span> لید
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters & Actions */}
       <Card>
@@ -634,6 +758,17 @@ const SimplifiedLeadManagement: React.FC = () => {
               <Percent className="h-3.5 w-3.5 md:h-4 md:w-4" />
               <span className="hidden sm:inline">توزیع درصدی</span>
               <span className="sm:hidden">توزیع</span>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowAiScore(true)}
+              disabled={!hasLoaded || leads.length === 0}
+              size="sm"
+              className="gap-1.5 text-xs md:text-sm"
+            >
+              <Brain className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">امتیازدهی AI</span>
+              <span className="sm:hidden">AI</span>
             </Button>
             {hasLoaded && (
               <span className="text-xs md:text-sm text-muted-foreground mr-auto">
@@ -810,6 +945,42 @@ const SimplifiedLeadManagement: React.FC = () => {
             >
               {actionLoading ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
               توزیع لیدها
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Score Modal */}
+      <Dialog open={showAiScore} onOpenChange={setShowAiScore}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              امتیازدهی هوش مصنوعی
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {selectedLeads.length > 0 
+                ? `${selectedLeads.length} لید انتخاب شده برای تحلیل`
+                : `${stats.unassigned} لید واگذار نشده برای تحلیل`
+              }
+            </p>
+            <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-2">
+              <p className="font-medium">امتیازدهی AI شامل:</p>
+              <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                <li>تحلیل احتمال خرید بر اساس رفتار کاربر</li>
+                <li>دسته‌بندی به گروه‌های Hot / Warm / Cold</li>
+                <li>پیشنهاد اولویت پیگیری</li>
+              </ul>
+            </div>
+            <Button
+              className="w-full gap-2"
+              onClick={handleAiScoreLeads}
+              disabled={aiScoreLoading}
+            >
+              {aiScoreLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+              شروع تحلیل
             </Button>
           </div>
         </DialogContent>
