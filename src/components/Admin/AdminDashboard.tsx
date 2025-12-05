@@ -371,21 +371,21 @@ const AdminDashboard: React.FC = () => {
 
         <TabsContent value="overview" className="space-y-6">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" dir="ltr">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {dashboardCards.map((card, index) => (
               <Card key={index}>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
-                    <div className={`w-12 h-12 rounded-lg ${card.bgColor} flex items-center justify-center`}>
-                      <card.icon className={`h-6 w-6 ${card.color}`} />
-                    </div>
-                    <div className="flex-1 text-right">
+                    <div className="flex-1">
                       <p className="text-sm font-medium text-muted-foreground mb-2">{card.title}</p>
                       {card.loading ? (
                         <div className="h-8 bg-muted rounded animate-pulse"></div>
                       ) : (
                         <p className="text-2xl font-bold">{card.value}</p>
                       )}
+                    </div>
+                    <div className={`w-12 h-12 rounded-lg ${card.bgColor} flex items-center justify-center`}>
+                      <card.icon className={`h-6 w-6 ${card.color}`} />
                     </div>
                   </div>
                 </CardContent>
