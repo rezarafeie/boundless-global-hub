@@ -234,7 +234,7 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-none w-screen h-[calc(100dvh-60px)] max-h-[calc(100dvh-60px)] m-0 p-0 rounded-none border-0 top-[60px] translate-y-0" dir="rtl">
+      <DialogContent className="max-w-none w-screen h-[calc(100dvh-60px)] max-h-[calc(100dvh-60px)] m-0 p-0 rounded-none border-0 top-[60px] translate-y-0 data-[state=open]:slide-in-from-bottom-0" dir="rtl">
         <div className="flex flex-col h-full max-h-full text-right">
           <DialogHeader className="px-4 sm:px-6 py-4 border-b bg-background shrink-0">
             <div className="flex items-center justify-between">
@@ -504,8 +504,8 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
           </div>
 
           {/* Fixed Footer Buttons */}
-          <div className="shrink-0 border-t bg-background px-4 sm:px-6 py-4 space-y-2">
-            <div className="max-w-2xl mx-auto flex flex-col gap-2">
+          <div className="shrink-0 border-t bg-background px-4 sm:px-6 pt-4 pb-8 space-y-2" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
+            <div className="max-w-2xl mx-auto flex flex-col gap-3">
               <Button 
                 className="w-full h-12 text-base sm:text-lg" 
                 onClick={handleCreateInvoice}
