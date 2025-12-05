@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { WebhookManagement } from '@/components/Admin/WebhookManagement';
 import ShortLinksManager from '@/components/admin/ShortLinksManager';
@@ -11,9 +10,42 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { 
+  Settings, 
+  Webhook, 
+  Link, 
+  Percent, 
+  Mail, 
+  Tag, 
+  Upload,
+  Info,
+  CreditCard,
+  ShoppingCart
+} from 'lucide-react';
+
+type SettingsTab = 'system' | 'webhooks' | 'short-links' | 'discounts' | 'emails' | 'blackfriday' | 'import' | 'info';
+
+interface NavItem {
+  id: SettingsTab;
+  label: string;
+  icon: React.ElementType;
+}
+
+const navItems: NavItem[] = [
+  { id: 'system', label: 'سیستم', icon: Settings },
+  { id: 'webhooks', label: 'Webhooks', icon: Webhook },
+  { id: 'short-links', label: 'لینک‌های کوتاه', icon: Link },
+  { id: 'discounts', label: 'کدهای تخفیف', icon: Percent },
+  { id: 'emails', label: 'ایمیل‌ها', icon: Mail },
+  { id: 'blackfriday', label: 'بلک فرایدی', icon: Tag },
+  { id: 'import', label: 'ورود داده', icon: Upload },
+  { id: 'info', label: 'اطلاعات سیستم', icon: Info },
+];
 
 const AdminSettingsPanel: React.FC = () => {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<SettingsTab>('system');
   const [useFullLeadsSystem, setUseFullLeadsSystem] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
@@ -55,143 +87,216 @@ const AdminSettingsPanel: React.FC = () => {
     }
   };
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'system':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold">تنظیمات سیستم</h2>
+              <p className="text-muted-foreground mt-1">تنظیمات کلی سیستم مدیریت</p>
+            </div>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Label htmlFor="leads-system" className="text-base font-medium">
+                      سیستم مدیریت لید
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {useFullLeadsSystem 
+                        ? "سیستم کامل (قدیمی) با تمام امکانات فعال است"
+                        : "سیستم ساده (جدید) با رابط کاربری بهینه فعال است"
+                      }
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">ساده</span>
+                    <Switch
+                      id="leads-system"
+                      checked={useFullLeadsSystem}
+                      onCheckedChange={handleToggleLeadsSystem}
+                      disabled={loadingSettings}
+                    />
+                    <span className="text-sm text-muted-foreground">کامل</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      case 'webhooks':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold">Webhooks</h2>
+              <p className="text-muted-foreground mt-1">مدیریت وب‌هوک‌های سیستم</p>
+            </div>
+            <Card>
+              <CardContent className="p-6">
+                <WebhookManagement />
+              </CardContent>
+            </Card>
+          </div>
+        );
+      case 'short-links':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold">لینک‌های کوتاه</h2>
+              <p className="text-muted-foreground mt-1">مدیریت لینک‌های کوتاه</p>
+            </div>
+            <Card>
+              <CardContent className="p-6">
+                <ShortLinksManager />
+              </CardContent>
+            </Card>
+          </div>
+        );
+      case 'discounts':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold">کدهای تخفیف</h2>
+              <p className="text-muted-foreground mt-1">مدیریت کدهای تخفیف</p>
+            </div>
+            <Card>
+              <CardContent className="p-6">
+                <DiscountManagement />
+              </CardContent>
+            </Card>
+          </div>
+        );
+      case 'emails':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold">تنظیمات ایمیل</h2>
+              <p className="text-muted-foreground mt-1">مدیریت قالب‌های ایمیل</p>
+            </div>
+            <Card>
+              <CardContent className="p-6">
+                <EmailSettings />
+              </CardContent>
+            </Card>
+          </div>
+        );
+      case 'blackfriday':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold">بلک فرایدی</h2>
+              <p className="text-muted-foreground mt-1">تنظیمات کمپین بلک فرایدی</p>
+            </div>
+            <Card>
+              <CardContent className="p-6">
+                <BlackFridaySettings />
+              </CardContent>
+            </Card>
+          </div>
+        );
+      case 'import':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold">ورود داده</h2>
+              <p className="text-muted-foreground mt-1">وارد کردن داده‌ها از فایل</p>
+            </div>
+            <Card>
+              <CardContent className="p-6">
+                <DataImportSection />
+              </CardContent>
+            </Card>
+          </div>
+        );
+      case 'info':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold">اطلاعات سیستم</h2>
+              <p className="text-muted-foreground mt-1">اطلاعات فنی و پیکربندی</p>
+            </div>
+            <Card>
+              <CardContent className="p-6 space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-5 w-5 text-primary" />
+                      <h3 className="font-semibold">تنظیمات پرداخت</h3>
+                    </div>
+                    <ul className="text-sm text-muted-foreground space-y-1 mr-7">
+                      <li>• درگاه: زرین‌پال</li>
+                      <li>• واحد پول: تومان</li>
+                      <li>• تایید خودکار: فعال</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <ShoppingCart className="h-5 w-5 text-primary" />
+                      <h3 className="font-semibold">تنظیمات WooCommerce</h3>
+                    </div>
+                    <ul className="text-sm text-muted-foreground space-y-1 mr-7">
+                      <li>• دامنه: auth.rafiei.co</li>
+                      <li>• API: فعال</li>
+                      <li>• سفارش خودکار: فعال</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
+                  <h4 className="font-semibold text-primary mb-2">اطلاعات مهم</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• تمام پرداخت‌ها از طریق زرین‌پال امن هستند</li>
+                    <li>• سفارشات به صورت خودکار در WooCommerce ثبت می‌شوند</li>
+                    <li>• ایمیل‌های تایید به صورت خودکار ارسال می‌شوند</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">تنظیمات</h1>
-        <p className="text-gray-600 mt-1">مدیریت تنظیمات سیستم و ابزارها</p>
+    <div className="flex gap-6 min-h-[600px]">
+      {/* Sidebar Navigation */}
+      <div className="w-56 flex-shrink-0">
+        <div className="sticky top-4">
+          <div className="mb-4">
+            <h1 className="text-xl font-bold">تنظیمات</h1>
+            <p className="text-sm text-muted-foreground">مدیریت سیستم</p>
+          </div>
+          <nav className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                    activeTab === item.id
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
       </div>
 
-      <Tabs defaultValue="system" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
-          <TabsTrigger value="system">سیستم</TabsTrigger>
-          <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
-          <TabsTrigger value="short-links">لینک‌های کوتاه</TabsTrigger>
-          <TabsTrigger value="discounts">کدهای تخفیف</TabsTrigger>
-          <TabsTrigger value="emails">ایمیل‌ها</TabsTrigger>
-          <TabsTrigger value="blackfriday">بلک فرایدی</TabsTrigger>
-          <TabsTrigger value="import">ورود داده</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="system">
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle>تنظیمات سیستم</CardTitle>
-              <CardDescription>تنظیمات کلی سیستم مدیریت</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="space-y-1">
-                  <Label htmlFor="leads-system" className="text-base font-medium">
-                    سیستم مدیریت لید
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    {useFullLeadsSystem 
-                      ? "سیستم کامل (قدیمی) با تمام امکانات فعال است"
-                      : "سیستم ساده (جدید) با رابط کاربری بهینه فعال است"
-                    }
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground">ساده</span>
-                  <Switch
-                    id="leads-system"
-                    checked={useFullLeadsSystem}
-                    onCheckedChange={handleToggleLeadsSystem}
-                    disabled={loadingSettings}
-                  />
-                  <span className="text-sm text-muted-foreground">کامل</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="webhooks">
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <WebhookManagement />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="short-links">
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <ShortLinksManager />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="discounts">
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <DiscountManagement />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="emails">
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <EmailSettings />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="blackfriday">
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <BlackFridaySettings />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="import">
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6">
-              <DataImportSection />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* System Information */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader>
-          <CardTitle>اطلاعات سیستم</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-semibold mb-2">تنظیمات پرداخت</h3>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• درگاه: زرین‌پال</li>
-                <li>• واحد پول: تومان</li>
-                <li>• تایید خودکار: فعال</li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold mb-2">تنظیمات WooCommerce</h3>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• دامنه: auth.rafiei.co</li>
-                <li>• API: فعال</li>
-                <li>• سفارش خودکار: فعال</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 className="font-semibold text-blue-800 mb-2">اطلاعات مهم</h4>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li>• تمام پرداخت‌ها از طریق زرین‌پال امن هستند</li>
-              <li>• سفارشات به صورت خودکار در WooCommerce ثبت می‌شوند</li>
-              <li>• ایمیل‌های تایید به صورت خودکار ارسال می‌شوند</li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Main Content */}
+      <div className="flex-1 min-w-0">
+        {renderContent()}
+      </div>
     </div>
   );
 };
