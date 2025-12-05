@@ -47,9 +47,6 @@ const menuItems = [
   { id: 'internships', label: 'کارآموزی‌ها', icon: Users },
   { id: 'sales', label: 'داشبورد فروش', icon: BarChart3 },
   { id: 'leads', label: 'مدیریت لیدها', icon: UserPlus },
-  { id: 'pipeline-builder', label: 'مدیریت پایپ‌لاین', icon: Settings },
-  { id: 'pipeline', label: 'پایپ‌لاین فروش', icon: Kanban },
-  { id: 'agent-financials', label: 'مالی من', icon: Receipt },
   { id: 'daily-reports', label: 'گزارشات روزانه', icon: ClipboardList },
   { id: 'accounting', label: 'حسابداری', icon: Calculator },
   { id: 'users', label: 'کاربران', icon: Users },
@@ -67,14 +64,14 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
 }) => {
   // Filter menu items based on user role
   const getFilteredMenuItems = () => {
-    // Sales manager gets sales, leads, pipeline-builder, and crm tabs
+    // Sales manager gets sales, leads, and crm tabs
     if (userRole === 'sales_manager' && !isMessengerAdmin) {
-      return menuItems.filter(item => ['sales', 'leads', 'pipeline-builder', 'crm'].includes(item.id));
+      return menuItems.filter(item => ['sales', 'leads', 'crm'].includes(item.id));
     }
     
-    // Sales agent gets leads, crm, pipeline, and financials tabs
+    // Sales agent gets sales, leads, crm, and accounting tabs (for their financials)
     if (isSalesAgent && !isMessengerAdmin && userRole !== 'sales_manager') {
-      return menuItems.filter(item => ['leads', 'pipeline', 'agent-financials', 'crm'].includes(item.id));
+      return menuItems.filter(item => ['sales', 'leads', 'accounting', 'crm'].includes(item.id));
     }
     
     // Enrollment managers get specific tabs including webinars

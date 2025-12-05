@@ -22,10 +22,16 @@ import {
   Award,
   Percent,
   FileText,
-  Filter
+  Filter,
+  Settings,
+  Kanban
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+
+interface SalesDashboardProps {
+  onViewChange?: (view: string) => void;
+}
 
 interface SalesStats {
   enrollments_today: number;
@@ -68,7 +74,7 @@ interface Course {
   slug: string;
 }
 
-const SalesDashboard: React.FC = () => {
+const SalesDashboard: React.FC<SalesDashboardProps> = ({ onViewChange }) => {
   const { toast } = useToast();
   const [salesStats, setSalesStats] = useState<SalesStats | null>(null);
   const [agentPerformance, setAgentPerformance] = useState<AgentPerformance[]>([]);
@@ -300,6 +306,28 @@ const SalesDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Navigation Buttons */}
+      {onViewChange && (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => onViewChange('pipeline-builder')}
+          >
+            <Settings className="h-4 w-4" />
+            مدیریت پایپ‌لاین
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => onViewChange('pipeline')}
+          >
+            <Kanban className="h-4 w-4" />
+            پایپ‌لاین فروش
+          </Button>
+        </div>
+      )}
+
       {/* Daily Sales Summary */}
       <div>
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">

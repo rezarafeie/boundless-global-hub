@@ -6,6 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
   Users, 
   Phone, 
@@ -61,6 +63,8 @@ const AgentActivityDashboard: React.FC = () => {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(false);
   const [dateRange, setDateRange] = useState<string>('7d');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
   const [hasLoaded, setHasLoaded] = useState(false);
   
   // User details dialog
@@ -82,9 +86,18 @@ const AgentActivityDashboard: React.FC = () => {
       case '24h': return subDays(now, 1).toISOString();
       case '7d': return subDays(now, 7).toISOString();
       case '30d': return subDays(now, 30).toISOString();
+      case 'custom': 
+        return customStartDate ? new Date(customStartDate).toISOString() : subDays(now, 7).toISOString();
       case 'all': return '2020-01-01T00:00:00Z';
       default: return subDays(now, 7).toISOString();
     }
+  };
+
+  const getEndDateFilter = () => {
+    if (dateRange === 'custom' && customEndDate) {
+      return new Date(customEndDate + 'T23:59:59').toISOString();
+    }
+    return new Date().toISOString();
   };
 
   const fetchData = async () => {
@@ -335,9 +348,9 @@ const AgentActivityDashboard: React.FC = () => {
   if (!hasLoaded) {
     return (
       <div className="space-y-4">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h2 className="text-lg font-semibold">داشبورد عملکرد کارشناسان</h2>
-          <div className="flex gap-2 items-center">
+          <div className="flex flex-wrap gap-2 items-center">
             <Select value={dateRange} onValueChange={setDateRange}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue />
@@ -346,9 +359,28 @@ const AgentActivityDashboard: React.FC = () => {
                 <SelectItem value="24h">۲۴ ساعت اخیر</SelectItem>
                 <SelectItem value="7d">۷ روز اخیر</SelectItem>
                 <SelectItem value="30d">۳۰ روز اخیر</SelectItem>
+                <SelectItem value="custom">سفارشی</SelectItem>
                 <SelectItem value="all">همه زمان‌ها</SelectItem>
               </SelectContent>
             </Select>
+            {dateRange === 'custom' && (
+              <>
+                <Input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="w-[140px]"
+                  placeholder="از تاریخ"
+                />
+                <Input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="w-[140px]"
+                  placeholder="تا تاریخ"
+                />
+              </>
+            )}
             <Button onClick={fetchData} className="gap-2">
               <BarChart3 className="h-4 w-4" />
               مشاهده گزارش
@@ -371,9 +403,9 @@ const AgentActivityDashboard: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* Date Range Filter */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h2 className="text-lg font-semibold">داشبورد عملکرد کارشناسان</h2>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           <Select value={dateRange} onValueChange={setDateRange}>
             <SelectTrigger className="w-[150px]">
               <SelectValue />
@@ -382,9 +414,26 @@ const AgentActivityDashboard: React.FC = () => {
               <SelectItem value="24h">۲۴ ساعت اخیر</SelectItem>
               <SelectItem value="7d">۷ روز اخیر</SelectItem>
               <SelectItem value="30d">۳۰ روز اخیر</SelectItem>
+              <SelectItem value="custom">سفارشی</SelectItem>
               <SelectItem value="all">همه زمان‌ها</SelectItem>
             </SelectContent>
           </Select>
+          {dateRange === 'custom' && (
+            <>
+              <Input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="w-[140px]"
+              />
+              <Input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="w-[140px]"
+              />
+            </>
+          )}
           <Button onClick={fetchData} variant="outline" size="sm" className="gap-2">
             <BarChart3 className="h-4 w-4" />
             بروزرسانی
