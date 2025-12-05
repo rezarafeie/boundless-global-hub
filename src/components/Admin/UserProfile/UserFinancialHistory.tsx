@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
-import { Receipt, CreditCard, Calendar, DollarSign } from 'lucide-react';
+import { Receipt, CreditCard, Calendar, DollarSign, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 
 interface UserFinancialHistoryProps {
@@ -256,6 +257,7 @@ const UserFinancialHistory: React.FC<UserFinancialHistoryProps> = ({ userId }) =
                       <TableHead>نوع پرداخت</TableHead>
                       <TableHead>وضعیت</TableHead>
                       <TableHead>تاریخ</TableHead>
+                      <TableHead>عملیات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -273,6 +275,16 @@ const UserFinancialHistory: React.FC<UserFinancialHistoryProps> = ({ userId }) =
                         </TableCell>
                         <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                         <TableCell>{formatDate(invoice.created_at)}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(`/invoice/${invoice.id}`, '_blank')}
+                          >
+                            <ExternalLink className="h-4 w-4 ml-1" />
+                            مشاهده
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
