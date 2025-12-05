@@ -310,6 +310,8 @@ const SimplifiedLeadManagement: React.FC = () => {
   };
 
   const handleAiScoreLeads = async () => {
+    console.log('AI Score clicked', { selectedCourse, leadsCount: leads.length, selectedLeadsCount: selectedLeads.length });
+    
     if (!selectedCourse) {
       toast({
         title: "خطا",
@@ -323,10 +325,12 @@ const SimplifiedLeadManagement: React.FC = () => {
       ? leads.filter(l => selectedLeads.includes(l.id))
       : leads.filter(l => !l.is_assigned);
 
+    console.log('Leads to score:', leadsToScore.length);
+
     if (leadsToScore.length === 0) {
       toast({
         title: "خطا", 
-        description: "لیدی برای امتیازدهی وجود ندارد",
+        description: "لیدی برای امتیازدهی وجود ندارد. ابتدا لیدها را بارگذاری کنید.",
         variant: "destructive"
       });
       return;
@@ -334,6 +338,7 @@ const SimplifiedLeadManagement: React.FC = () => {
 
     setAiScoreLoading(true);
     try {
+      console.log('Creating AI analysis job...');
       // Create a new AI analysis job
       const { data: job, error: jobError } = await supabase
         .from('lead_analysis_jobs')
@@ -348,7 +353,12 @@ const SimplifiedLeadManagement: React.FC = () => {
         .select()
         .single();
 
-      if (jobError) throw jobError;
+      if (jobError) {
+        console.error('Job creation error:', jobError);
+        throw jobError;
+      }
+
+      console.log('Job created:', job.id, 'Calling edge function...');
 
       // Call the edge function to process the leads
       const { data: result, error: funcError } = await supabase.functions.invoke('ai-lead-scoring', {
@@ -360,6 +370,8 @@ const SimplifiedLeadManagement: React.FC = () => {
           offset: 0
         }
       });
+
+      console.log('Edge function response:', { result, funcError });
 
       if (funcError) {
         // Update job status to failed
@@ -1012,12 +1024,24 @@ const SimplifiedLeadManagement: React.FC = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              {selectedLeads.length > 0 
-                ? `${selectedLeads.length} لید انتخاب شده برای تحلیل`
-                : `${stats.unassigned} لید واگذار نشده برای تحلیل`
-              }
-            </p>
+            {!selectedCourse ? (
+              <div className="bg-destructive/10 text-destructive rounded-lg p-4 text-sm">
+                <AlertCircle className="h-4 w-4 inline ml-2" />
+                ابتدا یک دوره انتخاب کنید
+              </div>
+            ) : leads.length === 0 ? (
+              <div className="bg-destructive/10 text-destructive rounded-lg p-4 text-sm">
+                <AlertCircle className="h-4 w-4 inline ml-2" />
+                ابتدا لیدها را بارگذاری کنید
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {selectedLeads.length > 0 
+                  ? `${selectedLeads.length} لید انتخاب شده برای تحلیل`
+                  : `${stats.unassigned} لید واگذار نشده برای تحلیل`
+                }
+              </p>
+            )}
             <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-2">
               <p className="font-medium">امتیازدهی AI شامل:</p>
               <ul className="list-disc list-inside text-muted-foreground space-y-1">
@@ -1029,7 +1053,7 @@ const SimplifiedLeadManagement: React.FC = () => {
             <Button
               className="w-full gap-2"
               onClick={handleAiScoreLeads}
-              disabled={aiScoreLoading}
+              disabled={aiScoreLoading || !selectedCourse || leads.length === 0}
             >
               {aiScoreLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
               شروع تحلیل
