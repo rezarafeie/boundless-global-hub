@@ -29,6 +29,8 @@ interface AIGreetingBannerProps {
   mode?: 'admin' | 'agent';
 }
 
+const CACHE_DURATION_HOURS = 6;
+
 const AIGreetingBanner: React.FC<AIGreetingBannerProps> = ({ onRefresh, mode = 'admin' }) => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -36,6 +38,7 @@ const AIGreetingBanner: React.FC<AIGreetingBannerProps> = ({ onRefresh, mode = '
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const getAdminName = () => {
     if (user?.messengerData?.name) return user.messengerData.name;
@@ -45,10 +48,55 @@ const AIGreetingBanner: React.FC<AIGreetingBannerProps> = ({ onRefresh, mode = '
     return 'مدیر';
   };
 
-  const runAnalysis = useCallback(async () => {
+  const loadCachedAnalysis = useCallback(async () => {
+    try {
+      const sixHoursAgo = new Date();
+      sixHoursAgo.setHours(sixHoursAgo.getHours() - CACHE_DURATION_HOURS);
+
+      const { data, error } = await supabase
+        .from('ai_admin_reports')
+        .select('*')
+        .eq('view_mode', viewMode)
+        .gte('created_at', sixHoursAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error || !data) {
+        return null;
+      }
+
+      return {
+        analysis: {
+          greeting: data.greeting || '',
+          summary: data.summary || '',
+          highlights: data.highlights || [],
+          warnings: data.warnings || [],
+          suggestions: data.suggestions || [],
+          motivation: data.motivation || ''
+        },
+        createdAt: new Date(data.created_at)
+      };
+    } catch {
+      return null;
+    }
+  }, [viewMode]);
+
+  const runAnalysis = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     
     try {
+      // Check cache first unless force refresh
+      if (!forceRefresh) {
+        const cached = await loadCachedAnalysis();
+        if (cached) {
+          setAnalysis(cached.analysis);
+          setLastUpdated(cached.createdAt);
+          setLoading(false);
+          return;
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke('ai-admin-greeting', {
         body: { 
           adminName: getAdminName(),
@@ -61,6 +109,7 @@ const AIGreetingBanner: React.FC<AIGreetingBannerProps> = ({ onRefresh, mode = '
 
       if (data?.analysis) {
         setAnalysis(data.analysis);
+        setLastUpdated(new Date());
       }
     } catch (error) {
       console.error('Error running AI analysis:', error);
@@ -72,17 +121,20 @@ const AIGreetingBanner: React.FC<AIGreetingBannerProps> = ({ onRefresh, mode = '
     } finally {
       setLoading(false);
     }
-  }, [viewMode, mode, toast]);
+  }, [viewMode, mode, toast, loadCachedAnalysis]);
 
   useEffect(() => {
-    runAnalysis();
+    runAnalysis(false);
   }, []);
 
   useEffect(() => {
-    if (viewMode) {
-      runAnalysis();
-    }
+    runAnalysis(false);
   }, [viewMode]);
+
+  const handleRefresh = () => {
+    runAnalysis(true);
+    onRefresh?.();
+  };
 
   const handleExport = () => {
     if (!analysis) return;
@@ -118,6 +170,18 @@ ${analysis.motivation}
     URL.revokeObjectURL(url);
   };
 
+  const formatTimeAgo = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    
+    if (diffMins < 1) return 'همین الان';
+    if (diffMins < 60) return `${diffMins} دقیقه پیش`;
+    if (diffHours < 24) return `${diffHours} ساعت پیش`;
+    return date.toLocaleDateString('fa-IR');
+  };
+
   return (
     <Card className="border-border/50">
       <CardContent className="p-4 sm:p-6">
@@ -126,6 +190,11 @@ ${analysis.motivation}
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
             <h3 className="font-semibold">تحلیل هوشمند</h3>
+            {lastUpdated && (
+              <span className="text-xs text-muted-foreground">
+                ({formatTimeAgo(lastUpdated)})
+              </span>
+            )}
           </div>
           
           <div className="flex flex-wrap items-center gap-2">
@@ -161,11 +230,9 @@ ${analysis.motivation}
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => {
-                  runAnalysis();
-                  onRefresh?.();
-                }}
+                onClick={handleRefresh}
                 disabled={loading}
+                title="تحلیل مجدد"
               >
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
