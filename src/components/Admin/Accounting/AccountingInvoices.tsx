@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from 'sonner';
 import { Plus, FileText, Eye, Search, Calendar, User, Phone, Mail, X, Trash2, Edit, Copy, ExternalLink, RefreshCw, Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { format } from 'date-fns-jalali';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Invoice {
   id: string;
@@ -1074,11 +1075,21 @@ export const AccountingInvoices: React.FC = () => {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
-                    در حال بارگذاری...
-                  </TableCell>
-                </TableRow>
+                [...Array(8)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Skeleton className="h-4 w-32 mb-1" />
+                      <Skeleton className="h-3 w-24" />
+                    </TableCell>
+                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                    <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-14" /></TableCell>
+                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-24" /></TableCell>
+                  </TableRow>
+                ))
               ) : paginatedInvoices.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
