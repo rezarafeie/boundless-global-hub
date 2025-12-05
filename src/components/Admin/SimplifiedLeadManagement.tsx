@@ -459,42 +459,42 @@ const SimplifiedLeadManagement: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-2 md:gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Users className="h-5 w-5 text-primary" />
+          <CardContent className="p-2 md:p-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 bg-primary/10 rounded-lg">
+                <Users className="h-4 w-4 md:h-5 md:w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">کل لیدها</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">کل لیدها</p>
+                <p className="text-lg md:text-2xl font-bold">{stats.total}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500/10 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-green-600" />
+          <CardContent className="p-2 md:p-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 bg-green-500/10 rounded-lg">
+                <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">واگذار شده</p>
-                <p className="text-2xl font-bold">{stats.assigned}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">واگذار شده</p>
+                <p className="text-lg md:text-2xl font-bold">{stats.assigned}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-500/10 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-orange-600" />
+          <CardContent className="p-2 md:p-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 bg-orange-500/10 rounded-lg">
+                <AlertCircle className="h-4 w-4 md:h-5 md:w-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">واگذار نشده</p>
-                <p className="text-2xl font-bold">{stats.unassigned}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">واگذار نشده</p>
+                <p className="text-lg md:text-2xl font-bold">{stats.unassigned}</p>
               </div>
             </div>
           </CardContent>
@@ -613,31 +613,33 @@ const SimplifiedLeadManagement: React.FC = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-2 mt-4 pt-4 border-t">
+          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t items-center">
             <Button
               onClick={() => setShowManualAssign(true)}
               disabled={selectedLeads.length === 0}
-              className="gap-2"
+              size="sm"
+              className="gap-1.5 text-xs md:text-sm"
             >
-              <UserPlus className="h-4 w-4" />
-              واگذاری دستی ({selectedLeads.length})
+              <UserPlus className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">واگذاری دستی</span>
+              <span className="sm:hidden">واگذاری</span>
+              ({selectedLeads.length})
             </Button>
             <Button
               variant="outline"
               onClick={() => setShowPercentageAssign(true)}
-              className="gap-2"
+              size="sm"
+              className="gap-1.5 text-xs md:text-sm"
             >
-              <Percent className="h-4 w-4" />
-              توزیع درصدی
+              <Percent className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">توزیع درصدی</span>
+              <span className="sm:hidden">توزیع</span>
             </Button>
-            <Button
-              variant="outline"
-              className="gap-2"
-              disabled
-            >
-              <Brain className="h-4 w-4" />
-              امتیازدهی هوشمند
-            </Button>
+            {hasLoaded && (
+              <span className="text-xs md:text-sm text-muted-foreground mr-auto">
+                نمایش {leads.length} لید
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>

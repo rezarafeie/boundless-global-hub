@@ -70,24 +70,32 @@ const AgentActivityDashboard: React.FC = () => {
     try {
       const dateFilter = getDateFilter();
 
-      // Fetch all sales agents
-      const { data: agents } = await supabase
-        .from('chat_users')
-        .select('id, name')
-        .or('role.in.(sales_agent,sales_manager,admin),is_messenger_admin.eq.true');
+      // Fetch all sales agents from sales_agents table joined with chat_users
+      const { data: salesAgentsData } = await supabase
+        .from('sales_agents')
+        .select('id, user_id, chat_users!inner(id, name)')
+        .eq('is_active', true);
 
-      if (!agents) {
+      // Build agents map from sales_agents
+      const agents = (salesAgentsData || []).map(sa => ({
+        id: sa.id, // sales_agent_id
+        user_id: (sa.chat_users as any).id,
+        name: (sa.chat_users as any).name
+      }));
+
+      if (agents.length === 0) {
         setAgentStats([]);
         return;
       }
 
-      // Fetch lead assignments per agent
+      // Fetch lead assignments per sales agent
       const { data: assignments } = await supabase
         .from('lead_assignments')
         .select('sales_agent_id, enrollment_id')
-        .not('sales_agent_id', 'is', null);
+        .not('sales_agent_id', 'is', null)
+        .in('sales_agent_id', agents.map(a => a.id));
 
-      // Create assignment count map
+      // Create assignment count map (keyed by sales_agent_id)
       const assignmentCountMap = new Map<number, number>();
       const enrollmentToAgentMap = new Map<string, number>();
       
@@ -109,26 +117,26 @@ const AgentActivityDashboard: React.FC = () => {
         .select('id, type, created_by, user_id, created_at')
         .gte('created_at', dateFilter);
 
-      // Map CRM notes to agents (via created_by name match)
-      const agentNameToId = new Map<string, number>();
-      agents.forEach(a => agentNameToId.set(a.name, a.id));
+      // Map CRM notes to agents (via created_by name match to user_id)
+      const agentNameToUserId = new Map<string, number>();
+      agents.forEach(a => agentNameToUserId.set(a.name, a.user_id));
 
       const notesPerAgent = new Map<number, { total: number; calls: number }>();
       const contactedUsersPerAgent = new Map<number, Set<number>>();
 
       crmNotes?.forEach(note => {
-        const agentId = agentNameToId.get(note.created_by);
-        if (agentId) {
-          const current = notesPerAgent.get(agentId) || { total: 0, calls: 0 };
+        const userId = agentNameToUserId.get(note.created_by);
+        if (userId) {
+          const current = notesPerAgent.get(userId) || { total: 0, calls: 0 };
           current.total++;
           if (note.type === 'call') current.calls++;
-          notesPerAgent.set(agentId, current);
+          notesPerAgent.set(userId, current);
 
           // Track contacted users
           if (note.user_id) {
-            const contacted = contactedUsersPerAgent.get(agentId) || new Set();
+            const contacted = contactedUsersPerAgent.get(userId) || new Set();
             contacted.add(note.user_id);
-            contactedUsersPerAgent.set(agentId, contacted);
+            contactedUsersPerAgent.set(userId, contacted);
           }
         }
       });
@@ -148,12 +156,12 @@ const AgentActivityDashboard: React.FC = () => {
         dealsPerAgent.set(deal.assigned_salesperson_id, current);
       });
 
-      // Build agent stats
+      // Build agent stats (using sales_agent_id for assignments, user_id for notes/deals)
       const stats: AgentStats[] = agents.map(agent => {
-        const totalLeads = assignmentCountMap.get(agent.id) || 0;
-        const notes = notesPerAgent.get(agent.id) || { total: 0, calls: 0 };
-        const dealInfo = dealsPerAgent.get(agent.id) || { count: 0, amount: 0 };
-        const contactedCount = contactedUsersPerAgent.get(agent.id)?.size || 0;
+        const totalLeads = assignmentCountMap.get(agent.id) || 0; // sales_agent_id
+        const notes = notesPerAgent.get(agent.user_id) || { total: 0, calls: 0 }; // user_id
+        const dealInfo = dealsPerAgent.get(agent.user_id) || { count: 0, amount: 0 }; // user_id
+        const contactedCount = contactedUsersPerAgent.get(agent.user_id)?.size || 0; // user_id
 
         return {
           agent_id: agent.id,
@@ -166,7 +174,7 @@ const AgentActivityDashboard: React.FC = () => {
           total_sales_amount: dealInfo.amount,
           conversion_rate: totalLeads > 0 ? Math.round((dealInfo.count / totalLeads) * 100) : 0
         };
-      }).filter(s => s.total_leads > 0 || s.notes_count > 0);
+      });
 
       // Sort by total leads
       stats.sort((a, b) => b.total_leads - a.total_leads);
@@ -321,64 +329,64 @@ const AgentActivityDashboard: React.FC = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Users className="h-5 w-5 text-primary" />
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 bg-primary/10 rounded-lg">
+                <Users className="h-4 w-4 md:h-5 md:w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">کل لیدها</p>
-                <p className="text-2xl font-bold">{summary.totalLeads}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">کل لیدها</p>
+                <p className="text-xl md:text-2xl font-bold">{summary.totalLeads}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/10 rounded-lg">
-                <Activity className="h-5 w-5 text-blue-600" />
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 bg-blue-500/10 rounded-lg">
+                <Activity className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">تماس گرفته شده</p>
-                <p className="text-2xl font-bold">{summary.totalContacted}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">تماس گرفته</p>
+                <p className="text-xl md:text-2xl font-bold">{summary.totalContacted}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500/10 rounded-lg">
-                <Phone className="h-5 w-5 text-green-600" />
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 bg-green-500/10 rounded-lg">
+                <Phone className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">تماس‌ها</p>
-                <p className="text-2xl font-bold">{summary.totalCalls}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">تماس‌ها</p>
+                <p className="text-xl md:text-2xl font-bold">{summary.totalCalls}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-500/10 rounded-lg">
-                <Award className="h-5 w-5 text-amber-600" />
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 bg-amber-500/10 rounded-lg">
+                <Award className="h-4 w-4 md:h-5 md:w-5 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">فروش موفق</p>
-                <p className="text-2xl font-bold">{summary.totalSales}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">فروش موفق</p>
+                <p className="text-xl md:text-2xl font-bold">{summary.totalSales}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Agent Performance Table */}
-        <Card className="col-span-2">
+        <Card className="lg:col-span-2 order-2 lg:order-1">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -443,7 +451,7 @@ const AgentActivityDashboard: React.FC = () => {
         </Card>
 
         {/* Recent Activity Feed */}
-        <Card>
+        <Card className="order-1 lg:order-2">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Clock className="h-4 w-4" />
