@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Plus, FileText, Eye, Search, Calendar, User, Phone, Mail, X, Trash2, Edit, Copy, ExternalLink, RefreshCw, Loader2 } from 'lucide-react';
+import { Plus, FileText, Eye, Search, Calendar, User, Phone, Mail, X, Trash2, Edit, Copy, ExternalLink, RefreshCw, Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 
 interface Invoice {
@@ -94,6 +94,10 @@ export const AccountingInvoices: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<{ id: number; role: string; is_messenger_admin: boolean } | null>(null);
   const [invoiceItemsMap, setInvoiceItemsMap] = useState<Record<string, InvoiceItem[]>>({});
   const [isSyncing, setIsSyncing] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 50;
   
   // Customer search state
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
@@ -572,6 +576,18 @@ export const AccountingInvoices: React.FC = () => {
       return matchesSearch && matchesStatus && matchesAgent && matchesCourse && matchesDate;
     });
   }, [invoices, searchTerm, statusFilter, agentFilter, courseFilter, dateFrom, dateTo, showFreeInvoices, invoiceItemsMap]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, agentFilter, courseFilter, dateFrom, dateTo, showFreeInvoices]);
+
+  // Paginated invoices for table display
+  const totalPages = Math.ceil(filteredInvoices.length / pageSize);
+  const paginatedInvoices = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredInvoices.slice(startIndex, startIndex + pageSize);
+  }, [filteredInvoices, currentPage, pageSize]);
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -1063,14 +1079,14 @@ export const AccountingInvoices: React.FC = () => {
                     در حال بارگذاری...
                   </TableCell>
                 </TableRow>
-              ) : filteredInvoices.length === 0 ? (
+              ) : paginatedInvoices.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     فاکتوری یافت نشد
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredInvoices.map(invoice => (
+                paginatedInvoices.map(invoice => (
                   <TableRow key={invoice.id}>
                     <TableCell className="font-mono text-xs md:text-sm">
                       <div>{invoice.invoice_number}</div>
@@ -1116,6 +1132,52 @@ export const AccountingInvoices: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
+          <div className="text-sm text-muted-foreground">
+            نمایش {((currentPage - 1) * pageSize) + 1} تا {Math.min(currentPage * pageSize, filteredInvoices.length)} از {filteredInvoices.length} فاکتور
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <span className="px-3 text-sm">
+              صفحه {currentPage} از {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* View Invoice Dialog */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
