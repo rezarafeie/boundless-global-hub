@@ -161,6 +161,10 @@ const SimplifiedLeadManagement: React.FC = () => {
   }
   const [showAssignmentReport, setShowAssignmentReport] = useState(false);
   const [assignmentReportData, setAssignmentReportData] = useState<AssignmentReportItem[]>([]);
+  
+  // Assignment progress states
+  const [assignmentProgress, setAssignmentProgress] = useState({ current: 0, total: 0, status: '' });
+  const [isAssigning, setIsAssigning] = useState(false);
 
   useEffect(() => {
     fetchInitialData();
@@ -596,6 +600,10 @@ const SimplifiedLeadManagement: React.FC = () => {
     }
 
     setActionLoading(true);
+    setIsAssigning(true);
+    setShowManualAssign(false);
+    setAssignmentProgress({ current: 0, total: selectedLeads.length, status: 'در حال آماده‌سازی...' });
+    
     try {
       const agentId = parseInt(selectedAgentForManual);
       const agent = agents.find(a => a.id === agentId);
@@ -604,11 +612,15 @@ const SimplifiedLeadManagement: React.FC = () => {
         throw new Error('Agent not found');
       }
       
+      setAssignmentProgress(prev => ({ ...prev, status: 'در حال حذف واگذاری‌های قبلی...' }));
+      
       // First remove existing assignments for selected leads
       await supabase
         .from('lead_assignments')
         .delete()
         .in('enrollment_id', selectedLeads);
+
+      setAssignmentProgress(prev => ({ ...prev, status: 'در حال ایجاد واگذاری‌ها...' }));
 
       // Create new assignments
       const assignments = selectedLeads.map(enrollmentId => ({
@@ -624,12 +636,17 @@ const SimplifiedLeadManagement: React.FC = () => {
         .insert(assignments);
 
       if (error) throw error;
+      
+      setAssignmentProgress(prev => ({ ...prev, current: selectedLeads.length, status: 'واگذاری‌ها ایجاد شد' }));
 
       // Create deals if pipeline is selected
       if (createDealForPipeline && selectedPipeline) {
         const pipeline = pipelines.find(p => p.id === selectedPipeline);
         const firstStage = pipeline?.stages?.[0];
         
+        setAssignmentProgress(prev => ({ ...prev, current: 0, status: 'در حال ایجاد معاملات...' }));
+        
+        let dealCount = 0;
         for (const enrollmentId of selectedLeads) {
           const lead = leads.find(l => l.id === enrollmentId);
           if (!lead) continue;
@@ -656,8 +673,12 @@ const SimplifiedLeadManagement: React.FC = () => {
                 stage_entered_at: new Date().toISOString()
               });
           }
+          dealCount++;
+          setAssignmentProgress(prev => ({ ...prev, current: dealCount, status: `ایجاد معامله ${dealCount} از ${selectedLeads.length}` }));
         }
       }
+
+      setAssignmentProgress(prev => ({ ...prev, status: 'تکمیل شد!' }));
 
       // Generate assignment report
       const assignedLeadsData = leads.filter(l => selectedLeads.includes(l.id));
@@ -667,14 +688,18 @@ const SimplifiedLeadManagement: React.FC = () => {
         leads: assignedLeadsData
       }];
       setAssignmentReportData(reportData);
-      setShowAssignmentReport(true);
+      
+      // Small delay to show completion status before showing report
+      setTimeout(() => {
+        setIsAssigning(false);
+        setShowAssignmentReport(true);
+      }, 500);
 
       toast({
         title: "موفق",
         description: `${selectedLeads.length} لید به ${agent.name} واگذار شد${createDealForPipeline ? ' و معامله ایجاد شد' : ''}`
       });
 
-      setShowManualAssign(false);
       setSelectedLeads([]);
       setSelectAll(false);
       setSelectedAgentForManual('');
@@ -683,6 +708,7 @@ const SimplifiedLeadManagement: React.FC = () => {
       handleLoadLeads();
     } catch (error) {
       console.error('Error assigning leads:', error);
+      setIsAssigning(false);
       toast({
         title: "خطا",
         description: "خطا در واگذاری لیدها",
@@ -727,12 +753,18 @@ const SimplifiedLeadManagement: React.FC = () => {
     }
 
     setActionLoading(true);
+    setIsAssigning(true);
+    setShowPercentageAssign(false);
+    setAssignmentProgress({ current: 0, total: unassignedLeads.length, status: 'در حال آماده‌سازی توزیع...' });
+    
     try {
       // Shuffle leads for random distribution
       const shuffled = [...unassignedLeads].sort(() => Math.random() - 0.5);
       
       const assignments: { enrollment_id: string; sales_agent_id: number; assigned_by: number; assignment_type: string; status: string }[] = [];
       let currentIndex = 0;
+
+      setAssignmentProgress(prev => ({ ...prev, status: 'در حال محاسبه توزیع...' }));
 
       for (const allocation of percentageAllocations) {
         if (allocation.percentage === 0) continue;
@@ -764,17 +796,24 @@ const SimplifiedLeadManagement: React.FC = () => {
       }
 
       if (assignments.length > 0) {
+        setAssignmentProgress(prev => ({ ...prev, status: 'در حال ایجاد واگذاری‌ها...' }));
+        
         const { error } = await supabase
           .from('lead_assignments')
           .insert(assignments);
 
         if (error) throw error;
+        
+        setAssignmentProgress(prev => ({ ...prev, current: assignments.length, status: 'واگذاری‌ها ایجاد شد' }));
 
         // Create deals if pipeline is selected
         if (createDealForPipeline && selectedPipeline) {
           const pipeline = pipelines.find(p => p.id === selectedPipeline);
           const firstStage = pipeline?.stages?.[0];
           
+          setAssignmentProgress(prev => ({ ...prev, current: 0, status: 'در حال ایجاد معاملات...' }));
+          
+          let dealCount = 0;
           for (const assignment of assignments) {
             const lead = shuffled.find(l => l.id === assignment.enrollment_id);
             const agent = agents.find(a => a.id === assignment.sales_agent_id);
@@ -802,9 +841,13 @@ const SimplifiedLeadManagement: React.FC = () => {
                   stage_entered_at: new Date().toISOString()
                 });
             }
+            dealCount++;
+            setAssignmentProgress(prev => ({ ...prev, current: dealCount, status: `ایجاد معامله ${dealCount} از ${assignments.length}` }));
           }
         }
       }
+
+      setAssignmentProgress(prev => ({ ...prev, status: 'تکمیل شد!' }));
 
       // Generate assignment report grouped by agent
       const reportMap = new Map<number, { agent_name: string; leads: Lead[] }>();
@@ -830,14 +873,18 @@ const SimplifiedLeadManagement: React.FC = () => {
         leads: data.leads
       }));
       setAssignmentReportData(reportData);
-      setShowAssignmentReport(true);
+      
+      // Small delay to show completion status before showing report
+      setTimeout(() => {
+        setIsAssigning(false);
+        setShowAssignmentReport(true);
+      }, 500);
 
       toast({
         title: "موفق",
         description: `${assignments.length} لید توزیع شد${createDealForPipeline ? ' و معامله ایجاد شد' : ''}`
       });
 
-      setShowPercentageAssign(false);
       setSelectedLeads([]);
       setSelectAll(false);
       setCreateDealForPipeline(false);
@@ -845,6 +892,7 @@ const SimplifiedLeadManagement: React.FC = () => {
       handleLoadLeads();
     } catch (error) {
       console.error('Error distributing leads:', error);
+      setIsAssigning(false);
       toast({
         title: "خطا",
         description: "خطا در توزیع لیدها",
@@ -948,6 +996,34 @@ const SimplifiedLeadManagement: React.FC = () => {
                 </div>
               </div>
               <Loader2 className="h-5 w-5 animate-spin text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Assignment Progress Card */}
+      {isAssigning && (
+        <Card className="border-green-500/30 bg-green-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <UserPlus className="h-5 w-5 text-green-600 animate-pulse" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-green-600">{assignmentProgress.status}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex-1 bg-green-200 rounded-full h-2">
+                    <div 
+                      className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${assignmentProgress.total > 0 ? (assignmentProgress.current / assignmentProgress.total) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {assignmentProgress.current} / {assignmentProgress.total}
+                  </span>
+                </div>
+              </div>
+              <Loader2 className="h-5 w-5 animate-spin text-green-600" />
             </div>
           </CardContent>
         </Card>
@@ -1349,13 +1425,20 @@ const SimplifiedLeadManagement: React.FC = () => {
               </div>
             )}
 
+            {selectedLeads.length === 0 && (
+              <div className="bg-destructive/10 text-destructive rounded-lg p-3 text-sm flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                لطفاً ابتدا لیدها را انتخاب کنید
+              </div>
+            )}
+
             <Button
               className="w-full"
               onClick={handleManualAssign}
-              disabled={actionLoading || !selectedAgentForManual || (createDealForPipeline && !selectedPipeline)}
+              disabled={actionLoading || !selectedAgentForManual || selectedLeads.length === 0 || (createDealForPipeline && !selectedPipeline)}
             >
               {actionLoading ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
-              واگذاری{createDealForPipeline ? ' و ایجاد معامله' : ''}
+              واگذاری {selectedLeads.length} لید{createDealForPipeline ? ' و ایجاد معامله' : ''}
             </Button>
           </div>
         </DialogContent>
