@@ -10,7 +10,8 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload, FileText, Users, UserPlus, UserCheck, Eye, Database, Download, RotateCcw, Trash2, Play, Pause, StickyNote } from 'lucide-react';
+import { Upload, FileText, Users, UserPlus, UserCheck, Eye, Database, Download, RotateCcw, Trash2, Play, Pause, StickyNote, DollarSign } from 'lucide-react';
+import { FinancialDataImport } from './FinancialDataImport';
 
 interface Course {
   id: string;
@@ -1355,9 +1356,13 @@ export function DataImportSection() {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="enrollments" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="enrollments">وارد کردن ثبت‌نام‌ها</TabsTrigger>
           <TabsTrigger value="crm">وارد کردن CRM</TabsTrigger>
+          <TabsTrigger value="financial" className="flex items-center gap-1">
+            <DollarSign className="h-4 w-4" />
+            وارد کردن مالی
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="enrollments">
@@ -1927,6 +1932,10 @@ export function DataImportSection() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="financial">
+          <FinancialDataImport />
         </TabsContent>
       </Tabs>
     </div>
