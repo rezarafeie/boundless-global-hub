@@ -106,14 +106,14 @@ const SimplifiedLeadManagement: React.FC = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [aiScoreLoading, setAiScoreLoading] = useState(false);
   
-  // Filter states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCourse, setSelectedCourse] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('all'); // all, assigned, unassigned
-  const [paymentFilter, setPaymentFilter] = useState<string>('all'); // all, success, pending, failed
-  const [agentFilter, setAgentFilter] = useState<string>('all');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  // Filter states - initialize from localStorage
+  const [searchTerm, setSearchTerm] = useState(() => localStorage.getItem('leads_searchTerm') || '');
+  const [selectedCourse, setSelectedCourse] = useState<string>(() => localStorage.getItem('leads_selectedCourse') || '');
+  const [statusFilter, setStatusFilter] = useState<string>(() => localStorage.getItem('leads_statusFilter') || 'all');
+  const [paymentFilter, setPaymentFilter] = useState<string>(() => localStorage.getItem('leads_paymentFilter') || 'all');
+  const [agentFilter, setAgentFilter] = useState<string>(() => localStorage.getItem('leads_agentFilter') || 'all');
+  const [dateFrom, setDateFrom] = useState(() => localStorage.getItem('leads_dateFrom') || '');
+  const [dateTo, setDateTo] = useState(() => localStorage.getItem('leads_dateTo') || '');
   
   // Selection states
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
@@ -165,6 +165,35 @@ const SimplifiedLeadManagement: React.FC = () => {
   // Assignment progress states
   const [assignmentProgress, setAssignmentProgress] = useState({ current: 0, total: 0, status: '' });
   const [isAssigning, setIsAssigning] = useState(false);
+
+  // Save filters to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('leads_searchTerm', searchTerm);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    localStorage.setItem('leads_selectedCourse', selectedCourse);
+  }, [selectedCourse]);
+
+  useEffect(() => {
+    localStorage.setItem('leads_statusFilter', statusFilter);
+  }, [statusFilter]);
+
+  useEffect(() => {
+    localStorage.setItem('leads_paymentFilter', paymentFilter);
+  }, [paymentFilter]);
+
+  useEffect(() => {
+    localStorage.setItem('leads_agentFilter', agentFilter);
+  }, [agentFilter]);
+
+  useEffect(() => {
+    localStorage.setItem('leads_dateFrom', dateFrom);
+  }, [dateFrom]);
+
+  useEffect(() => {
+    localStorage.setItem('leads_dateTo', dateTo);
+  }, [dateTo]);
 
   useEffect(() => {
     fetchInitialData();
@@ -622,11 +651,11 @@ const SimplifiedLeadManagement: React.FC = () => {
 
       setAssignmentProgress(prev => ({ ...prev, status: 'در حال ایجاد واگذاری‌ها...' }));
 
-      // Create new assignments
+      // Create new assignments - use agent.user_id for assigned_by (references chat_users.id)
       const assignments = selectedLeads.map(enrollmentId => ({
         enrollment_id: enrollmentId,
         sales_agent_id: agentId,
-        assigned_by: agentId,
+        assigned_by: agent.user_id,
         assignment_type: 'distributed',
         status: 'assigned'
       }));
@@ -769,12 +798,13 @@ const SimplifiedLeadManagement: React.FC = () => {
       for (const allocation of percentageAllocations) {
         if (allocation.percentage === 0) continue;
         
+        const agent = agents.find(a => a.id === allocation.agent_id);
         const count = Math.round((allocation.percentage / 100) * shuffled.length);
         for (let i = 0; i < count && currentIndex < shuffled.length; i++) {
           assignments.push({
             enrollment_id: shuffled[currentIndex].id,
             sales_agent_id: allocation.agent_id,
-            assigned_by: allocation.agent_id,
+            assigned_by: agent?.user_id || allocation.agent_id,
             assignment_type: 'distributed',
             status: 'assigned'
           });
@@ -783,12 +813,13 @@ const SimplifiedLeadManagement: React.FC = () => {
       }
 
       // Assign remaining leads to first agent with percentage > 0
-      const firstAgent = percentageAllocations.find(a => a.percentage > 0);
-      while (currentIndex < shuffled.length && firstAgent) {
+      const firstAllocation = percentageAllocations.find(a => a.percentage > 0);
+      const firstAgent = firstAllocation ? agents.find(a => a.id === firstAllocation.agent_id) : null;
+      while (currentIndex < shuffled.length && firstAllocation) {
         assignments.push({
           enrollment_id: shuffled[currentIndex].id,
-          sales_agent_id: firstAgent.agent_id,
-          assigned_by: firstAgent.agent_id,
+          sales_agent_id: firstAllocation.agent_id,
+          assigned_by: firstAgent?.user_id || firstAllocation.agent_id,
           assignment_type: 'distributed',
           status: 'assigned'
         });
