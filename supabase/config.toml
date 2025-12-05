@@ -76,3 +76,6 @@ verify_jwt = false
 
 [functions.invoice-zarinpal-verify]
 verify_jwt = false
+
+[functions.ai-admin-greeting]
+verify_jwt = false

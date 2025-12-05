@@ -276,6 +276,51 @@ export type Database = {
           },
         ]
       }
+      ai_admin_reports: {
+        Row: {
+          admin_name: string
+          created_at: string
+          greeting: string | null
+          highlights: string[] | null
+          id: string
+          motivation: string | null
+          raw_analysis: string | null
+          raw_data: Json | null
+          suggestions: string[] | null
+          summary: string | null
+          view_mode: string
+          warnings: string[] | null
+        }
+        Insert: {
+          admin_name: string
+          created_at?: string
+          greeting?: string | null
+          highlights?: string[] | null
+          id?: string
+          motivation?: string | null
+          raw_analysis?: string | null
+          raw_data?: Json | null
+          suggestions?: string[] | null
+          summary?: string | null
+          view_mode?: string
+          warnings?: string[] | null
+        }
+        Update: {
+          admin_name?: string
+          created_at?: string
+          greeting?: string | null
+          highlights?: string[] | null
+          id?: string
+          motivation?: string | null
+          raw_analysis?: string | null
+          raw_data?: Json | null
+          suggestions?: string[] | null
+          summary?: string | null
+          view_mode?: string
+          warnings?: string[] | null
+        }
+        Relationships: []
+      }
       analytics_daily_reports: {
         Row: {
           avg_session_duration: number

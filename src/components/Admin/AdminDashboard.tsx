@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +20,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import AIGreetingBanner from './AIGreetingBanner';
 
 interface DashboardStats {
   totalRevenue: number;
@@ -344,6 +344,9 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      {/* AI Greeting Banner */}
+      <AIGreetingBanner onRefresh={fetchDashboardData} />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
