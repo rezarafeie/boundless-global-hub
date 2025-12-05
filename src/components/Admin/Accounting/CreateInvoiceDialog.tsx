@@ -234,8 +234,8 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-none w-screen h-[100dvh] max-h-[100dvh] m-0 p-0 rounded-none border-0" dir="rtl">
-        <div className="flex flex-col h-[100dvh] max-h-[100dvh] text-right">
+      <DialogContent className="max-w-none w-screen h-[calc(100dvh-60px)] max-h-[calc(100dvh-60px)] m-0 p-0 rounded-none border-0 top-[60px] translate-y-0" dir="rtl">
+        <div className="flex flex-col h-full max-h-full text-right">
           <DialogHeader className="px-4 sm:px-6 py-4 border-b bg-background shrink-0">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-lg sm:text-xl">ایجاد فاکتور جدید</DialogTitle>
@@ -245,7 +245,7 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
             </div>
           </DialogHeader>
           
-          <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 pb-20" style={{ WebkitOverflowScrolling: 'touch' }}>
             <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
               {/* Customer Search Section */}
               <Card>
@@ -502,9 +502,9 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
               </Card>
 
               {/* Submit Button */}
-              <div className="pb-4 sm:pb-6 space-y-3">
+              <div className="pb-8 sm:pb-10 space-y-3">
                 <Button 
-                  className="w-full h-10 sm:h-12 text-base sm:text-lg" 
+                  className="w-full h-12 sm:h-14 text-base sm:text-lg" 
                   onClick={handleCreateInvoice}
                   disabled={!selectedCustomer || !formData.product_id || !formData.amount}
                 >
@@ -512,7 +512,7 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
                 </Button>
                 <Button 
                   variant="outline"
-                  className="w-full h-10 sm:h-12 text-base sm:text-lg" 
+                  className="w-full h-12 sm:h-14 text-base sm:text-lg border-2" 
                   onClick={handleClose}
                 >
                   بستن
