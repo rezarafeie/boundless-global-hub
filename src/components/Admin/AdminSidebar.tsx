@@ -22,7 +22,9 @@ import {
   Calendar,
   Briefcase,
   ClipboardList,
-  Calculator
+  Calculator,
+  Kanban,
+  Receipt
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -45,6 +47,8 @@ const menuItems = [
   { id: 'internships', label: 'کارآموزی‌ها', icon: Users },
   { id: 'sales', label: 'داشبورد فروش', icon: BarChart3 },
   { id: 'leads', label: 'مدیریت لیدها', icon: UserPlus },
+  { id: 'pipeline', label: 'پایپ‌لاین فروش', icon: Kanban },
+  { id: 'agent-financials', label: 'مالی من', icon: Receipt },
   { id: 'daily-reports', label: 'گزارشات روزانه', icon: ClipboardList },
   { id: 'accounting', label: 'حسابداری', icon: Calculator },
   { id: 'users', label: 'کاربران', icon: Users },
@@ -67,9 +71,9 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
       return menuItems.filter(item => ['sales', 'leads', 'crm'].includes(item.id));
     }
     
-    // Sales agent gets only leads and crm tabs
+    // Sales agent gets leads, crm, pipeline, and financials tabs
     if (isSalesAgent && !isMessengerAdmin && userRole !== 'sales_manager') {
-      return menuItems.filter(item => ['leads', 'crm'].includes(item.id));
+      return menuItems.filter(item => ['leads', 'pipeline', 'agent-financials', 'crm'].includes(item.id));
     }
     
     // Enrollment managers get specific tabs including webinars
