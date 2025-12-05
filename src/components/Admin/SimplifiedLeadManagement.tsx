@@ -344,7 +344,7 @@ const SimplifiedLeadManagement: React.FC = () => {
         .from('lead_analysis_jobs')
         .insert({
           course_id: selectedCourse,
-          status: 'processing',
+          status: 'running',
           progress_current: 0,
           progress_total: leadsToScore.length,
           start_date: dateFrom || null,
