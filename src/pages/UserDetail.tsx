@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Phone, Mail, Calendar, Shield, Settings, BookOpen, TrendingUp, MessageSquare, Edit } from 'lucide-react';
+import { ArrowLeft, User, Phone, Mail, Calendar, Shield, Settings, BookOpen, TrendingUp, MessageSquare, Edit, Wallet } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import UserRoleManagement from '@/components/Admin/UserProfile/UserRoleManagement';
@@ -15,6 +15,7 @@ import { UserEnrollments } from '@/components/Admin/UserProfile/UserEnrollments'
 import { UserLicenses } from '@/components/Admin/UserProfile/UserLicenses';
 import LearningProgress from '@/components/Admin/UserProfile/LearningProgress';
 import UserCRM from '@/components/Admin/UserProfile/UserCRM';
+import UserFinancialHistory from '@/components/Admin/UserProfile/UserFinancialHistory';
 import UserEditModal from '@/components/Admin/UserEditModal';
 
 interface UserData {
@@ -190,7 +191,7 @@ const UserDetail: React.FC = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="overview" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7 h-auto">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-8 h-auto">
               <TabsTrigger value="overview" className="flex items-center gap-1 text-xs md:text-sm">
                 <User className="w-3 h-3 md:w-4 md:h-4" />
                 <span className="hidden sm:inline">اطلاعات کلی</span>
@@ -219,6 +220,11 @@ const UserDetail: React.FC = () => {
               <TabsTrigger value="crm" className="flex items-center gap-1 text-xs md:text-sm">
                 <MessageSquare className="w-3 h-3 md:w-4 md:h-4" />
                 CRM
+              </TabsTrigger>
+              <TabsTrigger value="financial" className="flex items-center gap-1 text-xs md:text-sm">
+                <Wallet className="w-3 h-3 md:w-4 md:h-4" />
+                <span className="hidden sm:inline">تاریخچه مالی</span>
+                <span className="sm:hidden">مالی</span>
               </TabsTrigger>
               <TabsTrigger value="role" className="flex items-center gap-1 text-xs md:text-sm">
                 <Settings className="w-3 h-3 md:w-4 md:h-4" />
@@ -254,6 +260,10 @@ const UserDetail: React.FC = () => {
                 userPhone={user.phone}
                 userEmail={user.email || ''}
               />
+            </TabsContent>
+
+            <TabsContent value="financial" className="space-y-4">
+              <UserFinancialHistory userId={user.id} />
             </TabsContent>
             
             <TabsContent value="role" className="space-y-4">
