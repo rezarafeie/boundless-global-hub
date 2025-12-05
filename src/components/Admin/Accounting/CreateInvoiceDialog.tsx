@@ -245,7 +245,7 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
             </div>
           </DialogHeader>
           
-          <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 pb-20" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 pb-4" style={{ WebkitOverflowScrolling: 'touch' }}>
             <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
               {/* Customer Search Section */}
               <Card>
@@ -500,24 +500,26 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
                   />
                 </CardContent>
               </Card>
+            </div>
+          </div>
 
-              {/* Submit Button */}
-              <div className="pb-8 sm:pb-10 space-y-3">
-                <Button 
-                  className="w-full h-12 sm:h-14 text-base sm:text-lg" 
-                  onClick={handleCreateInvoice}
-                  disabled={!selectedCustomer || !formData.product_id || !formData.amount}
-                >
-                  ایجاد فاکتور
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="w-full h-12 sm:h-14 text-base sm:text-lg border-2" 
-                  onClick={handleClose}
-                >
-                  بستن
-                </Button>
-              </div>
+          {/* Fixed Footer Buttons */}
+          <div className="shrink-0 border-t bg-background px-4 sm:px-6 py-4 space-y-2">
+            <div className="max-w-2xl mx-auto flex flex-col gap-2">
+              <Button 
+                className="w-full h-12 text-base sm:text-lg" 
+                onClick={handleCreateInvoice}
+                disabled={!selectedCustomer || !formData.product_id || !formData.amount}
+              >
+                ایجاد فاکتور
+              </Button>
+              <Button 
+                variant="outline"
+                className="w-full h-12 text-base sm:text-lg border-2" 
+                onClick={handleClose}
+              >
+                بستن
+              </Button>
             </div>
           </div>
         </div>
