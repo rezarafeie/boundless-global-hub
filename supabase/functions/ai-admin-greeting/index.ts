@@ -25,9 +25,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { adminName, viewMode = 'daily' } = await req.json();
+    const { adminName, viewMode = 'daily', mode = 'admin' } = await req.json();
 
-    console.log('Starting AI admin analysis...');
+    console.log(`Starting AI analysis in ${mode} mode...`);
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -247,19 +247,26 @@ Deno.serve(async (req) => {
 
     console.log('Data summary:', JSON.stringify(dataSummary));
 
-    // Call AI for analysis
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: `شما یک تحلیلگر هوشمند برای یک پلتفرم آموزشی آنلاین هستید. وظیفه شما ارائه گزارش روزانه به مدیر است.
+    // Determine system prompt based on mode
+    const systemPrompt = mode === 'agent' 
+      ? `شما یک مربی فروش هوشمند برای یک تیم فروش آموزشی هستید. وظیفه شما ارائه گزارش و راهنمایی به کارشناس فروش است.
+
+پاسخ شما باید یک JSON معتبر با این ساختار باشد:
+{
+  "greeting": "پیام خوشامدگویی شخصی‌سازی شده (۱ جمله)",
+  "summary": "خلاصه عملکرد شما و وضعیت لیدها (۱-۲ جمله)",
+  "highlights": ["دستاورد ۱", "دستاورد ۲"],
+  "warnings": ["نکته‌ای که باید توجه کنید"],
+  "suggestions": ["پیشنهاد برای بهبود ۱", "پیشنهاد برای بهبود ۲"],
+  "motivation": "یک جمله انگیزشی برای فروش بیشتر"
+}
+
+نکات مهم:
+- از ایموجی در ابتدای هر آیتم استفاده کن
+- لحن دوستانه و انگیزشی داشته باش
+- روی تکنیک‌های فروش و پیگیری تمرکز کن
+- پیشنهادات عملی برای افزایش نرخ تبدیل بده`
+      : `شما یک تحلیلگر هوشمند برای یک پلتفرم آموزشی آنلاین هستید. وظیفه شما ارائه گزارش روزانه به مدیر است.
 
 پاسخ شما باید یک JSON معتبر با این ساختار باشد:
 {
@@ -276,18 +283,36 @@ Deno.serve(async (req) => {
 - اعداد را به فارسی بنویس
 - لحن دوستانه و حرفه‌ای داشته باش
 - اگر رشد مثبت داری، آن را هایلایت کن
-- اگر مشکلی وجود دارد، راه‌حل عملی پیشنهاد بده`
-          },
-          {
-            role: 'user',
-            content: `نام مدیر: ${adminName || 'مدیر'}
+- اگر مشکلی وجود دارد، راه‌حل عملی پیشنهاد بده`;
+
+    const userPrompt = mode === 'agent'
+      ? `نام کارشناس فروش: ${adminName || 'کارشناس'}
+بازه زمانی: ${viewMode === 'daily' ? 'روزانه' : viewMode === 'weekly' ? 'هفتگی' : 'ماهانه'}
+
+داده‌های فروش:
+${JSON.stringify(dataSummary, null, 2)}
+
+لطفا به عنوان مربی فروش، تحلیل و راهنمایی ارائه بده.`
+      : `نام مدیر: ${adminName || 'مدیر'}
 بازه زمانی: ${viewMode === 'daily' ? 'روزانه' : viewMode === 'weekly' ? 'هفتگی' : 'ماهانه'}
 
 داده‌های پلتفرم:
 ${JSON.stringify(dataSummary, null, 2)}
 
-لطفا تحلیل هوشمند ارائه بده.`
-          }
+لطفا تحلیل هوشمند ارائه بده.`;
+
+    // Call AI for analysis
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
         ],
         temperature: 0.7
       })

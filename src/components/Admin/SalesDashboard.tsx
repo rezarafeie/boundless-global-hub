@@ -29,6 +29,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import AIGreetingBanner from './AIGreetingBanner';
 
 interface SalesDashboardProps {
   onViewChange?: (view: string) => void;
@@ -337,6 +338,11 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ onViewChange, isSalesAg
 
   return (
     <div className="space-y-6">
+      {/* AI Greeting Banner for Sales Agents */}
+      {isSalesAgent && (
+        <AIGreetingBanner mode="agent" onRefresh={fetchSalesData} />
+      )}
+
       {/* Navigation Buttons - Only show pipeline builder for admins/sales managers */}
       {onViewChange && (isAdmin || isSalesManager) && (
         <div className="flex flex-wrap gap-2">
