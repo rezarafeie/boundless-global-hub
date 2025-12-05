@@ -9,7 +9,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { MessageSquare, Plus, Phone, FileText, Users, Calendar, Filter, Search, X, Clock } from 'lucide-react';
+import { MessageSquare, Plus, Phone, FileText, Users, Calendar, Filter, Search, X, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -58,6 +58,8 @@ const CRM_STATUSES = [
   { value: 'امکان مکالمه نداشت', label: 'امکان مکالمه نداشت' }
 ];
 
+const ITEMS_PER_PAGE = 50;
+
 export function EnrollmentCRM() {
   const [notes, setNotes] = useState<CRMNote[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -66,6 +68,9 @@ export function EnrollmentCRM() {
   const [loading, setLoading] = useState(true);
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
   
   // User search states
   const [searchTerm, setSearchTerm] = useState('');
@@ -420,6 +425,17 @@ export function EnrollmentCRM() {
     return true;
   });
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredNotes.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedNotes = filteredNotes.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterCourse, filterAgent, filterType, filterStatus]);
+
   if (loading) {
     return (
       <Card>
@@ -585,9 +601,19 @@ export function EnrollmentCRM() {
             </div>
           ) : (
             <>
+              {/* Pagination info */}
+              <div className="flex items-center justify-between mb-4 text-sm text-muted-foreground">
+                <span>
+                  نمایش {startIndex + 1} تا {Math.min(endIndex, filteredNotes.length)} از {filteredNotes.length} رکورد
+                </span>
+                {totalPages > 1 && (
+                  <span>صفحه {currentPage} از {totalPages}</span>
+                )}
+              </div>
+
               {/* Mobile cards view */}
               <div className="block md:hidden space-y-4">
-                {filteredNotes.map((note) => (
+                {paginatedNotes.map((note) => (
                   <div key={note.id} className="border rounded-lg p-4 space-y-3">
                     <div className="flex items-center gap-2">
                       {getTypeIcon(note.type)}
@@ -643,7 +669,7 @@ export function EnrollmentCRM() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredNotes.map((note) => (
+                    {paginatedNotes.map((note) => (
                       <TableRow key={note.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -682,6 +708,73 @@ export function EnrollmentCRM() {
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Pagination controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-6">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                  >
+                    اول
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                    قبلی
+                  </Button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    بعدی
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                  >
+                    آخر
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </CardContent>
