@@ -1,29 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus, 
   Loader2, 
   FileText, 
-  Calendar,
   DollarSign,
   CheckCircle,
   Clock,
-  AlertCircle,
   RefreshCw
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns-jalali';
 import { useAuth } from '@/contexts/AuthContext';
+import { CreateInvoiceDialog } from './Accounting/CreateInvoiceDialog';
 
 interface Invoice {
   id: string;
@@ -51,35 +45,15 @@ interface Installment {
   paid_at: string | null;
 }
 
-interface Customer {
-  id: number;
-  name: string;
-  phone: string;
-}
-
 const SalesAgentFinancials: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [installments, setInstallments] = useState<Installment[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('invoices');
-  
-  // Dialog states
   const [showNewInvoice, setShowNewInvoice] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  
-  // Form states
-  const [newInvoice, setNewInvoice] = useState({
-    customer_id: '',
-    total_amount: '',
-    payment_type: 'card',
-    is_installment: false,
-    notes: '',
-    due_date: ''
-  });
 
   // Stats
   const [stats, setStats] = useState({
@@ -143,16 +117,6 @@ const SalesAgentFinancials: React.FC = () => {
         setInstallments(installmentsData || []);
       }
 
-      // Fetch customers for dropdown
-      const { data: customersData } = await supabase
-        .from('chat_users')
-        .select('id, name, phone')
-        .eq('is_approved', true)
-        .order('name', { ascending: true })
-        .limit(500);
-
-      setCustomers(customersData || []);
-
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -162,62 +126,6 @@ const SalesAgentFinancials: React.FC = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleCreateInvoice = async () => {
-    if (!newInvoice.customer_id || !newInvoice.total_amount) {
-      toast({
-        title: "خطا",
-        description: "لطفاً مشتری و مبلغ را وارد کنید",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const { error } = await supabase
-        .from('invoices')
-        .insert([{
-          customer_id: parseInt(newInvoice.customer_id),
-          total_amount: parseFloat(newInvoice.total_amount),
-          payment_type: newInvoice.payment_type,
-          is_installment: newInvoice.is_installment,
-          notes: newInvoice.notes || null,
-          due_date: newInvoice.due_date || null,
-          sales_agent_id: user?.messengerData?.id,
-          status: 'unpaid',
-          paid_amount: 0,
-          invoice_number: `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
-        }]);
-
-      if (error) throw error;
-
-      toast({
-        title: "موفق",
-        description: "فاکتور با موفقیت ایجاد شد"
-      });
-
-      setShowNewInvoice(false);
-      setNewInvoice({
-        customer_id: '',
-        total_amount: '',
-        payment_type: 'card',
-        is_installment: false,
-        notes: '',
-        due_date: ''
-      });
-      fetchData();
-    } catch (error) {
-      console.error('Error creating invoice:', error);
-      toast({
-        title: "خطا",
-        description: "خطا در ایجاد فاکتور",
-        variant: "destructive"
-      });
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -419,83 +327,13 @@ const SalesAgentFinancials: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* New Invoice Dialog */}
-      <Dialog open={showNewInvoice} onOpenChange={setShowNewInvoice}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>ایجاد فاکتور جدید</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label>مشتری</Label>
-              <Select 
-                value={newInvoice.customer_id} 
-                onValueChange={(value) => setNewInvoice({...newInvoice, customer_id: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="انتخاب مشتری" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map(customer => (
-                    <SelectItem key={customer.id} value={customer.id.toString()}>
-                      {customer.name} - {customer.phone}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>مبلغ (تومان)</Label>
-              <Input 
-                type="number"
-                value={newInvoice.total_amount}
-                onChange={(e) => setNewInvoice({...newInvoice, total_amount: e.target.value})}
-                placeholder="مثال: 1000000"
-              />
-            </div>
-            <div>
-              <Label>نوع پرداخت</Label>
-              <Select 
-                value={newInvoice.payment_type} 
-                onValueChange={(value) => setNewInvoice({...newInvoice, payment_type: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="card">کارت به کارت</SelectItem>
-                  <SelectItem value="online">آنلاین</SelectItem>
-                  <SelectItem value="cash">نقدی</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>سررسید (اختیاری)</Label>
-              <Input 
-                type="date"
-                value={newInvoice.due_date}
-                onChange={(e) => setNewInvoice({...newInvoice, due_date: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label>توضیحات (اختیاری)</Label>
-              <Textarea 
-                value={newInvoice.notes}
-                onChange={(e) => setNewInvoice({...newInvoice, notes: e.target.value})}
-                placeholder="توضیحات..."
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNewInvoice(false)}>
-              انصراف
-            </Button>
-            <Button onClick={handleCreateInvoice} disabled={submitting}>
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'ایجاد فاکتور'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* New Invoice Dialog - Uses shared component with full features */}
+      <CreateInvoiceDialog
+        open={showNewInvoice}
+        onOpenChange={setShowNewInvoice}
+        onSuccess={fetchData}
+        salesAgentId={user?.messengerData?.id}
+      />
     </div>
   );
 };
