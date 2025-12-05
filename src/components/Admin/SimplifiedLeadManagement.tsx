@@ -45,6 +45,9 @@ interface Lead {
   is_assigned: boolean;
   assigned_agent_id: number | null;
   assigned_agent_name: string | null;
+  ai_score?: number;
+  ai_category?: 'hot' | 'warm' | 'cold';
+  ai_reason?: string;
 }
 
 interface Agent {
@@ -69,6 +72,13 @@ interface AgentLeadCount {
   agent_id: number;
   agent_name: string;
   count: number;
+}
+
+interface AIScoreResult {
+  enrollment_id: string;
+  score: number;
+  category: 'hot' | 'warm' | 'cold';
+  reason: string;
 }
 
 const SimplifiedLeadManagement: React.FC = () => {
@@ -109,13 +119,21 @@ const SimplifiedLeadManagement: React.FC = () => {
   const [stats, setStats] = useState({
     total: 0,
     assigned: 0,
-    unassigned: 0
+    unassigned: 0,
+    hot: 0,
+    warm: 0,
+    cold: 0
   });
   
   // Agent lead counts
   const [agentLeadCounts, setAgentLeadCounts] = useState<AgentLeadCount[]>([]);
 
   const [hasLoaded, setHasLoaded] = useState(false);
+  
+  // AI Score states
+  const [aiScoreResults, setAiScoreResults] = useState<AIScoreResult[]>([]);
+  const [aiScoreProgress, setAiScoreProgress] = useState({ current: 0, total: 0 });
+  const [aiScoreFilter, setAiScoreFilter] = useState<string>('all');
 
   useEffect(() => {
     fetchInitialData();
@@ -267,11 +285,15 @@ const SimplifiedLeadManagement: React.FC = () => {
         agent_id: assignmentMap.get(e.id) || null
       }));
       const totalAssigned = allLeads.filter(l => l.is_assigned).length;
-      setStats({
+      setStats(prev => ({
+        ...prev,
         total: allLeads.length,
         assigned: totalAssigned,
         unassigned: allLeads.length - totalAssigned
-      });
+      }));
+
+      // Reset AI score results when loading new leads
+      setAiScoreResults([]);
 
       // Calculate lead counts per agent
       const agentCounts = new Map<number, number>();
@@ -337,6 +359,9 @@ const SimplifiedLeadManagement: React.FC = () => {
     }
 
     setAiScoreLoading(true);
+    setAiScoreProgress({ current: 0, total: leadsToScore.length });
+    setShowAiScore(false); // Close modal to show progress
+    
     try {
       console.log('Creating AI analysis job...');
       // Create a new AI analysis job
@@ -392,12 +417,48 @@ const SimplifiedLeadManagement: React.FC = () => {
         })
         .eq('id', job.id);
 
+      // Process AI results and update leads
+      const aiResults: AIScoreResult[] = (result?.leads || []).map((lead: any) => ({
+        enrollment_id: lead.enrollment_id,
+        score: lead.score || 50,
+        category: lead.score >= 70 ? 'hot' : lead.score >= 40 ? 'warm' : 'cold',
+        reason: lead.reason || ''
+      }));
+      
+      setAiScoreResults(aiResults);
+      setAiScoreProgress({ current: aiResults.length, total: leadsToScore.length });
+      
+      // Update leads with AI scores
+      setLeads(prevLeads => prevLeads.map(lead => {
+        const aiResult = aiResults.find(r => r.enrollment_id === lead.id);
+        if (aiResult) {
+          return {
+            ...lead,
+            ai_score: aiResult.score,
+            ai_category: aiResult.category,
+            ai_reason: aiResult.reason
+          };
+        }
+        return lead;
+      }));
+      
+      // Update stats with AI categories
+      const hotCount = aiResults.filter(r => r.category === 'hot').length;
+      const warmCount = aiResults.filter(r => r.category === 'warm').length;
+      const coldCount = aiResults.filter(r => r.category === 'cold').length;
+      
+      setStats(prev => ({
+        ...prev,
+        hot: hotCount,
+        warm: warmCount,
+        cold: coldCount
+      }));
+
       toast({
         title: "تکمیل شد",
-        description: `تحلیل هوش مصنوعی برای ${result?.leads?.length || leadsToScore.length} لید انجام شد`,
+        description: `تحلیل هوش مصنوعی برای ${aiResults.length} لید انجام شد (${hotCount} داغ، ${warmCount} گرم، ${coldCount} سرد)`,
       });
 
-      setShowAiScore(false);
     } catch (error: any) {
       console.error('Error in AI analysis:', error);
       toast({
@@ -407,6 +468,20 @@ const SimplifiedLeadManagement: React.FC = () => {
       });
     } finally {
       setAiScoreLoading(false);
+    }
+  };
+  
+  const getAiScoreBadge = (category?: 'hot' | 'warm' | 'cold', score?: number) => {
+    if (!category) return null;
+    switch (category) {
+      case 'hot':
+        return <Badge className="bg-red-500/10 text-red-600 border-red-500/20">🔥 داغ ({score})</Badge>;
+      case 'warm':
+        return <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">☀️ گرم ({score})</Badge>;
+      case 'cold':
+        return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">❄️ سرد ({score})</Badge>;
+      default:
+        return null;
     }
   };
 
@@ -647,6 +722,86 @@ const SimplifiedLeadManagement: React.FC = () => {
         </Card>
       </div>
 
+      {/* AI Score Progress Card */}
+      {aiScoreLoading && (
+        <Card className="border-purple-500/30 bg-purple-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-500/10 rounded-lg">
+                <Brain className="h-5 w-5 text-purple-600 animate-pulse" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-purple-600">در حال تحلیل هوش مصنوعی...</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex-1 bg-purple-200 rounded-full h-2">
+                    <div 
+                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${aiScoreProgress.total > 0 ? (aiScoreProgress.current / aiScoreProgress.total) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {aiScoreProgress.current} / {aiScoreProgress.total}
+                  </span>
+                </div>
+              </div>
+              <Loader2 className="h-5 w-5 animate-spin text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* AI Score Stats - Show when we have results */}
+      {aiScoreResults.length > 0 && !aiScoreLoading && (
+        <Card className="border-purple-500/30 bg-purple-500/5">
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Brain className="h-4 w-4 text-purple-600" />
+              نتایج تحلیل هوش مصنوعی
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-3 gap-3">
+              <div 
+                className={`p-3 rounded-lg cursor-pointer transition-all ${aiScoreFilter === 'hot' ? 'ring-2 ring-red-500' : ''} bg-red-500/10`}
+                onClick={() => setAiScoreFilter(aiScoreFilter === 'hot' ? 'all' : 'hot')}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🔥</span>
+                  <div>
+                    <p className="text-xs text-muted-foreground">داغ</p>
+                    <p className="text-xl font-bold text-red-600">{stats.hot}</p>
+                  </div>
+                </div>
+              </div>
+              <div 
+                className={`p-3 rounded-lg cursor-pointer transition-all ${aiScoreFilter === 'warm' ? 'ring-2 ring-yellow-500' : ''} bg-yellow-500/10`}
+                onClick={() => setAiScoreFilter(aiScoreFilter === 'warm' ? 'all' : 'warm')}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">☀️</span>
+                  <div>
+                    <p className="text-xs text-muted-foreground">گرم</p>
+                    <p className="text-xl font-bold text-yellow-600">{stats.warm}</p>
+                  </div>
+                </div>
+              </div>
+              <div 
+                className={`p-3 rounded-lg cursor-pointer transition-all ${aiScoreFilter === 'cold' ? 'ring-2 ring-blue-500' : ''} bg-blue-500/10`}
+                onClick={() => setAiScoreFilter(aiScoreFilter === 'cold' ? 'all' : 'cold')}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">❄️</span>
+                  <div>
+                    <p className="text-xs text-muted-foreground">سرد</p>
+                    <p className="text-xl font-bold text-blue-600">{stats.cold}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Agent Lead Distribution - Only show after loading */}
       {hasLoaded && agentLeadCounts.length > 0 && (
         <Card>
@@ -827,7 +982,8 @@ const SimplifiedLeadManagement: React.FC = () => {
             </Button>
             {hasLoaded && (
               <span className="text-xs md:text-sm text-muted-foreground mr-auto">
-                نمایش {leads.length} لید
+                نمایش {aiScoreFilter !== 'all' ? leads.filter(l => l.ai_category === aiScoreFilter).length : leads.length} لید
+                {aiScoreFilter !== 'all' && ` (فیلتر: ${aiScoreFilter === 'hot' ? 'داغ' : aiScoreFilter === 'warm' ? 'گرم' : 'سرد'})`}
               </span>
             )}
           </div>
@@ -859,6 +1015,7 @@ const SimplifiedLeadManagement: React.FC = () => {
                   </TableHead>
                   <TableHead>نام</TableHead>
                   <TableHead>تلفن</TableHead>
+                  {aiScoreResults.length > 0 && <TableHead>امتیاز AI</TableHead>}
                   <TableHead>دوره</TableHead>
                   <TableHead>مبلغ</TableHead>
                   <TableHead>وضعیت پرداخت</TableHead>
@@ -867,14 +1024,16 @@ const SimplifiedLeadManagement: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {leads.length === 0 ? (
+                {leads.filter(l => aiScoreFilter === 'all' || l.ai_category === aiScoreFilter).length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={aiScoreResults.length > 0 ? 9 : 8} className="text-center py-10 text-muted-foreground">
                       لیدی یافت نشد
                     </TableCell>
                   </TableRow>
                 ) : (
-                  leads.map(lead => (
+                  leads
+                    .filter(l => aiScoreFilter === 'all' || l.ai_category === aiScoreFilter)
+                    .map(lead => (
                     <TableRow 
                       key={lead.id} 
                       className="cursor-pointer hover:bg-muted/50"
@@ -898,6 +1057,11 @@ const SimplifiedLeadManagement: React.FC = () => {
                           {formatPhone(lead.phone)}
                         </a>
                       </TableCell>
+                      {aiScoreResults.length > 0 && (
+                        <TableCell>
+                          {getAiScoreBadge(lead.ai_category, lead.ai_score)}
+                        </TableCell>
+                      )}
                       <TableCell className="max-w-[150px] truncate">{lead.course_title}</TableCell>
                       <TableCell>{lead.payment_amount?.toLocaleString()} تومان</TableCell>
                       <TableCell>{getStatusBadge(lead.payment_status)}</TableCell>
