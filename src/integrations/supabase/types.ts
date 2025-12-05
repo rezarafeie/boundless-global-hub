@@ -1422,6 +1422,62 @@ export type Database = {
           },
         ]
       }
+      deal_stage_history: {
+        Row: {
+          changed_by: number | null
+          created_at: string
+          deal_id: string
+          from_stage_id: string | null
+          id: string
+          to_stage_id: string | null
+        }
+        Insert: {
+          changed_by?: number | null
+          created_at?: string
+          deal_id: string
+          from_stage_id?: string | null
+          id?: string
+          to_stage_id?: string | null
+        }
+        Update: {
+          changed_by?: number | null
+          created_at?: string
+          deal_id?: string
+          from_stage_id?: string | null
+          id?: string
+          to_stage_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_stage_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_stage_history_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_stage_history_from_stage_id_fkey"
+            columns: ["from_stage_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_stage_history_to_stage_id_fkey"
+            columns: ["to_stage_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           assigned_by_id: number
@@ -1429,10 +1485,15 @@ export type Database = {
           closed_at: string | null
           course_id: string
           created_at: string
+          current_stage_id: string | null
           enrollment_id: string
           id: string
+          notes: string | null
+          pipeline_id: string | null
           price: number
+          stage_entered_at: string | null
           status: string
+          tags: string[] | null
           updated_at: string
         }
         Insert: {
@@ -1441,10 +1502,15 @@ export type Database = {
           closed_at?: string | null
           course_id: string
           created_at?: string
+          current_stage_id?: string | null
           enrollment_id: string
           id?: string
+          notes?: string | null
+          pipeline_id?: string | null
           price?: number
+          stage_entered_at?: string | null
           status?: string
+          tags?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -1453,10 +1519,15 @@ export type Database = {
           closed_at?: string | null
           course_id?: string
           created_at?: string
+          current_stage_id?: string | null
           enrollment_id?: string
           id?: string
+          notes?: string | null
+          pipeline_id?: string | null
           price?: number
+          stage_entered_at?: string | null
           status?: string
+          tags?: string[] | null
           updated_at?: string
         }
         Relationships: [
@@ -1482,10 +1553,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "deals_current_stage_id_fkey"
+            columns: ["current_stage_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_stages"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "deals_enrollment_id_fkey"
             columns: ["enrollment_id"]
             isOneToOne: true
             referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "pipelines"
             referencedColumns: ["id"]
           },
         ]
@@ -2893,6 +2978,88 @@ export type Database = {
             columns: ["topic_id"]
             isOneToOne: false
             referencedRelation: "chat_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pipeline_stages: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          order_index: number
+          pipeline_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          order_index?: number
+          pipeline_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          order_index?: number
+          pipeline_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_stages_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "pipelines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pipelines: {
+        Row: {
+          assigned_course_ids: string[] | null
+          assigned_sales_agent_ids: number[] | null
+          created_at: string
+          created_by: number | null
+          description: string | null
+          id: string
+          is_active: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_course_ids?: string[] | null
+          assigned_sales_agent_ids?: number[] | null
+          created_at?: string
+          created_by?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_course_ids?: string[] | null
+          assigned_sales_agent_ids?: number[] | null
+          created_at?: string
+          created_by?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipelines_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
             referencedColumns: ["id"]
           },
         ]
