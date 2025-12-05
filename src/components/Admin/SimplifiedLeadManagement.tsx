@@ -427,19 +427,31 @@ const SimplifiedLeadManagement: React.FC = () => {
       setAiScoreResults(aiResults);
       setAiScoreProgress({ current: aiResults.length, total: leadsToScore.length });
       
-      // Update leads with AI scores
-      setLeads(prevLeads => prevLeads.map(lead => {
-        const aiResult = aiResults.find(r => r.enrollment_id === lead.id);
-        if (aiResult) {
-          return {
-            ...lead,
-            ai_score: aiResult.score,
-            ai_category: aiResult.category,
-            ai_reason: aiResult.reason
-          };
-        }
-        return lead;
-      }));
+      // Update leads with AI scores and sort from hot to cold
+      setLeads(prevLeads => {
+        const updatedLeads = prevLeads.map(lead => {
+          const aiResult = aiResults.find(r => r.enrollment_id === lead.id);
+          if (aiResult) {
+            return {
+              ...lead,
+              ai_score: aiResult.score,
+              ai_category: aiResult.category,
+              ai_reason: aiResult.reason
+            };
+          }
+          return lead;
+        });
+        
+        // Sort by AI category: hot first, then warm, then cold, then unscored
+        const categoryOrder = { hot: 0, warm: 1, cold: 2 };
+        return updatedLeads.sort((a, b) => {
+          const aOrder = a.ai_category ? categoryOrder[a.ai_category] : 3;
+          const bOrder = b.ai_category ? categoryOrder[b.ai_category] : 3;
+          if (aOrder !== bOrder) return aOrder - bOrder;
+          // Secondary sort by score within same category
+          return (b.ai_score || 0) - (a.ai_score || 0);
+        });
+      });
       
       // Update stats with AI categories
       const hotCount = aiResults.filter(r => r.category === 'hot').length;
