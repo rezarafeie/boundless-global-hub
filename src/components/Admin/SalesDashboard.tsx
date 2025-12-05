@@ -28,9 +28,13 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SalesDashboardProps {
   onViewChange?: (view: string) => void;
+  isSalesAgent?: boolean;
+  isAdmin?: boolean;
+  isSalesManager?: boolean;
 }
 
 interface SalesStats {
@@ -74,8 +78,9 @@ interface Course {
   slug: string;
 }
 
-const SalesDashboard: React.FC<SalesDashboardProps> = ({ onViewChange }) => {
+const SalesDashboard: React.FC<SalesDashboardProps> = ({ onViewChange, isSalesAgent, isAdmin, isSalesManager }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [salesStats, setSalesStats] = useState<SalesStats | null>(null);
   const [agentPerformance, setAgentPerformance] = useState<AgentPerformance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,23 +140,49 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ onViewChange }) => {
   const fetchSalesData = async () => {
     setLoading(true);
     try {
-      // Fetch sales dashboard stats
-      const { data: statsData, error: statsError } = await supabase
-        .from('sales_dashboard_stats')
-        .select('*')
-        .single();
+      // For sales agents, fetch only their own data
+      if (isSalesAgent && !isAdmin && !isSalesManager && user?.messengerData?.id) {
+        // Get the sales agent ID from sales_agents table
+        const { data: salesAgentData } = await supabase
+          .from('sales_agents')
+          .select('id')
+          .eq('user_id', user.messengerData.id)
+          .single();
 
-      if (statsError) throw statsError;
-      setSalesStats(statsData);
+        if (salesAgentData) {
+          // Fetch only this agent's performance
+          const { data: agentData, error: agentError } = await supabase
+            .from('sales_agent_performance')
+            .select('*')
+            .eq('sales_agent_id', salesAgentData.id);
 
-      // Fetch agent performance
-      const { data: agentData, error: agentError } = await supabase
-        .from('sales_agent_performance')
-        .select('*')
-        .order('total_amount_sold', { ascending: false });
+          if (!agentError && agentData) {
+            setAgentPerformance(agentData);
+          }
+        }
+        
+        // Set basic stats for sales agent (they see limited stats)
+        setSalesStats(null);
+      } else {
+        // Admins and sales managers see all data
+        // Fetch sales dashboard stats
+        const { data: statsData, error: statsError } = await supabase
+          .from('sales_dashboard_stats')
+          .select('*')
+          .single();
 
-      if (agentError) throw agentError;
-      setAgentPerformance(agentData || []);
+        if (statsError) throw statsError;
+        setSalesStats(statsData);
+
+        // Fetch agent performance
+        const { data: agentData, error: agentError } = await supabase
+          .from('sales_agent_performance')
+          .select('*')
+          .order('total_amount_sold', { ascending: false });
+
+        if (agentError) throw agentError;
+        setAgentPerformance(agentData || []);
+      }
 
     } catch (error) {
       console.error('Error fetching sales data:', error);
@@ -306,8 +337,8 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ onViewChange }) => {
 
   return (
     <div className="space-y-6">
-      {/* Navigation Buttons */}
-      {onViewChange && (
+      {/* Navigation Buttons - Only show pipeline builder for admins/sales managers */}
+      {onViewChange && (isAdmin || isSalesManager) && (
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
@@ -328,7 +359,8 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ onViewChange }) => {
         </div>
       )}
 
-      {/* Daily Sales Summary */}
+      {/* Daily Sales Summary - Only for admins and sales managers */}
+      {(!isSalesAgent || isAdmin || isSalesManager) && (
       <div>
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <BarChart3 className="h-5 w-5" />
@@ -398,8 +430,10 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ onViewChange }) => {
           </Card>
         </div>
       </div>
+      )}
 
-      {/* Lead Status Summary */}
+      {/* Lead Status Summary - Only for admins and sales managers */}
+      {(!isSalesAgent || isAdmin || isSalesManager) && (
       <div>
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Clock className="h-5 w-5" />
@@ -437,8 +471,10 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ onViewChange }) => {
           </Card>
         </div>
       </div>
+      )}
 
-      {/* Custom Report Section */}
+      {/* Custom Report Section - Only for admins and sales managers */}
+      {(!isSalesAgent || isAdmin || isSalesManager) && (
       <div>
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <FileText className="h-5 w-5" />
@@ -578,12 +614,13 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ onViewChange }) => {
           </Card>
         )}
       </div>
+      )}
 
-      {/* Sales Agent Performance */}
+      {/* Sales Agent Performance - Title changes based on user role */}
       <div>
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Award className="h-5 w-5" />
-          عملکرد بازاریابان
+          {isSalesAgent && !isAdmin && !isSalesManager ? 'عملکرد من' : 'عملکرد بازاریابان'}
         </h3>
         <Card>
           <CardContent className="p-0">
@@ -591,8 +628,8 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ onViewChange }) => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>نام بازاریاب</TableHead>
-                    <TableHead>تلفن</TableHead>
+                    {(!isSalesAgent || isAdmin || isSalesManager) && <TableHead>نام بازاریاب</TableHead>}
+                    {(!isSalesAgent || isAdmin || isSalesManager) && <TableHead>تلفن</TableHead>}
                     <TableHead className="text-center">لیدهای واگذار شده</TableHead>
                     <TableHead className="text-center">لیدهای ادعا شده</TableHead>
                     <TableHead className="text-center">تماس‌های CRM</TableHead>
@@ -604,18 +641,22 @@ const SalesDashboard: React.FC<SalesDashboardProps> = ({ onViewChange }) => {
                 <TableBody>
                   {agentPerformance.map((agent) => (
                     <TableRow key={agent.sales_agent_id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          {agent.agent_name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Phone className="h-3 w-3 text-muted-foreground" />
-                          {agent.agent_phone}
-                        </div>
-                      </TableCell>
+                      {(!isSalesAgent || isAdmin || isSalesManager) && (
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            {agent.agent_name}
+                          </div>
+                        </TableCell>
+                      )}
+                      {(!isSalesAgent || isAdmin || isSalesManager) && (
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Phone className="h-3 w-3 text-muted-foreground" />
+                            {agent.agent_phone}
+                          </div>
+                        </TableCell>
+                      )}
                       <TableCell className="text-center">
                         <Badge variant="outline">{agent.total_assigned_leads}</Badge>
                       </TableCell>

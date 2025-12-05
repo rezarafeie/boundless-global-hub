@@ -237,11 +237,11 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
       <DialogContent className="max-w-none w-screen h-[100dvh] max-h-[100dvh] m-0 p-0 rounded-none border-0" dir="rtl">
         <div className="flex flex-col h-[100dvh] max-h-[100dvh] text-right">
           <DialogHeader className="px-4 sm:px-6 py-4 border-b bg-background shrink-0">
-            <div className="flex items-center justify-between flex-row-reverse">
-              <Button variant="ghost" size="icon" onClick={handleClose}>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-lg sm:text-xl">ایجاد فاکتور جدید</DialogTitle>
+              <Button variant="ghost" size="icon" onClick={handleClose} className="shrink-0">
                 <X className="h-5 w-5" />
               </Button>
-              <DialogTitle className="text-lg sm:text-xl">ایجاد فاکتور جدید</DialogTitle>
             </div>
           </DialogHeader>
           

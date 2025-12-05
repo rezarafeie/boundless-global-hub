@@ -402,13 +402,16 @@ const SalesAgentPipelineView: React.FC = () => {
 
       {/* Pipeline Board */}
       {selectedPipeline && (
-        <ScrollArea className="w-full">
-          <div className="flex gap-4 pb-4" style={{ minWidth: `${selectedPipeline.stages.length * 300}px` }}>
+        <div className="w-full overflow-x-auto pb-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div 
+            className="flex gap-4 min-w-max px-1" 
+            style={{ minWidth: `${Math.max(selectedPipeline.stages.length * 300, 100)}px` }}
+          >
             {selectedPipeline.stages.map(stage => {
               const stageDeals = getDealsForStage(stage.id);
               
               return (
-                <Card key={stage.id} className="min-w-[280px] max-w-[300px] flex-shrink-0">
+                <Card key={stage.id} className="w-[280px] md:w-[300px] flex-shrink-0">
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-base">
                       <div 
@@ -421,7 +424,7 @@ const SalesAgentPipelineView: React.FC = () => {
                       </Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2 min-h-[300px]">
+                  <CardContent className="space-y-2 min-h-[300px] max-h-[60vh] overflow-y-auto">
                     {stageDeals.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-8">
                         بدون معامله
@@ -577,7 +580,7 @@ const SalesAgentPipelineView: React.FC = () => {
               </CardContent>
             </Card>
           </div>
-        </ScrollArea>
+        </div>
       )}
 
       {/* Deal Detail Dialog */}
