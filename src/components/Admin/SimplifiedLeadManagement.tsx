@@ -65,13 +65,15 @@ const SimplifiedLeadManagement: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCourse, setSelectedCourse] = useState<string>('all');
+  const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all'); // all, assigned, unassigned
+  const [paymentFilter, setPaymentFilter] = useState<string>('all'); // all, success, pending, failed
   const [agentFilter, setAgentFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -100,8 +102,9 @@ const SimplifiedLeadManagement: React.FC = () => {
   }, []);
 
   const fetchInitialData = async () => {
+    setInitialLoading(true);
     await Promise.all([fetchCourses(), fetchAgents()]);
-    // Don't auto-load leads - wait for user to click "Load"
+    setInitialLoading(false);
   };
 
   const fetchCourses = async () => {
@@ -131,18 +134,20 @@ const SimplifiedLeadManagement: React.FC = () => {
     }
   };
 
-  const fetchLeads = async () => {
-    if (!selectedCourse || selectedCourse === 'all') {
-      // Require course selection
-      setLeads([]);
-      setStats({ total: 0, assigned: 0, unassigned: 0 });
+  const handleLoadLeads = async () => {
+    if (!selectedCourse) {
+      toast({
+        title: "خطا",
+        description: "لطفاً ابتدا دوره را انتخاب کنید",
+        variant: "destructive"
+      });
       return;
     }
     
     setLoading(true);
     setHasLoaded(true);
     try {
-      // Fetch enrollments
+      // Build query with filters
       let query = supabase
         .from('enrollments')
         .select(`
@@ -161,25 +166,36 @@ const SimplifiedLeadManagement: React.FC = () => {
         .order('created_at', { ascending: false })
         .limit(500);
 
+      // Apply payment status filter at DB level
+      if (paymentFilter !== 'all') {
+        if (paymentFilter === 'success') {
+          query = query.in('payment_status', ['success', 'completed']);
+        } else {
+          query = query.eq('payment_status', paymentFilter);
+        }
+      }
+
+      // Apply date filters
       if (dateFrom) {
         query = query.gte('created_at', dateFrom);
       }
-
       if (dateTo) {
         query = query.lte('created_at', dateTo + 'T23:59:59');
       }
 
-      if (searchTerm) {
+      // Apply search filter
+      if (searchTerm.trim()) {
         query = query.or(`full_name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
       }
 
       const { data: enrollments, error } = await query;
       if (error) throw error;
 
-      // Fetch all assignments
+      // Fetch assignments for this course only
       const { data: assignments } = await supabase
         .from('lead_assignments')
-        .select('enrollment_id, sales_agent_id');
+        .select('enrollment_id, sales_agent_id')
+        .in('enrollment_id', (enrollments || []).map(e => e.id));
 
       // Create assignment map
       const assignmentMap = new Map<string, number>();
@@ -192,7 +208,7 @@ const SimplifiedLeadManagement: React.FC = () => {
       agents.forEach(a => agentNameMap.set(a.id, a.name));
 
       // Process leads
-      const processedLeads: Lead[] = (enrollments || []).map(e => {
+      let processedLeads: Lead[] = (enrollments || []).map(e => {
         const agentId = assignmentMap.get(e.id) || null;
         return {
           id: e.id,
@@ -211,27 +227,34 @@ const SimplifiedLeadManagement: React.FC = () => {
         };
       });
 
-      // Apply status and agent filters
-      let filteredLeads = processedLeads;
-      
+      // Apply assignment status filter
       if (statusFilter === 'assigned') {
-        filteredLeads = filteredLeads.filter(l => l.is_assigned);
+        processedLeads = processedLeads.filter(l => l.is_assigned);
       } else if (statusFilter === 'unassigned') {
-        filteredLeads = filteredLeads.filter(l => !l.is_assigned);
+        processedLeads = processedLeads.filter(l => !l.is_assigned);
       }
 
+      // Apply agent filter
       if (agentFilter !== 'all') {
-        filteredLeads = filteredLeads.filter(l => l.assigned_agent_id === parseInt(agentFilter));
+        processedLeads = processedLeads.filter(l => l.assigned_agent_id === parseInt(agentFilter));
       }
 
-      setLeads(filteredLeads);
+      setLeads(processedLeads);
       
-      // Update stats
-      const totalAssigned = processedLeads.filter(l => l.is_assigned).length;
+      // Update stats based on all processed leads (before agent filter)
+      const allLeads = (enrollments || []).map(e => ({
+        is_assigned: !!assignmentMap.get(e.id)
+      }));
+      const totalAssigned = allLeads.filter(l => l.is_assigned).length;
       setStats({
-        total: processedLeads.length,
+        total: allLeads.length,
         assigned: totalAssigned,
-        unassigned: processedLeads.length - totalAssigned
+        unassigned: allLeads.length - totalAssigned
+      });
+
+      toast({
+        title: "بارگذاری شد",
+        description: `${processedLeads.length} لید یافت شد`
       });
 
     } catch (error) {
@@ -307,7 +330,7 @@ const SimplifiedLeadManagement: React.FC = () => {
       setSelectedLeads([]);
       setSelectAll(false);
       setSelectedAgentForManual('');
-      fetchLeads();
+      handleLoadLeads();
     } catch (error) {
       console.error('Error assigning leads:', error);
       toast({
@@ -395,7 +418,7 @@ const SimplifiedLeadManagement: React.FC = () => {
       setShowPercentageAssign(false);
       setSelectedLeads([]);
       setSelectAll(false);
-      fetchLeads();
+      handleLoadLeads();
     } catch (error) {
       console.error('Error distributing leads:', error);
       toast({
@@ -498,13 +521,12 @@ const SimplifiedLeadManagement: React.FC = () => {
 
             {/* Course Filter */}
             <div className="w-[180px]">
-              <Label className="text-xs text-muted-foreground mb-1 block">دوره</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">دوره *</Label>
               <Select value={selectedCourse} onValueChange={setSelectedCourse}>
                 <SelectTrigger>
-                  <SelectValue placeholder="همه دوره‌ها" />
+                  <SelectValue placeholder="انتخاب دوره" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">همه دوره‌ها</SelectItem>
                   {courses.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
                   ))}
@@ -512,9 +534,25 @@ const SimplifiedLeadManagement: React.FC = () => {
               </Select>
             </div>
 
-            {/* Status Filter */}
-            <div className="w-[150px]">
-              <Label className="text-xs text-muted-foreground mb-1 block">وضعیت</Label>
+            {/* Payment Status Filter */}
+            <div className="w-[140px]">
+              <Label className="text-xs text-muted-foreground mb-1 block">وضعیت پرداخت</Label>
+              <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه</SelectItem>
+                  <SelectItem value="success">پرداخت شده</SelectItem>
+                  <SelectItem value="pending">در انتظار</SelectItem>
+                  <SelectItem value="failed">ناموفق</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Assignment Status Filter */}
+            <div className="w-[140px]">
+              <Label className="text-xs text-muted-foreground mb-1 block">وضعیت واگذاری</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue />
@@ -528,7 +566,7 @@ const SimplifiedLeadManagement: React.FC = () => {
             </div>
 
             {/* Agent Filter */}
-            <div className="w-[180px]">
+            <div className="w-[150px]">
               <Label className="text-xs text-muted-foreground mb-1 block">کارشناس</Label>
               <Select value={agentFilter} onValueChange={setAgentFilter}>
                 <SelectTrigger>
@@ -544,7 +582,7 @@ const SimplifiedLeadManagement: React.FC = () => {
             </div>
 
             {/* Date From */}
-            <div className="w-[140px]">
+            <div className="w-[130px]">
               <Label className="text-xs text-muted-foreground mb-1 block">از تاریخ</Label>
               <Input
                 type="date"
@@ -565,8 +603,8 @@ const SimplifiedLeadManagement: React.FC = () => {
 
             {/* Load Button */}
             <Button 
-              onClick={fetchLeads} 
-              disabled={loading || !selectedCourse || selectedCourse === 'all'}
+              onClick={handleLoadLeads} 
+              disabled={loading || !selectedCourse}
               className="gap-2"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Filter className="h-4 w-4" />}
