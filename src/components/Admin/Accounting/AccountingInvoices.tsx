@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Plus, FileText, Eye, Search, Calendar, User, Phone, Mail, X, Trash2, Edit, Copy, ExternalLink } from 'lucide-react';
+import { Plus, FileText, Eye, Search, Calendar, User, Phone, Mail, X, Trash2, Edit, Copy, ExternalLink, RefreshCw, Loader2 } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 
 interface Invoice {
@@ -93,6 +93,7 @@ export const AccountingInvoices: React.FC = () => {
   const [deleteInvoice, setDeleteInvoice] = useState<Invoice | null>(null);
   const [currentUser, setCurrentUser] = useState<{ id: number; role: string; is_messenger_admin: boolean } | null>(null);
   const [invoiceItemsMap, setInvoiceItemsMap] = useState<Record<string, InvoiceItem[]>>({});
+  const [isSyncing, setIsSyncing] = useState(false);
   
   // Customer search state
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
@@ -241,6 +242,112 @@ export const AccountingInvoices: React.FC = () => {
       toast.error('خطا در دریافت اطلاعات');
     }
     setLoading(false);
+  };
+
+  const syncPaymentsToInvoices = async () => {
+    setIsSyncing(true);
+    try {
+      // Fetch all successful enrollments that don't have invoices yet
+      const { data: enrollments, error: fetchError } = await supabase
+        .from('enrollments')
+        .select(`
+          id, full_name, phone, email, payment_status, payment_method, payment_amount, 
+          chat_user_id, course_id, created_at,
+          courses!enrollments_course_id_fkey(title)
+        `)
+        .in('payment_status', ['completed', 'success'])
+        .gt('payment_amount', 0)
+        .not('chat_user_id', 'is', null);
+      
+      if (fetchError) throw fetchError;
+      
+      // Get existing invoice enrollment_ids
+      const { data: existingInvoices } = await supabase
+        .from('invoices')
+        .select('enrollment_id')
+        .not('enrollment_id', 'is', null);
+      
+      const existingEnrollmentIds = new Set(existingInvoices?.map(i => i.enrollment_id) || []);
+      
+      // Filter enrollments without invoices
+      const enrollmentsToSync = enrollments?.filter(e => !existingEnrollmentIds.has(e.id)) || [];
+      
+      if (enrollmentsToSync.length === 0) {
+        toast.info('همه پرداخت‌های موفق قبلا به فاکتور تبدیل شده‌اند');
+        setIsSyncing(false);
+        return;
+      }
+      
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (const enrollment of enrollmentsToSync) {
+        try {
+          // Determine payment type based on payment_method
+          let paymentType = 'online';
+          if (enrollment.payment_method === 'کارت به کارت' || enrollment.payment_method === 'manual') {
+            paymentType = 'card_to_card';
+          } else if (enrollment.payment_method === 'zarinpal') {
+            paymentType = 'online';
+          }
+          
+          // Generate invoice number
+          const { data: invoiceNumber } = await supabase.rpc('generate_invoice_number');
+          
+          // Create invoice
+          const { data: invoice, error: invoiceError } = await supabase
+            .from('invoices')
+            .insert({
+              invoice_number: invoiceNumber || `AUTO-${Date.now()}`,
+              customer_id: enrollment.chat_user_id!,
+              enrollment_id: enrollment.id,
+              total_amount: enrollment.payment_amount,
+              paid_amount: enrollment.payment_amount,
+              status: 'paid',
+              payment_type: paymentType,
+              is_installment: false,
+              notes: `همگام‌سازی خودکار از ${enrollment.payment_method || 'پرداخت آنلاین'}`
+            })
+            .select()
+            .single();
+          
+          if (invoiceError) {
+            console.error('Error creating invoice for enrollment:', enrollment.id, invoiceError);
+            errorCount++;
+            continue;
+          }
+          
+          // Create invoice item
+          const courseTitle = (enrollment.courses as any)?.title || 'دوره';
+          await supabase.from('invoice_items').insert({
+            invoice_id: invoice.id,
+            course_id: enrollment.course_id,
+            description: courseTitle,
+            unit_price: enrollment.payment_amount,
+            total_price: enrollment.payment_amount,
+            quantity: 1
+          });
+          
+          successCount++;
+        } catch (err) {
+          console.error('Error syncing enrollment:', enrollment.id, err);
+          errorCount++;
+        }
+      }
+      
+      if (successCount > 0) {
+        toast.success(`${successCount} فاکتور با موفقیت ایجاد شد`);
+      }
+      if (errorCount > 0) {
+        toast.warning(`${errorCount} فاکتور با خطا مواجه شد`);
+      }
+      
+      fetchData();
+    } catch (error) {
+      console.error('Error syncing payments:', error);
+      toast.error('خطا در همگام‌سازی پرداخت‌ها');
+    }
+    setIsSyncing(false);
   };
 
   const handleCreateInvoice = async () => {
@@ -470,20 +577,35 @@ export const AccountingInvoices: React.FC = () => {
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-xl md:text-2xl font-bold">مدیریت فاکتورها</h1>
-        <Dialog open={isCreateOpen} onOpenChange={(open) => {
-          setIsCreateOpen(open);
-          if (!open) {
-            setCustomerSearchTerm('');
-            setSelectedCustomer(null);
-            setShowCustomerResults(false);
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="w-full sm:w-auto">
-              <Plus className="ml-2 h-4 w-4" />
-              فاکتور جدید
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={syncPaymentsToInvoices}
+            disabled={isSyncing}
+            className="flex-1 sm:flex-none"
+          >
+            {isSyncing ? (
+              <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="ml-2 h-4 w-4" />
+            )}
+            همگام‌سازی پرداخت‌ها
+          </Button>
+          <Dialog open={isCreateOpen} onOpenChange={(open) => {
+            setIsCreateOpen(open);
+            if (!open) {
+              setCustomerSearchTerm('');
+              setSelectedCustomer(null);
+              setShowCustomerResults(false);
+            }
+          }}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="flex-1 sm:flex-none">
+                <Plus className="ml-2 h-4 w-4" />
+                فاکتور جدید
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-none w-screen h-[calc(100dvh-60px)] max-h-[calc(100dvh-60px)] m-0 p-0 rounded-none border-0 top-[60px] translate-y-0 pointer-events-auto" dir="rtl">
             <div className="flex flex-col h-full max-h-full text-right overflow-hidden">
               <DialogHeader className="px-4 sm:px-6 py-4 border-b bg-background shrink-0">
@@ -776,6 +898,7 @@ export const AccountingInvoices: React.FC = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Filters */}
