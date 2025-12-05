@@ -6,9 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Users, 
   Search, 
@@ -19,7 +20,12 @@ import {
   Phone,
   CheckCircle,
   AlertCircle,
-  Filter
+  Filter,
+  Mail,
+  Calendar,
+  CreditCard,
+  ExternalLink,
+  X
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -94,6 +100,8 @@ const SimplifiedLeadManagement: React.FC = () => {
   const [showManualAssign, setShowManualAssign] = useState(false);
   const [showPercentageAssign, setShowPercentageAssign] = useState(false);
   const [showAiScore, setShowAiScore] = useState(false);
+  const [showLeadDetails, setShowLeadDetails] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedAgentForManual, setSelectedAgentForManual] = useState<string>('');
   const [percentageAllocations, setPercentageAllocations] = useState<PercentageAllocation[]>([]);
   
@@ -331,7 +339,7 @@ const SimplifiedLeadManagement: React.FC = () => {
         .from('lead_analysis_jobs')
         .insert({
           course_id: selectedCourse,
-          status: 'pending',
+          status: 'processing',
           progress_current: 0,
           progress_total: leadsToScore.length,
           start_date: dateFrom || null,
@@ -342,22 +350,57 @@ const SimplifiedLeadManagement: React.FC = () => {
 
       if (jobError) throw jobError;
 
+      // Call the edge function to process the leads
+      const { data: result, error: funcError } = await supabase.functions.invoke('ai-lead-scoring', {
+        body: {
+          courseId: selectedCourse,
+          startDate: dateFrom || null,
+          endDate: dateTo || null,
+          batchSize: 50,
+          offset: 0
+        }
+      });
+
+      if (funcError) {
+        // Update job status to failed
+        await supabase
+          .from('lead_analysis_jobs')
+          .update({ status: 'failed', error_message: funcError.message })
+          .eq('id', job.id);
+        throw funcError;
+      }
+
+      // Update job with results
+      await supabase
+        .from('lead_analysis_jobs')
+        .update({ 
+          status: 'completed', 
+          completed_at: new Date().toISOString(),
+          results: result 
+        })
+        .eq('id', job.id);
+
       toast({
-        title: "شروع شد",
-        description: `تحلیل هوش مصنوعی برای ${leadsToScore.length} لید شروع شد. شناسه کار: ${job.id.slice(0, 8)}`,
+        title: "تکمیل شد",
+        description: `تحلیل هوش مصنوعی برای ${result?.leads?.length || leadsToScore.length} لید انجام شد`,
       });
 
       setShowAiScore(false);
-    } catch (error) {
-      console.error('Error starting AI analysis:', error);
+    } catch (error: any) {
+      console.error('Error in AI analysis:', error);
       toast({
         title: "خطا",
-        description: "خطا در شروع تحلیل هوش مصنوعی",
+        description: error.message || "خطا در تحلیل هوش مصنوعی",
         variant: "destructive"
       });
     } finally {
       setAiScoreLoading(false);
     }
+  };
+
+  const handleOpenLeadDetails = (lead: Lead) => {
+    setSelectedLead(lead);
+    setShowLeadDetails(true);
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -820,15 +863,24 @@ const SimplifiedLeadManagement: React.FC = () => {
                   </TableRow>
                 ) : (
                   leads.map(lead => (
-                    <TableRow key={lead.id}>
-                      <TableCell>
+                    <TableRow 
+                      key={lead.id} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleOpenLeadDetails(lead)}
+                    >
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <Checkbox
                           checked={selectedLeads.includes(lead.id)}
                           onCheckedChange={(checked) => handleSelectLead(lead.id, !!checked)}
                         />
                       </TableCell>
-                      <TableCell className="font-medium">{lead.full_name}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-1">
+                          {lead.full_name}
+                          <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <a href={`tel:${formatPhone(lead.phone)}`} className="flex items-center gap-1 text-primary hover:underline">
                           <Phone className="h-3 w-3" />
                           {formatPhone(lead.phone)}
@@ -983,6 +1035,123 @@ const SimplifiedLeadManagement: React.FC = () => {
               شروع تحلیل
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lead Details Dialog */}
+      <Dialog open={showLeadDetails} onOpenChange={setShowLeadDetails}>
+        <DialogContent className="max-w-2xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              جزئیات لید
+            </DialogTitle>
+            <DialogDescription>اطلاعات کامل لید و وضعیت پرداخت</DialogDescription>
+          </DialogHeader>
+          {selectedLead && (
+            <ScrollArea className="max-h-[60vh]">
+              <div className="space-y-6 p-1">
+                {/* Header with name and status */}
+                <div className="flex items-start justify-between gap-4 pb-4 border-b">
+                  <div className="flex items-center gap-3">
+                    <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Users className="h-7 w-7 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-xl">{selectedLead.full_name}</h3>
+                      <p className="text-sm text-muted-foreground">ID: {selectedLead.id.slice(0, 8)}...</p>
+                    </div>
+                  </div>
+                  {getStatusBadge(selectedLead.payment_status)}
+                </div>
+
+                {/* Contact Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-sm text-muted-foreground">اطلاعات تماس</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                        <Phone className="h-4 w-4 text-primary" />
+                        <a href={`tel:${formatPhone(selectedLead.phone)}`} className="text-primary hover:underline font-medium">
+                          {formatPhone(selectedLead.phone)}
+                        </a>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{selectedLead.email || '-'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-sm text-muted-foreground">اطلاعات ثبت‌نام</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{formatDate(selectedLead.created_at)}</span>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{selectedLead.payment_amount?.toLocaleString()} تومان</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Course Info */}
+                <div className="space-y-3">
+                  <h4 className="font-medium text-sm text-muted-foreground">دوره</h4>
+                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                    <p className="font-medium">{selectedLead.course_title}</p>
+                  </div>
+                </div>
+
+                {/* Assignment Info */}
+                <div className="space-y-3">
+                  <h4 className="font-medium text-sm text-muted-foreground">وضعیت واگذاری</h4>
+                  <div className="p-4 bg-muted/50 rounded-lg">
+                    {selectedLead.is_assigned ? (
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span>واگذار شده به: </span>
+                        <Badge variant="secondary">{selectedLead.assigned_agent_name}</Badge>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-orange-500" />
+                        <span className="text-muted-foreground">هنوز واگذار نشده</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-4 border-t">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 gap-2"
+                    onClick={() => window.open(`tel:${formatPhone(selectedLead.phone)}`, '_self')}
+                  >
+                    <Phone className="h-4 w-4" />
+                    تماس
+                  </Button>
+                  <Button
+                    variant="default"
+                    className="flex-1 gap-2"
+                    onClick={() => {
+                      setSelectedLeads([selectedLead.id]);
+                      setShowLeadDetails(false);
+                      setShowManualAssign(true);
+                    }}
+                    disabled={selectedLead.is_assigned}
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    واگذاری
+                  </Button>
+                </div>
+              </div>
+            </ScrollArea>
+          )}
         </DialogContent>
       </Dialog>
     </div>

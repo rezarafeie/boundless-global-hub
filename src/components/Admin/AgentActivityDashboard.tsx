@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Users, 
   Phone, 
@@ -11,7 +13,11 @@ import {
   Loader2,
   Activity,
   BarChart3,
-  Clock
+  Clock,
+  Mail,
+  Calendar,
+  MessageSquare,
+  ExternalLink
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -34,7 +40,18 @@ interface RecentActivity {
   agent_name: string;
   activity_type: string;
   lead_name: string;
+  lead_id: number;
   created_at: string;
+}
+
+interface UserDetails {
+  id: number;
+  name: string;
+  phone: string;
+  email: string | null;
+  created_at: string;
+  country: string | null;
+  province: string | null;
 }
 
 const AgentActivityDashboard: React.FC = () => {
@@ -45,6 +62,11 @@ const AgentActivityDashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [dateRange, setDateRange] = useState<string>('7d');
   const [hasLoaded, setHasLoaded] = useState(false);
+  
+  // User details dialog
+  const [selectedUser, setSelectedUser] = useState<UserDetails | null>(null);
+  const [userDetailsLoading, setUserDetailsLoading] = useState(false);
+  const [showUserDialog, setShowUserDialog] = useState(false);
   
   // Summary stats
   const [summary, setSummary] = useState({
@@ -60,6 +82,7 @@ const AgentActivityDashboard: React.FC = () => {
       case '24h': return subDays(now, 1).toISOString();
       case '7d': return subDays(now, 7).toISOString();
       case '30d': return subDays(now, 30).toISOString();
+      case 'all': return '2020-01-01T00:00:00Z';
       default: return subDays(now, 7).toISOString();
     }
   };
@@ -70,78 +93,86 @@ const AgentActivityDashboard: React.FC = () => {
     try {
       const dateFilter = getDateFilter();
 
-      // Fetch all sales agents from sales_agents table joined with chat_users
-      const { data: salesAgentsData } = await supabase
-        .from('sales_agents')
-        .select('id, user_id, chat_users!inner(id, name)')
-        .eq('is_active', true);
+      // Get all unique creators from CRM notes (includes all agents who have worked)
+      const { data: crmCreators } = await supabase
+        .from('crm_notes')
+        .select('created_by')
+        .gte('created_at', dateFilter);
 
-      // Build agents map from sales_agents
-      const agents = (salesAgentsData || []).map(sa => ({
-        id: sa.id, // sales_agent_id
-        user_id: (sa.chat_users as any).id,
-        name: (sa.chat_users as any).name
+      const uniqueCreators = [...new Set((crmCreators || []).map(c => c.created_by))];
+
+      // Get chat_users who match these creators OR are sales agents
+      const { data: chatUsers } = await supabase
+        .from('chat_users')
+        .select('id, name')
+        .or('role.in.(sales_agent,sales_manager,admin),is_messenger_admin.eq.true');
+
+      // Build agents list from chat_users
+      const agents = (chatUsers || []).map(u => ({
+        id: u.id,
+        user_id: u.id,
+        name: u.name
       }));
 
-      if (agents.length === 0) {
-        setAgentStats([]);
-        return;
-      }
+      // Also get sales_agents for lead assignment mapping
+      const { data: salesAgentsData } = await supabase
+        .from('sales_agents')
+        .select('id, user_id')
+        .eq('is_active', true);
+
+      const salesAgentUserIds = new Map<number, number>();
+      salesAgentsData?.forEach(sa => {
+        salesAgentUserIds.set(sa.user_id, sa.id);
+      });
 
       // Fetch lead assignments per sales agent
       const { data: assignments } = await supabase
         .from('lead_assignments')
         .select('sales_agent_id, enrollment_id')
-        .not('sales_agent_id', 'is', null)
-        .in('sales_agent_id', agents.map(a => a.id));
+        .not('sales_agent_id', 'is', null);
 
-      // Create assignment count map (keyed by sales_agent_id)
+      // Create assignment count map
       const assignmentCountMap = new Map<number, number>();
-      const enrollmentToAgentMap = new Map<string, number>();
-      
       assignments?.forEach(a => {
         if (a.sales_agent_id) {
-          assignmentCountMap.set(
-            a.sales_agent_id, 
-            (assignmentCountMap.get(a.sales_agent_id) || 0) + 1
-          );
-          if (a.enrollment_id) {
-            enrollmentToAgentMap.set(a.enrollment_id, a.sales_agent_id);
+          // Map back to user_id
+          const userId = [...salesAgentUserIds.entries()].find(([uid, said]) => said === a.sales_agent_id)?.[0];
+          if (userId) {
+            assignmentCountMap.set(userId, (assignmentCountMap.get(userId) || 0) + 1);
           }
         }
       });
 
-      // Fetch CRM notes with date filter - get creator info
+      // Fetch CRM notes with date filter
       const { data: crmNotes } = await supabase
         .from('crm_notes')
         .select('id, type, created_by, user_id, created_at')
         .gte('created_at', dateFilter);
 
-      // Map CRM notes to agents (via created_by name match to user_id)
-      const agentNameToUserId = new Map<string, number>();
-      agents.forEach(a => agentNameToUserId.set(a.name, a.user_id));
+      // Map CRM notes to agents via name matching
+      const agentNameToId = new Map<string, number>();
+      agents.forEach(a => agentNameToId.set(a.name, a.id));
 
       const notesPerAgent = new Map<number, { total: number; calls: number }>();
       const contactedUsersPerAgent = new Map<number, Set<number>>();
 
       crmNotes?.forEach(note => {
-        const userId = agentNameToUserId.get(note.created_by);
-        if (userId) {
-          const current = notesPerAgent.get(userId) || { total: 0, calls: 0 };
+        const agentId = agentNameToId.get(note.created_by);
+        if (agentId) {
+          const current = notesPerAgent.get(agentId) || { total: 0, calls: 0 };
           current.total++;
           if (note.type === 'call') current.calls++;
-          notesPerAgent.set(userId, current);
+          notesPerAgent.set(agentId, current);
 
-          // Track contacted users
           if (note.user_id) {
-            const contacted = contactedUsersPerAgent.get(userId) || new Set();
+            const contacted = contactedUsersPerAgent.get(agentId) || new Set();
             contacted.add(note.user_id);
-            contactedUsersPerAgent.set(userId, contacted);
+            contactedUsersPerAgent.set(agentId, contacted);
           }
         }
       });
 
-      // Fetch deals
+      // Fetch deals - assigned_salesperson_id references chat_users.id
       const { data: deals } = await supabase
         .from('deals')
         .select('assigned_salesperson_id, price, status')
@@ -156,53 +187,52 @@ const AgentActivityDashboard: React.FC = () => {
         dealsPerAgent.set(deal.assigned_salesperson_id, current);
       });
 
-      // Build agent stats (using sales_agent_id for assignments, user_id for notes/deals)
-      const stats: AgentStats[] = agents.map(agent => {
-        const totalLeads = assignmentCountMap.get(agent.id) || 0; // sales_agent_id
-        const notes = notesPerAgent.get(agent.user_id) || { total: 0, calls: 0 }; // user_id
-        const dealInfo = dealsPerAgent.get(agent.user_id) || { count: 0, amount: 0 }; // user_id
-        const contactedCount = contactedUsersPerAgent.get(agent.user_id)?.size || 0; // user_id
+      // Build agent stats - only include agents with activity
+      const stats: AgentStats[] = agents
+        .map(agent => {
+          const totalLeads = assignmentCountMap.get(agent.id) || 0;
+          const notes = notesPerAgent.get(agent.id) || { total: 0, calls: 0 };
+          const dealInfo = dealsPerAgent.get(agent.id) || { count: 0, amount: 0 };
+          const contactedCount = contactedUsersPerAgent.get(agent.id)?.size || 0;
 
-        return {
-          agent_id: agent.id,
-          agent_name: agent.name,
-          total_leads: totalLeads,
-          contacted_leads: contactedCount,
-          calls_count: notes.calls,
-          notes_count: notes.total,
-          successful_deals: dealInfo.count,
-          total_sales_amount: dealInfo.amount,
-          conversion_rate: totalLeads > 0 ? Math.round((dealInfo.count / totalLeads) * 100) : 0
-        };
-      });
+          return {
+            agent_id: agent.id,
+            agent_name: agent.name,
+            total_leads: totalLeads,
+            contacted_leads: contactedCount,
+            calls_count: notes.calls,
+            notes_count: notes.total,
+            successful_deals: dealInfo.count,
+            total_sales_amount: dealInfo.amount,
+            conversion_rate: totalLeads > 0 ? Math.round((dealInfo.count / totalLeads) * 100) : 0
+          };
+        })
+        .filter(s => s.total_leads > 0 || s.calls_count > 0 || s.notes_count > 0 || s.successful_deals > 0);
 
-      // Sort by total leads
-      stats.sort((a, b) => b.total_leads - a.total_leads);
+      // Sort by calls count
+      stats.sort((a, b) => b.calls_count - a.calls_count);
 
       setAgentStats(stats);
 
-      // Calculate summary
+      // Calculate summary from all CRM data
+      const totalCalls = crmNotes?.filter(n => n.type === 'call').length || 0;
+      const totalNotes = crmNotes?.length || 0;
+      const uniqueContacted = new Set(crmNotes?.filter(n => n.user_id).map(n => n.user_id) || []).size;
+
       setSummary({
         totalLeads: stats.reduce((sum, s) => sum + s.total_leads, 0),
-        totalContacted: stats.reduce((sum, s) => sum + s.contacted_leads, 0),
-        totalCalls: stats.reduce((sum, s) => sum + s.calls_count, 0),
+        totalContacted: uniqueContacted,
+        totalCalls: totalCalls,
         totalSales: stats.reduce((sum, s) => sum + s.successful_deals, 0)
       });
 
       // Fetch recent activity
       const { data: recentNotes } = await supabase
         .from('crm_notes')
-        .select(`
-          id,
-          type,
-          created_by,
-          created_at,
-          user_id
-        `)
+        .select('id, type, created_by, created_at, user_id')
         .order('created_at', { ascending: false })
         .limit(20);
 
-      // Get user names for recent activity
       const userIds = recentNotes?.map(n => n.user_id).filter(Boolean) || [];
       const { data: users } = await supabase
         .from('chat_users')
@@ -217,6 +247,7 @@ const AgentActivityDashboard: React.FC = () => {
         agent_name: note.created_by,
         activity_type: note.type,
         lead_name: note.user_id ? userNameMap.get(note.user_id) || 'نامشخص' : 'نامشخص',
+        lead_id: note.user_id || 0,
         created_at: note.created_at
       }));
 
@@ -234,9 +265,40 @@ const AgentActivityDashboard: React.FC = () => {
     }
   };
 
+  const handleOpenUserDetails = async (userId: number) => {
+    if (!userId) return;
+    
+    setUserDetailsLoading(true);
+    setShowUserDialog(true);
+    
+    try {
+      const { data } = await supabase
+        .from('chat_users')
+        .select('id, name, phone, email, created_at, country, province')
+        .eq('id', userId)
+        .single();
+      
+      if (data) {
+        setSelectedUser(data);
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error);
+    } finally {
+      setUserDetailsLoading(false);
+    }
+  };
+
   const formatDate = (date: string) => {
     try {
       return format(new Date(date), 'MM/dd HH:mm');
+    } catch {
+      return date;
+    }
+  };
+
+  const formatFullDate = (date: string) => {
+    try {
+      return format(new Date(date), 'yyyy/MM/dd HH:mm');
     } catch {
       return date;
     }
@@ -284,6 +346,7 @@ const AgentActivityDashboard: React.FC = () => {
                 <SelectItem value="24h">۲۴ ساعت اخیر</SelectItem>
                 <SelectItem value="7d">۷ روز اخیر</SelectItem>
                 <SelectItem value="30d">۳۰ روز اخیر</SelectItem>
+                <SelectItem value="all">همه زمان‌ها</SelectItem>
               </SelectContent>
             </Select>
             <Button onClick={fetchData} className="gap-2">
@@ -319,6 +382,7 @@ const AgentActivityDashboard: React.FC = () => {
               <SelectItem value="24h">۲۴ ساعت اخیر</SelectItem>
               <SelectItem value="7d">۷ روز اخیر</SelectItem>
               <SelectItem value="30d">۳۰ روز اخیر</SelectItem>
+              <SelectItem value="all">همه زمان‌ها</SelectItem>
             </SelectContent>
           </Select>
           <Button onClick={fetchData} variant="outline" size="sm" className="gap-2">
@@ -467,19 +531,28 @@ const AgentActivityDashboard: React.FC = () => {
               ) : (
                 <div className="divide-y">
                   {recentActivity.map(activity => (
-                    <div key={activity.id} className="p-3 hover:bg-muted/50">
+                    <div 
+                      key={activity.id} 
+                      className="p-3 hover:bg-muted/50 cursor-pointer"
+                      onClick={() => activity.lead_id && handleOpenUserDetails(activity.lead_id)}
+                    >
                       <div className="flex items-start gap-2">
                         <span className="text-lg">{getActivityIcon(activity.activity_type)}</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm">
                             <span className="font-medium">{activity.agent_name}</span>
                             {' '}{getActivityLabel(activity.activity_type)} با{' '}
-                            <span className="font-medium">{activity.lead_name}</span>
+                            <span className="font-medium text-primary hover:underline">
+                              {activity.lead_name}
+                            </span>
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {formatDate(activity.created_at)}
                           </p>
                         </div>
+                        {activity.lead_id > 0 && (
+                          <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                        )}
                       </div>
                     </div>
                   ))}
@@ -489,6 +562,62 @@ const AgentActivityDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* User Details Dialog */}
+      <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>اطلاعات کاربر</DialogTitle>
+          </DialogHeader>
+          {userDetailsLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : selectedUser ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 pb-3 border-b">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">{selectedUser.name}</h3>
+                  <p className="text-sm text-muted-foreground">ID: {selectedUser.id}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <a href={`tel:${selectedUser.phone}`} className="text-primary hover:underline">
+                    {selectedUser.phone?.startsWith('0') ? selectedUser.phone : `0${selectedUser.phone}`}
+                  </a>
+                </div>
+                
+                {selectedUser.email && (
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span>{selectedUser.email}</span>
+                  </div>
+                )}
+                
+                {(selectedUser.country || selectedUser.province) && (
+                  <div className="flex items-center gap-3">
+                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                    <span>{[selectedUser.province, selectedUser.country].filter(Boolean).join(' - ')}</span>
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span>عضویت: {formatFullDate(selectedUser.created_at)}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">کاربر یافت نشد</p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
