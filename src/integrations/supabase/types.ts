@@ -205,16 +205,19 @@ export type Database = {
           id: number
           manual_approval_enabled: boolean
           updated_at: string
+          use_full_leads_system: boolean | null
         }
         Insert: {
           id?: number
           manual_approval_enabled?: boolean
           updated_at?: string
+          use_full_leads_system?: boolean | null
         }
         Update: {
           id?: number
           manual_approval_enabled?: boolean
           updated_at?: string
+          use_full_leads_system?: boolean | null
         }
         Relationships: []
       }

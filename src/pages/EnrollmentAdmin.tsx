@@ -95,6 +95,23 @@ const EnrollmentAdmin: React.FC = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
   const [isSalesAgent, setIsSalesAgent] = useState(false);
+  const [useFullLeadsSystem, setUseFullLeadsSystem] = useState(false);
+
+  // Fetch admin settings for leads system
+  useEffect(() => {
+    const fetchLeadsSystemSetting = async () => {
+      const { data } = await supabase
+        .from('admin_settings')
+        .select('use_full_leads_system')
+        .eq('id', 1)
+        .single();
+      
+      if (data) {
+        setUseFullLeadsSystem(data.use_full_leads_system || false);
+      }
+    };
+    fetchLeadsSystemSetting();
+  }, []);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -293,7 +310,16 @@ const EnrollmentAdmin: React.FC = () => {
             </ErrorBoundary>
           );
         }
-        // Admins and sales managers see simplified lead distribution + activity dashboard
+        // Admins and sales managers see either full or simplified lead management
+        if (useFullLeadsSystem) {
+          return (
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <LeadManagement />
+              </Suspense>
+            </ErrorBoundary>
+          );
+        }
         return (
           <div className="space-y-6">
             <ErrorBoundary>
