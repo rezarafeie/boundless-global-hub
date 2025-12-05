@@ -35,10 +35,13 @@ interface Invoice {
 
 interface InvoiceItem {
   id: string;
+  invoice_id: string;
   description: string;
   unit_price: number;
   quantity: number;
   total_price: number;
+  course_id: string | null;
+  product_id: string | null;
 }
 
 interface Customer {
@@ -61,15 +64,25 @@ interface Product {
   type: string;
 }
 
+interface SalesAgent {
+  id: number;
+  name: string;
+}
+
 export const AccountingInvoices: React.FC = () => {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [salesAgents, setSalesAgents] = useState<SalesAgent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [courseFilter, setCourseFilter] = useState<string>('all');
+  const [agentFilter, setAgentFilter] = useState<string>('all');
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
@@ -77,6 +90,7 @@ export const AccountingInvoices: React.FC = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deleteInvoice, setDeleteInvoice] = useState<Invoice | null>(null);
   const [currentUser, setCurrentUser] = useState<{ id: number; role: string; is_messenger_admin: boolean } | null>(null);
+  const [invoiceItemsMap, setInvoiceItemsMap] = useState<Record<string, InvoiceItem[]>>({});
   
   // Customer search state
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
@@ -162,11 +176,12 @@ export const AccountingInvoices: React.FC = () => {
       // Ensure predefined services exist in products table
       await ensurePredefinedServices();
       
-      const [invoicesRes, customersRes, coursesRes, productsRes] = await Promise.all([
+      const [invoicesRes, customersRes, coursesRes, productsRes, agentsRes] = await Promise.all([
         supabase.from('invoices').select('*').order('created_at', { ascending: false }),
         supabase.from('chat_users').select('id, name, phone, email'),
         supabase.from('courses').select('id, title, price').eq('is_active', true),
-        supabase.from('products').select('*').eq('is_active', true)
+        supabase.from('products').select('*').eq('is_active', true),
+        supabase.from('sales_agents').select('id, user_id, chat_users!sales_agents_user_id_fkey(name)').eq('is_active', true)
       ]);
 
       if (invoicesRes.data) {
@@ -187,11 +202,38 @@ export const AccountingInvoices: React.FC = () => {
           })
         );
         setInvoices(invoicesWithDetails);
+        
+        // Fetch all invoice items for filtering by course
+        const invoiceIds = invoicesRes.data.map(i => i.id);
+        if (invoiceIds.length > 0) {
+          const { data: allItems } = await supabase
+            .from('invoice_items')
+            .select('*')
+            .in('invoice_id', invoiceIds);
+          
+          if (allItems) {
+            const itemsMap: Record<string, InvoiceItem[]> = {};
+            allItems.forEach(item => {
+              if (!itemsMap[item.invoice_id]) {
+                itemsMap[item.invoice_id] = [];
+              }
+              itemsMap[item.invoice_id].push(item);
+            });
+            setInvoiceItemsMap(itemsMap);
+          }
+        }
       }
 
       if (customersRes.data) setCustomers(customersRes.data);
       if (coursesRes.data) setCourses(coursesRes.data);
       if (productsRes.data) setProducts(productsRes.data as Product[]);
+      if (agentsRes.data) {
+        const agents = agentsRes.data.map((a: any) => ({
+          id: a.user_id,
+          name: a.chat_users?.name || 'Unknown'
+        }));
+        setSalesAgents(agents);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('خطا در دریافت اطلاعات');
@@ -393,7 +435,26 @@ export const AccountingInvoices: React.FC = () => {
       inv.customer?.name?.includes(searchTerm) ||
       inv.customer?.phone?.includes(searchTerm);
     const matchesStatus = statusFilter === 'all' || inv.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesAgent = agentFilter === 'all' || inv.sales_agent_id === parseInt(agentFilter);
+    
+    // Filter by course
+    let matchesCourse = courseFilter === 'all';
+    if (!matchesCourse && invoiceItemsMap[inv.id]) {
+      matchesCourse = invoiceItemsMap[inv.id].some(item => item.course_id === courseFilter);
+    }
+    
+    // Filter by date range
+    let matchesDate = true;
+    if (dateFrom) {
+      matchesDate = new Date(inv.created_at) >= new Date(dateFrom);
+    }
+    if (dateTo && matchesDate) {
+      const toDate = new Date(dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      matchesDate = new Date(inv.created_at) <= toDate;
+    }
+    
+    return matchesSearch && matchesStatus && matchesAgent && matchesCourse && matchesDate;
   });
 
   return (
@@ -709,31 +770,101 @@ export const AccountingInvoices: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="جستجو..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="pr-10"
-            />
+      <Card className="p-4">
+        <div className="flex flex-col gap-4">
+          {/* First row: Search and Status */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="جستجو..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="pr-10"
+                />
+              </div>
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="وضعیت" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                <SelectItem value="unpaid">پرداخت نشده</SelectItem>
+                <SelectItem value="partially_paid">پرداخت جزئی</SelectItem>
+                <SelectItem value="paid">پرداخت شده</SelectItem>
+                <SelectItem value="cancelled">لغو شده</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Second row: Course and Agent */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Select value={courseFilter} onValueChange={setCourseFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="دوره" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">همه دوره‌ها</SelectItem>
+                {courses.map(course => (
+                  <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={agentFilter} onValueChange={setAgentFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="فروشنده" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">همه فروشندگان</SelectItem>
+                {salesAgents.map(agent => (
+                  <SelectItem key={agent.id} value={agent.id.toString()}>{agent.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Third row: Date range */}
+          <div className="flex flex-col sm:flex-row gap-3 items-end">
+            <div className="flex-1 sm:max-w-48">
+              <Label className="text-xs text-muted-foreground mb-1 block">از تاریخ</Label>
+              <Input 
+                type="date"
+                value={dateFrom}
+                onChange={e => setDateFrom(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <div className="flex-1 sm:max-w-48">
+              <Label className="text-xs text-muted-foreground mb-1 block">تا تاریخ</Label>
+              <Input 
+                type="date"
+                value={dateTo}
+                onChange={e => setDateTo(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            {(dateFrom || dateTo || courseFilter !== 'all' || agentFilter !== 'all' || statusFilter !== 'all') && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  setDateFrom('');
+                  setDateTo('');
+                  setCourseFilter('all');
+                  setAgentFilter('all');
+                  setStatusFilter('all');
+                  setSearchTerm('');
+                }}
+                className="text-muted-foreground"
+              >
+                پاک کردن فیلترها
+              </Button>
+            )}
           </div>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-40">
-            <SelectValue placeholder="وضعیت" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">همه</SelectItem>
-            <SelectItem value="unpaid">پرداخت نشده</SelectItem>
-            <SelectItem value="partially_paid">پرداخت جزئی</SelectItem>
-            <SelectItem value="paid">پرداخت شده</SelectItem>
-            <SelectItem value="cancelled">لغو شده</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      </Card>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
