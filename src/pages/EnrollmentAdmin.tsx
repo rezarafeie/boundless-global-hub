@@ -97,20 +97,40 @@ const EnrollmentAdmin: React.FC = () => {
   const [isSalesAgent, setIsSalesAgent] = useState(false);
   const [useFullLeadsSystem, setUseFullLeadsSystem] = useState(false);
 
-  // Fetch admin settings for leads system
+  // Fetch admin settings for leads system and listen for changes
   useEffect(() => {
     const fetchLeadsSystemSetting = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('admin_settings')
         .select('use_full_leads_system')
         .eq('id', 1)
         .single();
       
-      if (data) {
-        setUseFullLeadsSystem(data.use_full_leads_system || false);
+      console.log('Fetched leads system setting:', data, error);
+      if (data && !error) {
+        setUseFullLeadsSystem(data.use_full_leads_system === true);
       }
     };
     fetchLeadsSystemSetting();
+
+    // Subscribe to changes in admin_settings
+    const channel = supabase
+      .channel('admin_settings_changes')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'admin_settings', filter: 'id=eq.1' },
+        (payload) => {
+          console.log('Admin settings changed:', payload);
+          if (payload.new && 'use_full_leads_system' in payload.new) {
+            setUseFullLeadsSystem(payload.new.use_full_leads_system === true);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
