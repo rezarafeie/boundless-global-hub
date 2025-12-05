@@ -1052,11 +1052,27 @@ const SimplifiedLeadManagement: React.FC = () => {
             </div>
             <Button
               className="w-full gap-2"
-              onClick={handleAiScoreLeads}
-              disabled={aiScoreLoading || !selectedCourse || leads.length === 0}
+              onClick={() => {
+                console.log('AI Score Button clicked', { 
+                  selectedCourse, 
+                  leadsLength: leads.length, 
+                  aiScoreLoading,
+                  buttonDisabled: aiScoreLoading || !selectedCourse || leads.length === 0
+                });
+                if (!selectedCourse) {
+                  toast({ title: "خطا", description: "ابتدا دوره انتخاب کنید", variant: "destructive" });
+                  return;
+                }
+                if (leads.length === 0) {
+                  toast({ title: "خطا", description: "ابتدا لیدها را بارگذاری کنید", variant: "destructive" });
+                  return;
+                }
+                handleAiScoreLeads();
+              }}
+              disabled={aiScoreLoading}
             >
               {aiScoreLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
-              شروع تحلیل
+              {!selectedCourse ? 'انتخاب دوره' : leads.length === 0 ? 'بارگذاری لید' : 'شروع تحلیل'}
             </Button>
           </div>
         </DialogContent>
