@@ -104,9 +104,30 @@ const SalesAgentLeads: React.FC = () => {
     setLoading(true);
     setHasLoaded(true);
     try {
-      const agentId = user.messengerData.id;
+      const chatUserId = user.messengerData.id;
 
-      // Fetch assignments for this agent with limit
+      // First get the sales_agent_id for this user
+      const { data: agentData, error: agentError } = await supabase
+        .from('sales_agents')
+        .select('id')
+        .eq('user_id', chatUserId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (agentError) throw agentError;
+      
+      if (!agentData) {
+        console.log('No active sales agent found for user:', chatUserId);
+        setLeads([]);
+        setStats({ total: 0, contacted: 0, untouched: 0 });
+        setLoading(false);
+        return;
+      }
+
+      const salesAgentId = agentData.id;
+      console.log('Sales agent ID:', salesAgentId, 'for user:', chatUserId);
+
+      // Fetch assignments for this agent
       const { data: assignments, error: assignError } = await supabase
         .from('lead_assignments')
         .select(`
@@ -123,10 +144,12 @@ const SalesAgentLeads: React.FC = () => {
             courses!inner(title)
           )
         `)
-        .eq('sales_agent_id', agentId)
+        .eq('sales_agent_id', salesAgentId)
         .order('assigned_at', { ascending: false });
 
       if (assignError) throw assignError;
+      
+      console.log('Found', assignments?.length || 0, 'lead assignments');
 
       // Get chat_user_ids for CRM lookup
       const chatUserIds = assignments
