@@ -24,6 +24,8 @@ const EnrollmentCRM = React.lazy(() => import('@/components/Admin/EnrollmentCRM'
 const LeadManagement = React.lazy(() => import('@/components/Admin/LeadManagement'));
 const SimplifiedLeadManagement = React.lazy(() => import('@/components/Admin/SimplifiedLeadManagement'));
 const SalesAgentLeads = React.lazy(() => import('@/components/Admin/SalesAgentLeads'));
+const SalesAgentFinancials = React.lazy(() => import('@/components/Admin/SalesAgentFinancials'));
+const SalesAgentPipeline = React.lazy(() => import('@/components/Admin/SalesAgentPipeline'));
 const AgentActivityDashboard = React.lazy(() => import('@/components/Admin/AgentActivityDashboard'));
 const SalesDashboard = React.lazy(() => import('@/components/Admin/SalesDashboard'));
 const TestManagement = React.lazy(() => import('@/components/Admin/TestManagement'));
@@ -90,7 +92,7 @@ const EnrollmentAdmin: React.FC = () => {
   const navigate = useNavigate();
   const [checkingRole, setCheckingRole] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'sales' | 'leads' | 'users' | 'analytics' | 'settings' | 'crm' | 'recruitment' | 'internships' | 'tests' | 'webinars' | 'daily-reports' | 'accounting'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'sales' | 'leads' | 'users' | 'analytics' | 'settings' | 'crm' | 'recruitment' | 'internships' | 'tests' | 'webinars' | 'daily-reports' | 'accounting' | 'pipeline' | 'agent-financials'>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
@@ -415,6 +417,22 @@ const EnrollmentAdmin: React.FC = () => {
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
               <AccountingTabs />
+            </Suspense>
+          </ErrorBoundary>
+        );
+      case 'pipeline':
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <SalesAgentPipeline />
+            </Suspense>
+          </ErrorBoundary>
+        );
+      case 'agent-financials':
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <SalesAgentFinancials />
             </Suspense>
           </ErrorBoundary>
         );
