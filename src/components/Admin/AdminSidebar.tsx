@@ -47,6 +47,7 @@ const menuItems = [
   { id: 'internships', label: 'کارآموزی‌ها', icon: Users },
   { id: 'sales', label: 'داشبورد فروش', icon: BarChart3 },
   { id: 'leads', label: 'مدیریت لیدها', icon: UserPlus },
+  { id: 'pipeline-builder', label: 'مدیریت پایپ‌لاین', icon: Settings },
   { id: 'pipeline', label: 'پایپ‌لاین فروش', icon: Kanban },
   { id: 'agent-financials', label: 'مالی من', icon: Receipt },
   { id: 'daily-reports', label: 'گزارشات روزانه', icon: ClipboardList },
@@ -66,9 +67,9 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
 }) => {
   // Filter menu items based on user role
   const getFilteredMenuItems = () => {
-    // Sales manager gets sales, leads, and crm tabs
+    // Sales manager gets sales, leads, pipeline-builder, and crm tabs
     if (userRole === 'sales_manager' && !isMessengerAdmin) {
-      return menuItems.filter(item => ['sales', 'leads', 'crm'].includes(item.id));
+      return menuItems.filter(item => ['sales', 'leads', 'pipeline-builder', 'crm'].includes(item.id));
     }
     
     // Sales agent gets leads, crm, pipeline, and financials tabs
