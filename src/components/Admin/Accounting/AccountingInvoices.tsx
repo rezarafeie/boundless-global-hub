@@ -83,6 +83,8 @@ export const AccountingInvoices: React.FC = () => {
   const [agentFilter, setAgentFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
+  const [showFreeInvoices, setShowFreeInvoices] = useState<boolean>(false);
+  const [filtersApplied, setFiltersApplied] = useState<boolean>(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
@@ -429,33 +431,40 @@ export const AccountingInvoices: React.FC = () => {
     }
   };
 
-  const filteredInvoices = invoices.filter(inv => {
-    const matchesSearch = 
-      inv.invoice_number.includes(searchTerm) ||
-      inv.customer?.name?.includes(searchTerm) ||
-      inv.customer?.phone?.includes(searchTerm);
-    const matchesStatus = statusFilter === 'all' || inv.status === statusFilter;
-    const matchesAgent = agentFilter === 'all' || inv.sales_agent_id === parseInt(agentFilter);
-    
-    // Filter by course
-    let matchesCourse = courseFilter === 'all';
-    if (!matchesCourse && invoiceItemsMap[inv.id]) {
-      matchesCourse = invoiceItemsMap[inv.id].some(item => item.course_id === courseFilter);
-    }
-    
-    // Filter by date range
-    let matchesDate = true;
-    if (dateFrom) {
-      matchesDate = new Date(inv.created_at) >= new Date(dateFrom);
-    }
-    if (dateTo && matchesDate) {
-      const toDate = new Date(dateTo);
-      toDate.setHours(23, 59, 59, 999);
-      matchesDate = new Date(inv.created_at) <= toDate;
-    }
-    
-    return matchesSearch && matchesStatus && matchesAgent && matchesCourse && matchesDate;
-  });
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter(inv => {
+      // Exclude free/0 price invoices by default
+      if (!showFreeInvoices && inv.total_amount === 0) {
+        return false;
+      }
+      
+      const matchesSearch = 
+        inv.invoice_number.includes(searchTerm) ||
+        inv.customer?.name?.includes(searchTerm) ||
+        inv.customer?.phone?.includes(searchTerm);
+      const matchesStatus = statusFilter === 'all' || inv.status === statusFilter;
+      const matchesAgent = agentFilter === 'all' || inv.sales_agent_id === parseInt(agentFilter);
+      
+      // Filter by course
+      let matchesCourse = courseFilter === 'all';
+      if (!matchesCourse && invoiceItemsMap[inv.id]) {
+        matchesCourse = invoiceItemsMap[inv.id].some(item => item.course_id === courseFilter);
+      }
+      
+      // Filter by date range
+      let matchesDate = true;
+      if (dateFrom) {
+        matchesDate = new Date(inv.created_at) >= new Date(dateFrom);
+      }
+      if (dateTo && matchesDate) {
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        matchesDate = new Date(inv.created_at) <= toDate;
+      }
+      
+      return matchesSearch && matchesStatus && matchesAgent && matchesCourse && matchesDate;
+    });
+  }, [invoices, searchTerm, statusFilter, agentFilter, courseFilter, dateFrom, dateTo, showFreeInvoices, invoiceItemsMap]);
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -773,20 +782,18 @@ export const AccountingInvoices: React.FC = () => {
       <Card className="p-4">
         <div className="flex flex-col gap-4">
           {/* First row: Search and Status */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="جستجو..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="pr-10"
-                />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="relative">
+              <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="جستجو..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="pr-10"
+              />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="وضعیت" />
               </SelectTrigger>
               <SelectContent>
@@ -797,12 +804,8 @@ export const AccountingInvoices: React.FC = () => {
                 <SelectItem value="cancelled">لغو شده</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          
-          {/* Second row: Course and Agent */}
-          <div className="flex flex-col sm:flex-row gap-3">
             <Select value={courseFilter} onValueChange={setCourseFilter}>
-              <SelectTrigger className="w-full sm:w-48">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="دوره" />
               </SelectTrigger>
               <SelectContent>
@@ -813,7 +816,7 @@ export const AccountingInvoices: React.FC = () => {
               </SelectContent>
             </Select>
             <Select value={agentFilter} onValueChange={setAgentFilter}>
-              <SelectTrigger className="w-full sm:w-48">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="فروشنده" />
               </SelectTrigger>
               <SelectContent>
@@ -825,9 +828,9 @@ export const AccountingInvoices: React.FC = () => {
             </Select>
           </div>
           
-          {/* Third row: Date range */}
-          <div className="flex flex-col sm:flex-row gap-3 items-end">
-            <div className="flex-1 sm:max-w-48">
+          {/* Second row: Date range and options */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
+            <div>
               <Label className="text-xs text-muted-foreground mb-1 block">از تاریخ</Label>
               <Input 
                 type="date"
@@ -836,7 +839,7 @@ export const AccountingInvoices: React.FC = () => {
                 className="w-full"
               />
             </div>
-            <div className="flex-1 sm:max-w-48">
+            <div>
               <Label className="text-xs text-muted-foreground mb-1 block">تا تاریخ</Label>
               <Input 
                 type="date"
@@ -845,23 +848,37 @@ export const AccountingInvoices: React.FC = () => {
                 className="w-full"
               />
             </div>
-            {(dateFrom || dateTo || courseFilter !== 'all' || agentFilter !== 'all' || statusFilter !== 'all') && (
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => {
-                  setDateFrom('');
-                  setDateTo('');
-                  setCourseFilter('all');
-                  setAgentFilter('all');
-                  setStatusFilter('all');
-                  setSearchTerm('');
-                }}
-                className="text-muted-foreground"
-              >
-                پاک کردن فیلترها
-              </Button>
-            )}
+            <div className="flex items-center gap-2 h-10">
+              <input
+                type="checkbox"
+                id="showFreeInvoices"
+                checked={showFreeInvoices}
+                onChange={e => setShowFreeInvoices(e.target.checked)}
+                className="rounded"
+              />
+              <Label htmlFor="showFreeInvoices" className="text-sm cursor-pointer">نمایش رایگان‌ها</Label>
+            </div>
+            <div className="flex gap-2">
+              {(dateFrom || dateTo || courseFilter !== 'all' || agentFilter !== 'all' || statusFilter !== 'all' || searchTerm || showFreeInvoices) && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setDateFrom('');
+                    setDateTo('');
+                    setCourseFilter('all');
+                    setAgentFilter('all');
+                    setStatusFilter('all');
+                    setSearchTerm('');
+                    setShowFreeInvoices(false);
+                  }}
+                  className="flex-1"
+                >
+                  <X className="ml-1 h-4 w-4" />
+                  پاک کردن
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </Card>
@@ -870,14 +887,14 @@ export const AccountingInvoices: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <Card>
           <CardContent className="pt-4 md:pt-6">
-            <div className="text-lg md:text-2xl font-bold">{invoices.length}</div>
+            <div className="text-lg md:text-2xl font-bold">{filteredInvoices.length}</div>
             <p className="text-xs md:text-sm text-muted-foreground">کل فاکتورها</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 md:pt-6">
             <div className="text-lg md:text-2xl font-bold text-green-500">
-              {invoices.filter(i => i.status === 'paid').length}
+              {filteredInvoices.filter(i => i.status === 'paid').length}
             </div>
             <p className="text-xs md:text-sm text-muted-foreground">پرداخت شده</p>
           </CardContent>
@@ -885,7 +902,7 @@ export const AccountingInvoices: React.FC = () => {
         <Card>
           <CardContent className="pt-4 md:pt-6">
             <div className="text-lg md:text-2xl font-bold text-red-500">
-              {invoices.filter(i => i.status === 'unpaid').length}
+              {filteredInvoices.filter(i => i.status === 'unpaid').length}
             </div>
             <p className="text-xs md:text-sm text-muted-foreground">پرداخت نشده</p>
           </CardContent>
@@ -893,7 +910,7 @@ export const AccountingInvoices: React.FC = () => {
         <Card>
           <CardContent className="pt-4 md:pt-6">
             <div className="text-lg md:text-2xl font-bold">
-              {invoices.reduce((sum, i) => sum + Number(i.total_amount), 0).toLocaleString()}
+              {filteredInvoices.reduce((sum, i) => sum + Number(i.total_amount), 0).toLocaleString()}
             </div>
             <p className="text-xs md:text-sm text-muted-foreground">مجموع (تومان)</p>
           </CardContent>
