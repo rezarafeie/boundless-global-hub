@@ -70,7 +70,7 @@ const SalesAgentLeads: React.FC = () => {
   const { toast } = useToast();
   
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [crmFilter, setCrmFilter] = useState<string>('all');
   
