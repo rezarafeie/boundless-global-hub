@@ -34,6 +34,7 @@ interface Lead {
   email: string;
   phone: string;
   course_title: string;
+  course_id: string;
   payment_amount: number;
   assigned_at: string;
   chat_user_id: number | null;
@@ -65,14 +66,22 @@ const CRM_STATUSES = [
   { value: 'کنسل', label: 'کنسل' },
 ];
 
+interface Course {
+  id: string;
+  title: string;
+}
+
 const SalesAgentLeads: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [allLeads, setAllLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [crmFilter, setCrmFilter] = useState<string>('all');
+  const [courseFilter, setCourseFilter] = useState<string>('all');
+  const [courses, setCourses] = useState<Course[]>([]);
   
   // Lead detail/CRM states
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -96,13 +105,10 @@ const SalesAgentLeads: React.FC = () => {
     untouched: 0
   });
 
-  const [hasLoaded, setHasLoaded] = useState(false);
-
   const fetchLeads = async () => {
     if (!user?.messengerData?.id) return;
     
     setLoading(true);
-    setHasLoaded(true);
     try {
       const chatUserId = user.messengerData.id;
 
@@ -119,6 +125,7 @@ const SalesAgentLeads: React.FC = () => {
       if (!agentData) {
         console.log('No active sales agent found for user:', chatUserId);
         setLeads([]);
+        setAllLeads([]);
         setStats({ total: 0, contacted: 0, untouched: 0 });
         setLoading(false);
         return;
@@ -141,7 +148,8 @@ const SalesAgentLeads: React.FC = () => {
             phone,
             chat_user_id,
             payment_amount,
-            courses!inner(title)
+            course_id,
+            courses!inner(id, title)
           )
         `)
         .eq('sales_agent_id', salesAgentId)
@@ -150,6 +158,17 @@ const SalesAgentLeads: React.FC = () => {
       if (assignError) throw assignError;
       
       console.log('Found', assignments?.length || 0, 'lead assignments');
+
+      // Extract unique courses from leads
+      const courseMap = new Map<string, string>();
+      assignments?.forEach(a => {
+        const enrollment = a.enrollments as any;
+        if (enrollment?.courses?.id && enrollment?.courses?.title) {
+          courseMap.set(enrollment.courses.id, enrollment.courses.title);
+        }
+      });
+      const uniqueCourses = Array.from(courseMap.entries()).map(([id, title]) => ({ id, title }));
+      setCourses(uniqueCourses);
 
       // Get chat_user_ids for CRM lookup
       const chatUserIds = assignments
@@ -188,6 +207,7 @@ const SalesAgentLeads: React.FC = () => {
           email: enrollment?.email || '',
           phone: enrollment?.phone || '',
           course_title: enrollment?.courses?.title || '',
+          course_id: enrollment?.course_id || '',
           payment_amount: enrollment?.payment_amount || 0,
           assigned_at: a.assigned_at,
           chat_user_id: chatUserId,
@@ -197,25 +217,7 @@ const SalesAgentLeads: React.FC = () => {
         };
       });
 
-      // Apply filters
-      let filteredLeads = processedLeads;
-
-      if (searchTerm) {
-        const search = searchTerm.toLowerCase();
-        filteredLeads = filteredLeads.filter(l => 
-          l.full_name.toLowerCase().includes(search) ||
-          l.phone.includes(search) ||
-          l.email.toLowerCase().includes(search)
-        );
-      }
-
-      if (crmFilter === 'untouched') {
-        filteredLeads = filteredLeads.filter(l => l.crm_status === 'none');
-      } else if (crmFilter === 'contacted') {
-        filteredLeads = filteredLeads.filter(l => l.crm_status !== 'none');
-      }
-
-      setLeads(filteredLeads);
+      setAllLeads(processedLeads);
 
       // Update stats
       const contacted = processedLeads.filter(l => l.crm_status !== 'none').length;
@@ -236,6 +238,39 @@ const SalesAgentLeads: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Auto-load leads on mount
+  React.useEffect(() => {
+    if (user?.messengerData?.id) {
+      fetchLeads();
+    }
+  }, [user?.messengerData?.id]);
+
+  // Apply filters whenever allLeads or filters change
+  React.useEffect(() => {
+    let filteredLeads = [...allLeads];
+
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filteredLeads = filteredLeads.filter(l => 
+        l.full_name.toLowerCase().includes(search) ||
+        l.phone.includes(search) ||
+        l.email.toLowerCase().includes(search)
+      );
+    }
+
+    if (courseFilter !== 'all') {
+      filteredLeads = filteredLeads.filter(l => l.course_id === courseFilter);
+    }
+
+    if (crmFilter === 'untouched') {
+      filteredLeads = filteredLeads.filter(l => l.crm_status === 'none');
+    } else if (crmFilter === 'contacted') {
+      filteredLeads = filteredLeads.filter(l => l.crm_status !== 'none');
+    }
+
+    setLeads(filteredLeads);
+  }, [allLeads, searchTerm, courseFilter, crmFilter]);
 
   const openLeadDetail = async (lead: Lead) => {
     setSelectedLead(lead);
@@ -388,8 +423,8 @@ const SalesAgentLeads: React.FC = () => {
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex gap-3 items-end">
-            <div className="flex-1">
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="flex-1 min-w-[150px]">
               <Label className="text-xs text-muted-foreground mb-1 block">جستجو</Label>
               <div className="relative">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -400,6 +435,22 @@ const SalesAgentLeads: React.FC = () => {
                   className="pr-9"
                 />
               </div>
+            </div>
+            <div className="w-[180px]">
+              <Label className="text-xs text-muted-foreground mb-1 block">دوره</Label>
+              <Select value={courseFilter} onValueChange={setCourseFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="انتخاب دوره" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه دوره‌ها</SelectItem>
+                  {courses.map(course => (
+                    <SelectItem key={course.id} value={course.id}>
+                      {course.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="w-[180px]">
               <Label className="text-xs text-muted-foreground mb-1 block">وضعیت CRM</Label>
@@ -414,9 +465,8 @@ const SalesAgentLeads: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={fetchLeads} disabled={loading} className="gap-2">
+            <Button onClick={fetchLeads} disabled={loading} variant="outline" size="icon" title="بروزرسانی">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              بارگذاری
             </Button>
           </div>
         </CardContent>
@@ -428,11 +478,6 @@ const SalesAgentLeads: React.FC = () => {
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : !hasLoaded ? (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-              <User className="h-12 w-12 mb-4 opacity-50" />
-              <p className="text-lg font-medium">برای مشاهده لیدها روی "بارگذاری" کلیک کنید</p>
             </div>
           ) : (
             <Table>
