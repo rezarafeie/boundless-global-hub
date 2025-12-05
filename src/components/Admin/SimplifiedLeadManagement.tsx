@@ -52,6 +52,7 @@ interface Lead {
 
 interface Agent {
   id: number;
+  user_id: number;
   name: string;
   phone: string;
   lead_count?: number;
@@ -60,6 +61,18 @@ interface Agent {
 interface Course {
   id: string;
   title: string;
+}
+
+interface Pipeline {
+  id: string;
+  title: string;
+  stages: PipelineStage[];
+}
+
+interface PipelineStage {
+  id: string;
+  title: string;
+  order_index: number;
 }
 
 interface PercentageAllocation {
@@ -135,13 +148,18 @@ const SimplifiedLeadManagement: React.FC = () => {
   const [aiScoreProgress, setAiScoreProgress] = useState({ current: 0, total: 0 });
   const [aiScoreFilter, setAiScoreFilter] = useState<string>('all');
 
+  // Pipeline states
+  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
+  const [selectedPipeline, setSelectedPipeline] = useState<string>('');
+  const [createDealForPipeline, setCreateDealForPipeline] = useState(false);
+
   useEffect(() => {
     fetchInitialData();
   }, []);
 
   const fetchInitialData = async () => {
     setInitialLoading(true);
-    await Promise.all([fetchCourses(), fetchAgents()]);
+    await Promise.all([fetchCourses(), fetchAgents(), fetchPipelines()]);
     setInitialLoading(false);
   };
 
@@ -154,22 +172,52 @@ const SimplifiedLeadManagement: React.FC = () => {
     setCourses(data || []);
   };
 
-  const fetchAgents = async () => {
+  const fetchPipelines = async () => {
     const { data } = await supabase
-      .from('chat_users')
-      .select('id, name, phone')
-      .or('role.in.(sales_agent,sales_manager,admin),is_messenger_admin.eq.true')
-      .order('name');
-    setAgents(data || []);
+      .from('pipelines')
+      .select(`
+        id,
+        title,
+        pipeline_stages (id, title, order_index)
+      `)
+      .eq('is_active', true)
+      .order('title');
+    
+    const pipelinesWithStages = (data || []).map(p => ({
+      id: p.id,
+      title: p.title,
+      stages: (p.pipeline_stages || []).sort((a: any, b: any) => a.order_index - b.order_index)
+    }));
+    
+    setPipelines(pipelinesWithStages);
+  };
+
+  const fetchAgents = async () => {
+    // Fetch from sales_agents joined with chat_users
+    const { data: salesAgentsData } = await supabase
+      .from('sales_agents')
+      .select(`
+        id,
+        user_id,
+        chat_users!inner(name, phone)
+      `)
+      .eq('is_active', true);
+
+    const agents: Agent[] = (salesAgentsData || []).map((sa: any) => ({
+      id: sa.id,
+      user_id: sa.user_id,
+      name: sa.chat_users?.name || 'Unknown',
+      phone: sa.chat_users?.phone || ''
+    }));
+    
+    setAgents(agents);
     
     // Initialize percentage allocations
-    if (data) {
-      setPercentageAllocations(data.map(agent => ({
-        agent_id: agent.id,
-        agent_name: agent.name,
-        percentage: 0
-      })));
-    }
+    setPercentageAllocations(agents.map(agent => ({
+      agent_id: agent.id,
+      agent_name: agent.name,
+      percentage: 0
+    })));
   };
 
   const handleLoadLeads = async () => {
@@ -529,9 +577,23 @@ const SimplifiedLeadManagement: React.FC = () => {
       return;
     }
 
+    if (createDealForPipeline && !selectedPipeline) {
+      toast({
+        title: "خطا",
+        description: "لطفاً پایپ‌لاین را انتخاب کنید",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setActionLoading(true);
     try {
       const agentId = parseInt(selectedAgentForManual);
+      const agent = agents.find(a => a.id === agentId);
+      
+      if (!agent) {
+        throw new Error('Agent not found');
+      }
       
       // First remove existing assignments for selected leads
       await supabase
@@ -543,7 +605,8 @@ const SimplifiedLeadManagement: React.FC = () => {
       const assignments = selectedLeads.map(enrollmentId => ({
         enrollment_id: enrollmentId,
         sales_agent_id: agentId,
-        assigned_by: agentId, // This should be current user ID
+        assigned_by: agentId,
+        assignment_type: 'distributed',
         status: 'assigned'
       }));
 
@@ -553,15 +616,51 @@ const SimplifiedLeadManagement: React.FC = () => {
 
       if (error) throw error;
 
+      // Create deals if pipeline is selected
+      if (createDealForPipeline && selectedPipeline) {
+        const pipeline = pipelines.find(p => p.id === selectedPipeline);
+        const firstStage = pipeline?.stages?.[0];
+        
+        for (const enrollmentId of selectedLeads) {
+          const lead = leads.find(l => l.id === enrollmentId);
+          if (!lead) continue;
+
+          // Check if deal already exists
+          const { data: existingDeal } = await supabase
+            .from('deals')
+            .select('id')
+            .eq('enrollment_id', enrollmentId)
+            .single();
+
+          if (!existingDeal) {
+            await supabase
+              .from('deals')
+              .insert({
+                enrollment_id: enrollmentId,
+                course_id: lead.course_id,
+                pipeline_id: selectedPipeline,
+                current_stage_id: firstStage?.id || null,
+                price: lead.payment_amount || 0,
+                assigned_salesperson_id: agent.user_id,
+                assigned_by_id: agent.user_id,
+                status: 'in_progress',
+                stage_entered_at: new Date().toISOString()
+              });
+          }
+        }
+      }
+
       toast({
         title: "موفق",
-        description: `${selectedLeads.length} لید به ${agents.find(a => a.id === agentId)?.name} واگذار شد`
+        description: `${selectedLeads.length} لید به ${agent.name} واگذار شد${createDealForPipeline ? ' و معامله ایجاد شد' : ''}`
       });
 
       setShowManualAssign(false);
       setSelectedLeads([]);
       setSelectAll(false);
       setSelectedAgentForManual('');
+      setCreateDealForPipeline(false);
+      setSelectedPipeline('');
       handleLoadLeads();
     } catch (error) {
       console.error('Error assigning leads:', error);
@@ -586,6 +685,15 @@ const SimplifiedLeadManagement: React.FC = () => {
       return;
     }
 
+    if (createDealForPipeline && !selectedPipeline) {
+      toast({
+        title: "خطا",
+        description: "لطفاً پایپ‌لاین را انتخاب کنید",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const unassignedLeads = selectedLeads.length > 0 
       ? leads.filter(l => selectedLeads.includes(l.id) && !l.is_assigned)
       : leads.filter(l => !l.is_assigned);
@@ -604,7 +712,7 @@ const SimplifiedLeadManagement: React.FC = () => {
       // Shuffle leads for random distribution
       const shuffled = [...unassignedLeads].sort(() => Math.random() - 0.5);
       
-      const assignments: { enrollment_id: string; sales_agent_id: number; assigned_by: number; status: string }[] = [];
+      const assignments: { enrollment_id: string; sales_agent_id: number; assigned_by: number; assignment_type: string; status: string }[] = [];
       let currentIndex = 0;
 
       for (const allocation of percentageAllocations) {
@@ -616,6 +724,7 @@ const SimplifiedLeadManagement: React.FC = () => {
             enrollment_id: shuffled[currentIndex].id,
             sales_agent_id: allocation.agent_id,
             assigned_by: allocation.agent_id,
+            assignment_type: 'distributed',
             status: 'assigned'
           });
           currentIndex++;
@@ -629,6 +738,7 @@ const SimplifiedLeadManagement: React.FC = () => {
           enrollment_id: shuffled[currentIndex].id,
           sales_agent_id: firstAgent.agent_id,
           assigned_by: firstAgent.agent_id,
+          assignment_type: 'distributed',
           status: 'assigned'
         });
         currentIndex++;
@@ -640,16 +750,53 @@ const SimplifiedLeadManagement: React.FC = () => {
           .insert(assignments);
 
         if (error) throw error;
+
+        // Create deals if pipeline is selected
+        if (createDealForPipeline && selectedPipeline) {
+          const pipeline = pipelines.find(p => p.id === selectedPipeline);
+          const firstStage = pipeline?.stages?.[0];
+          
+          for (const assignment of assignments) {
+            const lead = shuffled.find(l => l.id === assignment.enrollment_id);
+            const agent = agents.find(a => a.id === assignment.sales_agent_id);
+            if (!lead || !agent) continue;
+
+            // Check if deal already exists
+            const { data: existingDeal } = await supabase
+              .from('deals')
+              .select('id')
+              .eq('enrollment_id', assignment.enrollment_id)
+              .single();
+
+            if (!existingDeal) {
+              await supabase
+                .from('deals')
+                .insert({
+                  enrollment_id: assignment.enrollment_id,
+                  course_id: lead.course_id,
+                  pipeline_id: selectedPipeline,
+                  current_stage_id: firstStage?.id || null,
+                  price: lead.payment_amount || 0,
+                  assigned_salesperson_id: agent.user_id,
+                  assigned_by_id: agent.user_id,
+                  status: 'in_progress',
+                  stage_entered_at: new Date().toISOString()
+                });
+            }
+          }
+        }
       }
 
       toast({
         title: "موفق",
-        description: `${assignments.length} لید توزیع شد`
+        description: `${assignments.length} لید توزیع شد${createDealForPipeline ? ' و معامله ایجاد شد' : ''}`
       });
 
       setShowPercentageAssign(false);
       setSelectedLeads([]);
       setSelectAll(false);
+      setCreateDealForPipeline(false);
+      setSelectedPipeline('');
       handleLoadLeads();
     } catch (error) {
       console.error('Error distributing leads:', error);
@@ -1096,7 +1243,13 @@ const SimplifiedLeadManagement: React.FC = () => {
       </Card>
 
       {/* Manual Assignment Modal */}
-      <Dialog open={showManualAssign} onOpenChange={setShowManualAssign}>
+      <Dialog open={showManualAssign} onOpenChange={(open) => {
+        setShowManualAssign(open);
+        if (!open) {
+          setCreateDealForPipeline(false);
+          setSelectedPipeline('');
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>واگذاری دستی لیدها</DialogTitle>
@@ -1120,20 +1273,57 @@ const SimplifiedLeadManagement: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Pipeline Deal Creation Option */}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="createDeal"
+                checked={createDealForPipeline}
+                onCheckedChange={(checked) => setCreateDealForPipeline(!!checked)}
+              />
+              <Label htmlFor="createDeal" className="text-sm cursor-pointer">
+                ایجاد معامله در پایپ‌لاین فروش
+              </Label>
+            </div>
+
+            {createDealForPipeline && (
+              <div>
+                <Label>پایپ‌لاین</Label>
+                <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="انتخاب پایپ‌لاین" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pipelines.map(pipeline => (
+                      <SelectItem key={pipeline.id} value={pipeline.id}>
+                        {pipeline.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <Button
               className="w-full"
               onClick={handleManualAssign}
-              disabled={actionLoading || !selectedAgentForManual}
+              disabled={actionLoading || !selectedAgentForManual || (createDealForPipeline && !selectedPipeline)}
             >
               {actionLoading ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
-              واگذاری
+              واگذاری{createDealForPipeline ? ' و ایجاد معامله' : ''}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Percentage Distribution Modal */}
-      <Dialog open={showPercentageAssign} onOpenChange={setShowPercentageAssign}>
+      <Dialog open={showPercentageAssign} onOpenChange={(open) => {
+        setShowPercentageAssign(open);
+        if (!open) {
+          setCreateDealForPipeline(false);
+          setSelectedPipeline('');
+        }
+      }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>توزیع درصدی لیدها</DialogTitle>
@@ -1146,7 +1336,7 @@ const SimplifiedLeadManagement: React.FC = () => {
               }
             </p>
             
-            <div className="space-y-3 max-h-[300px] overflow-y-auto">
+            <div className="space-y-3 max-h-[200px] overflow-y-auto">
               {percentageAllocations.map((allocation, index) => (
                 <div key={allocation.agent_id} className="flex items-center gap-3">
                   <span className="w-32 text-sm truncate">{allocation.agent_name}</span>
@@ -1177,13 +1367,43 @@ const SimplifiedLeadManagement: React.FC = () => {
               </span>
             </div>
 
+            {/* Pipeline Deal Creation Option */}
+            <div className="flex items-center gap-2 pt-2 border-t">
+              <Checkbox
+                id="createDealPercent"
+                checked={createDealForPipeline}
+                onCheckedChange={(checked) => setCreateDealForPipeline(!!checked)}
+              />
+              <Label htmlFor="createDealPercent" className="text-sm cursor-pointer">
+                ایجاد معامله در پایپ‌لاین فروش
+              </Label>
+            </div>
+
+            {createDealForPipeline && (
+              <div>
+                <Label>پایپ‌لاین</Label>
+                <Select value={selectedPipeline} onValueChange={setSelectedPipeline}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="انتخاب پایپ‌لاین" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pipelines.map(pipeline => (
+                      <SelectItem key={pipeline.id} value={pipeline.id}>
+                        {pipeline.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <Button
               className="w-full"
               onClick={handlePercentageAssign}
-              disabled={actionLoading || percentageAllocations.reduce((sum, a) => sum + a.percentage, 0) !== 100}
+              disabled={actionLoading || percentageAllocations.reduce((sum, a) => sum + a.percentage, 0) !== 100 || (createDealForPipeline && !selectedPipeline)}
             >
               {actionLoading ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
-              توزیع لیدها
+              توزیع لیدها{createDealForPipeline ? ' و ایجاد معامله' : ''}
             </Button>
           </div>
         </DialogContent>
