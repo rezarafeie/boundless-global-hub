@@ -503,22 +503,22 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({
             </div>
           </div>
 
-          {/* Fixed Footer Buttons */}
-          <div className="shrink-0 border-t bg-background px-4 sm:px-6 pt-4 pb-8 space-y-2" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}>
-            <div className="max-w-2xl mx-auto flex flex-col gap-3">
+          {/* Fixed Footer Buttons - Side by side */}
+          <div className="shrink-0 border-t bg-background px-4 sm:px-6 py-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+            <div className="max-w-2xl mx-auto flex flex-row gap-3">
               <Button 
-                className="w-full h-12 text-base sm:text-lg" 
+                variant="outline"
+                className="flex-1 h-12 text-base sm:text-lg border-2" 
+                onClick={handleClose}
+              >
+                بستن
+              </Button>
+              <Button 
+                className="flex-1 h-12 text-base sm:text-lg" 
                 onClick={handleCreateInvoice}
                 disabled={!selectedCustomer || !formData.product_id || !formData.amount}
               >
                 ایجاد فاکتور
-              </Button>
-              <Button 
-                variant="outline"
-                className="w-full h-12 text-base sm:text-lg border-2" 
-                onClick={handleClose}
-              >
-                بستن
               </Button>
             </div>
           </div>
