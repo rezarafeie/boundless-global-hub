@@ -201,8 +201,7 @@ const SimplifiedLeadManagement: React.FC = () => {
           courses!inner(title)
         `)
         .eq('course_id', selectedCourse)
-        .order('created_at', { ascending: false })
-        .limit(500);
+        .order('created_at', { ascending: false });
 
       // Apply payment status filter at DB level
       if (paymentFilter !== 'all') {
