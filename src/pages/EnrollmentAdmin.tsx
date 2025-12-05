@@ -421,6 +421,16 @@ const EnrollmentAdmin: React.FC = () => {
           </ErrorBoundary>
         );
       case 'accounting':
+        // Sales agents (not admins/managers) see only their own financials
+        if (isSalesAgent && !isMessengerAdmin && userRole !== 'sales_manager') {
+          return (
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <SalesAgentFinancials />
+              </Suspense>
+            </ErrorBoundary>
+          );
+        }
         return (
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
