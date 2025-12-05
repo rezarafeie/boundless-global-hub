@@ -11,7 +11,8 @@ import {
   DollarSign,
   CheckCircle,
   Clock,
-  RefreshCw
+  RefreshCw,
+  ExternalLink
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -253,12 +254,13 @@ const SalesAgentFinancials: React.FC = () => {
                     <TableHead>پرداخت شده</TableHead>
                     <TableHead>وضعیت</TableHead>
                     <TableHead>تاریخ</TableHead>
+                    <TableHead>عملیات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {invoices.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                         فاکتوری یافت نشد
                       </TableCell>
                     </TableRow>
@@ -277,6 +279,16 @@ const SalesAgentFinancials: React.FC = () => {
                         <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {formatDate(invoice.created_at)}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(`/invoice/${invoice.id}`, '_blank')}
+                          >
+                            <ExternalLink className="h-4 w-4 ml-1" />
+                            مشاهده
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
