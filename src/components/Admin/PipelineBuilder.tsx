@@ -24,6 +24,23 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Pipeline {
   id: string;
@@ -60,6 +77,93 @@ const STAGE_COLORS = [
   '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
 ];
 
+// Sortable Stage Item Component
+interface SortableStageItemProps {
+  stage: PipelineStage;
+  index: number;
+  editingStage: PipelineStage | null;
+  setEditingStage: (stage: PipelineStage | null) => void;
+  handleUpdateStage: (stage: PipelineStage) => void;
+  handleDeleteStage: (stageId: string) => void;
+}
+
+const SortableStageItem: React.FC<SortableStageItemProps> = ({
+  stage,
+  index,
+  editingStage,
+  setEditingStage,
+  handleUpdateStage,
+  handleDeleteStage,
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: stage.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-2 p-2 border rounded-md bg-background"
+    >
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div 
+        className="w-4 h-4 rounded-full shrink-0" 
+        style={{ backgroundColor: stage.color }}
+      />
+      {editingStage?.id === stage.id ? (
+        <>
+          <Input
+            value={editingStage.title}
+            onChange={(e) => setEditingStage({ ...editingStage, title: e.target.value })}
+            className="flex-1 h-8"
+          />
+          <select
+            value={editingStage.color}
+            onChange={(e) => setEditingStage({ ...editingStage, color: e.target.value })}
+            className="h-8 border rounded px-2 bg-background"
+          >
+            {STAGE_COLORS.map(color => (
+              <option key={color} value={color} style={{ backgroundColor: color }}>
+                {color}
+              </option>
+            ))}
+          </select>
+          <Button size="sm" variant="ghost" onClick={() => handleUpdateStage(editingStage)}>
+            <Check className="h-4 w-4" />
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setEditingStage(null)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </>
+      ) : (
+        <>
+          <span className="flex-1">{stage.title}</span>
+          <Badge variant="secondary">{index + 1}</Badge>
+          <Button size="sm" variant="ghost" onClick={() => setEditingStage({ ...stage })}>
+            <Edit2 className="h-4 w-4" />
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => handleDeleteStage(stage.id)}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </>
+      )}
+    </div>
+  );
+};
+
 const PipelineBuilder: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -87,6 +191,14 @@ const PipelineBuilder: React.FC = () => {
   const [newStageName, setNewStageName] = useState('');
   const [newStageColor, setNewStageColor] = useState(STAGE_COLORS[0]);
   const [editingStage, setEditingStage] = useState<PipelineStage | null>(null);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     fetchData();
@@ -312,6 +424,10 @@ const PipelineBuilder: React.FC = () => {
 
       if (error) throw error;
 
+      // Update local stages state
+      setStages(prevStages => 
+        prevStages.map(s => s.id === stage.id ? { ...s, title: stage.title, color: stage.color } : s)
+      );
       setEditingStage(null);
       fetchPipelines();
       toast({ title: "موفق", description: "مرحله بروزرسانی شد" });
@@ -320,6 +436,37 @@ const PipelineBuilder: React.FC = () => {
       toast({ title: "خطا", description: "خطا در بروزرسانی مرحله", variant: "destructive" });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = stages.findIndex((s) => s.id === active.id);
+      const newIndex = stages.findIndex((s) => s.id === over.id);
+
+      const newStages = arrayMove(stages, oldIndex, newIndex);
+      
+      // Update local state immediately for smooth UX
+      setStages(newStages);
+
+      // Update order_index in database
+      try {
+        const updates = newStages.map((stage, index) => 
+          supabase
+            .from('pipeline_stages')
+            .update({ order_index: index })
+            .eq('id', stage.id)
+        );
+        
+        await Promise.all(updates);
+        fetchPipelines();
+        toast({ title: "موفق", description: "ترتیب مراحل بروزرسانی شد" });
+      } catch (error) {
+        console.error('Error reordering stages:', error);
+        toast({ title: "خطا", description: "خطا در بروزرسانی ترتیب مراحل", variant: "destructive" });
+      }
     }
   };
 
@@ -599,54 +746,30 @@ const PipelineBuilder: React.FC = () => {
           </DialogHeader>
           <div className="space-y-4 py-4">
             {/* Existing Stages */}
-            <div className="space-y-2">
-              {stages.map((stage, index) => (
-                <div key={stage.id} className="flex items-center gap-2 p-2 border rounded-md">
-                  <GripVertical className="h-4 w-4 text-muted-foreground" />
-                  <div 
-                    className="w-4 h-4 rounded-full shrink-0" 
-                    style={{ backgroundColor: stage.color }}
-                  />
-                  {editingStage?.id === stage.id ? (
-                    <>
-                      <Input
-                        value={editingStage.title}
-                        onChange={(e) => setEditingStage({ ...editingStage, title: e.target.value })}
-                        className="flex-1 h-8"
-                      />
-                      <select
-                        value={editingStage.color}
-                        onChange={(e) => setEditingStage({ ...editingStage, color: e.target.value })}
-                        className="h-8 border rounded px-2"
-                      >
-                        {STAGE_COLORS.map(color => (
-                          <option key={color} value={color} style={{ backgroundColor: color }}>
-                            {color}
-                          </option>
-                        ))}
-                      </select>
-                      <Button size="sm" variant="ghost" onClick={() => handleUpdateStage(editingStage)}>
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setEditingStage(null)}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <span className="flex-1">{stage.title}</span>
-                      <Badge variant="secondary">{index + 1}</Badge>
-                      <Button size="sm" variant="ghost" onClick={() => setEditingStage(stage)}>
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleDeleteStage(stage.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={stages.map(s => s.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {stages.map((stage, index) => (
+                    <SortableStageItem
+                      key={stage.id}
+                      stage={stage}
+                      index={index}
+                      editingStage={editingStage}
+                      setEditingStage={setEditingStage}
+                      handleUpdateStage={handleUpdateStage}
+                      handleDeleteStage={handleDeleteStage}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
 
             {/* Add New Stage */}
             <div className="flex items-center gap-2 p-2 border rounded-md border-dashed">
@@ -660,7 +783,7 @@ const PipelineBuilder: React.FC = () => {
               <select
                 value={newStageColor}
                 onChange={(e) => setNewStageColor(e.target.value)}
-                className="h-8 border rounded px-2"
+                className="h-8 border rounded px-2 bg-background"
               >
                 {STAGE_COLORS.map(color => (
                   <option key={color} value={color}>
