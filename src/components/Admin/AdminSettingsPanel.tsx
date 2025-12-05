@@ -262,9 +262,38 @@ const AdminSettingsPanel: React.FC = () => {
   };
 
   return (
-    <div className="flex gap-6 min-h-[600px]">
-      {/* Sidebar Navigation */}
-      <div className="w-56 flex-shrink-0">
+    <div className="flex flex-col md:flex-row gap-4 md:gap-6 min-h-[600px]">
+      {/* Mobile Horizontal Tabs */}
+      <div className="md:hidden">
+        <div className="mb-3">
+          <h1 className="text-lg font-bold">تنظیمات</h1>
+        </div>
+        <div className="overflow-x-auto pb-2 -mx-4 px-4">
+          <nav className="flex gap-2 min-w-max">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
+                    activeTab === item.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
+
+      {/* Desktop Sidebar Navigation */}
+      <div className="hidden md:block w-56 flex-shrink-0">
         <div className="sticky top-4">
           <div className="mb-4">
             <h1 className="text-xl font-bold">تنظیمات</h1>
