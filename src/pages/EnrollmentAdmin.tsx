@@ -320,7 +320,12 @@ const EnrollmentAdmin: React.FC = () => {
         return (
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
-              <SalesDashboard onViewChange={(view) => setActiveView(view as typeof activeView)} />
+              <SalesDashboard 
+                onViewChange={(view) => setActiveView(view as typeof activeView)}
+                isSalesAgent={isSalesAgent}
+                isAdmin={isMessengerAdmin}
+                isSalesManager={userRole === 'sales_manager'}
+              />
             </Suspense>
           </ErrorBoundary>
         );

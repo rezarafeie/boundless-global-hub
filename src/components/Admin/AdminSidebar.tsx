@@ -47,6 +47,7 @@ const menuItems = [
   { id: 'internships', label: 'کارآموزی‌ها', icon: Users },
   { id: 'sales', label: 'داشبورد فروش', icon: BarChart3 },
   { id: 'leads', label: 'مدیریت لیدها', icon: UserPlus },
+  { id: 'pipeline', label: 'پایپ‌لاین فروش', icon: Kanban },
   { id: 'daily-reports', label: 'گزارشات روزانه', icon: ClipboardList },
   { id: 'accounting', label: 'حسابداری', icon: Calculator },
   { id: 'users', label: 'کاربران', icon: Users },
@@ -69,9 +70,9 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
       return menuItems.filter(item => ['sales', 'leads', 'crm'].includes(item.id));
     }
     
-    // Sales agent gets sales, leads, crm, and accounting tabs (for their financials)
+    // Sales agent gets sales, leads, crm, accounting, and pipeline tabs (for their financials)
     if (isSalesAgent && !isMessengerAdmin && userRole !== 'sales_manager') {
-      return menuItems.filter(item => ['sales', 'leads', 'accounting', 'crm'].includes(item.id));
+      return menuItems.filter(item => ['sales', 'leads', 'accounting', 'crm', 'pipeline'].includes(item.id));
     }
     
     // Enrollment managers get specific tabs including webinars
