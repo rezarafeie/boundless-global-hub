@@ -153,6 +153,15 @@ const SimplifiedLeadManagement: React.FC = () => {
   const [selectedPipeline, setSelectedPipeline] = useState<string>('');
   const [createDealForPipeline, setCreateDealForPipeline] = useState(false);
 
+  // Assignment report states
+  interface AssignmentReportItem {
+    agent_id: number;
+    agent_name: string;
+    leads: Lead[];
+  }
+  const [showAssignmentReport, setShowAssignmentReport] = useState(false);
+  const [assignmentReportData, setAssignmentReportData] = useState<AssignmentReportItem[]>([]);
+
   useEffect(() => {
     fetchInitialData();
   }, []);
@@ -650,6 +659,16 @@ const SimplifiedLeadManagement: React.FC = () => {
         }
       }
 
+      // Generate assignment report
+      const assignedLeadsData = leads.filter(l => selectedLeads.includes(l.id));
+      const reportData = [{
+        agent_id: agentId,
+        agent_name: agent.name,
+        leads: assignedLeadsData
+      }];
+      setAssignmentReportData(reportData);
+      setShowAssignmentReport(true);
+
       toast({
         title: "موفق",
         description: `${selectedLeads.length} لید به ${agent.name} واگذار شد${createDealForPipeline ? ' و معامله ایجاد شد' : ''}`
@@ -786,6 +805,32 @@ const SimplifiedLeadManagement: React.FC = () => {
           }
         }
       }
+
+      // Generate assignment report grouped by agent
+      const reportMap = new Map<number, { agent_name: string; leads: Lead[] }>();
+      assignments.forEach(assignment => {
+        const lead = shuffled.find(l => l.id === assignment.enrollment_id);
+        const agent = agents.find(a => a.id === assignment.sales_agent_id);
+        if (lead && agent) {
+          const existing = reportMap.get(assignment.sales_agent_id);
+          if (existing) {
+            existing.leads.push(lead);
+          } else {
+            reportMap.set(assignment.sales_agent_id, {
+              agent_name: agent.name,
+              leads: [lead]
+            });
+          }
+        }
+      });
+
+      const reportData = Array.from(reportMap.entries()).map(([agent_id, data]) => ({
+        agent_id,
+        agent_name: data.agent_name,
+        leads: data.leads
+      }));
+      setAssignmentReportData(reportData);
+      setShowAssignmentReport(true);
 
       toast({
         title: "موفق",
@@ -1587,6 +1632,101 @@ const SimplifiedLeadManagement: React.FC = () => {
               </div>
             </ScrollArea>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Assignment Report Dialog */}
+      <Dialog open={showAssignmentReport} onOpenChange={setShowAssignmentReport}>
+        <DialogContent className="max-w-3xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              گزارش واگذاری لیدها
+            </DialogTitle>
+            <DialogDescription>
+              خلاصه واگذاری لیدها به کارشناسان
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-6 p-1">
+              {/* Summary */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-2xl font-bold text-primary">
+                      {assignmentReportData.reduce((sum, item) => sum + item.leads.length, 0)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">کل لیدهای واگذار شده</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-2xl font-bold text-blue-600">{assignmentReportData.length}</p>
+                    <p className="text-xs text-muted-foreground">کارشناس</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3 text-center">
+                    <p className="text-2xl font-bold text-green-600">
+                      {assignmentReportData.reduce((sum, item) => 
+                        sum + item.leads.reduce((s, l) => s + (l.payment_amount || 0), 0), 0
+                      ).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">مجموع ارزش (تومان)</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Per Agent Details */}
+              {assignmentReportData.map(item => (
+                <Card key={item.agent_id}>
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-base flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        {item.agent_name}
+                      </div>
+                      <Badge variant="secondary">{item.leads.length} لید</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>نام</TableHead>
+                          <TableHead>تلفن</TableHead>
+                          <TableHead>ایمیل</TableHead>
+                          <TableHead>مبلغ</TableHead>
+                          <TableHead>تاریخ</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {item.leads.map(lead => (
+                          <TableRow key={lead.id}>
+                            <TableCell className="font-medium">{lead.full_name}</TableCell>
+                            <TableCell>
+                              <a href={`tel:${formatPhone(lead.phone)}`} className="text-primary hover:underline flex items-center gap-1">
+                                <Phone className="h-3 w-3" />
+                                {formatPhone(lead.phone)}
+                              </a>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">{lead.email || '-'}</TableCell>
+                            <TableCell>{lead.payment_amount?.toLocaleString()} تومان</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{formatDate(lead.created_at)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
+          <div className="flex justify-end pt-4 border-t">
+            <Button onClick={() => setShowAssignmentReport(false)}>
+              بستن
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -320,7 +320,7 @@ const EnrollmentAdmin: React.FC = () => {
         return (
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
-              <SalesDashboard />
+              <SalesDashboard onViewChange={(view) => setActiveView(view as typeof activeView)} />
             </Suspense>
           </ErrorBoundary>
         );
