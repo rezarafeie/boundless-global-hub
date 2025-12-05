@@ -414,8 +414,8 @@ export const AccountingInvoices: React.FC = () => {
               فاکتور جدید
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-none w-screen h-[calc(100dvh-60px)] max-h-[calc(100dvh-60px)] m-0 p-0 rounded-none border-0 top-[60px] translate-y-0" dir="rtl">
-            <div className="flex flex-col h-full max-h-full text-right">
+          <DialogContent className="max-w-none w-screen h-[calc(100dvh-60px)] max-h-[calc(100dvh-60px)] m-0 p-0 rounded-none border-0 top-[60px] translate-y-0 pointer-events-auto" dir="rtl">
+            <div className="flex flex-col h-full max-h-full text-right overflow-hidden">
               <DialogHeader className="px-4 sm:px-6 py-4 border-b bg-background shrink-0">
                 <div className="flex items-center justify-between flex-row-reverse">
                   <Button variant="ghost" size="icon" onClick={() => setIsCreateOpen(false)}>
@@ -425,7 +425,7 @@ export const AccountingInvoices: React.FC = () => {
                 </div>
               </DialogHeader>
               
-              <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 pb-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 pb-4 pointer-events-auto touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
                 <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
                   {/* Customer Search Section */}
                   <Card>
