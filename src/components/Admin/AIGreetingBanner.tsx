@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { 
   RefreshCw, 
   Sparkles, 
@@ -10,8 +9,7 @@ import {
   AlertTriangle,
   Lightbulb,
   TrendingUp,
-  Download,
-  Clock
+  Download
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -28,18 +26,16 @@ interface AIAnalysis {
 
 interface AIGreetingBannerProps {
   onRefresh?: () => void;
+  mode?: 'admin' | 'agent';
 }
 
-const AIGreetingBanner: React.FC<AIGreetingBannerProps> = ({ onRefresh }) => {
+const AIGreetingBanner: React.FC<AIGreetingBannerProps> = ({ onRefresh, mode = 'admin' }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<'daily' | 'weekly' | 'monthly'>('daily');
-  const [displayedText, setDisplayedText] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const getAdminName = () => {
     if (user?.messengerData?.name) return user.messengerData.name;
@@ -51,14 +47,13 @@ const AIGreetingBanner: React.FC<AIGreetingBannerProps> = ({ onRefresh }) => {
 
   const runAnalysis = useCallback(async () => {
     setLoading(true);
-    setIsTyping(false);
-    setDisplayedText('');
     
     try {
       const { data, error } = await supabase.functions.invoke('ai-admin-greeting', {
         body: { 
           adminName: getAdminName(),
-          viewMode 
+          viewMode,
+          mode
         }
       });
 
@@ -66,9 +61,6 @@ const AIGreetingBanner: React.FC<AIGreetingBannerProps> = ({ onRefresh }) => {
 
       if (data?.analysis) {
         setAnalysis(data.analysis);
-        setLastUpdated(new Date());
-        // Start typing effect for greeting
-        typeText(data.analysis.greeting);
       }
     } catch (error) {
       console.error('Error running AI analysis:', error);
@@ -80,25 +72,7 @@ const AIGreetingBanner: React.FC<AIGreetingBannerProps> = ({ onRefresh }) => {
     } finally {
       setLoading(false);
     }
-  }, [viewMode, toast]);
-
-  const typeText = (text: string) => {
-    setIsTyping(true);
-    setDisplayedText('');
-    let index = 0;
-    
-    const interval = setInterval(() => {
-      if (index < text.length) {
-        setDisplayedText(prev => prev + text[index]);
-        index++;
-      } else {
-        clearInterval(interval);
-        setIsTyping(false);
-      }
-    }, 30);
-
-    return () => clearInterval(interval);
-  };
+  }, [viewMode, mode, toast]);
 
   useEffect(() => {
     runAnalysis();
@@ -115,7 +89,7 @@ const AIGreetingBanner: React.FC<AIGreetingBannerProps> = ({ onRefresh }) => {
     
     const content = `
 گزارش هوشمند آکادمی
-تاریخ: ${lastUpdated?.toLocaleDateString('fa-IR')}
+تاریخ: ${new Date().toLocaleDateString('fa-IR')}
 بازه: ${viewMode === 'daily' ? 'روزانه' : viewMode === 'weekly' ? 'هفتگی' : 'ماهانه'}
 
 ${analysis.greeting}
@@ -145,124 +119,96 @@ ${analysis.motivation}
   };
 
   return (
-    <Card className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5 border-primary/20">
-      {/* Animated background effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-50 animate-pulse pointer-events-none" />
-      
-      <CardContent className="p-6 relative">
+    <Card className="border-border/50">
+      <CardContent className="p-4 sm:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-bold text-lg">تحلیل هوشمند</h3>
-              {lastUpdated && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  آخرین بروزرسانی: {lastUpdated.toLocaleTimeString('fa-IR')}
-                </p>
-              )}
-            </div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">تحلیل هوشمند</h3>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* View Mode Toggle */}
-            <div className="flex bg-muted rounded-lg p-1">
-              {(['daily', 'weekly', 'monthly'] as const).map((mode) => (
+            <div className="flex bg-muted rounded-md p-0.5 text-xs">
+              {(['daily', 'weekly', 'monthly'] as const).map((m) => (
                 <button
-                  key={mode}
-                  onClick={() => setViewMode(mode)}
-                  className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                    viewMode === mode 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'hover:bg-muted-foreground/10'
+                  key={m}
+                  onClick={() => setViewMode(m)}
+                  className={`px-2 py-1 rounded transition-colors ${
+                    viewMode === m 
+                      ? 'bg-background text-foreground shadow-sm' 
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {mode === 'daily' ? 'روزانه' : mode === 'weekly' ? 'هفتگی' : 'ماهانه'}
+                  {m === 'daily' ? 'روزانه' : m === 'weekly' ? 'هفتگی' : 'ماهانه'}
                 </button>
               ))}
             </div>
             
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-              disabled={!analysis}
-              className="gap-1"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                runAnalysis();
-                onRefresh?.();
-              }}
-              disabled={loading}
-              className="gap-1"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              تحلیل مجدد
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setExpanded(!expanded)}
-            >
-              {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={handleExport}
+                disabled={!analysis}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  runAnalysis();
+                  onRefresh?.();
+                }}
+                disabled={loading}
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setExpanded(!expanded)}
+              >
+                {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Loading State */}
         {loading && (
-          <div className="flex items-center gap-3 py-4">
-            <div className="flex gap-1">
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-            </div>
-            <span className="text-muted-foreground">در حال تحلیل داده‌ها...</span>
+          <div className="flex items-center gap-2 py-3">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+            <span className="text-sm text-muted-foreground">در حال تحلیل...</span>
           </div>
         )}
 
-        {/* Greeting with typing effect */}
+        {/* Content */}
         {!loading && analysis && (
-          <div className="space-y-4">
-            <div className="text-xl font-medium text-foreground leading-relaxed">
-              {displayedText}
-              {isTyping && <span className="inline-block w-0.5 h-5 bg-primary animate-pulse ml-1" />}
-            </div>
-            
-            {!isTyping && (
-              <p className="text-muted-foreground">{analysis.summary}</p>
-            )}
+          <div className="space-y-3">
+            <p className="text-sm sm:text-base font-medium">{analysis.greeting}</p>
+            <p className="text-sm text-muted-foreground">{analysis.summary}</p>
 
             {/* Expanded Content */}
-            {expanded && !isTyping && (
-              <div className="space-y-4 pt-4 border-t border-border/50 animate-in fade-in slide-in-from-top-2 duration-300">
+            {expanded && (
+              <div className="space-y-3 pt-3 border-t border-border/50">
                 {/* Highlights */}
                 {analysis.highlights.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-green-600 dark:text-green-400">
-                      <TrendingUp className="h-4 w-4" />
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400">
+                      <TrendingUp className="h-3.5 w-3.5" />
                       نقاط قوت
                     </div>
-                    <div className="grid gap-2">
+                    <div className="space-y-1">
                       {analysis.highlights.map((highlight, index) => (
-                        <div 
-                          key={index}
-                          className="flex items-start gap-2 p-3 bg-green-500/10 rounded-lg text-sm"
-                          style={{ animationDelay: `${index * 100}ms` }}
-                        >
-                          <span className="text-green-600 dark:text-green-400">✓</span>
-                          <span>{highlight}</span>
-                        </div>
+                        <p key={index} className="text-sm text-muted-foreground pr-4">• {highlight}</p>
                       ))}
                     </div>
                   </div>
@@ -270,20 +216,14 @@ ${analysis.motivation}
 
                 {/* Warnings */}
                 {analysis.warnings.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-amber-600 dark:text-amber-400">
-                      <AlertTriangle className="h-4 w-4" />
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                      <AlertTriangle className="h-3.5 w-3.5" />
                       هشدارها
                     </div>
-                    <div className="grid gap-2">
+                    <div className="space-y-1">
                       {analysis.warnings.map((warning, index) => (
-                        <div 
-                          key={index}
-                          className="flex items-start gap-2 p-3 bg-amber-500/10 rounded-lg text-sm"
-                        >
-                          <span className="text-amber-600 dark:text-amber-400">⚠</span>
-                          <span>{warning}</span>
-                        </div>
+                        <p key={index} className="text-sm text-muted-foreground pr-4">• {warning}</p>
                       ))}
                     </div>
                   </div>
@@ -291,20 +231,14 @@ ${analysis.motivation}
 
                 {/* Suggestions */}
                 {analysis.suggestions.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400">
-                      <Lightbulb className="h-4 w-4" />
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400">
+                      <Lightbulb className="h-3.5 w-3.5" />
                       پیشنهادها
                     </div>
-                    <div className="grid gap-2">
+                    <div className="space-y-1">
                       {analysis.suggestions.map((suggestion, index) => (
-                        <div 
-                          key={index}
-                          className="flex items-start gap-2 p-3 bg-blue-500/10 rounded-lg text-sm"
-                        >
-                          <span className="text-blue-600 dark:text-blue-400">💡</span>
-                          <span>{suggestion}</span>
-                        </div>
+                        <p key={index} className="text-sm text-muted-foreground pr-4">• {suggestion}</p>
                       ))}
                     </div>
                   </div>
@@ -312,9 +246,9 @@ ${analysis.motivation}
 
                 {/* Motivation */}
                 {analysis.motivation && (
-                  <div className="p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg text-center">
-                    <p className="text-lg font-medium">{analysis.motivation}</p>
-                  </div>
+                  <p className="text-sm text-center text-muted-foreground pt-2 border-t border-border/50">
+                    {analysis.motivation}
+                  </p>
                 )}
               </div>
             )}
@@ -323,9 +257,8 @@ ${analysis.motivation}
 
         {/* Empty State */}
         {!loading && !analysis && (
-          <div className="text-center py-8 text-muted-foreground">
-            <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>روی "تحلیل مجدد" کلیک کنید</p>
+          <div className="text-center py-4 text-sm text-muted-foreground">
+            <p>روی دکمه رفرش کلیک کنید</p>
           </div>
         )}
       </CardContent>
