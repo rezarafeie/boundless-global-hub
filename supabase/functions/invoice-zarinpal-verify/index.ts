@@ -42,6 +42,8 @@ serve(async (req) => {
     }
 
     const remainingAmount = Number(invoice.total_amount) - Number(invoice.paid_amount);
+    // Convert Toman to Rial for Zarinpal verification (multiply by 10)
+    const amountInRial = remainingAmount * 10;
 
     // Verify payment with Zarinpal
     const verifyResponse = await fetch("https://api.zarinpal.com/pg/v4/payment/verify.json", {
@@ -49,7 +51,7 @@ serve(async (req) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         merchant_id: ZARINPAL_MERCHANT_ID,
-        amount: remainingAmount,
+        amount: amountInRial,
         authority
       })
     });
