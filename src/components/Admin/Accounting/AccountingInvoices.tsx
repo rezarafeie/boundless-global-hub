@@ -384,7 +384,14 @@ export const AccountingInvoices: React.FC = () => {
             .eq('course_id', courseItem.course_id)
             .maybeSingle();
 
-          if (!existingEnrollment) {
+          if (existingEnrollment) {
+            // Link existing enrollment to invoice
+            await supabase
+              .from('invoices')
+              .update({ enrollment_id: existingEnrollment.id })
+              .eq('id', invoice.id);
+          } else {
+            // Create new enrollment
             const { data: newEnrollment, error: enrollmentError } = await supabase
               .from('enrollments')
               .insert({
