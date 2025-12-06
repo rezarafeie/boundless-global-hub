@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Plus, FileText, Eye, Search, Calendar, User, Phone, Mail, X, Trash2, Edit, Copy, ExternalLink, RefreshCw, Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Plus, FileText, Eye, Search, Calendar, User, Phone, Mail, X, Trash2, Edit, Copy, ExternalLink, RefreshCw, Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Upload, Image } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -136,11 +136,69 @@ export const AccountingInvoices: React.FC = () => {
     product_id: '',
     amount: '',
     payment_type: 'online',
+    payment_status: 'pending' as 'pending' | 'completed',
     is_installment: false,
     installment_count: 2,
     notes: '',
     description: ''
   });
+
+  // Receipt upload state
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleReceiptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('فقط فایل تصویری مجاز است');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('حجم فایل نباید بیشتر از 5 مگابایت باشد');
+        return;
+      }
+      setReceiptFile(file);
+      setReceiptPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const uploadReceipt = async (invoiceId: string): Promise<string | null> => {
+    if (!receiptFile) return null;
+    
+    setUploadingReceipt(true);
+    try {
+      const fileExt = receiptFile.name.split('.').pop();
+      const fileName = `${invoiceId}_${Date.now()}.${fileExt}`;
+      const filePath = `receipts/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('invoices')
+        .upload(filePath, receiptFile);
+      
+      if (uploadError) {
+        if (uploadError.message.includes('not found')) {
+          toast.error('لطفا ابتدا باکت invoices را در استوریج ایجاد کنید');
+          return null;
+        }
+        throw uploadError;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('invoices')
+        .getPublicUrl(filePath);
+      
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading receipt:', error);
+      toast.error('خطا در آپلود رسید');
+      return null;
+    } finally {
+      setUploadingReceipt(false);
+    }
+  };
 
   // Check if user can edit/delete invoice - for admin panel, allow all users to edit/delete
   const canEditInvoice = (invoice: Invoice) => {
@@ -361,6 +419,12 @@ export const AccountingInvoices: React.FC = () => {
       return;
     }
 
+    // If completed status, receipt is required
+    if (formData.payment_status === 'completed' && !receiptFile) {
+      toast.error('برای وضعیت پرداخت شده، آپلود رسید الزامی است');
+      return;
+    }
+
     try {
       // Get current user as sales agent
       const sessionData = localStorage.getItem('messenger_session');
@@ -373,7 +437,9 @@ export const AccountingInvoices: React.FC = () => {
         total_amount: parseFloat(formData.amount),
         payment_type: formData.is_installment ? 'installment' : formData.payment_type,
         is_installment: formData.is_installment,
-        notes: formData.notes || null
+        notes: formData.notes || null,
+        status: formData.payment_status === 'completed' ? 'completed' : 'pending',
+        paid_amount: formData.payment_status === 'completed' ? parseFloat(formData.amount) : 0
       };
 
       const { data: invoice, error } = await supabase
@@ -383,6 +449,16 @@ export const AccountingInvoices: React.FC = () => {
         .single();
 
       if (error) throw error;
+
+      // Upload receipt if completed
+      if (formData.payment_status === 'completed' && receiptFile) {
+        const receiptUrl = await uploadReceipt(invoice.id);
+        if (receiptUrl) {
+          await supabase.from('invoices')
+            .update({ receipt_url: receiptUrl })
+            .eq('id', invoice.id);
+        }
+      }
 
       // Create invoice item
       let itemDescription = '';
@@ -419,7 +495,9 @@ export const AccountingInvoices: React.FC = () => {
             invoice_id: invoice.id,
             installment_number: i + 1,
             amount: installmentAmount,
-            due_date: dueDate.toISOString()
+            due_date: dueDate.toISOString(),
+            status: formData.payment_status === 'completed' && i === 0 ? 'paid' : 'pending',
+            paid_at: formData.payment_status === 'completed' && i === 0 ? new Date().toISOString() : null
           });
         }
         await supabase.from('installments').insert(installments);
@@ -433,11 +511,16 @@ export const AccountingInvoices: React.FC = () => {
         product_id: '',
         amount: '',
         payment_type: 'online',
+        payment_status: 'pending',
         is_installment: false,
         installment_count: 2,
         notes: '',
         description: ''
       });
+      setSelectedCustomer(null);
+      setCustomerSearchTerm('');
+      setReceiptFile(null);
+      setReceiptPreview(null);
       fetchData();
     } catch (error) {
       console.error('Error creating invoice:', error);
@@ -829,6 +912,24 @@ export const AccountingInvoices: React.FC = () => {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div>
+                        <Label className="text-right block">وضعیت پرداخت</Label>
+                        <Select value={formData.payment_status} onValueChange={(v: 'pending' | 'completed') => setFormData({...formData, payment_status: v})}>
+                          <SelectTrigger className="text-right">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">در انتظار پرداخت</SelectItem>
+                            <SelectItem value="completed">پرداخت شده</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {formData.payment_status === 'pending' && (
+                          <p className="text-xs text-muted-foreground mt-2 text-right">
+                            مشتری می‌تواند از طریق درگاه آنلاین (زرین‌پال) یا کارت به کارت پرداخت کند
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
                         <Label className="text-right block">نوع پرداخت</Label>
                         <Select value={formData.payment_type} onValueChange={v => setFormData({...formData, payment_type: v})}>
                           <SelectTrigger className="text-right">
@@ -841,6 +942,52 @@ export const AccountingInvoices: React.FC = () => {
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {/* Receipt upload for completed status */}
+                      {formData.payment_status === 'completed' && (
+                        <div className="space-y-3">
+                          <Label className="text-right block">آپلود رسید پرداخت <span className="text-destructive">*</span></Label>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleReceiptChange}
+                            className="hidden"
+                          />
+                          
+                          {receiptPreview ? (
+                            <div className="relative">
+                              <img 
+                                src={receiptPreview} 
+                                alt="Receipt preview" 
+                                className="w-full max-h-48 object-contain rounded-lg border"
+                              />
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="absolute top-2 left-2"
+                                onClick={() => {
+                                  setReceiptFile(null);
+                                  setReceiptPreview(null);
+                                  if (fileInputRef.current) fileInputRef.current.value = '';
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full h-24 flex flex-col gap-2 border-dashed"
+                              onClick={() => fileInputRef.current?.click()}
+                            >
+                              <Upload className="h-6 w-6 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">کلیک کنید یا تصویر را بکشید</span>
+                            </Button>
+                          )}
+                        </div>
+                      )}
 
                       <div className="flex items-center gap-2 flex-row-reverse justify-end">
                         <Label htmlFor="is_installment">پرداخت اقساطی</Label>
@@ -906,9 +1053,16 @@ export const AccountingInvoices: React.FC = () => {
                   <Button 
                     className="flex-1 h-12 text-base sm:text-lg" 
                     onClick={handleCreateInvoice}
-                    disabled={!selectedCustomer || !formData.product_id || !formData.amount}
+                    disabled={!selectedCustomer || !formData.product_id || !formData.amount || uploadingReceipt || (formData.payment_status === 'completed' && !receiptFile)}
                   >
-                    ایجاد فاکتور
+                    {uploadingReceipt ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin ml-2" />
+                        در حال آپلود...
+                      </>
+                    ) : (
+                      'ایجاد فاکتور'
+                    )}
                   </Button>
                 </div>
               </div>
