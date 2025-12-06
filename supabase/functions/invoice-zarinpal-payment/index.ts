@@ -25,13 +25,16 @@ serve(async (req) => {
       );
     }
 
+    // Convert Toman to Rial for Zarinpal (multiply by 10)
+    const amountInRial = amount * 10;
+    
     // Create payment request with Zarinpal
     const zarinpalResponse = await fetch("https://api.zarinpal.com/pg/v4/payment/request.json", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         merchant_id: ZARINPAL_MERCHANT_ID,
-        amount: amount,
+        amount: amountInRial,
         description: description || `پرداخت فاکتور`,
         callback_url: callback_url,
         metadata: { invoice_id }

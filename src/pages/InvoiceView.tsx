@@ -608,8 +608,17 @@ export default function InvoiceView() {
                 </p>
                 <div className="p-4 bg-muted rounded-lg text-center">
                   <p className="text-sm text-muted-foreground mb-1">شماره کارت:</p>
-                  <p className="text-xl font-mono font-bold tracking-wider">6037-9974-1234-5678</p>
-                  <p className="text-sm text-muted-foreground mt-2">به نام: {COMPANY_INFO.name}</p>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText('6219861919595958');
+                      toast.success('شماره کارت کپی شد');
+                    }}
+                    className="text-xl font-mono font-bold tracking-wider hover:text-primary transition-colors cursor-pointer flex items-center justify-center gap-2 mx-auto"
+                  >
+                    6219-8619-1959-5958
+                    <Copy className="h-4 w-4" />
+                  </button>
+                  <p className="text-sm text-muted-foreground mt-2">به نام: سید عباس رفیعی</p>
                 </div>
                 
                 <div>
