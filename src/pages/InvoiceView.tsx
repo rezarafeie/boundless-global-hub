@@ -269,22 +269,22 @@ export default function InvoiceView() {
     if (!invoice) return null;
 
     if (invoice.status === 'paid') {
-      return <Badge className="bg-green-500 text-white text-sm px-3 py-1"><CheckCircle className="h-4 w-4 ml-1" />پرداخت شده</Badge>;
+      return <Badge className="bg-green-500 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 flex items-center gap-1 w-fit"><CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />پرداخت شده</Badge>;
     }
 
     if (invoice.payment_review_status === 'pending_review') {
-      return <Badge className="bg-yellow-500 text-white text-sm px-3 py-1"><Clock className="h-4 w-4 ml-1" />در انتظار تایید</Badge>;
+      return <Badge className="bg-yellow-500 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 flex items-center gap-1 w-fit"><Clock className="h-3 w-3 sm:h-4 sm:w-4" />در انتظار تایید</Badge>;
     }
 
     if (invoice.payment_review_status === 'rejected') {
-      return <Badge className="bg-red-500 text-white text-sm px-3 py-1"><XCircle className="h-4 w-4 ml-1" />رد شده</Badge>;
+      return <Badge className="bg-red-500 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 flex items-center gap-1 w-fit"><XCircle className="h-3 w-3 sm:h-4 sm:w-4" />رد شده</Badge>;
     }
 
     if (invoice.status === 'partially_paid') {
-      return <Badge className="bg-orange-500 text-white text-sm px-3 py-1"><AlertCircle className="h-4 w-4 ml-1" />پرداخت جزئی</Badge>;
+      return <Badge className="bg-orange-500 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 flex items-center gap-1 w-fit"><AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />پرداخت جزئی</Badge>;
     }
 
-    return <Badge variant="outline" className="text-sm px-3 py-1"><Clock className="h-4 w-4 ml-1" />در انتظار پرداخت</Badge>;
+    return <Badge className="border border-slate-300 bg-white text-slate-700 text-xs sm:text-sm px-2 sm:px-3 py-1 flex items-center gap-1 w-fit"><Clock className="h-3 w-3 sm:h-4 sm:w-4" />در انتظار پرداخت</Badge>;
   };
 
   const getPaymentTypeLabel = (type: string) => {
@@ -347,52 +347,59 @@ export default function InvoiceView() {
         {/* Formal Invoice */}
         <div ref={invoiceRef} className="bg-white rounded-lg shadow-lg overflow-hidden">
           {/* Header with Logo */}
-          <div className="bg-gradient-to-l from-slate-800 to-slate-900 text-white p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <img src={rafieiLogo} alt="Logo" className="h-16 w-16 object-contain" />
+          <div className="bg-gradient-to-l from-slate-800 to-slate-900 text-white p-4 sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <img src={rafieiLogo} alt="Logo" className="h-10 w-10 sm:h-16 sm:w-16 object-contain" />
                 <div>
-                  <h1 className="text-2xl font-bold">{COMPANY_INFO.name}</h1>
-                  <p className="text-slate-300 text-sm">{COMPANY_INFO.website}</p>
+                  <h1 className="text-lg sm:text-2xl font-bold">{COMPANY_INFO.name}</h1>
+                  <p className="text-slate-300 text-xs sm:text-sm">{COMPANY_INFO.website}</p>
                 </div>
               </div>
               <div className="text-left">
-                <p className="text-3xl font-bold">فاکتور</p>
-                <p className="text-slate-300">INVOICE</p>
+                <p className="text-xl sm:text-3xl font-bold">فاکتور</p>
+                <p className="text-slate-300 text-xs sm:text-base">INVOICE</p>
               </div>
             </div>
           </div>
 
           {/* Invoice Info Bar */}
-          <div className="bg-slate-100 px-6 py-4 flex flex-wrap justify-between items-center gap-4">
-            <div className="flex items-center gap-6">
-              <div>
-                <p className="text-xs text-slate-500">شماره فاکتور</p>
-                <p className="font-bold text-lg text-slate-800">{invoice.invoice_number}</p>
+          <div className="bg-slate-100 px-4 sm:px-6 py-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+              {/* Status Badge - Mobile first, top right */}
+              <div className="order-first sm:order-last self-start sm:self-center">
+                {getStatusBadge()}
               </div>
-              <div>
-                <p className="text-xs text-slate-500">تاریخ صدور</p>
-                <p className="font-medium text-slate-700">{format(new Date(invoice.created_at), 'yyyy/MM/dd')}</p>
-              </div>
-              {invoice.due_date && (
+              
+              {/* Invoice Details */}
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                 <div>
-                  <p className="text-xs text-slate-500">سررسید</p>
-                  <p className="font-medium text-slate-700">{format(new Date(invoice.due_date), 'yyyy/MM/dd')}</p>
+                  <p className="text-xs text-slate-500">شماره فاکتور</p>
+                  <p className="font-bold text-base sm:text-lg text-slate-800">{invoice.invoice_number}</p>
                 </div>
-              )}
+                <div>
+                  <p className="text-xs text-slate-500">تاریخ صدور</p>
+                  <p className="font-medium text-sm sm:text-base text-slate-700">{format(new Date(invoice.created_at), 'yyyy/MM/dd')}</p>
+                </div>
+                {invoice.due_date && (
+                  <div>
+                    <p className="text-xs text-slate-500">سررسید</p>
+                    <p className="font-medium text-sm sm:text-base text-slate-700">{format(new Date(invoice.due_date), 'yyyy/MM/dd')}</p>
+                  </div>
+                )}
+              </div>
             </div>
-            <div>{getStatusBadge()}</div>
           </div>
 
           {/* Two Column Info */}
-          <div className="p-6 grid md:grid-cols-2 gap-6">
+          <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {/* Company Info */}
-            <div className="bg-slate-50 rounded-lg p-4">
-              <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2">
+            <div className="bg-slate-50 rounded-lg p-3 sm:p-4">
+              <h3 className="font-bold text-slate-700 mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
                 <Building className="h-4 w-4" />
                 مشخصات فروشنده
               </h3>
-              <div className="space-y-2 text-sm">
+              <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                 <p className="font-medium text-slate-800">{COMPANY_INFO.name}</p>
                 <div className="flex items-center gap-2 text-slate-600">
                   <Phone className="h-3 w-3" />
@@ -410,12 +417,12 @@ export default function InvoiceView() {
             </div>
 
             {/* Customer Info */}
-            <div className="bg-slate-50 rounded-lg p-4">
-              <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2">
+            <div className="bg-slate-50 rounded-lg p-3 sm:p-4">
+              <h3 className="font-bold text-slate-700 mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
                 <User className="h-4 w-4" />
                 مشخصات خریدار
               </h3>
-              <div className="space-y-2 text-sm">
+              <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                 <p className="font-medium text-slate-800">{invoice.customer?.name || '-'}</p>
                 <div className="flex items-center gap-2 text-slate-600">
                   <Phone className="h-3 w-3" />
@@ -436,25 +443,25 @@ export default function InvoiceView() {
           </div>
 
           {/* Items Table */}
-          <div className="px-6 pb-4">
-            <table className="w-full border-collapse">
+          <div className="px-4 sm:px-6 pb-4 overflow-x-auto">
+            <table className="w-full border-collapse min-w-[400px]">
               <thead>
-                <tr className="bg-slate-800 text-white">
-                  <th className="py-3 px-4 text-right rounded-tr-lg">ردیف</th>
-                  <th className="py-3 px-4 text-right">شرح کالا / خدمات</th>
-                  <th className="py-3 px-4 text-center">تعداد</th>
-                  <th className="py-3 px-4 text-left">قیمت واحد</th>
-                  <th className="py-3 px-4 text-left rounded-tl-lg">مبلغ کل</th>
+                <tr className="bg-slate-800 text-white text-xs sm:text-sm">
+                  <th className="py-2 sm:py-3 px-2 sm:px-4 text-right rounded-tr-lg">ردیف</th>
+                  <th className="py-2 sm:py-3 px-2 sm:px-4 text-right">شرح کالا / خدمات</th>
+                  <th className="py-2 sm:py-3 px-2 sm:px-4 text-center">تعداد</th>
+                  <th className="py-2 sm:py-3 px-2 sm:px-4 text-left">قیمت واحد</th>
+                  <th className="py-2 sm:py-3 px-2 sm:px-4 text-left rounded-tl-lg">مبلغ کل</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, index) => (
                   <tr key={item.id} className={index % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
-                    <td className="py-3 px-4 text-slate-600">{index + 1}</td>
-                    <td className="py-3 px-4 font-medium text-slate-800">{item.description}</td>
-                    <td className="py-3 px-4 text-center text-slate-600">{item.quantity}</td>
-                    <td className="py-3 px-4 text-left text-slate-600">{Number(item.unit_price).toLocaleString()} تومان</td>
-                    <td className="py-3 px-4 text-left font-bold text-slate-800">{Number(item.total_price).toLocaleString()} تومان</td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-4 text-slate-600 text-xs sm:text-sm">{index + 1}</td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-4 font-medium text-slate-800 text-xs sm:text-sm">{item.description}</td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-4 text-center text-slate-600 text-xs sm:text-sm">{item.quantity}</td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-4 text-left text-slate-600 text-xs sm:text-sm">{Number(item.unit_price).toLocaleString()} تومان</td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-4 text-left font-bold text-slate-800 text-xs sm:text-sm">{Number(item.total_price).toLocaleString()} تومان</td>
                   </tr>
                 ))}
               </tbody>
@@ -493,21 +500,21 @@ export default function InvoiceView() {
           )}
 
           {/* Summary */}
-          <div className="px-6 pb-6">
+          <div className="px-4 sm:px-6 pb-6">
             <div className="flex justify-end">
-              <div className="w-full md:w-80 bg-slate-50 rounded-lg p-4 space-y-3">
-                <div className="flex justify-between text-slate-600">
+              <div className="w-full sm:w-80 bg-slate-50 rounded-lg p-3 sm:p-4 space-y-2 sm:space-y-3">
+                <div className="flex justify-between text-slate-600 text-sm sm:text-base">
                   <span>جمع کل:</span>
                   <span className="font-medium">{Number(invoice.total_amount).toLocaleString()} تومان</span>
                 </div>
-                <div className="flex justify-between text-green-600">
+                <div className="flex justify-between text-green-600 text-sm sm:text-base">
                   <span>پرداخت شده:</span>
                   <span className="font-medium">{Number(invoice.paid_amount).toLocaleString()} تومان</span>
                 </div>
                 {remainingAmount > 0 && (
                   <>
                     <Separator />
-                    <div className="flex justify-between text-lg">
+                    <div className="flex justify-between text-base sm:text-lg">
                       <span className="font-bold text-slate-800">مانده قابل پرداخت:</span>
                       <span className="font-bold text-red-600">{remainingAmount.toLocaleString()} تومان</span>
                     </div>
@@ -519,15 +526,15 @@ export default function InvoiceView() {
 
           {/* Notes */}
           {invoice.notes && (
-            <div className="px-6 pb-6">
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <p className="text-sm text-amber-800"><strong>توضیحات:</strong> {invoice.notes}</p>
+            <div className="px-4 sm:px-6 pb-6">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4">
+                <p className="text-xs sm:text-sm text-amber-800"><strong>توضیحات:</strong> {invoice.notes}</p>
               </div>
             </div>
           )}
 
           {/* Footer */}
-          <div className="bg-slate-100 px-6 py-4 text-center text-xs text-slate-500">
+          <div className="bg-slate-100 px-4 sm:px-6 py-3 sm:py-4 text-center text-xs text-slate-500">
             <p>{COMPANY_INFO.website} | {COMPANY_INFO.email}</p>
           </div>
         </div>
