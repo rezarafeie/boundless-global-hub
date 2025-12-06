@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Plus, FileText, Eye, Search, Calendar, User, Phone, Mail, X, Trash2, Edit, Copy, ExternalLink, RefreshCw, Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Upload, Image } from 'lucide-react';
+import { Plus, FileText, Eye, Search, Calendar, User, Phone, Mail, X, Trash2, Edit, Copy, ExternalLink, RefreshCw, Loader2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Upload, Image, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns-jalali';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -95,6 +95,8 @@ export const AccountingInvoices: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<{ id: number; role: string; is_messenger_admin: boolean } | null>(null);
   const [invoiceItemsMap, setInvoiceItemsMap] = useState<Record<string, InvoiceItem[]>>({});
   const [isSyncing, setIsSyncing] = useState(false);
+  const [pendingReviewInvoices, setPendingReviewInvoices] = useState<Invoice[]>([]);
+  const [processingReview, setProcessingReview] = useState<string | null>(null);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -305,6 +307,139 @@ export const AccountingInvoices: React.FC = () => {
       toast.error('خطا در دریافت اطلاعات');
     }
     setLoading(false);
+    // Fetch pending review invoices
+    fetchPendingReviews();
+  };
+
+  const fetchPendingReviews = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('payment_review_status', 'pending_review')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const invoicesWithDetails = await Promise.all(
+          data.map(async (inv) => {
+            const [customerRes, agentRes] = await Promise.all([
+              supabase.from('chat_users').select('name, phone').eq('id', inv.customer_id).single(),
+              inv.sales_agent_id 
+                ? supabase.from('chat_users').select('name').eq('id', inv.sales_agent_id).single()
+                : Promise.resolve({ data: null })
+            ]);
+            return {
+              ...inv,
+              customer: customerRes.data,
+              agent: agentRes.data
+            };
+          })
+        );
+        setPendingReviewInvoices(invoicesWithDetails);
+      }
+    } catch (error) {
+      console.error('Error fetching pending reviews:', error);
+    }
+  };
+
+  const handleApprovePayment = async (invoice: Invoice) => {
+    setProcessingReview(invoice.id);
+    try {
+      // Update invoice to completed
+      const { error: updateError } = await supabase
+        .from('invoices')
+        .update({
+          status: 'paid',
+          paid_amount: invoice.total_amount,
+          payment_review_status: 'approved'
+        })
+        .eq('id', invoice.id);
+
+      if (updateError) throw updateError;
+
+      // Get invoice items to check for course
+      const { data: items } = await supabase
+        .from('invoice_items')
+        .select('*')
+        .eq('invoice_id', invoice.id);
+
+      const courseItem = items?.find(item => item.course_id);
+
+      // If invoice has a course, create enrollment
+      if (courseItem && courseItem.course_id) {
+        const { data: customer } = await supabase
+          .from('chat_users')
+          .select('name, full_name, email, phone, country_code')
+          .eq('id', invoice.customer_id)
+          .single();
+
+        if (customer) {
+          // Check if enrollment already exists
+          const { data: existingEnrollment } = await supabase
+            .from('enrollments')
+            .select('id')
+            .eq('chat_user_id', invoice.customer_id)
+            .eq('course_id', courseItem.course_id)
+            .maybeSingle();
+
+          if (!existingEnrollment) {
+            const { data: newEnrollment, error: enrollmentError } = await supabase
+              .from('enrollments')
+              .insert({
+                course_id: courseItem.course_id,
+                chat_user_id: invoice.customer_id,
+                full_name: customer.full_name || customer.name,
+                email: customer.email || '',
+                phone: customer.phone,
+                country_code: customer.country_code || '+98',
+                payment_amount: courseItem.total_price,
+                payment_status: 'completed',
+                payment_method: 'invoice'
+              })
+              .select('id')
+              .single();
+
+            if (!enrollmentError && newEnrollment) {
+              await supabase
+                .from('invoices')
+                .update({ enrollment_id: newEnrollment.id })
+                .eq('id', invoice.id);
+            }
+          }
+        }
+      }
+
+      toast.success('پرداخت تایید شد');
+      fetchData();
+    } catch (error) {
+      console.error('Error approving payment:', error);
+      toast.error('خطا در تایید پرداخت');
+    }
+    setProcessingReview(null);
+  };
+
+  const handleRejectPayment = async (invoice: Invoice) => {
+    setProcessingReview(invoice.id);
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .update({
+          payment_review_status: 'rejected',
+          rejection_reason: 'رسید پرداخت تایید نشد'
+        })
+        .eq('id', invoice.id);
+
+      if (error) throw error;
+
+      toast.success('پرداخت رد شد');
+      fetchData();
+    } catch (error) {
+      console.error('Error rejecting payment:', error);
+      toast.error('خطا در رد پرداخت');
+    }
+    setProcessingReview(null);
   };
 
   const syncPaymentsToInvoices = async () => {
@@ -725,6 +860,80 @@ export const AccountingInvoices: React.FC = () => {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
+      {/* Payment Review Card */}
+      {pendingReviewInvoices.length > 0 && (
+        <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+              <Clock className="h-5 w-5 text-yellow-600" />
+              پرداخت‌های در انتظار تایید ({pendingReviewInvoices.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {pendingReviewInvoices.map((invoice) => (
+                <div key={invoice.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-background rounded-lg border">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold">{invoice.customer?.name || 'نامشخص'}</span>
+                      <Badge variant="outline" className="text-xs">{invoice.invoice_number}</Badge>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                      <span>{invoice.customer?.phone}</span>
+                      <span className="font-medium text-foreground">{Number(invoice.total_amount).toLocaleString()} تومان</span>
+                    </div>
+                    {invoice.receipt_url && (
+                      <a 
+                        href={invoice.receipt_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline mt-1 inline-flex items-center gap-1"
+                      >
+                        <Eye className="h-3 w-3" />
+                        مشاهده رسید
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 sm:flex-none border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
+                      onClick={() => handleRejectPayment(invoice)}
+                      disabled={processingReview === invoice.id}
+                    >
+                      {processingReview === invoice.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <XCircle className="h-4 w-4 ml-1" />
+                          رد
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700"
+                      onClick={() => handleApprovePayment(invoice)}
+                      disabled={processingReview === invoice.id}
+                    >
+                      {processingReview === invoice.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <CheckCircle className="h-4 w-4 ml-1" />
+                          تایید
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-xl md:text-2xl font-bold">مدیریت فاکتورها</h1>
         <div className="flex gap-2 w-full sm:w-auto">
