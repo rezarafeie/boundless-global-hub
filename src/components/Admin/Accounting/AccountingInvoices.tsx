@@ -503,6 +503,56 @@ export const AccountingInvoices: React.FC = () => {
         await supabase.from('installments').insert(installments);
       }
 
+      // If payment is completed and product is a course, create enrollment
+      if (formData.payment_status === 'completed' && formData.product_type === 'course') {
+        // Get customer details
+        const { data: customer } = await supabase
+          .from('chat_users')
+          .select('name, full_name, email, phone, country_code')
+          .eq('id', parseInt(formData.customer_id))
+          .single();
+
+        if (customer) {
+          // Check if enrollment already exists
+          const { data: existingEnrollment } = await supabase
+            .from('enrollments')
+            .select('id')
+            .eq('chat_user_id', parseInt(formData.customer_id))
+            .eq('course_id', formData.product_id)
+            .maybeSingle();
+
+          if (!existingEnrollment) {
+            // Create enrollment
+            const { data: newEnrollment, error: enrollmentError } = await supabase
+              .from('enrollments')
+              .insert({
+                course_id: formData.product_id,
+                chat_user_id: parseInt(formData.customer_id),
+                full_name: customer.full_name || customer.name,
+                email: customer.email || '',
+                phone: customer.phone,
+                country_code: customer.country_code || '+98',
+                payment_amount: parseFloat(formData.amount),
+                payment_status: 'completed',
+                payment_method: 'invoice'
+              })
+              .select('id')
+              .single();
+
+            if (enrollmentError) {
+              console.error('Error creating enrollment:', enrollmentError);
+              toast.warning('فاکتور ایجاد شد اما ثبت‌نام با خطا مواجه شد');
+            } else if (newEnrollment) {
+              // Update invoice with enrollment_id
+              await supabase
+                .from('invoices')
+                .update({ enrollment_id: newEnrollment.id })
+                .eq('id', invoice.id);
+            }
+          }
+        }
+      }
+
       toast.success('فاکتور با موفقیت ایجاد شد');
       setIsCreateOpen(false);
       setFormData({
