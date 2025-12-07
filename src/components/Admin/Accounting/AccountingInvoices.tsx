@@ -367,7 +367,7 @@ export const AccountingInvoices: React.FC = () => {
 
       const courseItem = items?.find(item => item.course_id);
 
-      // If invoice has a course, create enrollment
+      // If invoice has a course, call create-enrollment edge function
       if (courseItem && courseItem.course_id) {
         const { data: customer } = await supabase
           .from('chat_users')
@@ -376,44 +376,28 @@ export const AccountingInvoices: React.FC = () => {
           .single();
 
         if (customer) {
-          // Check if enrollment already exists
-          const { data: existingEnrollment } = await supabase
-            .from('enrollments')
-            .select('id')
-            .eq('chat_user_id', invoice.customer_id)
-            .eq('course_id', courseItem.course_id)
-            .maybeSingle();
+          // Call create-enrollment edge function with force_create to always create new enrollment
+          const response = await supabase.functions.invoke('create-enrollment', {
+            body: {
+              course_id: courseItem.course_id,
+              full_name: customer.full_name || customer.name || 'Unknown',
+              email: customer.email || '',
+              phone: customer.phone,
+              payment_amount: courseItem.total_price,
+              payment_method: 'invoice',
+              payment_status: 'completed',
+              chat_user_id: invoice.customer_id,
+              country_code: customer.country_code || '+98',
+              force_create: true // Always create new enrollment, don't check for duplicates
+            }
+          });
 
-          if (existingEnrollment) {
-            // Link existing enrollment to invoice
+          if (response.data?.enrollment?.id) {
+            // Link the new enrollment to invoice
             await supabase
               .from('invoices')
-              .update({ enrollment_id: existingEnrollment.id })
+              .update({ enrollment_id: response.data.enrollment.id })
               .eq('id', invoice.id);
-          } else {
-            // Create new enrollment
-            const { data: newEnrollment, error: enrollmentError } = await supabase
-              .from('enrollments')
-              .insert({
-                course_id: courseItem.course_id,
-                chat_user_id: invoice.customer_id,
-                full_name: customer.full_name || customer.name,
-                email: customer.email || '',
-                phone: customer.phone,
-                country_code: customer.country_code || '+98',
-                payment_amount: courseItem.total_price,
-                payment_status: 'completed',
-                payment_method: 'invoice'
-              })
-              .select('id')
-              .single();
-
-            if (!enrollmentError && newEnrollment) {
-              await supabase
-                .from('invoices')
-                .update({ enrollment_id: newEnrollment.id })
-                .eq('id', invoice.id);
-            }
           }
         }
       }
