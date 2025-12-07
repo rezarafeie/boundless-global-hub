@@ -43,7 +43,8 @@ Deno.serve(async (req) => {
       receipt_url,
       chat_user_id,
       country_code,
-      payment_status
+      payment_status,
+      force_create // Skip duplicate check and always create new enrollment
     } = body;
 
     // Validate required fields
@@ -145,64 +146,68 @@ Deno.serve(async (req) => {
     
     console.log('👤 Using chat_user_id:', resolvedChatUserId);
 
-    // Check if enrollment already exists by email and phone (more comprehensive check)
-    const { data: existingEnrollmentByEmail } = await supabase
-      .from('enrollments')
-      .select('id, payment_status, chat_user_id')
-      .eq('course_id', course_id)
-      .eq('email', email.trim().toLowerCase())
-      .maybeSingle();
-
-    if (existingEnrollmentByEmail) {
-      console.log('📋 Found existing enrollment by email:', existingEnrollmentByEmail.id);
-      
-      const { data: fullEnrollment } = await supabase
+    // Check if enrollment already exists by email and phone (skip if force_create is true)
+    if (!force_create) {
+      const { data: existingEnrollmentByEmail } = await supabase
         .from('enrollments')
-        .select('*')
-        .eq('id', existingEnrollmentByEmail.id)
-        .single();
+        .select('id, payment_status, chat_user_id')
+        .eq('course_id', course_id)
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle();
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          enrollment: fullEnrollment,
-          message: 'User already enrolled in this course'
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
-        }
-      );
-    }
+      if (existingEnrollmentByEmail) {
+        console.log('📋 Found existing enrollment by email:', existingEnrollmentByEmail.id);
+        
+        const { data: fullEnrollment } = await supabase
+          .from('enrollments')
+          .select('*')
+          .eq('id', existingEnrollmentByEmail.id)
+          .single();
 
-    // Also check by phone
-    const { data: existingEnrollmentByPhone } = await supabase
-      .from('enrollments')
-      .select('id, payment_status, chat_user_id')
-      .eq('course_id', course_id)
-      .eq('phone', phone.trim())
-      .maybeSingle();
+        return new Response(
+          JSON.stringify({
+            success: true,
+            enrollment: fullEnrollment,
+            message: 'User already enrolled in this course'
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          }
+        );
+      }
 
-    if (existingEnrollmentByPhone) {
-      console.log('📋 Found existing enrollment by phone:', existingEnrollmentByPhone.id);
-      
-      const { data: fullEnrollment } = await supabase
+      // Also check by phone
+      const { data: existingEnrollmentByPhone } = await supabase
         .from('enrollments')
-        .select('*')
-        .eq('id', existingEnrollmentByPhone.id)
-        .single();
+        .select('id, payment_status, chat_user_id')
+        .eq('course_id', course_id)
+        .eq('phone', phone.trim())
+        .maybeSingle();
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          enrollment: fullEnrollment,
-          message: 'User already enrolled in this course'
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
-        }
-      );
+      if (existingEnrollmentByPhone) {
+        console.log('📋 Found existing enrollment by phone:', existingEnrollmentByPhone.id);
+        
+        const { data: fullEnrollment } = await supabase
+          .from('enrollments')
+          .select('*')
+          .eq('id', existingEnrollmentByPhone.id)
+          .single();
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            enrollment: fullEnrollment,
+            message: 'User already enrolled in this course'
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          }
+        );
+      }
+    } else {
+      console.log('⚡ force_create enabled, skipping duplicate check');
     }
 
     // Determine final payment status
