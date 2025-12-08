@@ -919,6 +919,7 @@ export type Database = {
           confirmed_by: number | null
           consultation_link: string | null
           created_at: string
+          description: string | null
           email: string | null
           full_name: string
           id: string
@@ -934,6 +935,7 @@ export type Database = {
           confirmed_by?: number | null
           consultation_link?: string | null
           created_at?: string
+          description?: string | null
           email?: string | null
           full_name: string
           id?: string
@@ -949,6 +951,7 @@ export type Database = {
           confirmed_by?: number | null
           consultation_link?: string | null
           created_at?: string
+          description?: string | null
           email?: string | null
           full_name?: string
           id?: string

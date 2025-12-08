@@ -712,9 +712,35 @@ const Dashboard = () => {
           </Card>
         </div>
 
+        {/* Mobile Navigation */}
+        <div className="md:hidden overflow-x-auto pb-2 -mx-4 px-4">
+          <div className="flex gap-2 min-w-max">
+            {[
+              { id: 'overview' as DashboardView, label: 'نمای کلی', icon: Users },
+              { id: 'courses' as DashboardView, label: 'دوره‌ها', icon: BookOpen },
+              { id: 'consultations' as DashboardView, label: 'مشاوره', icon: Video },
+              { id: 'tests' as DashboardView, label: 'آزمون', icon: Brain },
+              { id: 'licenses' as DashboardView, label: 'لایسنس', icon: Key },
+              { id: 'payments' as DashboardView, label: 'پرداخت', icon: CreditCard },
+              { id: 'profile' as DashboardView, label: 'پروفایل', icon: User },
+            ].map(item => (
+              <Button
+                key={item.id}
+                variant={activeView === item.id ? 'default' : 'outline'}
+                size="sm"
+                className="flex-shrink-0 gap-2 whitespace-nowrap"
+                onClick={() => setActiveView(item.id)}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
         {/* Main Content with Sidebar */}
-        <div className="flex gap-6">
-          {/* Sidebar Navigation */}
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Sidebar Navigation - Desktop */}
           <div className="hidden md:block w-64 flex-shrink-0">
             <Card className="sticky top-24">
               <CardContent className="p-2">
@@ -746,33 +772,6 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          {/* Mobile Navigation */}
-          <div className="md:hidden w-full mb-4">
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {[
-                { id: 'overview' as DashboardView, label: 'نمای کلی', icon: Users },
-                { id: 'courses' as DashboardView, label: 'دوره‌ها', icon: BookOpen },
-                { id: 'consultations' as DashboardView, label: 'مشاوره', icon: Video },
-                { id: 'tests' as DashboardView, label: 'آزمون', icon: Brain },
-                { id: 'licenses' as DashboardView, label: 'لایسنس', icon: Key },
-                { id: 'payments' as DashboardView, label: 'پرداخت', icon: CreditCard },
-                { id: 'profile' as DashboardView, label: 'پروفایل', icon: User },
-              ].map(item => (
-                <Button
-                  key={item.id}
-                  variant={activeView === item.id ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex-shrink-0 gap-2"
-                  onClick={() => setActiveView(item.id)}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Main Content Area */}
           <div className="flex-1 min-w-0">
             {/* Overview View */}
             {activeView === 'overview' && (

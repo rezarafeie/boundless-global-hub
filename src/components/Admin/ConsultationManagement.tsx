@@ -50,6 +50,7 @@ interface ConsultationBooking {
   confirmed_at: string | null;
   confirmation_note: string | null;
   consultation_link: string | null;
+  description: string | null;
   created_at: string;
   slot?: ConsultationSlot;
 }
@@ -123,7 +124,7 @@ const ConsultationManagement: React.FC = () => {
         slot:consultation_slots(*)
       `)
       .order('created_at', { ascending: false });
-    setBookings(data || []);
+    setBookings((data || []) as ConsultationBooking[]);
   };
 
   const fetchSettings = async () => {
@@ -448,6 +449,7 @@ const ConsultationManagement: React.FC = () => {
                     <TableHead>تلفن</TableHead>
                     <TableHead>تاریخ</TableHead>
                     <TableHead>ساعت</TableHead>
+                    <TableHead>توضیحات</TableHead>
                     <TableHead>وضعیت</TableHead>
                     <TableHead>عملیات</TableHead>
                   </TableRow>
@@ -455,7 +457,7 @@ const ConsultationManagement: React.FC = () => {
                 <TableBody>
                   {filteredBookings.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                         درخواستی یافت نشد
                       </TableCell>
                     </TableRow>
@@ -466,6 +468,11 @@ const ConsultationManagement: React.FC = () => {
                         <TableCell dir="ltr">{booking.phone}</TableCell>
                         <TableCell>{booking.slot ? formatDate(booking.slot.date) : '-'}</TableCell>
                         <TableCell>{booking.slot ? formatTime(booking.slot.start_time) : '-'}</TableCell>
+                        <TableCell className="max-w-[200px]">
+                          {booking.description ? (
+                            <span className="text-xs text-muted-foreground line-clamp-2">{booking.description}</span>
+                          ) : '-'}
+                        </TableCell>
                         <TableCell>{getStatusBadge(booking.status)}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
