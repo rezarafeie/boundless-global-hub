@@ -82,3 +82,6 @@ verify_jwt = false
 
 [functions.consultation-webhook]
 verify_jwt = false
+
+[functions.consultation-action]
+verify_jwt = false

@@ -33,6 +33,7 @@ serve(async (req) => {
       .from('consultation_bookings')
       .select(`
         *,
+        action_token,
         slot:consultation_slots(date, start_time, end_time)
       `)
       .eq('id', bookingId)
@@ -52,6 +53,12 @@ serve(async (req) => {
       .select('*')
       .eq('id', booking.user_id)
       .single();
+
+    // Generate action links
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const actionToken = booking.action_token;
+    const approveLink = `${supabaseUrl}/functions/v1/consultation-action?token=${actionToken}&action=approve`;
+    const rejectLink = `${supabaseUrl}/functions/v1/consultation-action?token=${actionToken}&action=reject`;
 
     // Prepare webhook payload with all consultation and user data
     const webhookPayload = {
@@ -93,6 +100,10 @@ serve(async (req) => {
       avatar_url: userData?.avatar_url || null,
       is_approved: userData?.is_approved || false,
       bedoun_marz: userData?.bedoun_marz || false,
+      
+      // Action links for direct approve/reject
+      approve_link: approveLink,
+      reject_link: rejectLink,
     };
 
     console.log('Sending webhook to:', webhookUrl);
