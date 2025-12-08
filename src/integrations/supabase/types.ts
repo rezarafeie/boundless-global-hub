@@ -914,6 +914,7 @@ export type Database = {
       }
       consultation_bookings: {
         Row: {
+          action_token: string | null
           confirmation_note: string | null
           confirmed_at: string | null
           confirmed_by: number | null
@@ -930,6 +931,7 @@ export type Database = {
           user_id: number
         }
         Insert: {
+          action_token?: string | null
           confirmation_note?: string | null
           confirmed_at?: string | null
           confirmed_by?: number | null
@@ -946,6 +948,7 @@ export type Database = {
           user_id: number
         }
         Update: {
+          action_token?: string | null
           confirmation_note?: string | null
           confirmed_at?: string | null
           confirmed_by?: number | null
