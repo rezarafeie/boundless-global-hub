@@ -177,7 +177,7 @@ const ConsultationBooking: React.FC = () => {
     
     setBooking(true);
     try {
-      const { error } = await supabase
+      const { data: bookingData, error } = await supabase
         .from('consultation_bookings')
         .insert({
           user_id: user.messengerData.id,
@@ -187,7 +187,9 @@ const ConsultationBooking: React.FC = () => {
           email: user.messengerData.email || null,
           status: 'pending',
           description: consultationDescription || null
-        });
+        })
+        .select('id')
+        .single();
       
       if (error) {
         if (error.code === '23505') {
@@ -196,6 +198,28 @@ const ConsultationBooking: React.FC = () => {
           throw error;
         }
         return;
+      }
+      
+      // Send webhook with pending status
+      if (bookingData?.id) {
+        try {
+          const { data: settings } = await supabase
+            .from('consultation_settings')
+            .select('webhook_url')
+            .single();
+          
+          if (settings?.webhook_url) {
+            await supabase.functions.invoke('consultation-webhook', {
+              body: {
+                bookingId: bookingData.id,
+                webhookUrl: settings.webhook_url
+              }
+            });
+          }
+        } catch (webhookError) {
+          console.error('Webhook error:', webhookError);
+          // Don't fail the booking if webhook fails
+        }
       }
       
       setBookingSuccess(true);
