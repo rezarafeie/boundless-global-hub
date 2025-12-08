@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -15,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@supabase/supabase-js';
 import MainLayout from '@/components/Layout/MainLayout';
 import TestsTab from '@/components/Dashboard/TestsTab';
+import UserConsultations from '@/components/Dashboard/UserConsultations';
 import { 
   BookOpen, 
   Key, 
@@ -39,10 +39,13 @@ import {
   MapPin,
   Briefcase,
   GraduationCap,
-  Brain
+  Brain,
+  Video,
+  Menu
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { IPDetectionService } from '@/lib/ipDetectionService';
+import { cn } from '@/lib/utils';
 
 interface EnrolledCourse {
   id: string;
@@ -90,12 +93,16 @@ const supabaseUrl = 'https://ihhetvwuhqohbfgkqoxw.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloaGV0dnd1aHFvaGJmZ2txb3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNjk0NTIsImV4cCI6MjA2NTk0NTQ1Mn0.91gRPO_ApEGQF2EtTAQLcqA-mIj7lqF29M1OZcGW4BI';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+type DashboardView = 'overview' | 'courses' | 'consultations' | 'tests' | 'licenses' | 'payments' | 'profile';
+
 const Dashboard = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
   const [loading, setLoading] = useState(true);
+  const [activeView, setActiveView] = useState<DashboardView>('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [courseLicenses, setCourseLicenses] = useState<CourseLicense[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<PaymentTransaction[]>([]);
@@ -705,566 +712,655 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="courses" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="courses" className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              دوره‌های من
-            </TabsTrigger>
-            <TabsTrigger value="tests" className="flex items-center gap-2">
-              <Brain className="w-4 h-4" />
-              آزمون‌های من
-            </TabsTrigger>
-            <TabsTrigger value="licenses" className="flex items-center gap-2">
-              <Key className="w-4 h-4" />
-              لایسنس‌ها
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4" />
-              تاریخچه پرداخت
-            </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              پروفایل
-            </TabsTrigger>
-          </TabsList>
+        {/* Main Content with Sidebar */}
+        <div className="flex gap-6">
+          {/* Sidebar Navigation */}
+          <div className="hidden md:block w-64 flex-shrink-0">
+            <Card className="sticky top-24">
+              <CardContent className="p-2">
+                <nav className="space-y-1">
+                  {[
+                    { id: 'overview' as DashboardView, label: 'نمای کلی', icon: Users },
+                    { id: 'courses' as DashboardView, label: 'دوره‌های من', icon: BookOpen },
+                    { id: 'consultations' as DashboardView, label: 'مشاوره‌ها', icon: Video },
+                    { id: 'tests' as DashboardView, label: 'آزمون‌های من', icon: Brain },
+                    { id: 'licenses' as DashboardView, label: 'لایسنس‌ها', icon: Key },
+                    { id: 'payments' as DashboardView, label: 'تاریخچه پرداخت', icon: CreditCard },
+                    { id: 'profile' as DashboardView, label: 'پروفایل', icon: User },
+                  ].map(item => (
+                    <Button
+                      key={item.id}
+                      variant={activeView === item.id ? 'secondary' : 'ghost'}
+                      className={cn(
+                        'w-full justify-start gap-3',
+                        activeView === item.id && 'bg-secondary'
+                      )}
+                      onClick={() => setActiveView(item.id)}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {item.label}
+                    </Button>
+                  ))}
+                </nav>
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Enrolled Courses Tab */}
-          <TabsContent value="courses" className="space-y-4" dir="rtl" style={{ textAlign: 'right' }}>
-            {enrolledCourses.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">هنوز دوره‌ای ندارید</h3>
-                  <p className="text-muted-foreground mb-4">
-                    برای شروع یادگیری، در دوره‌های ما ثبت‌نام کنید
-                  </p>
-                  <Button onClick={() => navigate('/courses')}>
-                    مشاهده دوره‌ها
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {enrolledCourses.map((course) => (
-                  <Card key={course.id} className="overflow-hidden">
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-1">
-                          <CardTitle className="text-lg">{course.title}</CardTitle>
-                          <CardDescription>
-                            {course.description?.substring(0, 100)}...
-                          </CardDescription>
-                        </div>
-                        {getStatusBadge(course.payment_status)}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {new Date(course.enrollment_date).toLocaleDateString('fa-IR')}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="w-4 h-4" />
-                          {course.payment_amount?.toLocaleString('fa-IR')} تومان
-                        </div>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <Button 
-                        className="w-full" 
-                        onClick={() => handleCourseAccess(course)}
-                        disabled={course.payment_status !== 'success' && course.payment_status !== 'completed'}
-                      >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        مشاهده جزئیات
+          {/* Mobile Navigation */}
+          <div className="md:hidden w-full mb-4">
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {[
+                { id: 'overview' as DashboardView, label: 'نمای کلی', icon: Users },
+                { id: 'courses' as DashboardView, label: 'دوره‌ها', icon: BookOpen },
+                { id: 'consultations' as DashboardView, label: 'مشاوره', icon: Video },
+                { id: 'tests' as DashboardView, label: 'آزمون', icon: Brain },
+                { id: 'licenses' as DashboardView, label: 'لایسنس', icon: Key },
+                { id: 'payments' as DashboardView, label: 'پرداخت', icon: CreditCard },
+                { id: 'profile' as DashboardView, label: 'پروفایل', icon: User },
+              ].map(item => (
+                <Button
+                  key={item.id}
+                  variant={activeView === item.id ? 'default' : 'outline'}
+                  size="sm"
+                  className="flex-shrink-0 gap-2"
+                  onClick={() => setActiveView(item.id)}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="flex-1 min-w-0">
+            {/* Overview View */}
+            {activeView === 'overview' && (
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold">نمای کلی</h2>
+                
+                {/* Active Consultation Card */}
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                    <Video className="h-4 w-4" />
+                    مشاوره فعال
+                  </h3>
+                  <UserConsultations showActiveOnly />
+                </div>
+
+                {/* Recent Courses */}
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    دوره‌های اخیر
+                  </h3>
+                  {enrolledCourses.length === 0 ? (
+                    <Card>
+                      <CardContent className="py-6 text-center text-muted-foreground">
+                        <p className="text-sm">هنوز دوره‌ای ندارید</p>
+                        <Button size="sm" variant="outline" className="mt-2" onClick={() => navigate('/courses')}>
+                          مشاهده دوره‌ها
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                      {enrolledCourses.slice(0, 2).map((course) => (
+                        <Card key={course.id}>
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h4 className="font-medium">{course.title}</h4>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {new Date(course.enrollment_date).toLocaleDateString('fa-IR')}
+                                </p>
+                              </div>
+                              {getStatusBadge(course.payment_status)}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      {enrolledCourses.length > 2 && (
+                        <Button variant="ghost" size="sm" onClick={() => setActiveView('courses')}>
+                          مشاهده همه ({enrolledCourses.length})
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Courses View */}
+            {activeView === 'courses' && (
+              <div className="space-y-4" dir="rtl" style={{ textAlign: 'right' }}>
+                <h2 className="text-xl font-semibold">دوره‌های من</h2>
+                {enrolledCourses.length === 0 ? (
+                  <Card>
+                    <CardContent className="text-center py-8">
+                      <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">هنوز دوره‌ای ندارید</h3>
+                      <p className="text-muted-foreground mb-4">
+                        برای شروع یادگیری، در دوره‌های ما ثبت‌نام کنید
+                      </p>
+                      <Button onClick={() => navigate('/courses')}>
+                        مشاهده دوره‌ها
                       </Button>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Licenses Tab */}
-          <TabsContent value="licenses" className="space-y-4" dir="rtl" style={{ textAlign: 'right' }}>
-            {courseLicenses.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <Key className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">لایسنسی یافت نشد</h3>
-                  <p className="text-muted-foreground">
-                    لایسنس‌های دوره‌هایتان اینجا نمایش داده می‌شود
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {courseLicenses.map((license) => (
-                  <Card key={license.id}>
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-lg">{license.course_title}</CardTitle>
-                          <CardDescription>
-                            ایجاد شده: {new Date(license.created_at).toLocaleDateString('fa-IR')}
-                          </CardDescription>
-                        </div>
-                        {getStatusBadge(license.status)}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {license.license_key && (
-                        <div className="bg-muted rounded-lg p-4">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <p className="text-sm font-medium mb-1">کلید لایسنس:</p>
-                              <p className="font-mono text-sm break-all">
-                                {license.license_key}
-                              </p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {enrolledCourses.map((course) => (
+                      <Card key={course.id} className="overflow-hidden">
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-1">
+                              <CardTitle className="text-lg">{course.title}</CardTitle>
+                              <CardDescription>
+                                {course.description?.substring(0, 100)}...
+                              </CardDescription>
                             </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => copyLicenseKey(license.license_key!)}
-                            >
-                              <Copy className="w-4 h-4" />
-                            </Button>
+                            {getStatusBadge(course.payment_status)}
                           </div>
-                        </div>
-                      )}
-                      
-                      {license.expires_at && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="w-4 h-4" />
-                          انقضا: {new Date(license.expires_at).toLocaleDateString('fa-IR')}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Tests Tab */}
-          <TabsContent value="tests" className="space-y-4" dir="rtl" style={{ textAlign: 'right' }}>
-            <TestsTab />
-          </TabsContent>
-
-          {/* Payment History Tab */}
-          <TabsContent value="payments" className="space-y-4" dir="rtl" style={{ textAlign: 'right' }}>
-            {paymentHistory.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">تاریخچه پرداختی وجود ندارد</h3>
-                  <p className="text-muted-foreground">
-                    پرداخت‌های شما اینجا نمایش داده می‌شود
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {paymentHistory.map((transaction) => (
-                  <Card key={transaction.id}>
-                    <CardContent className="p-6">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2">
-                          <h3 className="font-semibold">{transaction.course_title}</h3>
-                          <div className="space-y-1 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-2">
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="flex items-center justify-between text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
                               <Calendar className="w-4 h-4" />
-                              {new Date(transaction.created_at).toLocaleDateString('fa-IR')}
+                              {new Date(course.enrollment_date).toLocaleDateString('fa-IR')}
                             </div>
-                            <div className="flex items-center gap-2">
-                              <CreditCard className="w-4 h-4" />
-                              {transaction.payment_method === 'zarinpal' ? 'زرین‌پال' : transaction.payment_method}
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-4 h-4" />
+                              {course.payment_amount?.toLocaleString('fa-IR')} تومان
                             </div>
-                            {transaction.zarinpal_ref_id && (
-                              <div className="font-mono text-xs">
-                                کد پیگیری: {transaction.zarinpal_ref_id}
-                              </div>
-                            )}
                           </div>
-                        </div>
-                        <div className="text-left space-y-2">
-                          <div className="text-lg font-bold">
-                            {transaction.amount.toLocaleString('fa-IR')} تومان
-                          </div>
-                          {getStatusBadge(transaction.payment_status)}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                          
+                          <Separator />
+                          
+                          <Button 
+                            className="w-full" 
+                            onClick={() => handleCourseAccess(course)}
+                            disabled={course.payment_status !== 'success' && course.payment_status !== 'completed'}
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            مشاهده جزئیات
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
-          </TabsContent>
 
-          {/* Profile Tab */}
-          <TabsContent value="profile" className="space-y-6" dir="rtl"
-            style={{ textAlign: 'right' }}>
-            {/* Profile Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  اطلاعات پروفایل
-                </CardTitle>
-                <CardDescription>مدیریت اطلاعات شخصی شما</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Avatar Section */}
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <Avatar className="h-20 w-20">
-                      <AvatarFallback 
-                        className="text-lg font-semibold text-white"
-                        style={{ backgroundColor: getAvatarColor(formData.name || 'User') }}
-                      >
-                        {(formData.name || 'U').charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <label className={`absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors ${uploadingAvatar ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                      <Camera className="h-4 w-4" />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarUpload}
-                        className="hidden"
-                        disabled={uploadingAvatar}
-                      />
-                    </label>
-                  </div>
-                  <div>
-                    <h3 className="font-medium">{formData.name || 'کاربر'}</h3>
-                    <p className="text-sm text-muted-foreground">{formData.email}</p>
-                  </div>
-                </div>
+            {/* Consultations View */}
+            {activeView === 'consultations' && (
+              <div className="space-y-4">
+                <UserConsultations />
+              </div>
+            )}
 
-                <Separator />
+            {/* Tests View */}
+            {activeView === 'tests' && (
+              <div className="space-y-4" dir="rtl" style={{ textAlign: 'right' }}>
+                <h2 className="text-xl font-semibold">آزمون‌های من</h2>
+                <TestsTab />
+              </div>
+            )}
 
-                {/* Profile Form */}
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">نام</Label>
-                      <Input
-                        id="firstName"
-                        value={formData.firstName}
-                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                        placeholder="نام خود را وارد کنید"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">نام خانوادگی</Label>
-                      <Input
-                        id="lastName"
-                        value={formData.lastName}
-                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                        placeholder="نام خانوادگی خود را وارد کنید"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">ایمیل</Label>
-                    <Input
-                      id="email"
-                      value={formData.email}
-                      disabled
-                      className="bg-muted"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      ایمیل قابل تغییر نیست
-                    </p>
-                  </div>
-
-                  <Separator />
-                  
-                  {/* Demographics Section */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      اطلاعات شخصی
-                    </h3>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="gender">جنسیت</Label>
-                        <Select value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value })}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="انتخاب کنید" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="male">مرد</SelectItem>
-                            <SelectItem value="female">زن</SelectItem>
-                            <SelectItem value="other">سایر</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="age">سن</Label>
-                        <Input
-                          id="age"
-                          type="number"
-                          value={formData.age}
-                          onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                          placeholder="سن شما"
-                          min="1"
-                          max="120"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Professional Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                      <Briefcase className="h-4 w-4" />
-                      اطلاعات شغلی و تحصیلی
-                    </h3>
-
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="education">تحصیلات</Label>
-                        <Select value={formData.education} onValueChange={(value) => setFormData({ ...formData, education: value })}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="سطح تحصیلات خود را انتخاب کنید" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="diploma">دیپلم</SelectItem>
-                            <SelectItem value="associate">کاردانی</SelectItem>
-                            <SelectItem value="bachelor">کارشناسی</SelectItem>
-                            <SelectItem value="master">کارشناسی ارشد</SelectItem>
-                            <SelectItem value="phd">دکتری</SelectItem>
-                            <SelectItem value="other">سایر</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="job">شغل</Label>
-                        <Input
-                          id="job"
-                          value={formData.job}
-                          onChange={(e) => setFormData({ ...formData, job: e.target.value })}
-                          placeholder="شغل فعلی شما"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="specialized_program">برنامه تخصصی</Label>
-                        <Select value={formData.specialized_program} onValueChange={(value) => setFormData({ ...formData, specialized_program: value })}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="برنامه تخصصی مورد علاقه خود را انتخاب کنید" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="passive_income">درآمد غیرفعال</SelectItem>
-                            <SelectItem value="american_business">کسب‌وکار آمریکایی</SelectItem>
-                            <SelectItem value="boundless_taste">طعم بی‌کران</SelectItem>
-                            <SelectItem value="instagram_marketing">بازاریابی اینستاگرام</SelectItem>
-                            <SelectItem value="other">سایر</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Location Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
-                      اطلاعات مکانی
-                    </h3>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="country">کشور</Label>
-                        <Input
-                          id="country"
-                          value={formData.country}
-                          onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                          placeholder="کشور محل سکونت"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="province">استان/منطقه</Label>
-                        <Select value={formData.province} onValueChange={(value) => setFormData({ ...formData, province: value })}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="استان خود را انتخاب کنید" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="tehran">تهران</SelectItem>
-                            <SelectItem value="isfahan">اصفهان</SelectItem>
-                            <SelectItem value="shiraz">شیراز</SelectItem>
-                            <SelectItem value="mashhad">مشهد</SelectItem>
-                            <SelectItem value="tabriz">تبریز</SelectItem>
-                            <SelectItem value="ahvaz">اهواز</SelectItem>
-                            <SelectItem value="qom">قم</SelectItem>
-                            <SelectItem value="karaj">کرج</SelectItem>
-                            <SelectItem value="urmia">ارومیه</SelectItem>
-                            <SelectItem value="zahedan">زاهدان</SelectItem>
-                            <SelectItem value="rasht">رشت</SelectItem>
-                            <SelectItem value="kerman">کرمان</SelectItem>
-                            <SelectItem value="hamadan">همدان</SelectItem>
-                            <SelectItem value="yazd">یزد</SelectItem>
-                            <SelectItem value="ardebil">اردبیل</SelectItem>
-                            <SelectItem value="bandar_abbas">بندرعباس</SelectItem>
-                            <SelectItem value="arak">اراک</SelectItem>
-                            <SelectItem value="eslamshahr">اسلامشهر</SelectItem>
-                            <SelectItem value="zanjan">زنجان</SelectItem>
-                            <SelectItem value="qazvin">قزوین</SelectItem>
-                            <SelectItem value="khorramabad">خرم‌آباد</SelectItem>
-                            <SelectItem value="gorgan">گرگان</SelectItem>
-                            <SelectItem value="sabzevar">سبزوار</SelectItem>
-                            <SelectItem value="dezful">دزفول</SelectItem>
-                            <SelectItem value="sari">ساری</SelectItem>
-                            <SelectItem value="abadan">آبادان</SelectItem>
-                            <SelectItem value="bushehr">بوشهر</SelectItem>
-                            <SelectItem value="sanandaj">سنندج</SelectItem>
-                            <SelectItem value="khorramshahr">خرمشهر</SelectItem>
-                            <SelectItem value="shahrud">شاهرود</SelectItem>
-                            <SelectItem value="varamin">ورامین</SelectItem>
-                            <SelectItem value="yasuj">یاسوج</SelectItem>
-                            <SelectItem value="international">خارج از کشور</SelectItem>
-                            <SelectItem value="other">سایر</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button onClick={handleSaveProfile} disabled={saving} className="w-full">
-                    <Save className="mr-2 h-4 w-4" />
-                    {saving ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Notifications Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  اعلان‌ها
-                </CardTitle>
-                <CardDescription>مدیریت تنظیمات اعلان‌ها</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {formData.notification_enabled ? (
-                      <Bell className="h-5 w-5 text-primary" />
-                    ) : (
-                      <BellOff className="h-5 w-5 text-muted-foreground" />
-                    )}
-                    <div>
-                      <p className="font-medium">اعلان‌های ایمیل</p>
-                      <p className="text-sm text-muted-foreground">
-                        دریافت اعلان برای دوره‌های جدید و بروزرسانی‌ها
+            {/* Licenses View */}
+            {activeView === 'licenses' && (
+              <div className="space-y-4" dir="rtl" style={{ textAlign: 'right' }}>
+                <h2 className="text-xl font-semibold">لایسنس‌ها</h2>
+                {courseLicenses.length === 0 ? (
+                  <Card>
+                    <CardContent className="text-center py-8">
+                      <Key className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">لایسنسی یافت نشد</h3>
+                      <p className="text-muted-foreground">
+                        لایسنس‌های دوره‌هایتان اینجا نمایش داده می‌شود
                       </p>
-                    </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-4">
+                    {courseLicenses.map((license) => (
+                      <Card key={license.id}>
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-lg">{license.course_title}</CardTitle>
+                              <CardDescription>
+                                ایجاد شده: {new Date(license.created_at).toLocaleDateString('fa-IR')}
+                              </CardDescription>
+                            </div>
+                            {getStatusBadge(license.status)}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {license.license_key && (
+                            <div className="bg-muted rounded-lg p-4">
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <p className="text-sm font-medium mb-1">کلید لایسنس:</p>
+                                  <p className="font-mono text-sm break-all">
+                                    {license.license_key}
+                                  </p>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyLicenseKey(license.license_key!)}
+                                >
+                                  <Copy className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {license.expires_at && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Clock className="w-4 h-4" />
+                              انقضا: {new Date(license.expires_at).toLocaleDateString('fa-IR')}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                  <Switch
-                    checked={formData.notification_enabled}
-                    onCheckedChange={(checked) => 
-                      setFormData({ ...formData, notification_enabled: checked })
-                    }
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                )}
+              </div>
+            )}
 
-            {/* Password Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Lock className="h-5 w-5" />
-                  امنیت
-                </CardTitle>
-                <CardDescription>مدیریت رمز عبور و تنظیمات امنیتی</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Collapsible open={isPasswordSectionOpen} onOpenChange={setIsPasswordSectionOpen}>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between">
-                      تغییر رمز عبور
-                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isPasswordSectionOpen ? 'transform rotate-180' : ''}`} />
+            {/* Payments View */}
+            {activeView === 'payments' && (
+              <div className="space-y-4" dir="rtl" style={{ textAlign: 'right' }}>
+                <h2 className="text-xl font-semibold">تاریخچه پرداخت</h2>
+                {paymentHistory.length === 0 ? (
+                  <Card>
+                    <CardContent className="text-center py-8">
+                      <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">تاریخچه پرداختی وجود ندارد</h3>
+                      <p className="text-muted-foreground">
+                        پرداخت‌های شما اینجا نمایش داده می‌شود
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-4">
+                    {paymentHistory.map((transaction) => (
+                      <Card key={transaction.id}>
+                        <CardContent className="p-6">
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-2">
+                              <h3 className="font-semibold">{transaction.course_title}</h3>
+                              <div className="space-y-1 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="w-4 h-4" />
+                                  {new Date(transaction.created_at).toLocaleDateString('fa-IR')}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <CreditCard className="w-4 h-4" />
+                                  {transaction.payment_method === 'zarinpal' ? 'زرین‌پال' : transaction.payment_method}
+                                </div>
+                                {transaction.zarinpal_ref_id && (
+                                  <div className="font-mono text-xs">
+                                    کد پیگیری: {transaction.zarinpal_ref_id}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-left space-y-2">
+                              <div className="text-lg font-bold">
+                                {transaction.amount.toLocaleString('fa-IR')} تومان
+                              </div>
+                              {getStatusBadge(transaction.payment_status)}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Profile View */}
+            {activeView === 'profile' && (
+              <div className="space-y-6" dir="rtl" style={{ textAlign: 'right' }}>
+                <h2 className="text-xl font-semibold">پروفایل</h2>
+                
+                {/* Profile Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <User className="h-5 w-5" />
+                      اطلاعات پروفایل
+                    </CardTitle>
+                    <CardDescription>مدیریت اطلاعات شخصی شما</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Avatar Section */}
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <Avatar className="h-20 w-20">
+                          <AvatarFallback 
+                            className="text-lg font-semibold text-white"
+                            style={{ backgroundColor: getAvatarColor(formData.name || 'User') }}
+                          >
+                            {(formData.name || 'U').charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <label className={`absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors ${uploadingAvatar ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                          <Camera className="h-4 w-4" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            className="hidden"
+                            disabled={uploadingAvatar}
+                          />
+                        </label>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{formData.name || 'کاربر'}</h3>
+                        <p className="text-sm text-muted-foreground">{formData.email}</p>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Profile Form */}
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="firstName">نام</Label>
+                          <Input
+                            id="firstName"
+                            value={formData.firstName}
+                            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                            placeholder="نام خود را وارد کنید"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="lastName">نام خانوادگی</Label>
+                          <Input
+                            id="lastName"
+                            value={formData.lastName}
+                            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                            placeholder="نام خانوادگی خود را وارد کنید"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="email">ایمیل</Label>
+                        <Input
+                          id="email"
+                          value={formData.email}
+                          disabled
+                          className="bg-muted"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          ایمیل قابل تغییر نیست
+                        </p>
+                      </div>
+
+                      <Separator />
+                      
+                      {/* Demographics Section */}
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          اطلاعات شخصی
+                        </h3>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="gender">جنسیت</Label>
+                            <Select value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value })}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="انتخاب کنید" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="male">مرد</SelectItem>
+                                <SelectItem value="female">زن</SelectItem>
+                                <SelectItem value="other">سایر</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="age">سن</Label>
+                            <Input
+                              id="age"
+                              type="number"
+                              value={formData.age}
+                              onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                              placeholder="سن شما"
+                              min="1"
+                              max="120"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Professional Information */}
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                          <Briefcase className="h-4 w-4" />
+                          اطلاعات شغلی و تحصیلی
+                        </h3>
+
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="education">تحصیلات</Label>
+                            <Select value={formData.education} onValueChange={(value) => setFormData({ ...formData, education: value })}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="سطح تحصیلات خود را انتخاب کنید" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="diploma">دیپلم</SelectItem>
+                                <SelectItem value="associate">کاردانی</SelectItem>
+                                <SelectItem value="bachelor">کارشناسی</SelectItem>
+                                <SelectItem value="master">کارشناسی ارشد</SelectItem>
+                                <SelectItem value="phd">دکتری</SelectItem>
+                                <SelectItem value="other">سایر</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="job">شغل</Label>
+                            <Input
+                              id="job"
+                              value={formData.job}
+                              onChange={(e) => setFormData({ ...formData, job: e.target.value })}
+                              placeholder="شغل فعلی شما"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="specialized_program">برنامه تخصصی</Label>
+                            <Select value={formData.specialized_program} onValueChange={(value) => setFormData({ ...formData, specialized_program: value })}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="برنامه تخصصی مورد علاقه خود را انتخاب کنید" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="passive_income">درآمد غیرفعال</SelectItem>
+                                <SelectItem value="american_business">کسب‌وکار آمریکایی</SelectItem>
+                                <SelectItem value="boundless_taste">طعم بی‌کران</SelectItem>
+                                <SelectItem value="instagram_marketing">بازاریابی اینستاگرام</SelectItem>
+                                <SelectItem value="other">سایر</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Location Information */}
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          اطلاعات مکانی
+                        </h3>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="country">کشور</Label>
+                            <Input
+                              id="country"
+                              value={formData.country}
+                              onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                              placeholder="کشور محل سکونت"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="province">استان/منطقه</Label>
+                            <Select value={formData.province} onValueChange={(value) => setFormData({ ...formData, province: value })}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="استان خود را انتخاب کنید" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="tehran">تهران</SelectItem>
+                                <SelectItem value="isfahan">اصفهان</SelectItem>
+                                <SelectItem value="shiraz">شیراز</SelectItem>
+                                <SelectItem value="mashhad">مشهد</SelectItem>
+                                <SelectItem value="tabriz">تبریز</SelectItem>
+                                <SelectItem value="other">سایر</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button onClick={handleSaveProfile} disabled={saving} className="w-full">
+                        <Save className="mr-2 h-4 w-4" />
+                        {saving ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Notifications Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Bell className="h-5 w-5" />
+                      اعلان‌ها
+                    </CardTitle>
+                    <CardDescription>مدیریت تنظیمات اعلان‌ها</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {formData.notification_enabled ? (
+                          <Bell className="h-5 w-5 text-primary" />
+                        ) : (
+                          <BellOff className="h-5 w-5 text-muted-foreground" />
+                        )}
+                        <div>
+                          <p className="font-medium">اعلان‌های ایمیل</p>
+                          <p className="text-sm text-muted-foreground">
+                            دریافت اعلان برای دوره‌های جدید و بروزرسانی‌ها
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={formData.notification_enabled}
+                        onCheckedChange={(checked) => 
+                          setFormData({ ...formData, notification_enabled: checked })
+                        }
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Password Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Lock className="h-5 w-5" />
+                      امنیت
+                    </CardTitle>
+                    <CardDescription>مدیریت رمز عبور و تنظیمات امنیتی</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Collapsible open={isPasswordSectionOpen} onOpenChange={setIsPasswordSectionOpen}>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between">
+                          تغییر رمز عبور
+                          <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isPasswordSectionOpen ? 'transform rotate-180' : ''}`} />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-4 mt-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="currentPassword">رمز عبور فعلی</Label>
+                          <Input
+                            id="currentPassword"
+                            type="password"
+                            value={passwordData.currentPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                            placeholder="رمز عبور فعلی را وارد کنید"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="newPassword">رمز عبور جدید</Label>
+                          <Input
+                            id="newPassword"
+                            type="password"
+                            value={passwordData.newPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                            placeholder="رمز عبور جدید را وارد کنید"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="confirmPassword">تأیید رمز عبور جدید</Label>
+                          <Input
+                            id="confirmPassword"
+                            type="password"
+                            value={passwordData.confirmPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                            placeholder="رمز عبور جدید را دوباره وارد کنید"
+                          />
+                        </div>
+
+                        <Button onClick={handleChangePassword} className="w-full">
+                          <Lock className="mr-2 h-4 w-4" />
+                          تغییر رمز عبور
+                        </Button>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </CardContent>
+                </Card>
+
+                {/* Logout Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <LogOut className="h-5 w-5" />
+                      خروج از حساب کاربری
+                    </CardTitle>
+                    <CardDescription>خروج از حساب کاربری فعلی</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button 
+                      onClick={handleLogout} 
+                      variant="destructive" 
+                      className="w-full"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      خروج از حساب
                     </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-4 mt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="currentPassword">رمز عبور فعلی</Label>
-                      <Input
-                        id="currentPassword"
-                        type="password"
-                        value={passwordData.currentPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                        placeholder="رمز عبور فعلی را وارد کنید"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="newPassword">رمز عبور جدید</Label>
-                      <Input
-                        id="newPassword"
-                        type="password"
-                        value={passwordData.newPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                        placeholder="رمز عبور جدید را وارد کنید"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">تأیید رمز عبور جدید</Label>
-                      <Input
-                        id="confirmPassword"
-                        type="password"
-                        value={passwordData.confirmPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                        placeholder="رمز عبور جدید را دوباره وارد کنید"
-                      />
-                    </div>
-
-                    <Button onClick={handleChangePassword} className="w-full">
-                      <Lock className="mr-2 h-4 w-4" />
-                      تغییر رمز عبور
-                    </Button>
-                  </CollapsibleContent>
-                </Collapsible>
-              </CardContent>
-            </Card>
-
-            {/* Logout Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <LogOut className="h-5 w-5" />
-                  خروج از حساب کاربری
-                </CardTitle>
-                <CardDescription>خروج از حساب کاربری فعلی</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  onClick={handleLogout} 
-                  variant="destructive" 
-                  className="w-full"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  خروج از حساب
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </MainLayout>
   );

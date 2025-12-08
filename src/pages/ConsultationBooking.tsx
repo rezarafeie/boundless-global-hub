@@ -65,8 +65,8 @@ const ConsultationBooking: React.FC = () => {
     
     setLoading(true);
     try {
-      // Check for pending or confirmed bookings
-      const { data: existingBooking } = await supabase
+      // Check for pending or confirmed bookings where the slot date/time hasn't passed
+      const { data: existingBookings } = await supabase
         .from('consultation_bookings')
         .select(`
           id,
@@ -83,21 +83,37 @@ const ConsultationBooking: React.FC = () => {
         `)
         .eq('user_id', user.messengerData.id)
         .in('status', ['pending', 'confirmed'])
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order('created_at', { ascending: false });
       
-      if (existingBooking && existingBooking.consultation_slots) {
+      // Filter to only include bookings where the slot hasn't passed yet
+      const now = new Date();
+      const activeBooking = existingBookings?.find(booking => {
+        if (!booking.consultation_slots) return false;
+        const slot = booking.consultation_slots as any;
+        const slotDateTime = new Date(`${slot.date}T${slot.end_time}`);
+        return slotDateTime > now;
+      });
+      
+      if (activeBooking && activeBooking.consultation_slots) {
+        // Fetch default meeting URL from settings
+        const { data: settings } = await supabase
+          .from('consultation_settings')
+          .select('default_confirmation_message')
+          .eq('id', 1)
+          .maybeSingle();
+        
+        const slot = activeBooking.consultation_slots as unknown as ConsultationSlot;
+        
         setPendingBooking({
-          id: existingBooking.id,
-          status: existingBooking.status,
-          consultation_link: existingBooking.consultation_link,
-          confirmation_note: existingBooking.confirmation_note,
-          slot: existingBooking.consultation_slots as unknown as ConsultationSlot
+          id: activeBooking.id,
+          status: activeBooking.status,
+          consultation_link: activeBooking.consultation_link,
+          confirmation_note: activeBooking.confirmation_note,
+          slot
         });
         setLoading(false);
       } else {
-        // No existing booking, fetch available slots
+        // No active booking or booking time has passed, fetch available slots
         fetchSlots();
       }
     } catch (error) {
