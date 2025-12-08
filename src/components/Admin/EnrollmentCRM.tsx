@@ -45,6 +45,17 @@ interface ChatUser {
   id: number;
   name: string;
   phone: string;
+  email?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  full_name?: string | null;
+  country?: string | null;
+  province?: string | null;
+  gender?: string | null;
+  age?: number | null;
+  education?: string | null;
+  job?: string | null;
+  bio?: string | null;
 }
 
 interface CRMStatus {
@@ -148,7 +159,7 @@ export function EnrollmentCRM() {
     try {
       const { data, error } = await supabase
         .from('chat_users')
-        .select('id, name, phone')
+        .select('id, name, phone, email, first_name, last_name, full_name, country, province, gender, age, education, job, bio')
         .or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
         .eq('is_approved', true)
         .order('name')
@@ -210,7 +221,7 @@ export function EnrollmentCRM() {
       // Fetch chat users for user names and user selection
       const { data: chatUsersData, error: chatUsersError } = await supabase
         .from('chat_users')
-        .select('id, name, phone')
+        .select('id, name, phone, email, first_name, last_name, full_name, country, province, gender, age, education, job, bio')
         .eq('is_approved', true)
         .order('name');
 
@@ -351,7 +362,18 @@ export function EnrollmentCRM() {
           {
             id: parseInt(newNote.user_id),
             name: selectedUser?.name || '',
-            phone: selectedUser?.phone || ''
+            phone: selectedUser?.phone || '',
+            email: selectedUser?.email || '',
+            first_name: selectedUser?.first_name,
+            last_name: selectedUser?.last_name,
+            full_name: selectedUser?.full_name || selectedUser?.name || '',
+            country: selectedUser?.country,
+            province: selectedUser?.province,
+            gender: selectedUser?.gender,
+            age: selectedUser?.age,
+            education: selectedUser?.education,
+            job: selectedUser?.job,
+            bio: selectedUser?.bio
           },
           {
             id: crmData.id,
