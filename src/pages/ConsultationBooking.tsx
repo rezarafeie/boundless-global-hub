@@ -29,6 +29,14 @@ interface ConsultationSlot {
   is_booked?: boolean;
 }
 
+interface PendingBooking {
+  id: string;
+  status: string;
+  consultation_link: string | null;
+  confirmation_note: string | null;
+  slot: ConsultationSlot;
+}
+
 const ConsultationBooking: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -40,14 +48,63 @@ const ConsultationBooking: React.FC = () => {
   const [selectedSlot, setSelectedSlot] = useState<ConsultationSlot | null>(null);
   const [booking, setBooking] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [pendingBooking, setPendingBooking] = useState<PendingBooking | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth?redirect=/consultations');
       return;
     }
-    fetchSlots();
+    if (user?.messengerData?.id) {
+      checkExistingBooking();
+    }
   }, [user, authLoading]);
+
+  const checkExistingBooking = async () => {
+    if (!user?.messengerData?.id) return;
+    
+    setLoading(true);
+    try {
+      // Check for pending or confirmed bookings
+      const { data: existingBooking } = await supabase
+        .from('consultation_bookings')
+        .select(`
+          id,
+          status,
+          consultation_link,
+          confirmation_note,
+          consultation_slots (
+            id,
+            date,
+            start_time,
+            end_time,
+            is_available
+          )
+        `)
+        .eq('user_id', user.messengerData.id)
+        .in('status', ['pending', 'confirmed'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (existingBooking && existingBooking.consultation_slots) {
+        setPendingBooking({
+          id: existingBooking.id,
+          status: existingBooking.status,
+          consultation_link: existingBooking.consultation_link,
+          confirmation_note: existingBooking.confirmation_note,
+          slot: existingBooking.consultation_slots as unknown as ConsultationSlot
+        });
+        setLoading(false);
+      } else {
+        // No existing booking, fetch available slots
+        fetchSlots();
+      }
+    } catch (error) {
+      console.error('Error checking existing booking:', error);
+      fetchSlots();
+    }
+  };
 
   const fetchSlots = async () => {
     setLoading(true);
@@ -165,11 +222,85 @@ const ConsultationBooking: React.FC = () => {
     );
   }
 
+  // Show pending or confirmed booking
+  if (pendingBooking) {
+    const isConfirmed = pendingBooking.status === 'confirmed';
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container max-w-lg mx-auto py-12 px-4 pt-24">
+          <Card className="text-center">
+            <CardContent className="pt-10 pb-8 space-y-6">
+              <div className={`w-20 h-20 ${isConfirmed ? 'bg-green-500/10' : 'bg-amber-500/10'} rounded-full flex items-center justify-center mx-auto`}>
+                {isConfirmed ? (
+                  <CheckCircle className="h-10 w-10 text-green-600" />
+                ) : (
+                  <Clock className="h-10 w-10 text-amber-600" />
+                )}
+              </div>
+              <div className="space-y-2">
+                <Badge variant={isConfirmed ? 'default' : 'secondary'} className="mb-2">
+                  {isConfirmed ? 'تایید شده' : 'در انتظار تایید'}
+                </Badge>
+                <h2 className="text-2xl font-bold">
+                  {isConfirmed ? 'مشاوره شما تایید شد' : 'درخواست مشاوره ثبت شده'}
+                </h2>
+                <p className="text-muted-foreground">
+                  {isConfirmed 
+                    ? 'جلسه مشاوره شما تایید شده است. لطفا در زمان مقرر حاضر شوید.'
+                    : 'درخواست مشاوره شما ثبت شده و در انتظار تایید است.'}
+                </p>
+              </div>
+              
+              <div className="bg-muted rounded-lg p-4 text-sm space-y-2">
+                <div className="flex items-center gap-2 justify-center">
+                  <Calendar className="h-4 w-4" />
+                  <span>{formatDatePersian(pendingBooking.slot.date)}</span>
+                </div>
+                <div className="flex items-center gap-2 justify-center">
+                  <Clock className="h-4 w-4" />
+                  <span>{formatTime(pendingBooking.slot.start_time)} - {formatTime(pendingBooking.slot.end_time)}</span>
+                </div>
+              </div>
+
+              {isConfirmed && pendingBooking.consultation_link && (
+                <div className="space-y-3">
+                  <a 
+                    href={pendingBooking.consultation_link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    <Button className="w-full" size="lg">
+                      <Video className="h-4 w-4 ml-2" />
+                      ورود به جلسه
+                    </Button>
+                  </a>
+                  {pendingBooking.confirmation_note && (
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-sm text-right">
+                      <p className="font-medium mb-1">توضیحات:</p>
+                      <p className="text-muted-foreground">{pendingBooking.confirmation_note}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <Button variant="outline" onClick={() => navigate('/dashboard')}>
+                رفتن به داشبورد
+                <ArrowRight className="h-4 w-4 mr-2" />
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   if (bookingSuccess) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="container max-w-lg mx-auto py-12 px-4">
+        <div className="container max-w-lg mx-auto py-12 px-4 pt-24">
           <Card className="text-center">
             <CardContent className="pt-10 pb-8 space-y-6">
               <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto">
