@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { 
   Calendar, 
   Clock, 
   CheckCircle, 
   Loader2,
   ArrowRight,
+  FileText,
   User,
   Phone,
   Mail,
@@ -49,6 +52,7 @@ const ConsultationBooking: React.FC = () => {
   const [booking, setBooking] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [pendingBooking, setPendingBooking] = useState<PendingBooking | null>(null);
+  const [consultationDescription, setConsultationDescription] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -181,7 +185,8 @@ const ConsultationBooking: React.FC = () => {
           full_name: user.messengerData.name || user.messengerData.full_name || '',
           phone: user.messengerData.phone,
           email: user.messengerData.email || null,
-          status: 'pending'
+          status: 'pending',
+          description: consultationDescription || null
         });
       
       if (error) {
@@ -475,6 +480,25 @@ const ConsultationBooking: React.FC = () => {
                         {formatTime(selectedSlot.start_time)} - {formatTime(selectedSlot.end_time)}
                       </div>
                     </div>
+                  </div>
+
+                  {/* Consultation Description */}
+                  <div className="space-y-2">
+                    <Label htmlFor="description" className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      توضیحات مشاوره (اختیاری)
+                    </Label>
+                    <Textarea
+                      id="description"
+                      placeholder="موضوع یا سوالات خود را برای مشاوره بنویسید..."
+                      value={consultationDescription}
+                      onChange={(e) => setConsultationDescription(e.target.value)}
+                      rows={3}
+                      className="resize-none"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      این اطلاعات به مشاور کمک می‌کند تا آماده‌تر باشد
+                    </p>
                   </div>
 
                   <Button 

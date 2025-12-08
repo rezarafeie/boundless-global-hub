@@ -22,6 +22,7 @@ interface ConsultationBooking {
   status: string;
   confirmation_note: string | null;
   consultation_link: string | null;
+  description: string | null;
   created_at: string;
   slot: {
     date: string;
@@ -77,6 +78,7 @@ const UserConsultations: React.FC<UserConsultationsProps> = ({ showActiveOnly = 
           status,
           confirmation_note,
           consultation_link,
+          description,
           created_at,
           slot:consultation_slots(date, start_time, end_time)
         `)
@@ -274,6 +276,13 @@ const UserConsultations: React.FC<UserConsultationsProps> = ({ showActiveOnly = 
                             <Clock className="h-4 w-4" />
                             {formatTime(booking.slot.start_time)} - {formatTime(booking.slot.end_time)}
                           </div>
+                        </div>
+                      )}
+                      
+                      {booking.description && (
+                        <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                          <p className="text-xs font-medium text-muted-foreground mb-1">توضیحات مشاوره:</p>
+                          <p className="whitespace-pre-wrap">{booking.description}</p>
                         </div>
                       )}
                       

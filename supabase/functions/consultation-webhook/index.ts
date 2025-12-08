@@ -46,18 +46,53 @@ serve(async (req) => {
       );
     }
 
-    // Prepare webhook payload
+    // Fetch user details from chat_users
+    const { data: userData } = await supabase
+      .from('chat_users')
+      .select('*')
+      .eq('id', booking.user_id)
+      .single();
+
+    // Prepare webhook payload with all consultation and user data
     const webhookPayload = {
-      name: booking.full_name,
-      mobile: booking.phone,
-      email: booking.email || null,
-      date: booking.slot?.date || null,
-      time: booking.slot?.start_time?.slice(0, 5) || null,
-      link: booking.consultation_link || null,
+      // Booking info
+      booking_id: booking.id,
       status: booking.status,
       confirmation_note: booking.confirmation_note || null,
-      booking_id: booking.id,
-      confirmed_at: booking.confirmed_at
+      consultation_link: booking.consultation_link || null,
+      description: booking.description || null,
+      confirmed_at: booking.confirmed_at,
+      created_at: booking.created_at,
+      
+      // Slot info
+      date: booking.slot?.date || null,
+      start_time: booking.slot?.start_time?.slice(0, 5) || null,
+      end_time: booking.slot?.end_time?.slice(0, 5) || null,
+      
+      // User info from booking
+      full_name: booking.full_name,
+      phone: booking.phone,
+      email: booking.email || null,
+      
+      // Extended user info from chat_users
+      user_id: userData?.id || null,
+      user_unique_id: userData?.user_id || null,
+      first_name: userData?.first_name || null,
+      last_name: userData?.last_name || null,
+      user_email: userData?.email || null,
+      user_phone: userData?.phone || null,
+      country: userData?.country || null,
+      country_code: userData?.country_code || null,
+      province: userData?.province || null,
+      gender: userData?.gender || null,
+      age: userData?.age || null,
+      education: userData?.education || null,
+      job: userData?.job || null,
+      specialized_program: userData?.specialized_program || null,
+      bio: userData?.bio || null,
+      avatar_url: userData?.avatar_url || null,
+      is_approved: userData?.is_approved || false,
+      bedoun_marz: userData?.bedoun_marz || false,
     };
 
     console.log('Sending webhook to:', webhookUrl);
