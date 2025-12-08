@@ -52,6 +52,7 @@ interface Lead {
   assigned_at: string;
   chat_user_id: number | null;
   crm_status: 'none' | 'has_notes' | 'has_calls';
+  latest_crm_status: string | null;
   last_activity: string | null;
   notes_count: number;
 }
@@ -113,6 +114,9 @@ const SalesAgentLeads: React.FC = () => {
   const [crmFilter, setCrmFilter] = useState<string>('all');
   const [courseFilter, setCourseFilter] = useState<string>('all');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all');
+  const [crmStatusFilter, setCrmStatusFilter] = useState<string>('all');
+  const [excludeCourseFilter, setExcludeCourseFilter] = useState<string>('');
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   
   // Lead detail/CRM states
@@ -210,18 +214,21 @@ const SalesAgentLeads: React.FC = () => {
         ?.map(a => (a.enrollments as any)?.chat_user_id)
         .filter(Boolean) || [];
 
-      // Fetch CRM notes counts
+      // Fetch CRM notes with status
       const { data: crmData } = await supabase
         .from('crm_notes')
-        .select('user_id, type')
-        .in('user_id', chatUserIds);
+        .select('user_id, type, status, created_at')
+        .in('user_id', chatUserIds)
+        .order('created_at', { ascending: false });
 
-      // Create CRM status map
-      const crmMap = new Map<number, { count: number; hasCall: boolean }>();
+      // Create CRM status map with latest status
+      const crmMap = new Map<number, { count: number; hasCall: boolean; latestStatus: string | null }>();
       crmData?.forEach(note => {
-        const current = crmMap.get(note.user_id) || { count: 0, hasCall: false };
+        const current = crmMap.get(note.user_id) || { count: 0, hasCall: false, latestStatus: null };
         current.count++;
         if (note.type === 'call') current.hasCall = true;
+        // Only set latestStatus once (first one is most recent due to order)
+        if (!current.latestStatus && note.status) current.latestStatus = note.status;
         crmMap.set(note.user_id, current);
       });
 
@@ -248,6 +255,7 @@ const SalesAgentLeads: React.FC = () => {
           assigned_at: a.assigned_at,
           chat_user_id: chatUserId,
           crm_status: crmStatus,
+          latest_crm_status: crmInfo?.latestStatus || null,
           last_activity: null,
           notes_count: crmInfo?.count || 0
         };
@@ -275,10 +283,48 @@ const SalesAgentLeads: React.FC = () => {
     }
   };
 
+  // Fetch all courses for exclude filter
+  const fetchAllCourses = async () => {
+    const { data } = await supabase
+      .from('courses')
+      .select('id, title')
+      .eq('is_active', true)
+      .order('title');
+    setAllCourses(data || []);
+  };
+
+  // State for users who purchased excluded course
+  const [excludedUserIds, setExcludedUserIds] = React.useState<Set<number>>(new Set());
+
+  // Fetch excluded course users when filter changes
+  React.useEffect(() => {
+    const fetchExcludedUsers = async () => {
+      if (!excludeCourseFilter) {
+        setExcludedUserIds(new Set());
+        return;
+      }
+      
+      const { data } = await supabase
+        .from('enrollments')
+        .select('chat_user_id')
+        .eq('course_id', excludeCourseFilter)
+        .in('payment_status', ['success', 'completed']);
+      
+      const ids = new Set<number>();
+      data?.forEach(e => {
+        if (e.chat_user_id) ids.add(e.chat_user_id);
+      });
+      setExcludedUserIds(ids);
+    };
+    
+    fetchExcludedUsers();
+  }, [excludeCourseFilter]);
+
   // Auto-load leads on mount
   React.useEffect(() => {
     if (user?.messengerData?.id) {
       fetchLeads();
+      fetchAllCourses();
     }
   }, [user?.messengerData?.id]);
 
@@ -315,8 +361,22 @@ const SalesAgentLeads: React.FC = () => {
       }
     }
 
+    // Apply CRM status filter
+    if (crmStatusFilter !== 'all') {
+      if (crmStatusFilter === 'no_crm') {
+        filteredLeads = filteredLeads.filter(l => l.crm_status === 'none');
+      } else {
+        filteredLeads = filteredLeads.filter(l => l.latest_crm_status === crmStatusFilter);
+      }
+    }
+
+    // Apply exclude course filter
+    if (excludeCourseFilter && excludedUserIds.size > 0) {
+      filteredLeads = filteredLeads.filter(l => !l.chat_user_id || !excludedUserIds.has(l.chat_user_id));
+    }
+
     setLeads(filteredLeads);
-  }, [allLeads, searchTerm, courseFilter, crmFilter, paymentStatusFilter]);
+  }, [allLeads, searchTerm, courseFilter, crmFilter, paymentStatusFilter, crmStatusFilter, excludeCourseFilter, excludedUserIds]);
 
   const openLeadDetail = async (lead: Lead) => {
     setSelectedLead(lead);
@@ -541,7 +601,7 @@ const SalesAgentLeads: React.FC = () => {
               </Select>
             </div>
             <div className="w-[160px]">
-              <Label className="text-xs text-muted-foreground mb-1 block">وضعیت CRM</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">فعالیت CRM</Label>
               <Select value={crmFilter} onValueChange={setCrmFilter}>
                 <SelectTrigger>
                   <SelectValue />
@@ -550,6 +610,36 @@ const SalesAgentLeads: React.FC = () => {
                   <SelectItem value="all">همه</SelectItem>
                   <SelectItem value="untouched">بدون فعالیت ⚠️</SelectItem>
                   <SelectItem value="contacted">تماس گرفته شده</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-[160px]">
+              <Label className="text-xs text-muted-foreground mb-1 block">وضعیت CRM</Label>
+              <Select value={crmStatusFilter} onValueChange={setCrmStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="همه" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه</SelectItem>
+                  <SelectItem value="no_crm">بدون CRM</SelectItem>
+                  <SelectItem value="در انتظار پرداخت">در انتظار پرداخت</SelectItem>
+                  <SelectItem value="پاسخ نداده">پاسخ نداده</SelectItem>
+                  <SelectItem value="موفق">موفق</SelectItem>
+                  <SelectItem value="کنسل">کنسل</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-[180px]">
+              <Label className="text-xs text-muted-foreground mb-1 block">حذف خریداران دوره</Label>
+              <Select value={excludeCourseFilter} onValueChange={setExcludeCourseFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="بدون فیلتر" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">بدون فیلتر</SelectItem>
+                  {allCourses.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

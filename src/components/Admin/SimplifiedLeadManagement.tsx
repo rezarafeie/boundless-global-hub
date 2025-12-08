@@ -114,6 +114,8 @@ const SimplifiedLeadManagement: React.FC = () => {
   const [agentFilter, setAgentFilter] = useState<string>(() => localStorage.getItem('leads_agentFilter') || 'all');
   const [dateFrom, setDateFrom] = useState(() => localStorage.getItem('leads_dateFrom') || '');
   const [dateTo, setDateTo] = useState(() => localStorage.getItem('leads_dateTo') || '');
+  const [excludeCourseFilter, setExcludeCourseFilter] = useState<string>(() => localStorage.getItem('leads_excludeCourse') || '');
+  const [crmStatusFilter, setCrmStatusFilter] = useState<string>(() => localStorage.getItem('leads_crmStatusFilter') || 'all');
   
   // Selection states
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
@@ -194,6 +196,14 @@ const SimplifiedLeadManagement: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('leads_dateTo', dateTo);
   }, [dateTo]);
+
+  useEffect(() => {
+    localStorage.setItem('leads_excludeCourse', excludeCourseFilter);
+  }, [excludeCourseFilter]);
+
+  useEffect(() => {
+    localStorage.setItem('leads_crmStatusFilter', crmStatusFilter);
+  }, [crmStatusFilter]);
 
   useEffect(() => {
     fetchInitialData();
@@ -334,6 +344,42 @@ const SimplifiedLeadManagement: React.FC = () => {
       const agentNameMap = new Map<number, string>();
       agents.forEach(a => agentNameMap.set(a.id, a.name));
 
+      // Get chat_user_ids for CRM and exclude course lookup
+      const chatUserIds = (enrollments || [])
+        .map(e => e.chat_user_id)
+        .filter(Boolean) as number[];
+
+      // Fetch users who have purchased the excluded course (if filter is set)
+      let excludedUserIds = new Set<number>();
+      if (excludeCourseFilter && excludeCourseFilter !== selectedCourse) {
+        const { data: excludedEnrollments } = await supabase
+          .from('enrollments')
+          .select('chat_user_id')
+          .eq('course_id', excludeCourseFilter)
+          .in('payment_status', ['success', 'completed']);
+        
+        excludedEnrollments?.forEach(e => {
+          if (e.chat_user_id) excludedUserIds.add(e.chat_user_id);
+        });
+      }
+
+      // Fetch CRM notes for filtering by CRM status
+      let crmStatusMap = new Map<number, string | null>();
+      if (crmStatusFilter !== 'all' && chatUserIds.length > 0) {
+        const { data: crmNotes } = await supabase
+          .from('crm_notes')
+          .select('user_id, status')
+          .in('user_id', chatUserIds)
+          .order('created_at', { ascending: false });
+        
+        // Get latest CRM status for each user
+        crmNotes?.forEach(note => {
+          if (!crmStatusMap.has(note.user_id)) {
+            crmStatusMap.set(note.user_id, note.status);
+          }
+        });
+      }
+
       // Process leads
       let processedLeads: Lead[] = (enrollments || []).map(e => {
         const agentId = assignmentMap.get(e.id) || null;
@@ -353,6 +399,24 @@ const SimplifiedLeadManagement: React.FC = () => {
           assigned_agent_name: agentId ? agentNameMap.get(agentId) || null : null
         };
       });
+
+      // Apply exclude course filter - remove users who purchased the excluded course
+      if (excludeCourseFilter && excludedUserIds.size > 0) {
+        processedLeads = processedLeads.filter(l => !l.chat_user_id || !excludedUserIds.has(l.chat_user_id));
+      }
+
+      // Apply CRM status filter
+      if (crmStatusFilter !== 'all') {
+        if (crmStatusFilter === 'no_crm') {
+          // Users without any CRM notes
+          processedLeads = processedLeads.filter(l => !l.chat_user_id || !crmStatusMap.has(l.chat_user_id));
+        } else {
+          // Users with specific CRM status
+          processedLeads = processedLeads.filter(l => 
+            l.chat_user_id && crmStatusMap.get(l.chat_user_id) === crmStatusFilter
+          );
+        }
+      }
 
       // Apply assignment status filter
       if (statusFilter === 'assigned') {
@@ -1220,6 +1284,40 @@ const SimplifiedLeadManagement: React.FC = () => {
                   <SelectItem value="all">همه کارشناسان</SelectItem>
                   {agents.map(a => (
                     <SelectItem key={a.id} value={a.id.toString()}>{a.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* CRM Status Filter */}
+            <div className="w-[150px]">
+              <Label className="text-xs text-muted-foreground mb-1 block">وضعیت CRM</Label>
+              <Select value={crmStatusFilter} onValueChange={setCrmStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="همه" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه</SelectItem>
+                  <SelectItem value="no_crm">بدون CRM</SelectItem>
+                  <SelectItem value="در انتظار پرداخت">در انتظار پرداخت</SelectItem>
+                  <SelectItem value="پاسخ نداده">پاسخ نداده</SelectItem>
+                  <SelectItem value="موفق">موفق</SelectItem>
+                  <SelectItem value="کنسل">کنسل</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Exclude Course Filter */}
+            <div className="w-[180px]">
+              <Label className="text-xs text-muted-foreground mb-1 block">حذف خریداران دوره</Label>
+              <Select value={excludeCourseFilter} onValueChange={setExcludeCourseFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="انتخاب دوره" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">بدون فیلتر</SelectItem>
+                  {courses.filter(c => c.id !== selectedCourse).map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
