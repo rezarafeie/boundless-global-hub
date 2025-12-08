@@ -209,7 +209,7 @@ const ConsultationBooking: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container max-w-2xl mx-auto py-8 px-4">
+      <div className="container max-w-2xl mx-auto py-8 px-4 pt-24">
         {/* Hero */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">

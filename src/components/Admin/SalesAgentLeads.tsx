@@ -631,12 +631,12 @@ const SalesAgentLeads: React.FC = () => {
             </div>
             <div className="w-[180px]">
               <Label className="text-xs text-muted-foreground mb-1 block">حذف خریداران دوره</Label>
-              <Select value={excludeCourseFilter} onValueChange={setExcludeCourseFilter}>
+              <Select value={excludeCourseFilter || "none"} onValueChange={(v) => setExcludeCourseFilter(v === "none" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="بدون فیلتر" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">بدون فیلتر</SelectItem>
+                  <SelectItem value="none">بدون فیلتر</SelectItem>
                   {allCourses.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
                   ))}
