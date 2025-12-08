@@ -67,10 +67,13 @@ class EnhancedWebhookManager {
 
   async sendWebhook(eventType: WebhookEventType, payload: any) {
     try {
+      console.log(`📡 sendWebhook called for event type: ${eventType}`);
       const webhooks = await this.getActiveWebhooks(eventType);
       
+      console.log(`📋 Found ${webhooks.length} active webhooks for event type: ${eventType}`);
+      
       if (webhooks.length === 0) {
-        console.log(`No active webhooks found for event type: ${eventType}`);
+        console.log(`⚠️ No active webhooks found for event type: ${eventType}`);
         return;
       }
       
@@ -80,10 +83,11 @@ class EnhancedWebhookManager {
       }
       
       for (const webhook of webhooks) {
+        console.log(`🚀 Executing webhook: ${webhook.name} to ${webhook.url}`);
         await this.executeWebhook(webhook, payload);
       }
     } catch (error) {
-      console.error('Error sending webhooks:', error);
+      console.error('❌ Error sending webhooks:', error);
     }
   }
 
