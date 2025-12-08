@@ -289,6 +289,20 @@ const ConsultationManagement: React.FC = () => {
       
       if (error) throw error;
       
+      // Send webhook for rejection
+      if (settings.webhook_url) {
+        try {
+          await supabase.functions.invoke('consultation-webhook', {
+            body: {
+              bookingId: bookingId,
+              webhookUrl: settings.webhook_url
+            }
+          });
+        } catch (webhookError) {
+          console.error('Webhook error:', webhookError);
+        }
+      }
+      
       toast({ title: 'موفق', description: 'مشاوره لغو شد' });
       fetchBookings();
     } catch (error) {
