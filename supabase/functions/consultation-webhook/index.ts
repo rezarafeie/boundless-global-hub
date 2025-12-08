@@ -55,7 +55,6 @@ serve(async (req) => {
       .single();
 
     // Generate action links
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const actionToken = booking.action_token;
     const approveLink = `${supabaseUrl}/functions/v1/consultation-action?token=${actionToken}&action=approve`;
     const rejectLink = `${supabaseUrl}/functions/v1/consultation-action?token=${actionToken}&action=reject`;
