@@ -1310,12 +1310,12 @@ const SimplifiedLeadManagement: React.FC = () => {
             {/* Exclude Course Filter */}
             <div className="w-[180px]">
               <Label className="text-xs text-muted-foreground mb-1 block">حذف خریداران دوره</Label>
-              <Select value={excludeCourseFilter} onValueChange={setExcludeCourseFilter}>
+              <Select value={excludeCourseFilter || "none"} onValueChange={(v) => setExcludeCourseFilter(v === "none" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="انتخاب دوره" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">بدون فیلتر</SelectItem>
+                  <SelectItem value="none">بدون فیلتر</SelectItem>
                   {courses.filter(c => c.id !== selectedCourse).map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
                   ))}
