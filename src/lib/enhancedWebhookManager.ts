@@ -92,14 +92,30 @@ class EnhancedWebhookManager {
       // Merge payload with body template
       const body = this.mergeTemplate(webhook.body_template, payload);
       
+      console.log(`🔗 Executing webhook: ${webhook.name} (${webhook.event_type}) to ${webhook.url}`);
+      
+      // Only use headers if they are valid HTTP headers (simple key-value strings)
+      const customHeaders: Record<string, string> = {};
+      if (webhook.headers && typeof webhook.headers === 'object') {
+        for (const [key, value] of Object.entries(webhook.headers)) {
+          // Only include simple string values that look like HTTP headers
+          if (typeof value === 'string' && !key.includes('.') && !value.includes('{{')) {
+            customHeaders[key] = value;
+          }
+        }
+      }
+      
       const response = await fetch(webhook.url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...webhook.headers
+          ...customHeaders
         },
         body: JSON.stringify(body)
       });
+
+      const responseText = await response.text();
+      console.log(`✅ Webhook response: ${response.status} - ${responseText.substring(0, 100)}`);
 
       // Log the webhook execution
       await this.logWebhookExecution(
@@ -107,12 +123,12 @@ class EnhancedWebhookManager {
         webhook.event_type,
         body,
         response.status,
-        await response.text(),
+        responseText,
         response.ok
       );
 
     } catch (error) {
-      console.error(`Webhook execution failed for ${webhook.name}:`, error);
+      console.error(`❌ Webhook execution failed for ${webhook.name}:`, error);
       
       // Log the error
       await this.logWebhookExecution(
