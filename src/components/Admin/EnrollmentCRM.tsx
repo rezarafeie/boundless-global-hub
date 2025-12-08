@@ -7,15 +7,18 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { MessageSquare, Plus, Phone, FileText, Users, Calendar, Filter, Search, X, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MessageSquare, Plus, Phone, FileText, Users, Calendar, Filter, Search, X, Clock, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { CRMStatusSettings } from './CRM/CRMStatusSettings';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface CRMNote {
   id: string;
@@ -43,19 +46,18 @@ interface ChatUser {
   phone: string;
 }
 
+interface CRMStatus {
+  id: string;
+  label: string;
+  color: string;
+  is_active: boolean;
+}
+
 const CRM_TYPES = [
   { value: 'note', label: 'یادداشت' },
   { value: 'call', label: 'تماس' },
   { value: 'message', label: 'پیام' },
   { value: 'consultation', label: 'جلسه مشاوره' }
-];
-
-const CRM_STATUSES = [
-  { value: 'در انتظار پرداخت', label: 'در انتظار پرداخت' },
-  { value: 'کنسل', label: 'کنسل' },
-  { value: 'موفق', label: 'موفق' },
-  { value: 'پاسخ نداده', label: 'پاسخ نداده' },
-  { value: 'امکان مکالمه نداشت', label: 'امکان مکالمه نداشت' }
 ];
 
 const ITEMS_PER_PAGE = 50;
@@ -65,9 +67,12 @@ export function EnrollmentCRM() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [chatUsers, setChatUsers] = useState<ChatUser[]>([]);
   const [agents, setAgents] = useState<string[]>([]);
+  const [crmStatuses, setCrmStatuses] = useState<CRMStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('notes');
+  const { isAdmin, isSalesManager } = useUserRole();
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -103,7 +108,23 @@ export function EnrollmentCRM() {
 
   useEffect(() => {
     fetchData();
+    fetchCrmStatuses();
   }, []);
+
+  const fetchCrmStatuses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('crm_statuses')
+        .select('*')
+        .eq('is_active', true)
+        .order('order_index', { ascending: true });
+      
+      if (error) throw error;
+      setCrmStatuses(data || []);
+    } catch (error) {
+      console.error('Error fetching CRM statuses:', error);
+    }
+  };
 
   // Search users with debounce
   useEffect(() => {
@@ -448,8 +469,29 @@ export function EnrollmentCRM() {
     );
   }
 
+  const canAccessSettings = isAdmin || isSalesManager;
+
   return (
     <div dir="rtl">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="notes" className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4" />
+            فعالیت‌ها
+          </TabsTrigger>
+          {canAccessSettings && (
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              تنظیمات
+            </TabsTrigger>
+          )}
+        </TabsList>
+
+        <TabsContent value="settings">
+          {canAccessSettings && <CRMStatusSettings />}
+        </TabsContent>
+
+        <TabsContent value="notes">
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-4">
@@ -585,8 +627,8 @@ export function EnrollmentCRM() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                  {CRM_STATUSES.map(status => (
-                    <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                  {crmStatuses.map(status => (
+                    <SelectItem key={status.id} value={status.label}>{status.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -833,8 +875,8 @@ export function EnrollmentCRM() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CRM_STATUSES.map(status => (
-                    <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                  {crmStatuses.map(status => (
+                    <SelectItem key={status.id} value={status.label}>{status.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -935,6 +977,8 @@ export function EnrollmentCRM() {
           </div>
         </DialogContent>
       </Dialog>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

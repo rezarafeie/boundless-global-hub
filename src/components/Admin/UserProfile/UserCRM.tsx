@@ -56,16 +56,12 @@ const CRM_TYPES = [
   { value: 'payment', label: 'پرداخت' },
   { value: 'support', label: 'پشتیبانی' }
 ];
-
-const CRM_STATUSES = [
-  { value: 'در انتظار پرداخت', label: 'در انتظار پرداخت' },
-  { value: 'کنسل', label: 'کنسل' },
-  { value: 'موفق', label: 'موفق' },
-  { value: 'پاسخ نداده', label: 'پاسخ نداده' },
-  { value: 'امکان مکالمه نداشت', label: 'امکان مکالمه نداشت' },
-  { value: 'تکمیل شده', label: 'تکمیل شده' },
-  { value: 'لغو شده', label: 'لغو شده' }
-];
+interface CRMStatusOption {
+  id: string;
+  label: string;
+  color: string;
+  is_active: boolean;
+}
 
 const UserCRM: React.FC<UserCRMProps> = ({ 
   userId, 
@@ -79,6 +75,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
   const isMobile = useIsMobile();
   const [notes, setNotes] = useState<CRMNote[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [crmStatuses, setCrmStatuses] = useState<CRMStatusOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -121,7 +118,23 @@ const UserCRM: React.FC<UserCRMProps> = ({
     fetchCourses();
     fetchCRMNotes();
     fetchUserData();
+    fetchCrmStatuses();
   }, [userId]);
+
+  const fetchCrmStatuses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('crm_statuses')
+        .select('*')
+        .eq('is_active', true)
+        .order('order_index', { ascending: true });
+      
+      if (error) throw error;
+      setCrmStatuses(data || []);
+    } catch (error) {
+      console.error('Error fetching CRM statuses:', error);
+    }
+  };
 
   const fetchUserData = async () => {
     try {
@@ -854,8 +867,8 @@ const UserCRM: React.FC<UserCRMProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CRM_STATUSES.map(status => (
-                    <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                  {crmStatuses.map(status => (
+                    <SelectItem key={status.id} value={status.label}>{status.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

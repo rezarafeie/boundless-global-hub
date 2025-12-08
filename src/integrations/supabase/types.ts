@@ -1522,6 +1522,47 @@ export type Database = {
           },
         ]
       }
+      crm_statuses: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: number | null
+          id: string
+          is_active: boolean | null
+          label: string
+          order_index: number | null
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by?: number | null
+          id?: string
+          is_active?: boolean | null
+          label: string
+          order_index?: number | null
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: number | null
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          order_index?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_statuses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_reports: {
         Row: {
           created_at: string
