@@ -64,3 +64,11 @@ export const sendSSOAccessLinkGenerated = async (enrollment: any, user: any, cou
 export const sendRafieiPlayerLicenseGenerated = async (enrollment: any, user: any, course: any, license: any) => {
   await enhancedWebhookManager.sendRafieiPlayerLicenseGenerated(enrollment, user, course, license);
 };
+
+export const sendCRMNoteCreated = async (user: any, crmNote: any, course: any) => {
+  await enhancedWebhookManager.sendCRMNoteCreated(user, crmNote, course);
+};
+
+export const sendConsultationBooking = async (status: 'pending' | 'confirmed' | 'cancelled', booking: any, user: any, slot: any) => {
+  await enhancedWebhookManager.sendConsultationBooking(status, booking, user, slot);
+};
