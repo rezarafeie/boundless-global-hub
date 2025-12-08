@@ -168,6 +168,8 @@ const ConsultationManagement: React.FC = () => {
   };
 
   const handleAddSlots = async () => {
+    console.log('handleAddSlots called', { newSlotDate, newSlotStartTime, newSlotEndTime, slotDuration });
+    
     if (!newSlotDate || !newSlotStartTime || !newSlotEndTime) {
       toast({ title: 'خطا', description: 'لطفا تمام فیلدها را پر کنید', variant: 'destructive' });
       return;
@@ -176,18 +178,30 @@ const ConsultationManagement: React.FC = () => {
     setAddingSlots(true);
     try {
       const timeSlots = generateTimeSlots(newSlotStartTime, newSlotEndTime, slotDuration);
+      console.log('Generated time slots:', timeSlots);
+      
+      if (timeSlots.length === 0) {
+        toast({ title: 'خطا', description: 'هیچ اسلاتی قابل ایجاد نیست. بازه زمانی را بررسی کنید.', variant: 'destructive' });
+        setAddingSlots(false);
+        return;
+      }
       
       const slotsToInsert = timeSlots.map(slot => ({
         date: newSlotDate,
-        start_time: slot.start,
-        end_time: slot.end,
+        start_time: slot.start + ':00',
+        end_time: slot.end + ':00',
         is_available: true,
         created_by: user?.messengerData?.id || null
       }));
       
-      const { error } = await supabase
+      console.log('Slots to insert:', slotsToInsert);
+      
+      const { data, error } = await supabase
         .from('consultation_slots')
-        .insert(slotsToInsert);
+        .insert(slotsToInsert)
+        .select();
+      
+      console.log('Insert result:', { data, error });
       
       if (error) throw error;
       
@@ -195,9 +209,9 @@ const ConsultationManagement: React.FC = () => {
       setShowAddSlot(false);
       setNewSlotDate('');
       fetchSlots();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding slots:', error);
-      toast({ title: 'خطا', description: 'خطا در اضافه کردن اسلات‌ها', variant: 'destructive' });
+      toast({ title: 'خطا', description: error?.message || 'خطا در اضافه کردن اسلات‌ها', variant: 'destructive' });
     } finally {
       setAddingSlots(false);
     }
