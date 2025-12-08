@@ -237,7 +237,7 @@ const ConsultationManagement: React.FC = () => {
   const openApprovalDialog = (booking: ConsultationBooking) => {
     setSelectedBooking(booking);
     setApprovalNote(settings.default_confirmation_message || '');
-    setApprovalLink('');
+    setApprovalLink(booking.consultation_link || 'https://meet.google.com/nrs-cvbs-ppr');
     setShowApproval(true);
   };
 
