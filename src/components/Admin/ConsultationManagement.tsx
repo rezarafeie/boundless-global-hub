@@ -296,6 +296,36 @@ const ConsultationManagement: React.FC = () => {
     }
   };
 
+  const handleDeleteBooking = async (bookingId: string) => {
+    if (!confirm('آیا از حذف این رزرو مطمئن هستید؟')) return;
+    
+    try {
+      // First get the booking to find its slot
+      const booking = bookings.find(b => b.id === bookingId);
+      
+      const { error } = await supabase
+        .from('consultation_bookings')
+        .delete()
+        .eq('id', bookingId);
+      
+      if (error) throw error;
+      
+      // Make the slot available again
+      if (booking?.slot_id) {
+        await supabase
+          .from('consultation_slots')
+          .update({ is_available: true })
+          .eq('id', booking.slot_id);
+      }
+      
+      toast({ title: 'موفق', description: 'رزرو حذف شد' });
+      fetchBookings();
+      fetchSlots();
+    } catch (error) {
+      toast({ title: 'خطا', description: 'خطا در حذف رزرو', variant: 'destructive' });
+    }
+  };
+
   const handleSaveSettings = async () => {
     setSavingSettings(true);
     try {
@@ -503,6 +533,14 @@ const ConsultationManagement: React.FC = () => {
                                 </Button>
                               </a>
                             )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                              onClick={() => handleDeleteBooking(booking.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
