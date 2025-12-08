@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CRMStatusSettings } from './CRM/CRMStatusSettings';
 import { useUserRole } from '@/hooks/useUserRole';
+import { enhancedWebhookManager } from '@/lib/enhancedWebhookManager';
 
 interface CRMNote {
   id: string;
@@ -329,6 +330,43 @@ export function EnrollmentCRM() {
         .single();
 
       if (crmError) throw crmError;
+
+      // Get user data for webhook
+      const selectedUser = chatUsers.find(u => u.id === parseInt(newNote.user_id));
+      
+      // Get course data for webhook
+      let courseData = null;
+      if (newNote.course_id && newNote.course_id !== 'none') {
+        const { data: course } = await supabase
+          .from('courses')
+          .select('*')
+          .eq('id', newNote.course_id)
+          .single();
+        courseData = course;
+      }
+
+      // Send CRM webhook
+      try {
+        await enhancedWebhookManager.sendCRMNoteCreated(
+          {
+            id: parseInt(newNote.user_id),
+            name: selectedUser?.name || '',
+            phone: selectedUser?.phone || ''
+          },
+          {
+            id: crmData.id,
+            content: crmData.content,
+            type: crmData.type,
+            status: crmData.status,
+            created_at: crmData.created_at,
+            created_by: crmData.created_by
+          },
+          courseData
+        );
+        console.log('✅ CRM webhook sent successfully');
+      } catch (webhookError) {
+        console.error('❌ CRM webhook failed:', webhookError);
+      }
 
       // If follow-up is scheduled, create follow-up entry
       if (newNote.schedule_followup && crmData) {
