@@ -154,6 +154,9 @@ import InvoiceView from "./pages/InvoiceView";
 import InvoiceAdmin from "./pages/InvoiceAdmin";
 import InvoicePaymentCallback from "./pages/InvoicePaymentCallback";
 
+// Consultation pages
+import ConsultationBooking from "./pages/ConsultationBooking";
+
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -380,6 +383,9 @@ const App = () => {
                     <Route path="/invoice/:invoiceId" element={<InvoiceView />} />
                     <Route path="/invoice/:invoiceId/callback" element={<InvoicePaymentCallback />} />
                     <Route path="/enroll/admin/invoice/:invoiceId" element={<InvoiceAdmin />} />
+
+                    {/* Consultation Routes */}
+                    <Route path="/consultations" element={<ConsultationBooking />} />
 
                     {/* 404 fallback */}
                     <Route path="*" element={<NotFound />} />

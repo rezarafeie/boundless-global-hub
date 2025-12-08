@@ -24,7 +24,8 @@ import {
   ClipboardList,
   Calculator,
   Kanban,
-  Receipt
+  Receipt,
+  Video
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -42,6 +43,7 @@ const menuItems = [
   { id: 'courses', label: 'دوره‌ها', icon: BookOpen },
   { id: 'tests', label: 'آزمون‌ها', icon: Brain },
   { id: 'webinars', label: 'وبینارها', icon: Calendar },
+  { id: 'consultations', label: 'مشاوره‌ها', icon: Video },
   { id: 'enrollments', label: 'ثبت‌نام‌ها', icon: UserCheck },
   { id: 'recruitment', label: 'استخدام', icon: Briefcase },
   { id: 'internships', label: 'کارآموزی‌ها', icon: Users },
