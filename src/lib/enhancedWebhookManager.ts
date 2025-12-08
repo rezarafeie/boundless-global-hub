@@ -12,7 +12,11 @@ export type WebhookEventType =
   | 'sso_access_link_generated'
   | 'rafiei_player_license_generated'
   | 'webinar_registration'
-  | 'webinar_login';
+  | 'webinar_login'
+  | 'crm_note_created'
+  | 'consultation_booking_pending'
+  | 'consultation_booking_confirmed'
+  | 'consultation_booking_cancelled';
 
 interface WebhookPayload {
   event_type: WebhookEventType;
@@ -372,6 +376,37 @@ class EnhancedWebhookManager {
       event_type: 'webinar_login',
       timestamp: new Date().toISOString(),
       data: { webinar, entry }
+    });
+  }
+
+  async sendCRMNoteCreated(user: any, crmNote: any, course: any) {
+    const enhancedUser = this.enhanceUserData(user);
+    const enhancedCourse = course ? this.ensureCourseData(course) : null;
+    
+    await this.sendWebhook('crm_note_created', {
+      event_type: 'crm_note_created',
+      timestamp: new Date().toISOString(),
+      data: { 
+        user: enhancedUser, 
+        crm_note: crmNote,
+        course: enhancedCourse
+      }
+    });
+  }
+
+  async sendConsultationBooking(status: 'pending' | 'confirmed' | 'cancelled', booking: any, user: any, slot: any) {
+    const enhancedUser = this.enhanceUserData(user);
+    const eventType = `consultation_booking_${status}` as WebhookEventType;
+    
+    await this.sendWebhook(eventType, {
+      event_type: eventType,
+      timestamp: new Date().toISOString(),
+      data: { 
+        booking,
+        user: enhancedUser,
+        slot,
+        status
+      }
     });
   }
 }

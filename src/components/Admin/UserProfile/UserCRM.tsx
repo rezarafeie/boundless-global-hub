@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
+import { enhancedWebhookManager } from '@/lib/enhancedWebhookManager';
 
 interface CRMNote {
   id: string;
@@ -304,7 +305,8 @@ const UserCRM: React.FC<UserCRMProps> = ({
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
+      // Insert CRM note and get the created record
+      const { data: createdNote, error } = await supabase
         .from('crm_notes')
         .insert({
           user_id: userId,
@@ -313,46 +315,79 @@ const UserCRM: React.FC<UserCRMProps> = ({
           status: newNote.status,
           course_id: newNote.course_id === 'none' ? null : newNote.course_id,
           created_by: 'مدیر'
-        });
+        })
+        .select('*')
+        .single();
 
       if (error) throw error;
+
+      // Get course data if course_id is set
+      let courseData = null;
+      if (newNote.course_id && newNote.course_id !== 'none') {
+        const { data: course } = await supabase
+          .from('courses')
+          .select('*')
+          .eq('id', newNote.course_id)
+          .single();
+        courseData = course;
+      }
+
+      // Send CRM webhook with all user and note details
+      try {
+        await enhancedWebhookManager.sendCRMNoteCreated(
+          {
+            id: userId,
+            name: userName,
+            phone: userPhone,
+            email: userEmail,
+            first_name: currentUser?.first_name,
+            last_name: currentUser?.last_name,
+            full_name: currentUser?.full_name || userName,
+            country: currentUser?.country,
+            province: currentUser?.province,
+            gender: currentUser?.gender,
+            age: currentUser?.age,
+            education: currentUser?.education,
+            job: currentUser?.job,
+            bio: currentUser?.bio
+          },
+          {
+            id: createdNote.id,
+            content: createdNote.content,
+            type: createdNote.type,
+            status: createdNote.status,
+            created_at: createdNote.created_at,
+            created_by: createdNote.created_by
+          },
+          courseData
+        );
+        console.log('✅ CRM webhook sent successfully');
+      } catch (webhookError) {
+        console.error('❌ CRM webhook failed:', webhookError);
+      }
 
       // If follow-up is scheduled, create the follow-up entry
       if (newNote.schedule_followup) {
         const followUpDate = calculateFollowUpDate();
         
-        // First get the created CRM note ID
-        const { data: crmNoteData, error: getCrmError } = await supabase
-          .from('crm_notes')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('content', newNote.content)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
+        const { error: followUpError } = await supabase
+          .from('crm_followups')
+          .insert({
+            user_id: userId,
+            title: newNote.followup_title,
+            due_at: followUpDate.toISOString(),
+            status: 'open',
+            assigned_to: 1, // Default admin assignment
+            crm_activity_id: createdNote.id
+          });
 
-        if (getCrmError) {
-          console.error('Error getting CRM note ID:', getCrmError);
-        } else if (crmNoteData) {
-          const { error: followUpError } = await supabase
-            .from('crm_followups')
-            .insert({
-              user_id: userId,
-              title: newNote.followup_title,
-              due_at: followUpDate.toISOString(),
-              status: 'open',
-              assigned_to: 1, // Default admin assignment
-              crm_activity_id: crmNoteData.id
-            });
-
-          if (followUpError) {
-            console.error('Error creating follow-up:', followUpError);
-            toast({
-              title: "هشدار",
-              description: "یادداشت ایجاد شد اما پیگیری ثبت نشد.",
-              variant: "destructive"
-            });
-          }
+        if (followUpError) {
+          console.error('Error creating follow-up:', followUpError);
+          toast({
+            title: "هشدار",
+            description: "یادداشت ایجاد شد اما پیگیری ثبت نشد.",
+            variant: "destructive"
+          });
         }
       }
 

@@ -25,7 +25,11 @@ const WEBHOOK_EVENTS = [
   { value: 'sso_access_link_generated', label: 'تولید لینک دسترسی SSO' },
   { value: 'rafiei_player_license_generated', label: 'تولید لایسنس پلیر رفیعی' },
   { value: 'webinar_registration', label: 'ثبت نام وبینار' },
-  { value: 'webinar_login', label: 'ورود به وبینار' }
+  { value: 'webinar_login', label: 'ورود به وبینار' },
+  { value: 'crm_note_created', label: 'ثبت یادداشت CRM' },
+  { value: 'consultation_booking_pending', label: 'رزرو مشاوره (در انتظار)' },
+  { value: 'consultation_booking_confirmed', label: 'رزرو مشاوره (تایید شده)' },
+  { value: 'consultation_booking_cancelled', label: 'رزرو مشاوره (لغو شده)' }
 ];
 
 const DEFAULT_BODY_TEMPLATE = {
@@ -34,8 +38,16 @@ const DEFAULT_BODY_TEMPLATE = {
   user: {
     id: '{{data.user.id}}',
     name: '{{data.user.name}}',
+    firstname: '{{data.user.firstname}}',
+    lastname: '{{data.user.lastname}}',
     email: '{{data.user.email}}',
-    phone: '{{data.user.phone}}'
+    phone: '{{data.user.phone}}',
+    country: '{{data.user.country}}',
+    province: '{{data.user.province}}',
+    gender: '{{data.user.gender}}',
+    age: '{{data.user.age}}',
+    education: '{{data.user.education}}',
+    job: '{{data.user.job}}'
   },
   course: {
     id: '{{data.course.id}}',
@@ -48,6 +60,26 @@ const DEFAULT_BODY_TEMPLATE = {
     payment_status: '{{data.enrollment.payment_status}}',
     payment_amount: '{{data.enrollment.payment_amount}}',
     created_at: '{{data.enrollment.created_at}}'
+  },
+  crm_note: {
+    id: '{{data.crm_note.id}}',
+    content: '{{data.crm_note.content}}',
+    type: '{{data.crm_note.type}}',
+    status: '{{data.crm_note.status}}',
+    created_at: '{{data.crm_note.created_at}}',
+    created_by: '{{data.crm_note.created_by}}'
+  },
+  consultation: {
+    booking_id: '{{data.booking.id}}',
+    full_name: '{{data.booking.full_name}}',
+    phone: '{{data.booking.phone}}',
+    email: '{{data.booking.email}}',
+    description: '{{data.booking.description}}',
+    consultation_link: '{{data.booking.consultation_link}}',
+    status: '{{data.status}}',
+    slot_date: '{{data.slot.date}}',
+    slot_start_time: '{{data.slot.start_time}}',
+    slot_end_time: '{{data.slot.end_time}}'
   },
   admin_access_link: '{{data.admin_access_link}}',
   sso_tokens: '{{data.sso_tokens}}',
