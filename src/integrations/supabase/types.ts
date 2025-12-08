@@ -912,6 +912,144 @@ export type Database = {
           },
         ]
       }
+      consultation_bookings: {
+        Row: {
+          confirmation_note: string | null
+          confirmed_at: string | null
+          confirmed_by: number | null
+          consultation_link: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          phone: string
+          slot_id: string
+          status: string
+          updated_at: string
+          user_id: number
+        }
+        Insert: {
+          confirmation_note?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: number | null
+          consultation_link?: string | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          phone: string
+          slot_id: string
+          status?: string
+          updated_at?: string
+          user_id: number
+        }
+        Update: {
+          confirmation_note?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: number | null
+          consultation_link?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string
+          slot_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultation_bookings_confirmed_by_fkey"
+            columns: ["confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultation_bookings_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "consultation_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultation_bookings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consultation_settings: {
+        Row: {
+          created_at: string
+          default_confirmation_message: string | null
+          id: number
+          slot_duration: number
+          updated_at: string
+          webhook_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          default_confirmation_message?: string | null
+          id?: number
+          slot_duration?: number
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          default_confirmation_message?: string | null
+          id?: number
+          slot_duration?: number
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
+      consultation_slots: {
+        Row: {
+          created_at: string
+          created_by: number | null
+          date: string
+          end_time: string
+          id: string
+          is_available: boolean
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: number | null
+          date: string
+          end_time: string
+          id?: string
+          is_available?: boolean
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: number | null
+          date?: string
+          end_time?: string
+          id?: string
+          is_available?: boolean
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultation_slots_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_click_logs: {
         Row: {
           action_type: string

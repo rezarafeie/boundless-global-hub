@@ -79,3 +79,6 @@ verify_jwt = false
 
 [functions.ai-admin-greeting]
 verify_jwt = false
+
+[functions.consultation-webhook]
+verify_jwt = false
