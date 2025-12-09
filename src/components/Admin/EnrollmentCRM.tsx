@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CRMStatusSettings } from './CRM/CRMStatusSettings';
 import { useUserRole } from '@/hooks/useUserRole';
 import { enhancedWebhookManager } from '@/lib/enhancedWebhookManager';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CRMNote {
   id: string;
@@ -85,6 +86,19 @@ export function EnrollmentCRM() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState('notes');
   const { isAdmin, isSalesManager } = useUserRole();
+  const { user } = useAuth();
+  
+  // Get current user's display name
+  const getCurrentUserName = () => {
+    if (!user) return 'مدیر';
+    if (user.isMessengerUser && user.messengerData) {
+      return user.messengerData.full_name || user.messengerData.name || 'مدیر';
+    }
+    if (user.isAcademyUser && user.academyData) {
+      return `${user.academyData.first_name} ${user.academyData.last_name}`.trim() || 'مدیر';
+    }
+    return 'مدیر';
+  };
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -335,7 +349,7 @@ export function EnrollmentCRM() {
           content: newNote.content,
           course_id: newNote.course_id === 'none' ? null : newNote.course_id,
           status: newNote.status,
-          created_by: 'مدیر'
+          created_by: getCurrentUserName()
         })
         .select()
         .single();

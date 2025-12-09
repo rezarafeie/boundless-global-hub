@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { messengerService, type MessengerUser } from '@/lib/messengerService';
 import { enhancedWebhookManager } from '@/lib/enhancedWebhookManager';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CRMNote {
   id: string;
@@ -73,11 +74,24 @@ const UserCRM: React.FC<UserCRMProps> = ({
 }) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   const [notes, setNotes] = useState<CRMNote[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [crmStatuses, setCrmStatuses] = useState<CRMStatusOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Get current user's display name
+  const getCurrentUserName = () => {
+    if (!user) return 'مدیر';
+    if (user.isMessengerUser && user.messengerData) {
+      return user.messengerData.full_name || user.messengerData.name || 'مدیر';
+    }
+    if (user.isAcademyUser && user.academyData) {
+      return `${user.academyData.first_name} ${user.academyData.last_name}`.trim() || 'مدیر';
+    }
+    return 'مدیر';
+  };
   
   // Form states
   const [isAddingNote, setIsAddingNote] = useState(false);
@@ -327,7 +341,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
           type: newNote.type,
           status: newNote.status,
           course_id: newNote.course_id === 'none' ? null : newNote.course_id,
-          created_by: 'مدیر'
+          created_by: getCurrentUserName()
         })
         .select('*')
         .single();
