@@ -55,21 +55,46 @@ serve(async (req) => {
 
     // Get active webhook configurations for this event type
     // If payload contains course information, filter by course-specific webhooks
-    let webhookQuery = supabase
-      .from('webhook_configurations')
-      .select('*')
-      .eq('event_type', finalEventType)
-      .eq('is_active', true);
+    const courseId = finalPayload?.data?.course?.id;
+    console.log('📦 Course ID from payload:', courseId);
+    
+    let webhookConfigs;
+    let configError;
 
-    // If we have course data in the payload, include course-specific webhooks
-    if (finalPayload?.data?.course?.id) {
-      webhookQuery = webhookQuery.or(`course_id.is.null,course_id.eq.${finalPayload.data.course.id}`);
+    if (courseId) {
+      // Get both global webhooks (course_id is null) AND course-specific webhooks
+      const { data: globalWebhooks, error: globalError } = await supabase
+        .from('webhook_configurations')
+        .select('*')
+        .eq('event_type', finalEventType)
+        .eq('is_active', true)
+        .is('course_id', null);
+      
+      const { data: courseWebhooks, error: courseError } = await supabase
+        .from('webhook_configurations')
+        .select('*')
+        .eq('event_type', finalEventType)
+        .eq('is_active', true)
+        .eq('course_id', courseId);
+      
+      configError = globalError || courseError;
+      webhookConfigs = [...(globalWebhooks || []), ...(courseWebhooks || [])];
+      
+      console.log(`📋 Found ${globalWebhooks?.length || 0} global + ${courseWebhooks?.length || 0} course-specific webhooks`);
     } else {
       // If no course data, only get global webhooks (course_id is null)
-      webhookQuery = webhookQuery.is('course_id', null);
+      const { data, error } = await supabase
+        .from('webhook_configurations')
+        .select('*')
+        .eq('event_type', finalEventType)
+        .eq('is_active', true)
+        .is('course_id', null);
+      
+      webhookConfigs = data;
+      configError = error;
+      
+      console.log(`📋 Found ${data?.length || 0} global webhooks (no course ID in payload)`);
     }
-
-    const { data: webhookConfigs, error: configError } = await webhookQuery;
 
     if (configError) {
       console.error('Error fetching webhook configurations:', configError);
