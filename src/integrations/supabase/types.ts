@@ -5113,6 +5113,10 @@ export type Database = {
         Args: { curlopt: string; value: string }
         Returns: boolean
       }
+      increment_lead_call_clicks: {
+        Args: { lead_id: string }
+        Returns: undefined
+      }
       increment_short_link_clicks: {
         Args: { link_slug: string }
         Returns: undefined
