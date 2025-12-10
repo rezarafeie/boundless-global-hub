@@ -29,7 +29,10 @@ const WEBHOOK_EVENTS = [
   { value: 'crm_note_created', label: 'ثبت یادداشت CRM' },
   { value: 'consultation_booking_pending', label: 'رزرو مشاوره (در انتظار)' },
   { value: 'consultation_booking_confirmed', label: 'رزرو مشاوره (تایید شده)' },
-  { value: 'consultation_booking_cancelled', label: 'رزرو مشاوره (لغو شده)' }
+  { value: 'consultation_booking_cancelled', label: 'رزرو مشاوره (لغو شده)' },
+  { value: 'lead_request_created', label: 'درخواست لید جدید' },
+  { value: 'lead_request_updated', label: 'بروزرسانی درخواست لید' },
+  { value: 'lead_request_ai_completed', label: 'تکمیل AI درخواست لید' }
 ];
 
 const DEFAULT_BODY_TEMPLATE = {
