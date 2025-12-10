@@ -56,6 +56,7 @@ export function RequestLeadsTab() {
   const [selectedLead, setSelectedLead] = useState<LeadRequest | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
+  const [showAiRecommendation, setShowAiRecommendation] = useState(false);
   const [assignLoading, setAssignLoading] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string>('');
 
@@ -385,7 +386,13 @@ export function RequestLeadsTab() {
                     </TableCell>
                     <TableCell>
                       {lead.ai_recommendation ? (
-                        <div className="flex items-center gap-1 text-primary">
+                        <button
+                          onClick={() => {
+                            setSelectedLead(lead);
+                            setShowAiRecommendation(true);
+                          }}
+                          className="flex items-center gap-1 text-primary hover:underline cursor-pointer"
+                        >
                           <Sparkles className="w-4 h-4" />
                           <span className="text-sm truncate max-w-[150px]">
                             {lead.ai_recommendation.courses?.length > 0 
@@ -394,7 +401,7 @@ export function RequestLeadsTab() {
                                 ? lead.ai_recommendation.services[0].name
                                 : lead.ai_recommendation.name || lead.ai_recommendation.recommendation || 'پیشنهاد موجود'}
                           </span>
-                        </div>
+                        </button>
                       ) : '-'}
                     </TableCell>
                     <TableCell>
@@ -638,6 +645,89 @@ export function RequestLeadsTab() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Recommendation Dialog */}
+      <Dialog open={showAiRecommendation} onOpenChange={setShowAiRecommendation}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              پیشنهاد هوش مصنوعی
+            </DialogTitle>
+          </DialogHeader>
+          {selectedLead?.ai_recommendation && (
+            <ScrollArea className="max-h-[70vh]">
+              <div className="space-y-4">
+                {/* Courses */}
+                {selectedLead.ai_recommendation.courses?.length > 0 && (
+                  <div className="bg-primary/5 p-4 rounded-lg">
+                    <div className="text-sm font-medium text-primary mb-3">دوره‌های پیشنهادی:</div>
+                    {selectedLead.ai_recommendation.courses.map((course: any, idx: number) => (
+                      <div key={idx} className="mb-3 last:mb-0 p-3 bg-background rounded-md">
+                        <div className="font-medium flex items-center gap-2 mb-1">
+                          {course.name}
+                          {course.tier && (
+                            <Badge variant="outline" className="text-xs">
+                              {course.tier === 'free' ? 'رایگان' : course.tier === 'start' ? 'شروع' : 'پریمیوم'}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground">{course.explanation}</div>
+                        {course.link && (
+                          <a href={course.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline mt-1 inline-block">
+                            مشاهده دوره
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Services */}
+                {selectedLead.ai_recommendation.services?.length > 0 && (
+                  <div className="bg-amber-500/5 p-4 rounded-lg">
+                    <div className="text-sm font-medium text-amber-600 mb-3">خدمات پیشنهادی:</div>
+                    {selectedLead.ai_recommendation.services.map((service: any, idx: number) => (
+                      <div key={idx} className="mb-3 last:mb-0 p-3 bg-background rounded-md">
+                        <div className="font-medium">{service.name}</div>
+                        <div className="text-sm text-muted-foreground">{service.explanation}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Analysis */}
+                {selectedLead.ai_recommendation.analysis && (
+                  <div className="bg-muted/30 p-4 rounded-lg">
+                    <div className="text-sm font-medium mb-2">تحلیل:</div>
+                    <div className="text-sm whitespace-pre-wrap">{selectedLead.ai_recommendation.analysis}</div>
+                  </div>
+                )}
+                
+                {/* Selling Script */}
+                {selectedLead.ai_recommendation.sellingScript && (
+                  <div className="bg-green-500/5 p-4 rounded-lg border border-green-200">
+                    <div className="text-sm font-medium text-green-700 mb-2">اسکریپت فروش:</div>
+                    <div className="text-sm whitespace-pre-wrap">{selectedLead.ai_recommendation.sellingScript}</div>
+                  </div>
+                )}
+                
+                {/* Fallback for old format */}
+                {!selectedLead.ai_recommendation.courses && !selectedLead.ai_recommendation.services && (
+                  <div className="bg-primary/5 p-4 rounded-lg">
+                    <div className="font-medium mb-2">
+                      {selectedLead.ai_recommendation.name || selectedLead.ai_recommendation.recommendation}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {selectedLead.ai_recommendation.explanation}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          )}
         </DialogContent>
       </Dialog>
     </div>
