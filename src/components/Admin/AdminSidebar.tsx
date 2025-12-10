@@ -25,8 +25,7 @@ import {
   Calculator,
   Kanban,
   Receipt,
-  Video,
-  PhoneCall
+  Video
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -50,7 +49,6 @@ const menuItems = [
   { id: 'internships', label: 'کارآموزی‌ها', icon: Users },
   { id: 'sales', label: 'داشبورد فروش', icon: BarChart3 },
   { id: 'leads', label: 'مدیریت لیدها', icon: UserPlus },
-  { id: 'request-leads', label: 'درخواست‌های لید', icon: PhoneCall },
   { id: 'pipeline', label: 'پایپ‌لاین فروش', icon: Kanban },
   { id: 'daily-reports', label: 'گزارشات روزانه', icon: ClipboardList },
   { id: 'accounting', label: 'حسابداری', icon: Calculator },
