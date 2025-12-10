@@ -627,14 +627,48 @@ const LeadRequest: React.FC = () => {
                       >
                         <div className="flex items-center gap-2 mb-3">
                           <Sparkles className="w-5 h-5 text-primary" />
-                          <span className="font-medium text-primary">پیشنهاد ما برای شما</span>
+                          <span className="font-medium text-primary">
+                            {aiRecommendation.type === 'course' ? 'دوره پیشنهادی' : 'خدمات پیشنهادی'}
+                          </span>
+                          {aiRecommendation.tier && (
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              aiRecommendation.tier === 'free' ? 'bg-green-500/20 text-green-600' :
+                              aiRecommendation.tier === 'start' ? 'bg-blue-500/20 text-blue-600' :
+                              'bg-yellow-500/20 text-yellow-600'
+                            }`}>
+                              {aiRecommendation.tier === 'free' ? 'رایگان' :
+                               aiRecommendation.tier === 'start' ? 'شروع' : 'پریمیوم'}
+                            </span>
+                          )}
                         </div>
                         <h3 className="text-lg font-bold text-foreground mb-2">
-                          {aiRecommendation.recommendation}
+                          {aiRecommendation.name || aiRecommendation.recommendation}
                         </h3>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground mb-4">
                           {aiRecommendation.explanation}
                         </p>
+                        
+                        {/* Selling Script */}
+                        {aiRecommendation.sellingScript && (
+                          <div className="bg-background/50 rounded-lg p-4 mb-4 border border-border/50">
+                            <p className="text-sm text-foreground leading-relaxed">
+                              {aiRecommendation.sellingScript}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {/* Course Link */}
+                        {aiRecommendation.type === 'course' && aiRecommendation.slug && (
+                          <a
+                            href={`/course/${aiRecommendation.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-medium text-sm"
+                          >
+                            مشاهده دوره
+                            <ArrowLeft className="w-4 h-4" />
+                          </a>
+                        )}
                       </motion.div>
                     )}
 
