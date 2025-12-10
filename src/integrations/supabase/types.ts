@@ -2704,6 +2704,50 @@ export type Database = {
           },
         ]
       }
+      lead_requests: {
+        Row: {
+          ai_recommendation: Json | null
+          answers: Json | null
+          assigned_agent_id: number | null
+          created_at: string
+          id: string
+          name: string | null
+          phone: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ai_recommendation?: Json | null
+          answers?: Json | null
+          assigned_agent_id?: number | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          phone: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_recommendation?: Json | null
+          answers?: Json | null
+          assigned_agent_id?: number | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          phone?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_requests_assigned_agent_id_fkey"
+            columns: ["assigned_agent_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_sections: {
         Row: {
           created_at: string | null

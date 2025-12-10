@@ -156,6 +156,7 @@ import InvoicePaymentCallback from "./pages/InvoicePaymentCallback";
 
 // Consultation pages
 import ConsultationBooking from "./pages/ConsultationBooking";
+import LeadRequest from "./pages/LeadRequest";
 
 const queryClient = new QueryClient();
 
@@ -386,6 +387,9 @@ const App = () => {
 
                     {/* Consultation Routes */}
                     <Route path="/consultations" element={<ConsultationBooking />} />
+
+                    {/* Lead Request Route */}
+                    <Route path="/request" element={<LeadRequest />} />
 
                     {/* 404 fallback */}
                     <Route path="*" element={<NotFound />} />
