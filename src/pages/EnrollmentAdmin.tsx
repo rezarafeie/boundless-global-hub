@@ -42,6 +42,7 @@ const AccountingReports = React.lazy(() => import('@/components/Admin/Accounting
 const AccountingProducts = React.lazy(() => import('@/components/Admin/Accounting/AccountingProducts'));
 const SalesAgentDashboard = React.lazy(() => import('@/components/Admin/Accounting/SalesAgentDashboard'));
 const ConsultationManagement = React.lazy(() => import('@/components/Admin/ConsultationManagement'));
+const RequestLeadsTab = React.lazy(() => import('@/components/Admin/RequestLeadsTab'));
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -96,7 +97,7 @@ const EnrollmentAdmin: React.FC = () => {
   const navigate = useNavigate();
   const [checkingRole, setCheckingRole] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'sales' | 'leads' | 'users' | 'analytics' | 'settings' | 'crm' | 'recruitment' | 'internships' | 'tests' | 'webinars' | 'daily-reports' | 'accounting' | 'pipeline' | 'pipeline-builder' | 'agent-financials' | 'consultations'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'sales' | 'leads' | 'request-leads' | 'users' | 'analytics' | 'settings' | 'crm' | 'recruitment' | 'internships' | 'tests' | 'webinars' | 'daily-reports' | 'accounting' | 'pipeline' | 'pipeline-builder' | 'agent-financials' | 'consultations'>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
@@ -484,6 +485,14 @@ const EnrollmentAdmin: React.FC = () => {
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
               <ConsultationManagement />
+            </Suspense>
+          </ErrorBoundary>
+        );
+      case 'request-leads':
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <RequestLeadsTab />
             </Suspense>
           </ErrorBoundary>
         );
