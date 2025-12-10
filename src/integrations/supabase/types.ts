@@ -2709,6 +2709,7 @@ export type Database = {
           ai_recommendation: Json | null
           answers: Json | null
           assigned_agent_id: number | null
+          call_clicks: number | null
           created_at: string
           id: string
           name: string | null
@@ -2720,6 +2721,7 @@ export type Database = {
           ai_recommendation?: Json | null
           answers?: Json | null
           assigned_agent_id?: number | null
+          call_clicks?: number | null
           created_at?: string
           id?: string
           name?: string | null
@@ -2731,6 +2733,7 @@ export type Database = {
           ai_recommendation?: Json | null
           answers?: Json | null
           assigned_agent_id?: number | null
+          call_clicks?: number | null
           created_at?: string
           id?: string
           name?: string | null
