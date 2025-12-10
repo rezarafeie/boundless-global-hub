@@ -45,14 +45,15 @@ const LeadRequest: React.FC = () => {
   const [aiRecommendation, setAiRecommendation] = useState<any>(null);
   const [completed, setCompleted] = useState(false);
 
-  // Dynamic total steps based on request type
-  const getTotalSteps = () => {
-    if (answers.request_type === 'services') {
-      // phone, name, type, services, budget, completion
-      return 6;
-    }
-    // phone, name, type, goal, status, interests, budget, completion
-    return 8;
+  // Simplified progress: 1=phone, 2=name, 3=questionnaire, 4=completion
+  const totalVisualSteps = 4;
+
+  // Get visual step number for progress indicator
+  const getVisualStep = () => {
+    if (step === 1) return 1; // Phone
+    if (step === 2) return 2; // Name
+    if (completed) return 4; // Completion
+    return 3; // All questionnaire steps show as step 3
   };
 
   // Normalize phone number
@@ -276,41 +277,16 @@ const LeadRequest: React.FC = () => {
   };
 
   // Get current step for progress indicator
-  const getCurrentStepNumber = () => {
-    if (answers.request_type === 'services') {
-      // Services path: 1=phone, 2=name, 3=type, 4=services, 5=budget, 6=completion
-      return step;
-    }
-    // Learning path: 1=phone, 2=name, 3=type, 4=goal, 5=status, 6=interests, 7=budget, 8=completion
-    return step;
-  };
-
-  // Check if current step is completion
-  const isCompletionStep = () => {
-    if (answers.request_type === 'services') {
-      return step === 6;
-    }
-    return step === 8;
-  };
-
-  // Check if current step is budget
-  const isBudgetStep = () => {
-    if (answers.request_type === 'services') {
-      return step === 5;
-    }
-    return step === 7;
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4" dir="rtl">
       <div className="w-full max-w-md">
         {/* Progress indicators */}
         <div className="flex justify-center gap-1.5 mb-8">
-          {Array.from({ length: getTotalSteps() }).map((_, i) => (
+          {Array.from({ length: totalVisualSteps }).map((_, i) => (
             <div
               key={i}
               className={`h-1.5 rounded-full transition-all duration-300 ${
-                i + 1 <= getCurrentStepNumber() ? 'bg-primary w-6' : 'bg-muted w-3'
+                i + 1 <= getVisualStep() ? 'bg-primary w-6' : 'bg-muted w-3'
               }`}
             />
           ))}
