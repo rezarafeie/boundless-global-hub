@@ -18,7 +18,8 @@ import {
   Eye,
   Sparkles,
   RefreshCw,
-  Download
+  Download,
+  PhoneCall
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -34,6 +35,7 @@ interface LeadRequest {
   assigned_agent_id: number | null;
   created_at: string;
   updated_at: string;
+  call_clicks: number | null;
   assigned_agent?: { name: string } | null;
 }
 
@@ -182,7 +184,7 @@ export function RequestLeadsTab() {
 
   const exportToCSV = () => {
     const csvContent = [
-      ['شناسه', 'تلفن', 'نام', 'هدف', 'وضعیت فعلی', 'علاقه‌مندی‌ها', 'بودجه', 'پیشنهاد AI', 'وضعیت', 'کارشناس', 'تاریخ'].join(','),
+      ['شناسه', 'تلفن', 'نام', 'هدف', 'وضعیت فعلی', 'علاقه‌مندی‌ها', 'بودجه', 'کلیک تماس', 'پیشنهاد AI', 'وضعیت', 'کارشناس', 'تاریخ'].join(','),
       ...leads.map(l => [
         l.id,
         l.phone,
@@ -191,6 +193,7 @@ export function RequestLeadsTab() {
         l.answers?.current_status || '',
         l.answers?.interests?.join(' - ') || '',
         l.answers?.budget || '',
+        l.call_clicks || 0,
         l.ai_recommendation?.recommendation || '',
         l.status,
         l.assigned_agent?.name || '',
@@ -289,7 +292,7 @@ export function RequestLeadsTab() {
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold">{leads.length}</div>
@@ -320,6 +323,15 @@ export function RequestLeadsTab() {
             <div className="text-sm text-muted-foreground">اختصاص یافته</div>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-amber-600 flex items-center justify-center gap-1">
+              <PhoneCall className="w-5 h-5" />
+              {leads.reduce((sum, l) => sum + (l.call_clicks || 0), 0)}
+            </div>
+            <div className="text-sm text-muted-foreground">کلیک تماس</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Table */}
@@ -340,6 +352,7 @@ export function RequestLeadsTab() {
                   <TableHead>تلفن</TableHead>
                   <TableHead>نام</TableHead>
                   <TableHead>بودجه</TableHead>
+                  <TableHead>کلیک تماس</TableHead>
                   <TableHead>پیشنهاد AI</TableHead>
                   <TableHead>وضعیت</TableHead>
                   <TableHead>کارشناس</TableHead>
@@ -360,6 +373,14 @@ export function RequestLeadsTab() {
                     <TableCell>
                       {lead.answers?.budget ? (
                         <Badge variant="outline">{lead.answers.budget}</Badge>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {lead.call_clicks ? (
+                        <div className="flex items-center gap-1 text-amber-600">
+                          <PhoneCall className="w-4 h-4" />
+                          <span className="font-medium">{lead.call_clicks}</span>
+                        </div>
                       ) : '-'}
                     </TableCell>
                     <TableCell>

@@ -213,8 +213,17 @@ const LeadRequest: React.FC = () => {
   const handleCallClick = async () => {
     if (leadId) {
       try {
-        // Increment call_clicks
-        await supabase.rpc('increment_lead_call_clicks', { lead_id: leadId });
+        // Increment call_clicks using direct update
+        const { data: currentLead } = await supabase
+          .from('lead_requests')
+          .select('call_clicks')
+          .eq('id', leadId)
+          .maybeSingle();
+        
+        await supabase
+          .from('lead_requests')
+          .update({ call_clicks: (currentLead?.call_clicks || 0) + 1 } as any)
+          .eq('id', leadId);
       } catch (error) {
         console.error('Error tracking call click:', error);
       }
