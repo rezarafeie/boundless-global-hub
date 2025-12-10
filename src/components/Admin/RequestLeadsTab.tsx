@@ -388,7 +388,11 @@ export function RequestLeadsTab() {
                         <div className="flex items-center gap-1 text-primary">
                           <Sparkles className="w-4 h-4" />
                           <span className="text-sm truncate max-w-[150px]">
-                            {lead.ai_recommendation.recommendation}
+                            {lead.ai_recommendation.courses?.length > 0 
+                              ? lead.ai_recommendation.courses[0].name 
+                              : lead.ai_recommendation.services?.length > 0
+                                ? lead.ai_recommendation.services[0].name
+                                : lead.ai_recommendation.name || lead.ai_recommendation.recommendation || 'پیشنهاد موجود'}
                           </span>
                         </div>
                       ) : '-'}
@@ -472,6 +476,24 @@ export function RequestLeadsTab() {
                   <div className="border-t pt-4">
                     <div className="text-sm font-medium mb-2">پاسخ‌های پرسشنامه</div>
                     <div className="space-y-2 text-sm">
+                      {selectedLead.answers.request_type && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">نوع درخواست:</span>
+                          <Badge variant="outline">
+                            {selectedLead.answers.request_type === 'learning' ? 'یادگیری' : 'خدمات'}
+                          </Badge>
+                        </div>
+                      )}
+                      {selectedLead.answers.selected_services?.length > 0 && (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-muted-foreground">خدمات انتخابی:</span>
+                          <div className="flex flex-wrap gap-1">
+                            {selectedLead.answers.selected_services.map((s: string) => (
+                              <Badge key={s} variant="secondary">{s}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {selectedLead.answers.goal && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">هدف:</span>
@@ -510,13 +532,59 @@ export function RequestLeadsTab() {
                       <Sparkles className="w-4 h-4 text-primary" />
                       پیشنهاد هوش مصنوعی
                     </div>
-                    <div className="bg-primary/5 p-3 rounded-lg">
-                      <div className="font-medium">
-                        {selectedLead.ai_recommendation.recommendation}
-                      </div>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        {selectedLead.ai_recommendation.explanation}
-                      </div>
+                    <div className="space-y-3">
+                      {/* Courses */}
+                      {selectedLead.ai_recommendation.courses?.length > 0 && (
+                        <div className="bg-primary/5 p-3 rounded-lg">
+                          <div className="text-sm font-medium text-primary mb-2">دوره‌ها:</div>
+                          {selectedLead.ai_recommendation.courses.map((course: any, idx: number) => (
+                            <div key={idx} className="mb-2 last:mb-0">
+                              <div className="font-medium flex items-center gap-2">
+                                {course.name}
+                                {course.tier && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {course.tier === 'free' ? 'رایگان' : course.tier === 'start' ? 'شروع' : 'پریمیوم'}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-sm text-muted-foreground">{course.explanation}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Services */}
+                      {selectedLead.ai_recommendation.services?.length > 0 && (
+                        <div className="bg-amber-500/5 p-3 rounded-lg">
+                          <div className="text-sm font-medium text-amber-600 mb-2">خدمات:</div>
+                          {selectedLead.ai_recommendation.services.map((service: any, idx: number) => (
+                            <div key={idx} className="mb-2 last:mb-0">
+                              <div className="font-medium">{service.name}</div>
+                              <div className="text-sm text-muted-foreground">{service.explanation}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Selling Script */}
+                      {selectedLead.ai_recommendation.sellingScript && (
+                        <div className="bg-muted/50 p-3 rounded-lg">
+                          <div className="text-sm font-medium mb-1">اسکریپت فروش:</div>
+                          <div className="text-sm">{selectedLead.ai_recommendation.sellingScript}</div>
+                        </div>
+                      )}
+                      
+                      {/* Fallback for old format */}
+                      {!selectedLead.ai_recommendation.courses && !selectedLead.ai_recommendation.services && (
+                        <div className="bg-primary/5 p-3 rounded-lg">
+                          <div className="font-medium">
+                            {selectedLead.ai_recommendation.name || selectedLead.ai_recommendation.recommendation}
+                          </div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {selectedLead.ai_recommendation.explanation}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
