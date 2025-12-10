@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Phone, User, ArrowLeft, ArrowRight, CheckCircle, Sparkles, Loader2 } from 'lucide-react';
+import { Phone, User, ArrowLeft, CheckCircle, Sparkles, Loader2, Target, Briefcase, Heart, Wallet, PhoneCall } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -30,6 +30,9 @@ const LeadRequest: React.FC = () => {
   });
   const [aiRecommendation, setAiRecommendation] = useState<any>(null);
   const [completed, setCompleted] = useState(false);
+
+  // Total steps: 1=phone, 2=name, 3=goal, 4=status, 5=interests, 6=budget, 7=completion
+  const totalSteps = 7;
 
   // Normalize phone number
   const normalizePhone = (p: string) => {
@@ -104,46 +107,71 @@ const LeadRequest: React.FC = () => {
     }
   };
 
-  // Step 3: Questionnaire submission
-  const handleQuestionnaireSubmit = async (skip = false) => {
+  // Handle goal selection
+  const handleGoalSelect = (goal: string) => {
+    setAnswers(prev => ({ ...prev, goal }));
+    setStep(4);
+  };
+
+  // Handle status selection
+  const handleStatusSelect = (status: string) => {
+    setAnswers(prev => ({ ...prev, current_status: status }));
+    setStep(5);
+  };
+
+  // Handle interests and continue
+  const handleInterestsSubmit = () => {
+    setStep(6);
+  };
+
+  // Handle budget selection and submit
+  const handleBudgetSubmit = async (budget: string) => {
+    const finalAnswers = { ...answers, budget };
+    setAnswers(finalAnswers);
+    
     if (!leadId) return;
     
     setLoading(true);
+    setAiLoading(true);
+    
     try {
-      if (!skip) {
+      await supabase
+        .from('lead_requests')
+        .update({ answers: finalAnswers as any })
+        .eq('id', leadId);
+      
+      // Trigger webhook
+      await triggerWebhook({ id: leadId, phone, name, answers: finalAnswers }, 'answers_added');
+      
+      // Get AI recommendation
+      const recommendation = await getAiRecommendation(finalAnswers);
+      
+      if (recommendation) {
         await supabase
           .from('lead_requests')
-          .update({ answers: answers as any })
+          .update({ ai_recommendation: recommendation })
           .eq('id', leadId);
         
-        // Trigger webhook
-        await triggerWebhook({ id: leadId, phone, name, answers }, 'answers_added');
+        setAiRecommendation(recommendation);
         
-        // Get AI recommendation
-        setAiLoading(true);
-        const recommendation = await getAiRecommendation();
-        
-        if (recommendation) {
-          await supabase
-            .from('lead_requests')
-            .update({ ai_recommendation: recommendation })
-            .eq('id', leadId);
-          
-          setAiRecommendation(recommendation);
-          
-          // Trigger webhook with AI result
-          await triggerWebhook({ id: leadId, phone, name, answers, ai_recommendation: recommendation }, 'ai_completed');
-        }
+        // Trigger webhook with AI result
+        await triggerWebhook({ id: leadId, phone, name, answers: finalAnswers, ai_recommendation: recommendation }, 'ai_completed');
       }
       
       setCompleted(true);
-      setStep(4);
+      setStep(7);
     } catch (error) {
       console.error('Error submitting questionnaire:', error);
     } finally {
       setLoading(false);
       setAiLoading(false);
     }
+  };
+
+  // Skip questionnaire and go to completion
+  const handleSkipQuestionnaire = async () => {
+    setCompleted(true);
+    setStep(7);
   };
 
   // Trigger webhook
@@ -158,10 +186,10 @@ const LeadRequest: React.FC = () => {
   };
 
   // Get AI recommendation
-  const getAiRecommendation = async () => {
+  const getAiRecommendation = async (finalAnswers: LeadAnswers) => {
     try {
       const { data, error } = await supabase.functions.invoke('lead-request-ai', {
-        body: { answers }
+        body: { answers: finalAnswers }
       });
       
       if (error) throw error;
@@ -181,16 +209,38 @@ const LeadRequest: React.FC = () => {
     }));
   };
 
+  // Handle call button click
+  const handleCallClick = async () => {
+    if (leadId) {
+      try {
+        // Increment call_clicks
+        await supabase.rpc('increment_lead_call_clicks', { lead_id: leadId });
+      } catch (error) {
+        console.error('Error tracking call click:', error);
+      }
+    }
+    // Open phone dialer
+    window.location.href = 'tel:+982128427131';
+  };
+
+  // Get budget question text with goal reference
+  const getBudgetQuestion = () => {
+    if (answers.goal) {
+      return `بودجه شما برای ${answers.goal} چقدر است؟`;
+    }
+    return 'بودجه شما چقدر است؟';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4" dir="rtl">
       <div className="w-full max-w-md">
         {/* Progress indicators */}
-        <div className="flex justify-center gap-2 mb-8">
-          {[1, 2, 3, 4].map((s) => (
+        <div className="flex justify-center gap-1.5 mb-8">
+          {Array.from({ length: totalSteps }).map((_, i) => (
             <div
-              key={s}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                s <= step ? 'bg-primary w-8' : 'bg-muted w-4'
+              key={i}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i + 1 <= step ? 'bg-primary w-6' : 'bg-muted w-3'
               }`}
             />
           ))}
@@ -318,7 +368,7 @@ const LeadRequest: React.FC = () => {
             </motion.div>
           )}
 
-          {/* Step 3: Questionnaire */}
+          {/* Step 3: Goal */}
           {step === 3 && (
             <motion.div
               key="step3"
@@ -328,128 +378,214 @@ const LeadRequest: React.FC = () => {
               className="space-y-6"
             >
               <Card className="border-0 shadow-xl bg-card/80 backdrop-blur">
-                <CardContent className="p-6">
+                <CardContent className="p-8">
                   <div className="text-center mb-6">
                     <div className="w-16 h-16 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Sparkles className="w-8 h-8 text-purple-500" />
+                      <Target className="w-8 h-8 text-purple-500" />
                     </div>
                     <h2 className="text-xl font-bold text-foreground mb-2">
-                      چند سوال کوتاه
+                      هدف شما چیست؟
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      با پاسخ به این سوالات، بهترین پیشنهاد را برای شما پیدا می‌کنیم
+                      با انتخاب هدف، بهترین پیشنهاد را برای شما پیدا می‌کنیم
                     </p>
                   </div>
 
-                  <div className="space-y-6">
-                    {/* Goal */}
-                    <div className="space-y-3">
-                      <Label className="text-foreground font-medium">هدف شما چیست؟</Label>
-                      <RadioGroup
-                        value={answers.goal}
-                        onValueChange={(v) => setAnswers({ ...answers, goal: v })}
-                        className="space-y-2"
-                      >
-                        {['کسب درآمد آنلاین', 'یادگیری مهارت جدید', 'ارتقای شغلی', 'شروع کسب‌وکار'].map((option) => (
-                          <div key={option} className="flex items-center space-x-2 space-x-reverse bg-muted/50 p-3 rounded-lg">
-                            <RadioGroupItem value={option} id={option} />
-                            <Label htmlFor={option} className="cursor-pointer flex-1">{option}</Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </div>
-
-                    {/* Current Status */}
-                    <div className="space-y-3">
-                      <Label className="text-foreground font-medium">وضعیت فعلی شما؟</Label>
-                      <RadioGroup
-                        value={answers.current_status}
-                        onValueChange={(v) => setAnswers({ ...answers, current_status: v })}
-                        className="space-y-2"
-                      >
-                        {['دانشجو', 'شاغل', 'بیکار', 'کارآفرین'].map((option) => (
-                          <div key={option} className="flex items-center space-x-2 space-x-reverse bg-muted/50 p-3 rounded-lg">
-                            <RadioGroupItem value={option} id={`status-${option}`} />
-                            <Label htmlFor={`status-${option}`} className="cursor-pointer flex-1">{option}</Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </div>
-
-                    {/* Interests */}
-                    <div className="space-y-3">
-                      <Label className="text-foreground font-medium">به چه موضوعاتی علاقه‌مندید؟</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {['هوش مصنوعی', 'کسب‌وکار آنلاین', 'فریلنسری', 'مهاجرت کاری', 'اینستاگرام', 'ویدیو مارکتینگ'].map((interest) => (
-                          <div
-                            key={interest}
-                            onClick={() => handleInterestToggle(interest)}
-                            className={`flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-all ${
-                              answers.interests?.includes(interest)
-                                ? 'bg-primary/10 border-2 border-primary'
-                                : 'bg-muted/50 border-2 border-transparent'
-                            }`}
-                          >
-                            <Checkbox checked={answers.interests?.includes(interest)} />
-                            <span className="text-sm">{interest}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Budget */}
-                    <div className="space-y-3">
-                      <Label className="text-foreground font-medium">بودجه آموزشی شما؟</Label>
-                      <RadioGroup
-                        value={answers.budget}
-                        onValueChange={(v) => setAnswers({ ...answers, budget: v })}
-                        className="space-y-2"
-                      >
-                        {['رایگان', 'تا ۵۰۰ هزار تومان', '۵۰۰ هزار تا ۲ میلیون', 'بالای ۲ میلیون'].map((option) => (
-                          <div key={option} className="flex items-center space-x-2 space-x-reverse bg-muted/50 p-3 rounded-lg">
-                            <RadioGroupItem value={option} id={`budget-${option}`} />
-                            <Label htmlFor={`budget-${option}`} className="cursor-pointer flex-1">{option}</Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                    </div>
-
-                    <div className="flex gap-2 pt-4">
+                  <div className="space-y-3">
+                    {['کسب درآمد آنلاین', 'یادگیری مهارت جدید', 'ارتقای شغلی', 'شروع کسب‌وکار'].map((option) => (
                       <Button
-                        onClick={() => handleQuestionnaireSubmit(false)}
-                        disabled={loading || aiLoading}
-                        className="flex-1 h-12"
-                      >
-                        {aiLoading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin ml-2" />
-                            در حال تحلیل...
-                          </>
-                        ) : loading ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          'دریافت پیشنهاد'
-                        )}
-                      </Button>
-                      <Button
+                        key={option}
                         variant="outline"
-                        onClick={() => handleQuestionnaireSubmit(true)}
-                        disabled={loading || aiLoading}
-                        className="h-12"
+                        className={`w-full h-14 text-base justify-start px-4 ${
+                          answers.goal === option ? 'border-primary bg-primary/5' : ''
+                        }`}
+                        onClick={() => handleGoalSelect(option)}
                       >
-                        رد شو
+                        {option}
                       </Button>
-                    </div>
+                    ))}
                   </div>
+
+                  <Button
+                    variant="ghost"
+                    onClick={handleSkipQuestionnaire}
+                    className="w-full mt-4"
+                  >
+                    رد شو و ادامه بده
+                  </Button>
                 </CardContent>
               </Card>
             </motion.div>
           )}
 
-          {/* Step 4: Completion */}
+          {/* Step 4: Current Status */}
           {step === 4 && (
             <motion.div
               key="step4"
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -50 }}
+              className="space-y-6"
+            >
+              <Card className="border-0 shadow-xl bg-card/80 backdrop-blur">
+                <CardContent className="p-8">
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Briefcase className="w-8 h-8 text-blue-500" />
+                    </div>
+                    <h2 className="text-xl font-bold text-foreground mb-2">
+                      وضعیت فعلی شما؟
+                    </h2>
+                  </div>
+
+                  <div className="space-y-3">
+                    {['دانشجو', 'شاغل', 'بیکار', 'کارآفرین'].map((option) => (
+                      <Button
+                        key={option}
+                        variant="outline"
+                        className={`w-full h-14 text-base justify-start px-4 ${
+                          answers.current_status === option ? 'border-primary bg-primary/5' : ''
+                        }`}
+                        onClick={() => handleStatusSelect(option)}
+                      >
+                        {option}
+                      </Button>
+                    ))}
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    onClick={handleSkipQuestionnaire}
+                    className="w-full mt-4"
+                  >
+                    رد شو و ادامه بده
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Step 5: Interests */}
+          {step === 5 && (
+            <motion.div
+              key="step5"
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -50 }}
+              className="space-y-6"
+            >
+              <Card className="border-0 shadow-xl bg-card/80 backdrop-blur">
+                <CardContent className="p-8">
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-pink-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Heart className="w-8 h-8 text-pink-500" />
+                    </div>
+                    <h2 className="text-xl font-bold text-foreground mb-2">
+                      به چه موضوعاتی علاقه‌مندید؟
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      می‌توانید چند مورد انتخاب کنید
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    {['هوش مصنوعی', 'کسب‌وکار آنلاین', 'فریلنسری', 'مهاجرت کاری', 'اینستاگرام', 'ویدیو مارکتینگ'].map((interest) => (
+                      <div
+                        key={interest}
+                        onClick={() => handleInterestToggle(interest)}
+                        className={`flex items-center gap-2 p-4 rounded-xl cursor-pointer transition-all border-2 ${
+                          answers.interests?.includes(interest)
+                            ? 'bg-primary/10 border-primary'
+                            : 'bg-muted/50 border-transparent hover:border-muted-foreground/20'
+                        }`}
+                      >
+                        <Checkbox checked={answers.interests?.includes(interest)} />
+                        <span className="text-sm font-medium">{interest}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Button
+                    onClick={handleInterestsSubmit}
+                    className="w-full h-14 text-lg"
+                  >
+                    ادامه
+                    <ArrowLeft className="w-5 h-5 mr-2" />
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    onClick={handleSkipQuestionnaire}
+                    className="w-full mt-2"
+                  >
+                    رد شو و ادامه بده
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Step 6: Budget */}
+          {step === 6 && (
+            <motion.div
+              key="step6"
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -50 }}
+              className="space-y-6"
+            >
+              <Card className="border-0 shadow-xl bg-card/80 backdrop-blur">
+                <CardContent className="p-8">
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Wallet className="w-8 h-8 text-amber-500" />
+                    </div>
+                    <h2 className="text-xl font-bold text-foreground mb-2">
+                      {getBudgetQuestion()}
+                    </h2>
+                  </div>
+
+                  <div className="space-y-3">
+                    {['رایگان', 'تا ۵۰۰ هزار تومان', '۵۰۰ هزار تا ۲ میلیون', 'بالای ۲ میلیون'].map((option) => (
+                      <Button
+                        key={option}
+                        variant="outline"
+                        className="w-full h-14 text-base justify-start px-4"
+                        onClick={() => handleBudgetSubmit(option)}
+                        disabled={loading || aiLoading}
+                      >
+                        {aiLoading && answers.budget === option ? (
+                          <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                        ) : null}
+                        {option}
+                      </Button>
+                    ))}
+                  </div>
+
+                  {(loading || aiLoading) && (
+                    <div className="text-center mt-4 text-sm text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin inline ml-2" />
+                      در حال تحلیل پاسخ‌ها...
+                    </div>
+                  )}
+
+                  <Button
+                    variant="ghost"
+                    onClick={handleSkipQuestionnaire}
+                    className="w-full mt-4"
+                    disabled={loading || aiLoading}
+                  >
+                    رد شو و ادامه بده
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Step 7: Completion */}
+          {step === 7 && (
+            <motion.div
+              key="step7"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="space-y-6"
@@ -478,7 +614,7 @@ const LeadRequest: React.FC = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
-                        className="bg-primary/5 border border-primary/20 rounded-xl p-6 text-right mt-6"
+                        className="bg-primary/5 border border-primary/20 rounded-xl p-6 text-right mb-6"
                       >
                         <div className="flex items-center gap-2 mb-3">
                           <Sparkles className="w-5 h-5 text-primary" />
@@ -493,9 +629,29 @@ const LeadRequest: React.FC = () => {
                       </motion.div>
                     )}
 
-                    <div className="mt-8 p-4 bg-muted/50 rounded-lg">
+                    {/* Call Button */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.6 }}
+                      className="space-y-4"
+                    >
                       <p className="text-sm text-muted-foreground">
-                        📞 تماس ظرف ۲۴ ساعت آینده
+                        اگه عجله دارید، همین الان تماس بگیرید:
+                      </p>
+                      <Button
+                        onClick={handleCallClick}
+                        className="w-full h-16 text-lg bg-green-600 hover:bg-green-700"
+                        size="lg"
+                      >
+                        <PhoneCall className="w-6 h-6 ml-3" />
+                        <span dir="ltr" className="font-bold">+98 21 2842 7131</span>
+                      </Button>
+                    </motion.div>
+
+                    <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        📞 در غیر این صورت، تماس ظرف ۲۴ ساعت آینده
                       </p>
                     </div>
                   </div>
