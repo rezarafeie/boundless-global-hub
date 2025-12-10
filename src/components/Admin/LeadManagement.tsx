@@ -47,6 +47,8 @@ import DealsPipeline from './DealsPipeline';
 import SalesAgentDealsPipeline from './SalesAgentDealsPipeline';
 import { FollowUpsManagement } from './FollowUpsManagement';
 import AILeadScoring from './AILeadScoring';
+import { RequestLeadsTab } from './RequestLeadsTab';
+import { PhoneCall } from 'lucide-react';
 import AILeadScoringJob from './AILeadScoringJob';
 
 interface Lead {
@@ -148,7 +150,7 @@ const LeadManagement: React.FC = () => {
   const [adminLoading, setAdminLoading] = useState(false);
   const [assignLoading, setAssignLoading] = useState<string | null>(null);
   const [removeLoading, setRemoveLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'admin' | 'distribution' | 'pipeline' | 'followups' | 'ai-scoring'>(
+  const [activeTab, setActiveTab] = useState<'available' | 'assigned' | 'admin' | 'distribution' | 'pipeline' | 'followups' | 'ai-scoring' | 'request-leads'>(
     (isAdmin || isSalesManager) ? 'admin' : 'available'
   );
   const [searchTerm, setSearchTerm] = useState('');
@@ -1341,6 +1343,15 @@ const LeadManagement: React.FC = () => {
                          <BarChart3 className="h-4 w-4" />
                          امتیازدهی AI
                        </Button>
+                       <Button
+                         variant={activeTab === 'request-leads' ? 'default' : 'ghost'}
+                         size="sm"
+                         onClick={() => setActiveTab('request-leads')}
+                         className="w-full sm:w-auto text-sm whitespace-nowrap flex items-center gap-1"
+                       >
+                         <PhoneCall className="h-4 w-4" />
+                         درخواست‌های لید
+                       </Button>
                    </>
                  )}
               </div>
@@ -1894,6 +1905,8 @@ const LeadManagement: React.FC = () => {
             ) : activeTab === 'pipeline' ? (
               // Show appropriate pipeline component based on user role
               (isAdmin || isSalesManager) ? <DealsPipeline /> : <SalesAgentDealsPipeline />
+            ) : activeTab === 'request-leads' ? (
+              <RequestLeadsTab />
             ) : null}
         </CardContent>
        </Card>
