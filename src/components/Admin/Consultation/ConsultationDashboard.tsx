@@ -401,26 +401,23 @@ const ConsultationDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        {/* Queue Section */}
-        <Card className="xl:col-span-7">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                صف مشاوره
-              </CardTitle>
-              <Button variant="outline" size="sm" onClick={fetchData}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[400px]">
-              {consultationQueue.length === 0 ? (
-                <div className="text-center py-10 text-muted-foreground">
-                  مشاوره‌ای در صف نیست
-                </div>
-              ) : (
+        {/* Queue Section - Only show when there are items in queue */}
+        {consultationQueue.length > 0 && (
+          <Card className="xl:col-span-7">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  صف مشاوره
+                  <Badge variant="secondary" className="text-xs">{consultationQueue.length}</Badge>
+                </CardTitle>
+                <Button variant="outline" size="sm" onClick={fetchData}>
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px]">
                 <div className="space-y-3">
                   {consultationQueue.map(booking => {
                     const timeInfo = getTimeRemaining(booking.slot!.date, booking.slot!.start_time);
@@ -524,10 +521,10 @@ const ConsultationDashboard: React.FC = () => {
                     );
                   })}
                 </div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Quick Actions & Filters */}
         <div className="xl:col-span-5 space-y-4">
