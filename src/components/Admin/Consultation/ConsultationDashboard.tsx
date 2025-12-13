@@ -66,6 +66,7 @@ const ConsultationDashboard: React.FC = () => {
   // Filters
   const [dateFilter, setDateFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all'); // all, sales, education
   const [searchTerm, setSearchTerm] = useState('');
   
   // Panels
@@ -151,9 +152,12 @@ const ConsultationDashboard: React.FC = () => {
         if (!b.full_name.toLowerCase().includes(search) && 
             !b.phone.includes(search)) return false;
       }
+      // Type filter: sales = has deal_id, education = crm_added but no deal_id
+      if (typeFilter === 'sales' && !b.deal_id) return false;
+      if (typeFilter === 'education' && (!b.crm_added || b.deal_id)) return false;
       return true;
     });
-  }, [bookings, statusFilter, dateFilter, searchTerm]);
+  }, [bookings, statusFilter, dateFilter, searchTerm, typeFilter]);
 
   const getTimeRemaining = (date: string, time: string) => {
     const sessionTime = new Date(`${date}T${time}`);
@@ -563,9 +567,23 @@ const ConsultationDashboard: React.FC = () => {
                   onChange={(e) => setDateFilter(e.target.value)}
                 />
               </div>
+              <div>
+                <Label className="text-xs">نوع مشاوره</Label>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">همه</SelectItem>
+                    <SelectItem value="sales">مشاوره فروش</SelectItem>
+                    <SelectItem value="education">مشاوره آموزشی</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Button variant="outline" className="w-full" onClick={() => {
                 setSearchTerm('');
                 setStatusFilter('all');
+                setTypeFilter('all');
                 setDateFilter('');
               }}>
                 پاک کردن فیلترها
