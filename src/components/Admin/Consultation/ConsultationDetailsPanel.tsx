@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   User, 
   Phone, 
@@ -13,9 +14,12 @@ import {
   FileText,
   Bell,
   CheckCircle,
-  ExternalLink
+  ExternalLink,
+  Edit2
 } from 'lucide-react';
 import { format } from 'date-fns-jalali';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ConsultationBooking {
   id: string;
@@ -49,7 +53,32 @@ interface Props {
   onRefresh: () => void;
 }
 
-const ConsultationDetailsPanel: React.FC<Props> = ({ booking, open, onClose, onOpenCRM }) => {
+const ConsultationDetailsPanel: React.FC<Props> = ({ booking, open, onClose, onOpenCRM, onRefresh }) => {
+  const [isEditingStatus, setIsEditingStatus] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!booking) return;
+    
+    setUpdatingStatus(true);
+    try {
+      const { error } = await supabase
+        .from('consultation_bookings')
+        .update({ status: newStatus })
+        .eq('id', booking.id);
+
+      if (error) throw error;
+
+      toast.success('وضعیت با موفقیت تغییر کرد');
+      setIsEditingStatus(false);
+      onRefresh();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('خطا در تغییر وضعیت');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
   if (!booking) return null;
 
   const formatDate = (dateStr: string) => {
@@ -133,7 +162,38 @@ const ConsultationDetailsPanel: React.FC<Props> = ({ booking, open, onClose, onO
             <div className="p-4 bg-muted/50 rounded-lg space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">وضعیت:</span>
-                {getStatusBadge(booking.status)}
+                <div className="flex items-center gap-2">
+                  {isEditingStatus ? (
+                    <Select
+                      value={booking.status}
+                      onValueChange={handleStatusChange}
+                      disabled={updatingStatus}
+                    >
+                      <SelectTrigger className="w-[140px] h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">در انتظار</SelectItem>
+                        <SelectItem value="confirmed">تایید شده</SelectItem>
+                        <SelectItem value="completed">انجام شده</SelectItem>
+                        <SelectItem value="no_show">عدم حضور</SelectItem>
+                        <SelectItem value="cancelled">لغو شده</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <>
+                      {getStatusBadge(booking.status)}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => setIsEditingStatus(true)}
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
               {booking.slot && (
                 <>
