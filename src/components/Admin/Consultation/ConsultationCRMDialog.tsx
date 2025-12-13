@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, FileText, TrendingUp, User, Phone } from 'lucide-react';
+import { Loader2, FileText, TrendingUp, User, Phone, GraduationCap, ShoppingCart, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -51,6 +51,8 @@ interface Props {
   onSuccess: () => void;
 }
 
+type ConsultationType = 'sales' | 'education' | null;
+
 const DEAL_STATUSES = [
   { value: 'interested', label: 'علاقه‌مند' },
   { value: 'waiting_payment', label: 'در انتظار پرداخت' },
@@ -77,6 +79,9 @@ const ConsultationCRMDialog: React.FC<Props> = ({ booking, open, onClose, onSucc
   const [crmStatuses, setCrmStatuses] = useState<CRMStatus[]>([]);
   const [salesAgents, setSalesAgents] = useState<{ id: number; name: string }[]>([]);
   
+  // Consultation type selection
+  const [consultationType, setConsultationType] = useState<ConsultationType>(null);
+  
   // Form state
   const [selectedProduct, setSelectedProduct] = useState('');
   const [productType, setProductType] = useState<'course' | 'service'>('course');
@@ -86,13 +91,21 @@ const ConsultationCRMDialog: React.FC<Props> = ({ booking, open, onClose, onSucc
   const [notes, setNotes] = useState('');
   const [assignedAgent, setAssignedAgent] = useState('');
   const [createDeal, setCreateDeal] = useState(true);
+  
+  // Education consultation - simpler form
+  const [educationCourse, setEducationCourse] = useState('');
+  const [educationNotes, setEducationNotes] = useState('');
 
   useEffect(() => {
     if (open) {
+      // Reset consultation type on open
+      setConsultationType(null);
+      setEducationCourse('');
+      setEducationNotes('');
       fetchData();
-      // Pre-fill amount if course selected
       if (booking) {
         setNotes(`مشاوره از تاریخ ${booking.slot?.date || ''}`);
+        setEducationNotes(`مشاوره آموزشی از تاریخ ${booking.slot?.date || ''}`);
       }
     }
   }, [open, booking]);
@@ -112,7 +125,6 @@ const ConsultationCRMDialog: React.FC<Props> = ({ booking, open, onClose, onSucc
     setCrmStatuses(statusesRes.data || []);
     setSalesAgents(agentsRes.data || []);
     
-    // Set default agent to current user
     if (user?.messengerData?.id) {
       setAssignedAgent(user.messengerData.id.toString());
     }
@@ -124,7 +136,59 @@ const ConsultationCRMDialog: React.FC<Props> = ({ booking, open, onClose, onSucc
     return 'مدیر';
   };
 
-  const handleSubmit = async () => {
+  const handleClose = () => {
+    setConsultationType(null);
+    onClose();
+  };
+
+  // Education consultation submit (simple form)
+  const handleEducationSubmit = async () => {
+    if (!booking || !educationCourse) {
+      toast({ title: 'لطفا دوره را انتخاب کنید', variant: 'destructive' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const selectedCourse = courses.find(c => c.id === educationCourse);
+      const crmContent = `
+مشاوره آموزشی
+دوره: ${selectedCourse?.title || ''}
+${educationNotes ? `یادداشت: ${educationNotes}` : ''}
+منبع: مشاوره (${booking.id.slice(0, 8)})
+      `.trim();
+
+      await supabase
+        .from('crm_notes')
+        .insert({
+          user_id: booking.user_id,
+          type: 'education_consultation',
+          content: crmContent,
+          course_id: educationCourse,
+          status: 'مشاوره آموزشی',
+          created_by: getCurrentUserName()
+        });
+
+      await supabase
+        .from('consultation_bookings')
+        .update({
+          crm_added: true,
+          status: booking.status === 'confirmed' ? 'completed' : booking.status
+        })
+        .eq('id', booking.id);
+
+      toast({ title: 'CRM مشاوره آموزشی ثبت شد' });
+      onSuccess();
+    } catch (error: any) {
+      console.error('CRM Error:', error);
+      toast({ title: 'خطا در ثبت CRM', description: error.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Sales consultation submit (full form with deal)
+  const handleSalesSubmit = async () => {
     if (!booking || !selectedProduct) {
       toast({ title: 'لطفا محصول را انتخاب کنید', variant: 'destructive' });
       return;
@@ -135,7 +199,6 @@ const ConsultationCRMDialog: React.FC<Props> = ({ booking, open, onClose, onSucc
       const courseId = productType === 'course' ? selectedProduct : null;
       const productId = productType === 'service' ? selectedProduct : null;
       
-      // Map deal status to CRM status
       const statusMap: Record<string, string> = {
         'interested': 'علاقه‌مند',
         'waiting_payment': 'در انتظار پرداخت',
@@ -144,14 +207,13 @@ const ConsultationCRMDialog: React.FC<Props> = ({ booking, open, onClose, onSucc
         'failed': 'ناموفق'
       };
 
-      // 1. Create CRM Note
       const crmContent = `
 محصول: ${productType === 'course' ? courses.find(c => c.id === selectedProduct)?.title : products.find(p => p.id === selectedProduct)?.name}
 وضعیت: ${statusMap[dealStatus]}
 مبلغ مورد انتظار: ${expectedAmount ? `${Number(expectedAmount).toLocaleString()} تومان` : 'نامشخص'}
 اقدام بعدی: ${NEXT_ACTIONS.find(a => a.value === nextAction)?.label}
 ${notes ? `یادداشت: ${notes}` : ''}
-منبع: مشاوره (${booking.id.slice(0, 8)})
+منبع: مشاوره فروش (${booking.id.slice(0, 8)})
       `.trim();
 
       const { data: crmData, error: crmError } = await supabase
@@ -169,13 +231,11 @@ ${notes ? `یادداشت: ${notes}` : ''}
 
       if (crmError) throw crmError;
 
-      // 2. Create Deal if requested and course selected
       let dealId: string | null = null;
       if (createDeal && productType === 'course' && assignedAgent) {
         const selectedCourse = courses.find(c => c.id === selectedProduct);
         const price = expectedAmount ? Number(expectedAmount) : (selectedCourse?.price || 0);
 
-        // First, check if there's an enrollment for this user and course
         const { data: enrollment } = await supabase
           .from('enrollments')
           .select('id')
@@ -184,7 +244,6 @@ ${notes ? `یادداشت: ${notes}` : ''}
           .single();
 
         if (enrollment) {
-          // Create deal linked to enrollment
           const { data: dealData, error: dealError } = await supabase
             .from('deals')
             .insert({
@@ -204,7 +263,6 @@ ${notes ? `یادداشت: ${notes}` : ''}
             dealId = dealData.id;
           }
         } else {
-          // Create enrollment first, then deal
           const { data: newEnrollment, error: enrollError } = await supabase
             .from('enrollments')
             .insert({
@@ -240,7 +298,6 @@ ${notes ? `یادداشت: ${notes}` : ''}
         }
       }
 
-      // 3. Update consultation booking
       await supabase
         .from('consultation_bookings')
         .update({
@@ -250,7 +307,6 @@ ${notes ? `یادداشت: ${notes}` : ''}
         })
         .eq('id', booking.id);
 
-      // 4. Send webhook
       try {
         const userData = await supabase
           .from('chat_users')
@@ -285,8 +341,8 @@ ${notes ? `یادداشت: ${notes}` : ''}
   if (!booking) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -294,7 +350,7 @@ ${notes ? `یادداشت: ${notes}` : ''}
           </DialogTitle>
         </DialogHeader>
 
-        {/* User Info Card */}
+        {/* User Info Card - Always visible */}
         <div className="p-3 bg-muted/50 rounded-lg flex items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-full">
             <User className="h-5 w-5 text-primary" />
@@ -311,146 +367,235 @@ ${notes ? `یادداشت: ${notes}` : ''}
           )}
         </div>
 
-        <div className="space-y-4 py-2">
-          {/* Product Type */}
-          <div>
-            <Label>نوع محصول</Label>
-            <Select value={productType} onValueChange={(v: 'course' | 'service') => {
-              setProductType(v);
-              setSelectedProduct('');
-            }}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="course">دوره آموزشی</SelectItem>
-                <SelectItem value="service">خدمات</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Product Selection */}
-          <div>
-            <Label>{productType === 'course' ? 'دوره' : 'خدمت'} *</Label>
-            <Select value={selectedProduct} onValueChange={(v) => {
-              setSelectedProduct(v);
-              if (productType === 'course') {
-                const course = courses.find(c => c.id === v);
-                if (course) setExpectedAmount(course.price.toString());
-              }
-            }}>
-              <SelectTrigger>
-                <SelectValue placeholder="انتخاب کنید..." />
-              </SelectTrigger>
-              <SelectContent>
-                {productType === 'course' 
-                  ? courses.map(c => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.title} - {c.price.toLocaleString()} تومان
-                      </SelectItem>
-                    ))
-                  : products.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))
-                }
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Deal Status */}
-          <div>
-            <Label>وضعیت</Label>
-            <Select value={dealStatus} onValueChange={setDealStatus}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {DEAL_STATUSES.map(s => (
-                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Expected Amount */}
-          <div>
-            <Label>مبلغ مورد انتظار (تومان)</Label>
-            <Input
-              type="number"
-              value={expectedAmount}
-              onChange={(e) => setExpectedAmount(e.target.value)}
-              placeholder="مبلغ..."
-            />
-          </div>
-
-          {/* Next Action */}
-          <div>
-            <Label>اقدام بعدی</Label>
-            <Select value={nextAction} onValueChange={setNextAction}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {NEXT_ACTIONS.map(a => (
-                  <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Assigned Agent */}
-          {productType === 'course' && (
-            <div>
-              <Label>فروشنده</Label>
-              <Select value={assignedAgent} onValueChange={setAssignedAgent}>
-                <SelectTrigger>
-                  <SelectValue placeholder="انتخاب فروشنده..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {salesAgents.map(a => (
-                    <SelectItem key={a.id} value={a.id.toString()}>{a.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        {/* Step 1: Consultation Type Selection */}
+        {consultationType === null && (
+          <div className="py-6">
+            <p className="text-center text-muted-foreground mb-6">نوع مشاوره را انتخاب کنید</p>
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                variant="outline"
+                className="h-24 flex-col gap-2 hover:border-primary hover:bg-primary/5"
+                onClick={() => setConsultationType('sales')}
+              >
+                <ShoppingCart className="h-8 w-8 text-primary" />
+                <span className="font-medium">مشاوره فروش</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-24 flex-col gap-2 hover:border-blue-500 hover:bg-blue-500/5"
+                onClick={() => setConsultationType('education')}
+              >
+                <GraduationCap className="h-8 w-8 text-blue-500" />
+                <span className="font-medium">مشاوره آموزش</span>
+              </Button>
             </div>
-          )}
-
-          {/* Create Deal Toggle */}
-          {productType === 'course' && (
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="createDeal"
-                checked={createDeal}
-                onChange={(e) => setCreateDeal(e.target.checked)}
-                className="rounded border-input"
-              />
-              <Label htmlFor="createDeal" className="text-sm flex items-center gap-1 cursor-pointer">
-                <TrendingUp className="h-4 w-4" />
-                ایجاد معامله در پایپ‌لاین فروش
-              </Label>
-            </div>
-          )}
-
-          {/* Notes */}
-          <div>
-            <Label>یادداشت</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              placeholder="یادداشت اختیاری..."
-            />
           </div>
-        </div>
+        )}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>انصراف</Button>
-          <Button onClick={handleSubmit} disabled={loading || !selectedProduct}>
-            {loading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
-            ثبت CRM
-          </Button>
-        </DialogFooter>
+        {/* Step 2a: Education Consultation - Simple Form */}
+        {consultationType === 'education' && (
+          <>
+            <div className="flex items-center gap-2 mb-2">
+              <Button variant="ghost" size="sm" onClick={() => setConsultationType(null)}>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Badge variant="secondary" className="bg-blue-500/10 text-blue-600">
+                <GraduationCap className="h-3 w-3 ml-1" />
+                مشاوره آموزش
+              </Badge>
+            </div>
+
+            <div className="space-y-4 py-2">
+              <div>
+                <Label>دوره *</Label>
+                <Select value={educationCourse} onValueChange={setEducationCourse}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب دوره..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>یادداشت</Label>
+                <Textarea
+                  value={educationNotes}
+                  onChange={(e) => setEducationNotes(e.target.value)}
+                  rows={3}
+                  placeholder="یادداشت اختیاری..."
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={handleClose}>انصراف</Button>
+              <Button onClick={handleEducationSubmit} disabled={loading || !educationCourse}>
+                {loading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+                ثبت CRM
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+
+        {/* Step 2b: Sales Consultation - Full Form */}
+        {consultationType === 'sales' && (
+          <>
+            <div className="flex items-center gap-2 mb-2">
+              <Button variant="ghost" size="sm" onClick={() => setConsultationType(null)}>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Badge variant="secondary" className="bg-primary/10 text-primary">
+                <ShoppingCart className="h-3 w-3 ml-1" />
+                مشاوره فروش
+              </Badge>
+            </div>
+
+            <div className="space-y-4 py-2">
+              {/* Product Type */}
+              <div>
+                <Label>نوع محصول</Label>
+                <Select value={productType} onValueChange={(v: 'course' | 'service') => {
+                  setProductType(v);
+                  setSelectedProduct('');
+                }}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="course">دوره آموزشی</SelectItem>
+                    <SelectItem value="service">خدمات</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Product Selection */}
+              <div>
+                <Label>{productType === 'course' ? 'دوره' : 'خدمت'} *</Label>
+                <Select value={selectedProduct} onValueChange={(v) => {
+                  setSelectedProduct(v);
+                  if (productType === 'course') {
+                    const course = courses.find(c => c.id === v);
+                    if (course) setExpectedAmount(course.price.toString());
+                  }
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب کنید..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {productType === 'course' 
+                      ? courses.map(c => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.title} - {c.price.toLocaleString()} تومان
+                          </SelectItem>
+                        ))
+                      : products.map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))
+                    }
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Deal Status */}
+              <div>
+                <Label>وضعیت</Label>
+                <Select value={dealStatus} onValueChange={setDealStatus}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEAL_STATUSES.map(s => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Expected Amount */}
+              <div>
+                <Label>مبلغ مورد انتظار (تومان)</Label>
+                <Input
+                  type="number"
+                  value={expectedAmount}
+                  onChange={(e) => setExpectedAmount(e.target.value)}
+                  placeholder="مبلغ..."
+                />
+              </div>
+
+              {/* Next Action */}
+              <div>
+                <Label>اقدام بعدی</Label>
+                <Select value={nextAction} onValueChange={setNextAction}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {NEXT_ACTIONS.map(a => (
+                      <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Assigned Agent */}
+              {productType === 'course' && (
+                <div>
+                  <Label>فروشنده</Label>
+                  <Select value={assignedAgent} onValueChange={setAssignedAgent}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="انتخاب فروشنده..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {salesAgents.map(a => (
+                        <SelectItem key={a.id} value={a.id.toString()}>{a.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Create Deal Toggle */}
+              {productType === 'course' && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="createDeal"
+                    checked={createDeal}
+                    onChange={(e) => setCreateDeal(e.target.checked)}
+                    className="rounded border-input"
+                  />
+                  <Label htmlFor="createDeal" className="text-sm flex items-center gap-1 cursor-pointer">
+                    <TrendingUp className="h-4 w-4" />
+                    ایجاد معامله در پایپ‌لاین فروش
+                  </Label>
+                </div>
+              )}
+
+              {/* Notes */}
+              <div>
+                <Label>یادداشت</Label>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  placeholder="یادداشت اختیاری..."
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={handleClose}>انصراف</Button>
+              <Button onClick={handleSalesSubmit} disabled={loading || !selectedProduct}>
+                {loading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+                ثبت CRM
+              </Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
