@@ -73,6 +73,7 @@ const ConsultationDashboard: React.FC = () => {
   const [showDetailsPanel, setShowDetailsPanel] = useState(false);
   const [showCRMDialog, setShowCRMDialog] = useState(false);
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+  const [pendingCompletionBookingId, setPendingCompletionBookingId] = useState<string | null>(null);
   
   // Time tracking for countdown
   const [now, setNow] = useState(new Date());
@@ -220,17 +221,46 @@ const ConsultationDashboard: React.FC = () => {
     }
   };
 
-  const handleMarkCompleted = async (bookingId: string) => {
+  const handleMarkCompleted = async (booking: ConsultationBooking) => {
+    // If CRM not added, show CRM dialog first
+    if (!booking.crm_added) {
+      setSelectedBooking(booking);
+      setPendingCompletionBookingId(booking.id);
+      setShowCRMDialog(true);
+      return;
+    }
+    
+    // CRM already added, just mark as completed
     try {
       await supabase
         .from('consultation_bookings')
         .update({ status: 'completed' })
-        .eq('id', bookingId);
+        .eq('id', booking.id);
       toast({ title: 'وضعیت به انجام شده تغییر یافت' });
       fetchBookings();
     } catch {
       toast({ title: 'خطا', variant: 'destructive' });
     }
+  };
+
+  const handleCRMSuccess = async () => {
+    setShowCRMDialog(false);
+    
+    // If there was a pending completion, mark as completed now
+    if (pendingCompletionBookingId) {
+      try {
+        await supabase
+          .from('consultation_bookings')
+          .update({ status: 'completed' })
+          .eq('id', pendingCompletionBookingId);
+        toast({ title: 'CRM ثبت و مشاوره تکمیل شد' });
+      } catch {
+        toast({ title: 'خطا در تکمیل مشاوره', variant: 'destructive' });
+      }
+      setPendingCompletionBookingId(null);
+    }
+    
+    fetchBookings();
   };
 
   const getStatusBadge = (status: string) => {
@@ -463,7 +493,7 @@ const ConsultationDashboard: React.FC = () => {
                                     size="sm"
                                     variant="ghost"
                                     className="h-7 w-7 p-0 text-green-600"
-                                    onClick={() => handleMarkCompleted(booking.id)}
+                                    onClick={() => handleMarkCompleted(booking)}
                                   >
                                     <CheckCircle className="h-3.5 w-3.5" />
                                   </Button>
@@ -594,11 +624,11 @@ const ConsultationDashboard: React.FC = () => {
       <ConsultationCRMDialog
         booking={selectedBooking}
         open={showCRMDialog}
-        onClose={() => setShowCRMDialog(false)}
-        onSuccess={() => {
+        onClose={() => {
           setShowCRMDialog(false);
-          fetchBookings();
+          setPendingCompletionBookingId(null);
         }}
+        onSuccess={handleCRMSuccess}
       />
     </div>
   );
