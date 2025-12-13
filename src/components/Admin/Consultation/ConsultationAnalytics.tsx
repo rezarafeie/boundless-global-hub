@@ -120,7 +120,8 @@ const ConsultationAnalytics: React.FC<Props> = ({ bookings }) => {
     const noShow = bookings.filter(b => b.status === 'no_show').length;
     
     // Only count sales consultations for conversion rate
-    const salesConsultations = bookings.filter(b => b.consultation_type === 'sales');
+    // Include both consultation_type === 'sales' AND legacy records that have deal_id (were sales consultations before we added the type field)
+    const salesConsultations = bookings.filter(b => b.consultation_type === 'sales' || b.deal_id !== null);
     const converted = salesConsultations.filter(b => b.deal_id !== null).length;
     const totalSalesConsultations = salesConsultations.length;
 
