@@ -117,12 +117,17 @@ const ConsultationAnalytics: React.FC<Props> = ({ bookings }) => {
       b.status === 'confirmed' || b.status === 'completed'
     ).length;
     const noShow = bookings.filter(b => b.status === 'no_show').length;
-    const converted = bookings.filter(b => b.deal_id).length;
+    
+    // Only count sales consultations for conversion rate (those with crm_added but excluding education-only)
+    // Sales consultations can have deal_id, education consultations never have deal_id
+    const salesConsultations = bookings.filter(b => b.crm_added && b.deal_id !== null);
+    const converted = salesConsultations.length;
+    const totalSalesConsultations = bookings.filter(b => b.crm_added).length;
 
     return {
       approval: Math.round((confirmedOrCompleted / total) * 100),
       noShow: Math.round((noShow / total) * 100),
-      conversion: Math.round((converted / total) * 100)
+      conversion: totalSalesConsultations > 0 ? Math.round((converted / totalSalesConsultations) * 100) : 0
     };
   }, [bookings]);
 
