@@ -400,23 +400,82 @@ const ConsultationDashboard: React.FC = () => {
         </Card>
       </div>
 
+      {/* Filters - Compact horizontal layout */}
+      <Card>
+        <CardContent className="py-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex-1 min-w-[150px] max-w-[200px]">
+              <Input
+                placeholder="جستجو نام یا تلفن..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[130px] h-9">
+                <SelectValue placeholder="وضعیت" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                <SelectItem value="pending">در انتظار</SelectItem>
+                <SelectItem value="confirmed">تایید شده</SelectItem>
+                <SelectItem value="completed">انجام شده</SelectItem>
+                <SelectItem value="no_show">عدم حضور</SelectItem>
+                <SelectItem value="cancelled">لغو شده</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="نوع مشاوره" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">همه انواع</SelectItem>
+                <SelectItem value="sales">مشاوره فروش</SelectItem>
+                <SelectItem value="education">مشاوره آموزشی</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="w-[150px] h-9"
+            />
+            {(searchTerm || statusFilter !== 'all' || typeFilter !== 'all' || dateFilter) && (
+              <Button variant="ghost" size="sm" className="h-9" onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('all');
+                setTypeFilter('all');
+                setDateFilter('');
+              }}>
+                پاک کردن
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        {/* Queue Section - Only show when there are items in queue */}
-        {consultationQueue.length > 0 && (
-          <Card className="xl:col-span-7">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  صف مشاوره
+        {/* Queue Section */}
+        <Card className={consultationQueue.length > 0 ? "xl:col-span-7" : "xl:col-span-12"}>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                صف مشاوره
+                {consultationQueue.length > 0 && (
                   <Badge variant="secondary" className="text-xs">{consultationQueue.length}</Badge>
-                </CardTitle>
-                <Button variant="outline" size="sm" onClick={fetchData}>
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
+                )}
+              </CardTitle>
+              <Button variant="outline" size="sm" onClick={fetchData}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {consultationQueue.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">مشاوره‌ای در صف نیست</p>
+            ) : (
               <ScrollArea className="h-[400px]">
                 <div className="space-y-3">
                   {consultationQueue.map(booking => {
@@ -522,81 +581,21 @@ const ConsultationDashboard: React.FC = () => {
                   })}
                 </div>
               </ScrollArea>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Quick Actions & Filters */}
-        <div className="xl:col-span-5 space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">فیلترها</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label className="text-xs">جستجو</Label>
-                <Input
-                  placeholder="نام یا تلفن..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label className="text-xs">وضعیت</Label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">همه</SelectItem>
-                    <SelectItem value="pending">در انتظار</SelectItem>
-                    <SelectItem value="confirmed">تایید شده</SelectItem>
-                    <SelectItem value="completed">انجام شده</SelectItem>
-                    <SelectItem value="no_show">عدم حضور</SelectItem>
-                    <SelectItem value="cancelled">لغو شده</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">تاریخ</Label>
-                <Input
-                  type="date"
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label className="text-xs">نوع مشاوره</Label>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">همه</SelectItem>
-                    <SelectItem value="sales">مشاوره فروش</SelectItem>
-                    <SelectItem value="education">مشاوره آموزشی</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button variant="outline" className="w-full" onClick={() => {
-                setSearchTerm('');
-                setStatusFilter('all');
-                setTypeFilter('all');
-                setDateFilter('');
-              }}>
-                پاک کردن فیلترها
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">نتایج ({filteredBookings.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[250px]">
-                <div className="space-y-2">
-                  {filteredBookings.slice(0, 20).map(booking => (
+        {/* Results Section - Only show when queue has items */}
+        {consultationQueue.length > 0 && (
+          <div className="xl:col-span-5">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">نتایج ({filteredBookings.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[250px]">
+                  <div className="space-y-2">
+                    {filteredBookings.slice(0, 20).map(booking => (
                     <div
                       key={booking.id}
                       className="p-2 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
@@ -617,8 +616,9 @@ const ConsultationDashboard: React.FC = () => {
                 </div>
               </ScrollArea>
             </CardContent>
-          </Card>
-        </div>
+            </Card>
+          </div>
+        )}
       </div>
 
       {/* Analytics Section */}
