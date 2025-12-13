@@ -920,11 +920,14 @@ export type Database = {
           confirmed_by: number | null
           consultation_link: string | null
           created_at: string
+          crm_added: boolean | null
+          deal_id: string | null
           description: string | null
           email: string | null
           full_name: string
           id: string
           phone: string
+          reminder_sent_at: string | null
           slot_id: string
           status: string
           updated_at: string
@@ -937,11 +940,14 @@ export type Database = {
           confirmed_by?: number | null
           consultation_link?: string | null
           created_at?: string
+          crm_added?: boolean | null
+          deal_id?: string | null
           description?: string | null
           email?: string | null
           full_name: string
           id?: string
           phone: string
+          reminder_sent_at?: string | null
           slot_id: string
           status?: string
           updated_at?: string
@@ -954,11 +960,14 @@ export type Database = {
           confirmed_by?: number | null
           consultation_link?: string | null
           created_at?: string
+          crm_added?: boolean | null
+          deal_id?: string | null
           description?: string | null
           email?: string | null
           full_name?: string
           id?: string
           phone?: string
+          reminder_sent_at?: string | null
           slot_id?: string
           status?: string
           updated_at?: string
@@ -970,6 +979,13 @@ export type Database = {
             columns: ["confirmed_by"]
             isOneToOne: false
             referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultation_bookings_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
             referencedColumns: ["id"]
           },
           {
@@ -1713,6 +1729,7 @@ export type Database = {
           assigned_by_id: number
           assigned_salesperson_id: number
           closed_at: string | null
+          consultation_id: string | null
           course_id: string
           created_at: string
           current_stage_id: string | null
@@ -1730,6 +1747,7 @@ export type Database = {
           assigned_by_id: number
           assigned_salesperson_id: number
           closed_at?: string | null
+          consultation_id?: string | null
           course_id: string
           created_at?: string
           current_stage_id?: string | null
@@ -1747,6 +1765,7 @@ export type Database = {
           assigned_by_id?: number
           assigned_salesperson_id?: number
           closed_at?: string | null
+          consultation_id?: string | null
           course_id?: string
           created_at?: string
           current_stage_id?: string | null
@@ -1773,6 +1792,13 @@ export type Database = {
             columns: ["assigned_salesperson_id"]
             isOneToOne: false
             referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_consultation_id_fkey"
+            columns: ["consultation_id"]
+            isOneToOne: false
+            referencedRelation: "consultation_bookings"
             referencedColumns: ["id"]
           },
           {

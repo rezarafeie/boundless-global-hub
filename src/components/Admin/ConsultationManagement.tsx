@@ -21,12 +21,14 @@ import {
   Settings,
   Users,
   Link as LinkIcon,
-  RefreshCw
+  RefreshCw,
+  LayoutDashboard
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns-jalali';
 import { useAuth } from '@/contexts/AuthContext';
+import ConsultationDashboard from './Consultation/ConsultationDashboard';
 
 interface ConsultationSlot {
   id: string;
@@ -435,8 +437,12 @@ const ConsultationManagement: React.FC = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="bookings" className="w-full">
+      <Tabs defaultValue="dashboard" className="w-full">
         <TabsList>
+          <TabsTrigger value="dashboard" className="gap-2">
+            <LayoutDashboard className="h-4 w-4" />
+            داشبورد
+          </TabsTrigger>
           <TabsTrigger value="bookings" className="gap-2">
             <Users className="h-4 w-4" />
             درخواست‌ها
@@ -447,6 +453,10 @@ const ConsultationManagement: React.FC = () => {
             زمان‌های موجود
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="dashboard">
+          <ConsultationDashboard />
+        </TabsContent>
 
         <TabsContent value="bookings" className="space-y-4">
           {/* Filters */}
