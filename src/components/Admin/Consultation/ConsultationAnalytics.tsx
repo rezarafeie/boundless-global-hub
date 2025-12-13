@@ -24,6 +24,7 @@ interface ConsultationBooking {
   confirmed_at: string | null;
   deal_id: string | null;
   crm_added: boolean;
+  consultation_type: string | null;
   slot?: {
     date: string;
     start_time: string;
@@ -118,11 +119,10 @@ const ConsultationAnalytics: React.FC<Props> = ({ bookings }) => {
     ).length;
     const noShow = bookings.filter(b => b.status === 'no_show').length;
     
-    // Only count sales consultations for conversion rate (those with crm_added but excluding education-only)
-    // Sales consultations can have deal_id, education consultations never have deal_id
-    const salesConsultations = bookings.filter(b => b.crm_added && b.deal_id !== null);
-    const converted = salesConsultations.length;
-    const totalSalesConsultations = bookings.filter(b => b.crm_added).length;
+    // Only count sales consultations for conversion rate
+    const salesConsultations = bookings.filter(b => b.consultation_type === 'sales');
+    const converted = salesConsultations.filter(b => b.deal_id !== null).length;
+    const totalSalesConsultations = salesConsultations.length;
 
     return {
       approval: Math.round((confirmedOrCompleted / total) * 100),

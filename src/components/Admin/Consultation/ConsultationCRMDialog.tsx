@@ -173,7 +173,8 @@ ${educationNotes ? `یادداشت: ${educationNotes}` : ''}
         .from('consultation_bookings')
         .update({
           crm_added: true,
-          status: 'completed'
+          status: 'completed',
+          consultation_type: 'education'
         })
         .eq('id', booking.id);
 
@@ -303,7 +304,8 @@ ${notes ? `یادداشت: ${notes}` : ''}
         .update({
           crm_added: true,
           deal_id: dealId,
-          status: 'completed'
+          status: 'completed',
+          consultation_type: 'sales'
         })
         .eq('id', booking.id);
 

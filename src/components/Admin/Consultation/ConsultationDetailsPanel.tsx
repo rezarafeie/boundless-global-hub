@@ -37,6 +37,7 @@ interface ConsultationBooking {
   reminder_sent_at: string | null;
   deal_id: string | null;
   crm_added: boolean;
+  consultation_type: string | null;
   slot?: {
     id: string;
     date: string;

@@ -919,6 +919,7 @@ export type Database = {
           confirmed_at: string | null
           confirmed_by: number | null
           consultation_link: string | null
+          consultation_type: string | null
           created_at: string
           crm_added: boolean | null
           deal_id: string | null
@@ -939,6 +940,7 @@ export type Database = {
           confirmed_at?: string | null
           confirmed_by?: number | null
           consultation_link?: string | null
+          consultation_type?: string | null
           created_at?: string
           crm_added?: boolean | null
           deal_id?: string | null
@@ -959,6 +961,7 @@ export type Database = {
           confirmed_at?: string | null
           confirmed_by?: number | null
           consultation_link?: string | null
+          consultation_type?: string | null
           created_at?: string
           crm_added?: boolean | null
           deal_id?: string | null
