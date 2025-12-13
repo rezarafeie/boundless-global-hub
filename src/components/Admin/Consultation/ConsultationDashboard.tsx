@@ -269,9 +269,9 @@ const ConsultationDashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir="rtl">
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-3">
         <Card>
           <CardContent className="p-3">
             <div className="flex items-center gap-2">
@@ -365,9 +365,9 @@ const ConsultationDashboard: React.FC = () => {
         </Card>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         {/* Queue Section */}
-        <Card className="lg:col-span-2">
+        <Card className="xl:col-span-7">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -495,7 +495,7 @@ const ConsultationDashboard: React.FC = () => {
         </Card>
 
         {/* Quick Actions & Filters */}
-        <div className="space-y-4">
+        <div className="xl:col-span-5 space-y-4">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">فیلترها</CardTitle>
