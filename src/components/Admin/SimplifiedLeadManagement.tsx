@@ -176,7 +176,7 @@ const SimplifiedLeadManagement: React.FC = () => {
   // Bulk transfer states
   const [bulkTransferDialogOpen, setBulkTransferDialogOpen] = useState(false);
   const [selectedInactiveAgentId, setSelectedInactiveAgentId] = useState<number | null>(null);
-  const [targetAgentId, setTargetAgentId] = useState<string>('');
+  const [transferAllocations, setTransferAllocations] = useState<PercentageAllocation[]>([]);
   const [transferLoading, setTransferLoading] = useState(false);
 
   // Save filters to localStorage when they change
@@ -1011,12 +1011,60 @@ const SimplifiedLeadManagement: React.FC = () => {
     }
   };
 
-  // Bulk transfer leads from inactive agent to active agent
+  // Initialize transfer allocations when dialog opens
+  const initializeTransferAllocations = (inactiveAgentId: number) => {
+    const activeAgentsList = agents.filter(a => a.is_active && a.id !== inactiveAgentId);
+    if (activeAgentsList.length > 0) {
+      const equalPercentage = Math.floor(100 / activeAgentsList.length);
+      const remainder = 100 - (equalPercentage * activeAgentsList.length);
+      
+      const allocations = activeAgentsList.map((agent, index) => ({
+        agent_id: agent.id,
+        agent_name: agent.name,
+        percentage: equalPercentage + (index === 0 ? remainder : 0)
+      }));
+      setTransferAllocations(allocations);
+    }
+  };
+
+  // Update transfer allocation percentage
+  const updateTransferAllocation = (agentId: number, newPercentage: number) => {
+    setTransferAllocations(prev => 
+      prev.map(a => a.agent_id === agentId ? { ...a, percentage: newPercentage } : a)
+    );
+  };
+
+  // Get total transfer allocation percentage
+  const getTotalTransferPercentage = () => {
+    return transferAllocations.reduce((sum, a) => sum + a.percentage, 0);
+  };
+
+  // Bulk transfer leads from inactive agent to multiple active agents
   const handleBulkTransferLeads = async () => {
-    if (!selectedInactiveAgentId || !targetAgentId) {
+    if (!selectedInactiveAgentId) {
       toast({
         title: "خطا",
-        description: "لطفا نماینده مقصد را انتخاب کنید",
+        description: "نماینده مبدا انتخاب نشده",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const totalPercentage = getTotalTransferPercentage();
+    if (totalPercentage !== 100) {
+      toast({
+        title: "خطا",
+        description: `مجموع درصدها باید ۱۰۰٪ باشد (فعلی: ${totalPercentage}٪)`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const activeAllocations = transferAllocations.filter(a => a.percentage > 0);
+    if (activeAllocations.length === 0) {
+      toast({
+        title: "خطا",
+        description: "حداقل یک نماینده با درصد بالای صفر انتخاب کنید",
         variant: "destructive"
       });
       return;
@@ -1024,23 +1072,79 @@ const SimplifiedLeadManagement: React.FC = () => {
 
     setTransferLoading(true);
     try {
-      // Update all lead assignments from inactive agent to target agent
-      const { error } = await supabase
+      // Get all lead assignments for the inactive agent
+      const { data: leadAssignments, error: fetchError } = await supabase
         .from('lead_assignments')
-        .update({ 
-          sales_agent_id: parseInt(targetAgentId),
-          assigned_at: new Date().toISOString()
-        })
+        .select('id')
         .eq('sales_agent_id', selectedInactiveAgentId);
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
+
+      if (!leadAssignments || leadAssignments.length === 0) {
+        toast({
+          title: "اطلاع",
+          description: "لیدی برای انتقال وجود ندارد",
+        });
+        setBulkTransferDialogOpen(false);
+        return;
+      }
+
+      const totalLeads = leadAssignments.length;
+      const shuffledLeads = [...leadAssignments].sort(() => Math.random() - 0.5);
+      
+      let assignedIndex = 0;
+      const assignmentPromises: Promise<void>[] = [];
+
+      for (const allocation of activeAllocations) {
+        const leadsForAgent = Math.round((allocation.percentage / 100) * totalLeads);
+        const agentLeadIds = shuffledLeads
+          .slice(assignedIndex, assignedIndex + leadsForAgent)
+          .map(l => l.id);
+        
+        if (agentLeadIds.length > 0) {
+          const updatePromise = (async () => {
+            const { error } = await supabase
+              .from('lead_assignments')
+              .update({ 
+                sales_agent_id: allocation.agent_id,
+                assigned_at: new Date().toISOString()
+              })
+              .in('id', agentLeadIds);
+            if (error) throw error;
+          })();
+          assignmentPromises.push(updatePromise);
+        }
+        assignedIndex += leadsForAgent;
+      }
+
+      // Assign remaining leads to the first active allocation
+      if (assignedIndex < totalLeads && activeAllocations.length > 0) {
+        const remainingIds = shuffledLeads.slice(assignedIndex).map(l => l.id);
+        if (remainingIds.length > 0) {
+          const updatePromise = (async () => {
+            const { error } = await supabase
+              .from('lead_assignments')
+              .update({ 
+                sales_agent_id: activeAllocations[0].agent_id,
+                assigned_at: new Date().toISOString()
+              })
+              .in('id', remainingIds);
+            if (error) throw error;
+          })();
+          assignmentPromises.push(updatePromise);
+        }
+      }
+
+      await Promise.all(assignmentPromises);
 
       const sourceAgent = agentLeadCounts.find(a => a.agent_id === selectedInactiveAgentId);
-      const targetAgent = agents.find(a => a.id === parseInt(targetAgentId));
+      const distributionSummary = activeAllocations
+        .map(a => `${a.agent_name}: ${a.percentage}%`)
+        .join('، ');
       
       toast({
         title: "موفقیت",
-        description: `${sourceAgent?.count || 0} لید از ${sourceAgent?.agent_name} به ${targetAgent?.name} منتقل شد`,
+        description: `${totalLeads} لید از ${sourceAgent?.agent_name} توزیع شد (${distributionSummary})`,
       });
 
       // Refresh data
@@ -1049,7 +1153,7 @@ const SimplifiedLeadManagement: React.FC = () => {
       // Close dialog and reset
       setBulkTransferDialogOpen(false);
       setSelectedInactiveAgentId(null);
-      setTargetAgentId('');
+      setTransferAllocations([]);
     } catch (error) {
       console.error('Error transferring leads:', error);
       toast({
@@ -1271,6 +1375,7 @@ const SimplifiedLeadManagement: React.FC = () => {
                             className="h-6 text-xs text-amber-700 border-amber-400 hover:bg-amber-100"
                             onClick={() => {
                               setSelectedInactiveAgentId(ac.agent_id);
+                              initializeTransferAllocations(ac.agent_id);
                               setBulkTransferDialogOpen(true);
                             }}
                           >
@@ -2092,56 +2197,62 @@ const SimplifiedLeadManagement: React.FC = () => {
             )}
             
             <div className="space-y-2">
-              <Label>انتخاب نماینده مقصد (فعال)</Label>
-              <ScrollArea className="h-[200px] border rounded-lg p-2">
-                <div className="space-y-2">
-                  {(() => {
-                    const activeAgents = agents.filter(a => a.is_active && a.id !== selectedInactiveAgentId);
-                    const totalActiveLeads = agentLeadCounts
-                      .filter(ac => ac.is_active && ac.agent_id !== selectedInactiveAgentId)
-                      .reduce((sum, ac) => sum + ac.count, 0);
+              <div className="flex items-center justify-between">
+                <Label>توزیع بین نمایندگان فعال</Label>
+                <Badge 
+                  variant={getTotalTransferPercentage() === 100 ? "default" : "destructive"}
+                  className="text-xs"
+                >
+                  مجموع: {getTotalTransferPercentage()}%
+                </Badge>
+              </div>
+              <ScrollArea className="h-[250px] border rounded-lg p-2">
+                <div className="space-y-3">
+                  {transferAllocations.map((allocation) => {
+                    const agentCount = agentLeadCounts.find(ac => ac.agent_id === allocation.agent_id)?.count || 0;
+                    const sourceLeadCount = agentLeadCounts.find(a => a.agent_id === selectedInactiveAgentId)?.count || 0;
+                    const estimatedLeads = Math.round((allocation.percentage / 100) * sourceLeadCount);
                     
-                    return activeAgents.map((agent) => {
-                      const agentCount = agentLeadCounts.find(ac => ac.agent_id === agent.id)?.count || 0;
-                      const percentage = totalActiveLeads > 0 
-                        ? Math.round((agentCount / totalActiveLeads) * 100) 
-                        : 0;
-                      const isSelected = targetAgentId === agent.id.toString();
-                      
-                      return (
-                        <div
-                          key={agent.id}
-                          onClick={() => setTargetAgentId(agent.id.toString())}
-                          className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-                            isSelected 
-                              ? 'bg-primary/10 border-2 border-primary' 
-                              : 'bg-muted/50 hover:bg-muted border border-transparent'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full border-2 ${
-                              isSelected ? 'border-primary bg-primary' : 'border-muted-foreground'
-                            }`}>
-                              {isSelected && <div className="w-full h-full rounded-full bg-primary" />}
-                            </div>
-                            <span className="font-medium">{agent.name}</span>
-                          </div>
+                    return (
+                      <div key={allocation.agent_id} className="bg-muted/50 p-3 rounded-lg space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-sm">{allocation.agent_name}</span>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-xs">
-                              {agentCount} لید
+                              فعلی: {agentCount} لید
                             </Badge>
                             <Badge variant="outline" className="text-xs">
-                              {percentage}%
+                              +{estimatedLeads} لید
                             </Badge>
                           </div>
                         </div>
-                      );
-                    });
-                  })()}
+                        <div className="flex items-center gap-3">
+                          <Slider
+                            value={[allocation.percentage]}
+                            onValueChange={(value) => updateTransferAllocation(allocation.agent_id, value[0])}
+                            max={100}
+                            step={5}
+                            className="flex-1"
+                          />
+                          <div className="flex items-center gap-1 min-w-[60px]">
+                            <Input
+                              type="number"
+                              value={allocation.percentage}
+                              onChange={(e) => updateTransferAllocation(allocation.agent_id, Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                              className="w-14 h-8 text-center text-sm"
+                              min={0}
+                              max={100}
+                            />
+                            <span className="text-xs text-muted-foreground">%</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </ScrollArea>
-              {!targetAgentId && (
-                <p className="text-xs text-muted-foreground">یک نماینده فعال را برای انتقال انتخاب کنید</p>
+              {getTotalTransferPercentage() !== 100 && (
+                <p className="text-xs text-destructive">مجموع درصدها باید دقیقاً ۱۰۰٪ باشد</p>
               )}
             </div>
 
@@ -2149,7 +2260,7 @@ const SimplifiedLeadManagement: React.FC = () => {
               <div className="flex items-start gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
                 <p className="text-xs text-amber-700 dark:text-amber-300">
-                  این عملیات تمام لیدهای نماینده غیرفعال را به نماینده انتخاب شده منتقل می‌کند. این عمل غیرقابل بازگشت است.
+                  این عملیات لیدهای نماینده غیرفعال را بین نمایندگان انتخاب شده توزیع می‌کند. این عمل غیرقابل بازگشت است.
                 </p>
               </div>
             </div>
@@ -2160,14 +2271,14 @@ const SimplifiedLeadManagement: React.FC = () => {
                 onClick={() => {
                   setBulkTransferDialogOpen(false);
                   setSelectedInactiveAgentId(null);
-                  setTargetAgentId('');
+                  setTransferAllocations([]);
                 }}
               >
                 لغو
               </Button>
               <Button 
                 onClick={handleBulkTransferLeads} 
-                disabled={transferLoading || !targetAgentId}
+                disabled={transferLoading || getTotalTransferPercentage() !== 100}
                 className="bg-amber-600 hover:bg-amber-700"
               >
                 {transferLoading ? (
