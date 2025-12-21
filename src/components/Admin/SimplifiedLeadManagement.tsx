@@ -25,7 +25,10 @@ import {
   Calendar,
   CreditCard,
   ExternalLink,
-  X
+  X,
+  AlertTriangle,
+  ArrowRightLeft,
+  UserX
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -56,6 +59,7 @@ interface Agent {
   name: string;
   phone: string;
   lead_count?: number;
+  is_active: boolean;
 }
 
 interface Course {
@@ -85,6 +89,7 @@ interface AgentLeadCount {
   agent_id: number;
   agent_name: string;
   count: number;
+  is_active: boolean;
 }
 
 interface AIScoreResult {
@@ -168,6 +173,12 @@ const SimplifiedLeadManagement: React.FC = () => {
   const [assignmentProgress, setAssignmentProgress] = useState({ current: 0, total: 0, status: '' });
   const [isAssigning, setIsAssigning] = useState(false);
 
+  // Bulk transfer states
+  const [bulkTransferDialogOpen, setBulkTransferDialogOpen] = useState(false);
+  const [selectedInactiveAgentId, setSelectedInactiveAgentId] = useState<number | null>(null);
+  const [targetAgentId, setTargetAgentId] = useState<string>('');
+  const [transferLoading, setTransferLoading] = useState(false);
+
   // Save filters to localStorage when they change
   useEffect(() => {
     localStorage.setItem('leads_searchTerm', searchTerm);
@@ -245,27 +256,28 @@ const SimplifiedLeadManagement: React.FC = () => {
   };
 
   const fetchAgents = async () => {
-    // Fetch from sales_agents joined with chat_users
+    // Fetch ALL agents (active and inactive) for comprehensive view
     const { data: salesAgentsData } = await supabase
       .from('sales_agents')
       .select(`
         id,
         user_id,
+        is_active,
         chat_users!inner(name, phone)
-      `)
-      .eq('is_active', true);
+      `);
 
     const agents: Agent[] = (salesAgentsData || []).map((sa: any) => ({
       id: sa.id,
       user_id: sa.user_id,
       name: sa.chat_users?.name || 'Unknown',
-      phone: sa.chat_users?.phone || ''
+      phone: sa.chat_users?.phone || '',
+      is_active: sa.is_active
     }));
     
     setAgents(agents);
     
-    // Initialize percentage allocations
-    setPercentageAllocations(agents.map(agent => ({
+    // Initialize percentage allocations (only for active agents)
+    setPercentageAllocations(agents.filter(a => a.is_active).map(agent => ({
       agent_id: agent.id,
       agent_name: agent.name,
       percentage: 0
@@ -460,7 +472,8 @@ const SimplifiedLeadManagement: React.FC = () => {
         .map(a => ({
           agent_id: a.id,
           agent_name: a.name,
-          count: agentCounts.get(a.id) || 0
+          count: agentCounts.get(a.id) || 0,
+          is_active: a.is_active
         }))
         .filter(c => c.count > 0)
         .sort((a, b) => b.count - a.count);
@@ -998,6 +1011,57 @@ const SimplifiedLeadManagement: React.FC = () => {
     }
   };
 
+  // Bulk transfer leads from inactive agent to active agent
+  const handleBulkTransferLeads = async () => {
+    if (!selectedInactiveAgentId || !targetAgentId) {
+      toast({
+        title: "خطا",
+        description: "لطفا نماینده مقصد را انتخاب کنید",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setTransferLoading(true);
+    try {
+      // Update all lead assignments from inactive agent to target agent
+      const { error } = await supabase
+        .from('lead_assignments')
+        .update({ 
+          sales_agent_id: parseInt(targetAgentId),
+          assigned_at: new Date().toISOString()
+        })
+        .eq('sales_agent_id', selectedInactiveAgentId);
+
+      if (error) throw error;
+
+      const sourceAgent = agentLeadCounts.find(a => a.agent_id === selectedInactiveAgentId);
+      const targetAgent = agents.find(a => a.id === parseInt(targetAgentId));
+      
+      toast({
+        title: "موفقیت",
+        description: `${sourceAgent?.count || 0} لید از ${sourceAgent?.agent_name} به ${targetAgent?.name} منتقل شد`,
+      });
+
+      // Refresh data
+      await handleLoadLeads();
+      
+      // Close dialog and reset
+      setBulkTransferDialogOpen(false);
+      setSelectedInactiveAgentId(null);
+      setTargetAgentId('');
+    } catch (error) {
+      console.error('Error transferring leads:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در انتقال لیدها",
+        variant: "destructive"
+      });
+    } finally {
+      setTransferLoading(false);
+    }
+  };
+
   const formatDate = (date: string) => {
     try {
       return format(new Date(date), 'yyyy/MM/dd HH:mm');
@@ -1176,6 +1240,55 @@ const SimplifiedLeadManagement: React.FC = () => {
         </Card>
       )}
 
+      {/* Warning for Orphaned Leads - Only show if there are inactive agents with leads */}
+      {hasLoaded && (() => {
+        const inactiveAgentsWithLeads = agentLeadCounts.filter(ac => !ac.is_active && ac.count > 0);
+        const totalOrphanedLeads = inactiveAgentsWithLeads.reduce((sum, ac) => sum + ac.count, 0);
+        
+        if (totalOrphanedLeads > 0) {
+          return (
+            <Card className="bg-amber-50 border-amber-300 dark:bg-amber-950 dark:border-amber-800">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-amber-800 dark:text-amber-200">
+                      هشدار: لیدهای یتیم
+                    </h4>
+                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                      {totalOrphanedLeads} لید به نمایندگان غیرفعال تخصیص یافته‌اند و نیاز به انتقال دارند.
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {inactiveAgentsWithLeads.map(ac => (
+                        <div key={ac.agent_id} className="flex items-center gap-2">
+                          <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-400">
+                            <UserX className="h-3 w-3 mr-1" />
+                            {ac.agent_name}: {ac.count} لید
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 text-xs text-amber-700 border-amber-400 hover:bg-amber-100"
+                            onClick={() => {
+                              setSelectedInactiveAgentId(ac.agent_id);
+                              setBulkTransferDialogOpen(true);
+                            }}
+                          >
+                            <ArrowRightLeft className="h-3 w-3 mr-1" />
+                            انتقال
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        }
+        return null;
+      })()}
+
       {/* Agent Lead Distribution - Only show after loading */}
       {hasLoaded && agentLeadCounts.length > 0 && (
         <Card>
@@ -1191,10 +1304,14 @@ const SimplifiedLeadManagement: React.FC = () => {
                 <Badge 
                   key={ac.agent_id} 
                   variant="outline" 
-                  className="text-xs md:text-sm py-1.5 px-3 cursor-pointer hover:bg-muted"
+                  className={`text-xs md:text-sm py-1.5 px-3 cursor-pointer hover:bg-muted ${
+                    !ac.is_active ? 'border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-950' : ''
+                  }`}
                   onClick={() => setAgentFilter(ac.agent_id.toString())}
                 >
+                  {!ac.is_active && <UserX className="h-3 w-3 mr-1 inline" />}
                   {ac.agent_name}: <span className="font-bold mr-1">{ac.count}</span> لید
+                  {!ac.is_active && <span className="text-[10px] mr-1">(غیرفعال)</span>}
                 </Badge>
               ))}
               <Badge 
@@ -1280,10 +1397,16 @@ const SimplifiedLeadManagement: React.FC = () => {
                 <SelectTrigger>
                   <SelectValue placeholder="همه" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background">
                   <SelectItem value="all">همه کارشناسان</SelectItem>
                   {agents.map(a => (
-                    <SelectItem key={a.id} value={a.id.toString()}>{a.name}</SelectItem>
+                    <SelectItem key={a.id} value={a.id.toString()}>
+                      <span className="flex items-center gap-1">
+                        {!a.is_active && <UserX className="h-3 w-3 text-amber-600" />}
+                        {a.name}
+                        {!a.is_active && <span className="text-[10px] text-amber-600">(غیرفعال)</span>}
+                      </span>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1938,6 +2061,92 @@ const SimplifiedLeadManagement: React.FC = () => {
             <Button onClick={() => setShowAssignmentReport(false)}>
               بستن
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Transfer Dialog */}
+      <Dialog open={bulkTransferDialogOpen} onOpenChange={setBulkTransferDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowRightLeft className="h-5 w-5" />
+              انتقال دسته‌جمعی لیدها
+            </DialogTitle>
+            <DialogDescription>
+              انتقال لیدها از نماینده غیرفعال به نماینده فعال
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedInactiveAgentId && (
+              <div className="bg-muted p-3 rounded-lg">
+                <p className="text-sm">
+                  <strong>نماینده مبدا:</strong>{' '}
+                  {agentLeadCounts.find(a => a.agent_id === selectedInactiveAgentId)?.agent_name}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  <strong>تعداد لیدها:</strong>{' '}
+                  {agentLeadCounts.find(a => a.agent_id === selectedInactiveAgentId)?.count} لید
+                </p>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="target-agent">انتخاب نماینده مقصد (فعال)</Label>
+              <Select value={targetAgentId} onValueChange={setTargetAgentId}>
+                <SelectTrigger id="target-agent">
+                  <SelectValue placeholder="نماینده مقصد را انتخاب کنید" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {agents
+                    .filter(a => a.is_active && a.id !== selectedInactiveAgentId)
+                    .map((agent) => (
+                      <SelectItem key={agent.id} value={agent.id.toString()}>
+                        {agent.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="bg-amber-50 dark:bg-amber-950 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  این عملیات تمام لیدهای نماینده غیرفعال را به نماینده انتخاب شده منتقل می‌کند. این عمل غیرقابل بازگشت است.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setBulkTransferDialogOpen(false);
+                  setSelectedInactiveAgentId(null);
+                  setTargetAgentId('');
+                }}
+              >
+                لغو
+              </Button>
+              <Button 
+                onClick={handleBulkTransferLeads} 
+                disabled={transferLoading || !targetAgentId}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                {transferLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    در حال انتقال...
+                  </>
+                ) : (
+                  <>
+                    <ArrowRightLeft className="h-4 w-4 mr-2" />
+                    انتقال لیدها
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
