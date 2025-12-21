@@ -32,6 +32,9 @@ import {
   Share2,
   Trash2,
   X,
+  AlertTriangle,
+  ArrowRightLeft,
+  UserX,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -100,6 +103,7 @@ interface AgentSummary {
   total_sales: number;
   total_sales_amount: number;
   conversion_rate: number;
+  is_active: boolean; // Agent status
 }
 
 interface CRMNote {
@@ -171,7 +175,12 @@ const LeadManagement: React.FC = () => {
   // Filter states for admin leads
   const [selectedCourse, setSelectedCourse] = useState<string>('all');
   const [selectedAgent, setSelectedAgent] = useState<string>('all');
-  const [agents, setAgents] = useState<{ id: number; name: string }[]>([]);
+  const [agents, setAgents] = useState<{ id: number; name: string; is_active?: boolean }[]>([]);
+  const [agentStatusFilter, setAgentStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [bulkTransferDialogOpen, setBulkTransferDialogOpen] = useState(false);
+  const [selectedInactiveAgentId, setSelectedInactiveAgentId] = useState<number | null>(null);
+  const [targetAgentId, setTargetAgentId] = useState<string>('');
+  const [transferLoading, setTransferLoading] = useState(false);
   
   // CRM popup states
   const [isAddingNote, setIsAddingNote] = useState(false);
@@ -233,20 +242,22 @@ const LeadManagement: React.FC = () => {
 
   const fetchAgents = async () => {
     try {
+      // Fetch ALL agents (active and inactive) for comprehensive view
       const { data, error } = await supabase
         .from('sales_agents')
         .select(`
           id,
           user_id,
+          is_active,
           chat_users!inner(name)
-        `)
-        .eq('is_active', true);
+        `);
 
       if (error) throw error;
       
       const agentsData = data?.map(agent => ({
         id: agent.id,
-        name: (agent as any).chat_users.name
+        name: (agent as any).chat_users.name,
+        is_active: agent.is_active
       })) || [];
       
       setAgents(agentsData);
@@ -500,24 +511,24 @@ const LeadManagement: React.FC = () => {
     try {
       console.log('Fetching agent summaries...');
       
+      // Fetch ALL agents (active and inactive) to show complete picture
       const { data, error } = await supabase
         .from('sales_agents')
         .select(`
           id,
           user_id,
           is_active
-        `)
-        .eq('is_active', true);
+        `);
 
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        console.log('No active sales agents found');
+        console.log('No sales agents found');
         setAgentSummaries([]);
         return;
       }
 
-      console.log('Found agents:', data.length);
+      console.log('Found agents:', data.length, '(active:', data.filter(a => a.is_active).length, ', inactive:', data.filter(a => !a.is_active).length, ')');
 
       // Get user names
       const userIds = data.map(agent => agent.user_id);
@@ -533,7 +544,7 @@ const LeadManagement: React.FC = () => {
       const userMap = new Map(usersData?.map(u => [u.id, u]) || []);
 
       // Debug: Check what agents we have
-      console.log('Sales agents:', data.map(a => ({ id: a.id, user_id: a.user_id, name: userMap.get(a.user_id)?.name })));
+      console.log('Sales agents:', data.map(a => ({ id: a.id, user_id: a.user_id, name: userMap.get(a.user_id)?.name, is_active: a.is_active })));
 
       // Get ALL leads (total available leads) - not just assigned ones
       const { data: totalLeadsData, error: totalLeadsError } = await supabase
@@ -548,7 +559,7 @@ const LeadManagement: React.FC = () => {
       const totalAvailableLeads = totalLeadsData?.length || 0;
       console.log('Total available leads:', totalAvailableLeads);
 
-      // Get assignments for each agent
+      // Get assignments for ALL agents (including inactive ones)
       const agentIds = data.map(agent => agent.id);
       const { data: assignmentsData, error: assignmentsError } = await supabase
         .from('lead_assignments')
@@ -599,7 +610,7 @@ const LeadManagement: React.FC = () => {
         const user = userMap.get(agent.user_id);
         const agentAssignments = assignmentsData?.filter(a => a.sales_agent_id === agent.id) || [];
         
-        console.log(`Agent ${user?.name || 'Unknown'} (ID: ${agent.id}) assignments:`, agentAssignments);
+        console.log(`Agent ${user?.name || 'Unknown'} (ID: ${agent.id}, active: ${agent.is_active}) assignments:`, agentAssignments.length);
         
         // Count calls made by this agent (using agent's name in created_by)
         const agentName = user?.name || '';
@@ -627,7 +638,7 @@ const LeadManagement: React.FC = () => {
 
         const conversionRate = assignedLeads > 0 ? (completedSales / assignedLeads) * 100 : 0;
 
-        console.log(`Agent ${agentName}: total_leads=${totalAvailableLeads}, assigned=${assignedLeads}, calls=${totalCalls}, sales=${completedSales}, amount=${totalSalesAmount}`);
+        console.log(`Agent ${agentName}: total_leads=${totalAvailableLeads}, assigned=${assignedLeads}, calls=${totalCalls}, sales=${completedSales}, amount=${totalSalesAmount}, is_active=${agent.is_active}`);
 
         return {
           agent_id: agent.id,
@@ -637,7 +648,8 @@ const LeadManagement: React.FC = () => {
           total_calls: totalCalls,
           total_sales: completedSales,
           total_sales_amount: totalSalesAmount,
-          conversion_rate: conversionRate
+          conversion_rate: conversionRate,
+          is_active: agent.is_active
         };
       });
 
@@ -723,6 +735,58 @@ const LeadManagement: React.FC = () => {
       });
     } finally {
       setRemoveLoading(null);
+    }
+  };
+
+  // Bulk transfer leads from inactive agent to active agent
+  const handleBulkTransferLeads = async () => {
+    if (!selectedInactiveAgentId || !targetAgentId) {
+      toast({
+        title: "خطا",
+        description: "لطفا نماینده مقصد را انتخاب کنید",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setTransferLoading(true);
+    try {
+      // Update all lead assignments from inactive agent to target agent
+      const { error } = await supabase
+        .from('lead_assignments')
+        .update({ 
+          sales_agent_id: parseInt(targetAgentId),
+          assigned_at: new Date().toISOString()
+        })
+        .eq('sales_agent_id', selectedInactiveAgentId);
+
+      if (error) throw error;
+
+      const sourceAgent = agentSummaries.find(a => a.agent_id === selectedInactiveAgentId);
+      const targetAgent = agents.find(a => a.id === parseInt(targetAgentId));
+      
+      toast({
+        title: "موفقیت",
+        description: `${sourceAgent?.total_leads || 0} لید از ${sourceAgent?.agent_name} به ${targetAgent?.name} منتقل شد`,
+      });
+
+      // Refresh data
+      await fetchAgentSummaries();
+      await fetchAdminLeads(currentPage);
+      
+      // Close dialog and reset
+      setBulkTransferDialogOpen(false);
+      setSelectedInactiveAgentId(null);
+      setTargetAgentId('');
+    } catch (error) {
+      console.error('Error transferring leads:', error);
+      toast({
+        title: "خطا",
+        description: "خطا در انتقال لیدها",
+        variant: "destructive"
+      });
+    } finally {
+      setTransferLoading(false);
     }
   };
 
@@ -1631,14 +1695,99 @@ const LeadManagement: React.FC = () => {
             </div>
            ) : activeTab === 'admin' ? (
             <div className="space-y-6">
+              {/* Warning for Orphaned Leads */}
+              {(() => {
+                const inactiveAgentsWithLeads = agentSummaries.filter(s => !s.is_active && s.total_leads > 0);
+                const totalOrphanedLeads = inactiveAgentsWithLeads.reduce((sum, s) => sum + s.total_leads, 0);
+                
+                if (totalOrphanedLeads > 0) {
+                  return (
+                    <Card className="bg-amber-50 border-amber-300 dark:bg-amber-950 dark:border-amber-800">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-amber-800 dark:text-amber-200">
+                              هشدار: لیدهای یتیم
+                            </h4>
+                            <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                              {totalOrphanedLeads} لید به نمایندگان غیرفعال تخصیص یافته‌اند و نیاز به انتقال دارند.
+                            </p>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {inactiveAgentsWithLeads.map(agent => (
+                                <Badge key={agent.agent_id} variant="outline" className="bg-amber-100 text-amber-800 border-amber-400">
+                                  {agent.agent_name}: {agent.total_leads} لید
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* Agent Status Filter */}
+              <div className="flex items-center gap-4">
+                <Label className="text-sm font-medium">نمایش نمایندگان:</Label>
+                <div className="flex rounded-md bg-muted p-1 gap-1">
+                  <Button
+                    variant={agentStatusFilter === 'all' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setAgentStatusFilter('all')}
+                    className="text-xs"
+                  >
+                    همه ({agentSummaries.length})
+                  </Button>
+                  <Button
+                    variant={agentStatusFilter === 'active' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setAgentStatusFilter('active')}
+                    className="text-xs"
+                  >
+                    فعال ({agentSummaries.filter(s => s.is_active).length})
+                  </Button>
+                  <Button
+                    variant={agentStatusFilter === 'inactive' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setAgentStatusFilter('inactive')}
+                    className="text-xs"
+                  >
+                    غیرفعال ({agentSummaries.filter(s => !s.is_active).length})
+                  </Button>
+                </div>
+              </div>
+
               {/* Agent Summaries */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {agentSummaries.map((summary) => (
-                  <Card key={summary.agent_id} className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                {agentSummaries
+                  .filter(summary => {
+                    if (agentStatusFilter === 'active') return summary.is_active;
+                    if (agentStatusFilter === 'inactive') return !summary.is_active;
+                    return true;
+                  })
+                  .map((summary) => (
+                  <Card 
+                    key={summary.agent_id} 
+                    className={`bg-gradient-to-br ${
+                      summary.is_active 
+                        ? 'from-blue-50 to-indigo-50 border-blue-200 dark:from-blue-950 dark:to-indigo-950 dark:border-blue-800' 
+                        : 'from-gray-100 to-gray-200 border-gray-300 dark:from-gray-800 dark:to-gray-900 dark:border-gray-700 opacity-80'
+                    }`}
+                  >
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Users className="h-5 w-5 text-blue-600" />
-                        {summary.agent_name}
+                      <CardTitle className="text-lg flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Users className={`h-5 w-5 ${summary.is_active ? 'text-blue-600' : 'text-gray-500'}`} />
+                          {summary.agent_name}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={summary.is_active ? 'default' : 'secondary'} className="text-xs">
+                            {summary.is_active ? 'فعال' : 'غیرفعال'}
+                          </Badge>
+                        </div>
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
@@ -1684,6 +1833,24 @@ const LeadManagement: React.FC = () => {
                         </div>
                         <Badge variant="secondary">{summary.conversion_rate.toFixed(1)}%</Badge>
                       </div>
+                      
+                      {/* Bulk Transfer Button for Inactive Agents with Leads */}
+                      {!summary.is_active && summary.total_leads > 0 && (
+                        <div className="pt-2 border-t">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full text-amber-700 border-amber-400 hover:bg-amber-100"
+                            onClick={() => {
+                              setSelectedInactiveAgentId(summary.agent_id);
+                              setBulkTransferDialogOpen(true);
+                            }}
+                          >
+                            <ArrowRightLeft className="h-4 w-4 mr-2" />
+                            انتقال لیدها به نماینده فعال
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -1723,12 +1890,19 @@ const LeadManagement: React.FC = () => {
                          <SelectTrigger id="agent-filter" className="w-full">
                            <SelectValue placeholder="همه نمایندگان" />
                          </SelectTrigger>
-                         <SelectContent className="bg-white z-50">
+                         <SelectContent className="bg-background z-50">
                            <SelectItem value="all">همه نمایندگان</SelectItem>
                            <SelectItem value="unassigned">واگذار نشده</SelectItem>
                            {agents.map((agent) => (
-                             <SelectItem key={agent.id} value={agent.name}>
-                               {agent.name}
+                             <SelectItem key={agent.id} value={agent.id.toString()}>
+                               <span className="flex items-center gap-2">
+                                 {agent.name}
+                                 {!agent.is_active && (
+                                   <Badge variant="secondary" className="text-[10px] py-0 px-1">
+                                     غیرفعال
+                                   </Badge>
+                                 )}
+                               </span>
                              </SelectItem>
                            ))}
                          </SelectContent>
@@ -1739,7 +1913,7 @@ const LeadManagement: React.FC = () => {
                     {selectedAgent !== 'all' && selectedAgent !== 'unassigned' && (
                       <div className="bg-muted p-3 rounded-lg mt-4">
                         <p className="text-sm">
-                          لیدهای واگذار شده به <strong>{selectedAgent}</strong>: {filteredAdminLeads.length} لید
+                          لیدهای واگذار شده به <strong>{agents.find(a => a.id.toString() === selectedAgent)?.name || selectedAgent}</strong>: {filteredAdminLeads.length} لید
                         </p>
                       </div>
                     )}
@@ -2671,6 +2845,89 @@ const LeadManagement: React.FC = () => {
           });
         }}
       />
+
+      {/* Bulk Transfer Dialog */}
+      <Dialog open={bulkTransferDialogOpen} onOpenChange={setBulkTransferDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowRightLeft className="h-5 w-5" />
+              انتقال دسته‌جمعی لیدها
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedInactiveAgentId && (
+              <div className="bg-muted p-3 rounded-lg">
+                <p className="text-sm">
+                  <strong>نماینده مبدا:</strong>{' '}
+                  {agentSummaries.find(a => a.agent_id === selectedInactiveAgentId)?.agent_name}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  <strong>تعداد لیدها:</strong>{' '}
+                  {agentSummaries.find(a => a.agent_id === selectedInactiveAgentId)?.total_leads} لید
+                </p>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="target-agent">انتخاب نماینده مقصد (فعال)</Label>
+              <Select value={targetAgentId} onValueChange={setTargetAgentId}>
+                <SelectTrigger id="target-agent">
+                  <SelectValue placeholder="نماینده مقصد را انتخاب کنید" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {agents
+                    .filter(a => a.is_active && a.id !== selectedInactiveAgentId)
+                    .map((agent) => (
+                      <SelectItem key={agent.id} value={agent.id.toString()}>
+                        {agent.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="bg-amber-50 dark:bg-amber-950 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  این عملیات تمام لیدهای نماینده غیرفعال را به نماینده انتخاب شده منتقل می‌کند. این عمل غیرقابل بازگشت است.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setBulkTransferDialogOpen(false);
+                  setSelectedInactiveAgentId(null);
+                  setTargetAgentId('');
+                }}
+              >
+                لغو
+              </Button>
+              <Button 
+                onClick={handleBulkTransferLeads} 
+                disabled={transferLoading || !targetAgentId}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                {transferLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    در حال انتقال...
+                  </>
+                ) : (
+                  <>
+                    <ArrowRightLeft className="h-4 w-4 mr-2" />
+                    انتقال لیدها
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
