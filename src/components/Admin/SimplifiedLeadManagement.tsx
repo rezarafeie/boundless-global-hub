@@ -2092,21 +2092,57 @@ const SimplifiedLeadManagement: React.FC = () => {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="target-agent">انتخاب نماینده مقصد (فعال)</Label>
-              <Select value={targetAgentId} onValueChange={setTargetAgentId}>
-                <SelectTrigger id="target-agent">
-                  <SelectValue placeholder="نماینده مقصد را انتخاب کنید" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  {agents
-                    .filter(a => a.is_active && a.id !== selectedInactiveAgentId)
-                    .map((agent) => (
-                      <SelectItem key={agent.id} value={agent.id.toString()}>
-                        {agent.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <Label>انتخاب نماینده مقصد (فعال)</Label>
+              <ScrollArea className="h-[200px] border rounded-lg p-2">
+                <div className="space-y-2">
+                  {(() => {
+                    const activeAgents = agents.filter(a => a.is_active && a.id !== selectedInactiveAgentId);
+                    const totalActiveLeads = agentLeadCounts
+                      .filter(ac => ac.is_active && ac.agent_id !== selectedInactiveAgentId)
+                      .reduce((sum, ac) => sum + ac.count, 0);
+                    
+                    return activeAgents.map((agent) => {
+                      const agentCount = agentLeadCounts.find(ac => ac.agent_id === agent.id)?.count || 0;
+                      const percentage = totalActiveLeads > 0 
+                        ? Math.round((agentCount / totalActiveLeads) * 100) 
+                        : 0;
+                      const isSelected = targetAgentId === agent.id.toString();
+                      
+                      return (
+                        <div
+                          key={agent.id}
+                          onClick={() => setTargetAgentId(agent.id.toString())}
+                          className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                            isSelected 
+                              ? 'bg-primary/10 border-2 border-primary' 
+                              : 'bg-muted/50 hover:bg-muted border border-transparent'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full border-2 ${
+                              isSelected ? 'border-primary bg-primary' : 'border-muted-foreground'
+                            }`}>
+                              {isSelected && <div className="w-full h-full rounded-full bg-primary" />}
+                            </div>
+                            <span className="font-medium">{agent.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {agentCount} لید
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {percentage}%
+                            </Badge>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </ScrollArea>
+              {!targetAgentId && (
+                <p className="text-xs text-muted-foreground">یک نماینده فعال را برای انتقال انتخاب کنید</p>
+              )}
             </div>
 
             <div className="bg-amber-50 dark:bg-amber-950 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
