@@ -5,28 +5,28 @@ const BioLinks = () => {
   const links = [
     {
       title: 'دوره بدون مرز',
-      subtitle: 'Boundless Course',
+      subtitle: 'کسب درآمد دلاری از ایران',
       icon: BookOpen,
       href: '/courses/boundless',
       gradient: 'from-primary to-primary/70',
     },
     {
       title: 'دوره مزه بدون مرز',
-      subtitle: 'Boundless Taste Course',
+      subtitle: 'راه‌اندازی کسب‌وکار غذایی',
       icon: Utensils,
       href: '/courses/boundless-taste',
       gradient: 'from-amber-500 to-orange-500',
     },
     {
-      title: 'ثبت درخواست',
-      subtitle: 'Submit Request',
+      title: 'مشاوره رایگان',
+      subtitle: 'ثبت درخواست مشاوره',
       icon: FileText,
       href: '/request',
       gradient: 'from-emerald-500 to-teal-500',
     },
     {
       title: '۰۲۱-۲۸۴۲۷۱۳۱',
-      subtitle: 'تماس با ما',
+      subtitle: 'تماس مستقیم با ما',
       icon: Phone,
       href: 'tel:02128427131',
       gradient: 'from-blue-500 to-cyan-500',
@@ -34,7 +34,7 @@ const BioLinks = () => {
     },
     {
       title: 'کانال تلگرام',
-      subtitle: '@rafieiacademy',
+      subtitle: 'عضویت در کانال آکادمی',
       icon: Send,
       href: 'https://t.me/rafieiacademy',
       gradient: 'from-sky-400 to-blue-500',
