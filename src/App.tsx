@@ -101,6 +101,9 @@ import EnAssessmentCenter from "./pages/en/AssessmentCenter";
 // User Hub page
 import UserHub from "./pages/UserHub";
 
+// Bio Links page
+import BioLinks from "./pages/BioLinks";
+
 // Messenger App (for subdomain)
 import MessengerApp from "./pages/MessengerApp";
 import MessengerProfile from "./pages/MessengerProfile";
@@ -359,6 +362,9 @@ const App = () => {
 
                     {/* User Hub Route */}
                     <Route path="/user-hub" element={<UserHub />} />
+
+                    {/* Bio Links Route */}
+                    <Route path="/bio" element={<BioLinks />} />
 
                      {/* App View Routes */}
                      <Route path="/app/dashboard" element={<AppDashboard />} />
