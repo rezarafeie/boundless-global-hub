@@ -28,7 +28,8 @@ import {
   X,
   AlertTriangle,
   ArrowRightLeft,
-  UserX
+  UserX,
+  Download
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -1166,6 +1167,58 @@ const SimplifiedLeadManagement: React.FC = () => {
     }
   };
 
+  // CSV Download function
+  const downloadLeadsAsCSV = () => {
+    if (leads.length === 0) {
+      toast({
+        title: "خطا",
+        description: "هیچ لیدی برای دانلود وجود ندارد",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create CSV headers
+    const headers = ['نام و نام خانوادگی', 'تلفن', 'ایمیل', 'دوره', 'مبلغ', 'تاریخ ثبت‌نام', 'نماینده', 'وضعیت پرداخت'];
+    
+    // Create CSV rows
+    const rows = leads.map(lead => [
+      lead.full_name,
+      lead.phone,
+      lead.email,
+      lead.course_title,
+      lead.payment_amount.toString(),
+      formatDate(lead.created_at),
+      lead.assigned_agent_name || 'واگذار نشده',
+      lead.payment_status === 'success' || lead.payment_status === 'completed' ? 'پرداخت شده' : lead.payment_status
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    // Add BOM for proper UTF-8 encoding in Excel
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    // Create download link
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const courseName = courses.find(c => c.id === selectedCourse)?.title || 'leads';
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${courseName}-leads-${format(new Date(), 'yyyy-MM-dd-HHmm')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "موفق",
+      description: `${leads.length} لید با موفقیت دانلود شد`,
+    });
+  };
+
   const formatDate = (date: string) => {
     try {
       return format(new Date(date), 'yyyy/MM/dd HH:mm');
@@ -1615,6 +1668,17 @@ const SimplifiedLeadManagement: React.FC = () => {
               <Brain className="h-3.5 w-3.5 md:h-4 md:w-4" />
               <span className="hidden sm:inline">امتیازدهی AI</span>
               <span className="sm:hidden">AI</span>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={downloadLeadsAsCSV}
+              disabled={!hasLoaded || leads.length === 0}
+              size="sm"
+              className="gap-1.5 text-xs md:text-sm"
+            >
+              <Download className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">دانلود CSV</span>
+              <span className="sm:hidden">CSV</span>
             </Button>
             {hasLoaded && (
               <span className="text-xs md:text-sm text-muted-foreground mr-auto">
