@@ -35,6 +35,7 @@ import {
   AlertTriangle,
   ArrowRightLeft,
   UserX,
+  Download,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -663,6 +664,57 @@ const LeadManagement: React.FC = () => {
         variant: "destructive"
       });
     }
+  };
+
+  // CSV Download function
+  const downloadLeadsAsCSV = () => {
+    if (adminLeads.length === 0) {
+      toast({
+        title: "خطا",
+        description: "هیچ لیدی برای دانلود وجود ندارد",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create CSV headers
+    const headers = ['نام و نام خانوادگی', 'تلفن', 'ایمیل', 'دوره', 'مبلغ', 'تاریخ ثبت‌نام', 'نماینده', 'وضعیت'];
+    
+    // Create CSV rows
+    const rows = adminLeads.map(lead => [
+      lead.full_name,
+      lead.phone,
+      lead.email,
+      lead.course_title,
+      lead.payment_amount.toString(),
+      format(new Date(lead.created_at), 'yyyy-MM-dd HH:mm'),
+      lead.assigned_to_agent || 'واگذار نشده',
+      lead.assignment_status || 'واگذار نشده'
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    // Add BOM for proper UTF-8 encoding in Excel
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    // Create download link
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `leads-${format(new Date(), 'yyyy-MM-dd-HHmm')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "موفق",
+      description: `${adminLeads.length} لید با موفقیت دانلود شد`,
+    });
   };
 
   const handleAssignLead = async (enrollmentId: string) => {
@@ -1907,6 +1959,19 @@ const LeadManagement: React.FC = () => {
                            ))}
                          </SelectContent>
                        </Select>
+                      </div>
+                      
+                      <div className="flex items-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={downloadLeadsAsCSV}
+                          disabled={adminLoading || adminLeads.length === 0}
+                          className="flex items-center gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          دانلود CSV
+                        </Button>
                       </div>
                     </div>
                     
