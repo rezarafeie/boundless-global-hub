@@ -1,19 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import MainLayout from "@/components/Layout/MainLayout";
 import DirectEnrollmentForm from "@/components/Course/DirectEnrollmentForm";
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from "framer-motion";
 import { 
-  Heart,
-  Compass,
-  Shield,
   ArrowDown,
   Check,
-  Quote,
-  Clock,
+  Target,
+  TrendingUp,
+  Globe,
+  Briefcase,
   Users,
-  MapPin
+  Clock,
+  ShieldCheck,
+  Zap,
+  Award,
+  BookOpen,
+  MessageCircle,
+  ChevronLeft
 } from "lucide-react";
 
 const RescueProjectLanding = () => {
@@ -44,324 +51,439 @@ const RescueProjectLanding = () => {
     document.querySelector('#enrollment-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const features = [
+    {
+      icon: Target,
+      title: "تحلیل واقع‌بینانه بازار",
+      description: "بررسی فرصت‌های واقعی کسب درآمد در شرایط اقتصادی فعلی"
+    },
+    {
+      icon: Globe,
+      title: "مسیرهای بین‌المللی",
+      description: "راه‌های عملی برای کسب درآمد دلاری از ایران"
+    },
+    {
+      icon: Briefcase,
+      title: "کسب‌وکار بدون سرمایه",
+      description: "مدل‌های کسب‌وکاری که نیاز به سرمایه اولیه زیاد ندارند"
+    },
+    {
+      icon: TrendingUp,
+      title: "برنامه عملی گام به گام",
+      description: "چک‌لیست‌های کاربردی برای شروع سریع و موثر"
+    }
+  ];
+
+  const benefits = [
+    "دسترسی کامل به محتوای آموزشی پروژه نجات",
+    "راهنمای جامع فرصت‌های کاری بین‌المللی",
+    "چک‌لیست‌های عملی برای شروع کسب‌وکار",
+    "دسترسی به جامعه همراهان پروژه نجات",
+    "پشتیبانی و پاسخگویی به سوالات"
+  ];
+
+  const targetAudience = [
+    {
+      icon: Users,
+      text: "افرادی که به دنبال راه‌های جدید کسب درآمد هستند"
+    },
+    {
+      icon: Clock,
+      text: "کسانی که وقت محدودی دارند و به برنامه مشخص نیاز دارند"
+    },
+    {
+      icon: Globe,
+      text: "علاقه‌مندان به کار با بازار بین‌المللی"
+    },
+    {
+      icon: Zap,
+      text: "افرادی که آماده تغییر و اقدام عملی هستند"
+    }
+  ];
+
+  const stats = [
+    { value: "+۵۰۰", label: "شرکت‌کننده فعال" },
+    { value: "۹۸٪", label: "رضایت کاربران" },
+    { value: "+۲۰", label: "ساعت محتوا" }
+  ];
+
   return (
     <MainLayout>
       <div className="min-h-screen bg-background" dir="rtl">
         
-        {/* Hero Section - Deeply Human, Minimal */}
-        <section className="relative min-h-[90vh] flex items-center justify-center px-4 py-20">
-          <div className="absolute inset-0 bg-gradient-to-b from-muted/30 to-background"></div>
+        {/* Hero Section */}
+        <section className="relative min-h-[85vh] flex items-center justify-center px-4 py-16 overflow-hidden">
+          {/* Background Elements */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-primary/10"></div>
+          <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
           
-          <div className="container relative z-10 max-w-3xl mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-            >
-              <p className="text-muted-foreground text-lg mb-6">
-                پروژه نجات | بدون مرز
-              </p>
-              
-              <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-foreground mb-8 leading-tight">
-                این دوره انگیزشی نیست.
-                <br />
-                <span className="text-muted-foreground font-normal">
-                  یک چالش کوتاه و جدی است.
-                </span>
-              </h1>
-              
-              <p className="text-xl md:text-2xl text-muted-foreground mb-12 leading-relaxed max-w-2xl mx-auto">
-                برای کسانی که زیر فشار اقتصادی هستند و بی‌صدا دنبال راه خروج می‌گردند.
-              </p>
-
-              <Button 
-                onClick={scrollToEnrollment}
-                size="lg"
-                className="h-14 px-10 text-lg rounded-full bg-foreground text-background hover:bg-foreground/90 transition-all"
-              >
-                می‌خوام شروع کنم
-                <ArrowDown className="mr-2 h-5 w-5" />
-              </Button>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* The Truth Section */}
-        <section className="py-24 px-4 bg-muted/20">
-          <div className="container max-w-2xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="space-y-8"
-            >
-              <p className="text-2xl md:text-3xl font-medium text-foreground leading-relaxed">
-                شاید تو هم مثل خیلی‌ها،
-              </p>
-              
-              <div className="space-y-6 text-lg md:text-xl text-muted-foreground leading-relaxed">
-                <p>
-                  هر شب با فکر فردا می‌خوابی.
-                </p>
-                <p>
-                  هر روز با خستگی از دیروز بیدار می‌شی.
-                </p>
-                <p>
-                  حقوقت کم‌تر از خرجت شده.
-                </p>
-                <p>
-                  ذخیره‌ات داره آب می‌ره.
-                </p>
-                <p>
-                  و آینده... مبهم‌تر از همیشه.
-                </p>
-              </div>
-
-              <div className="pt-8 border-t border-border">
-                <p className="text-xl md:text-2xl text-foreground font-medium">
-                  این پروژه قرار نیست کشور رو نجات بده.
-                  <br />
-                  <span className="text-primary">
-                    قراره تو رو نجات بده.
-                  </span>
-                </p>
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* What This Is Section */}
-        <section className="py-24 px-4 bg-background">
-          <div className="container max-w-3xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-2xl md:text-4xl font-bold text-foreground mb-4">
-                پروژه نجات چیست؟
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                یک چالش کوتاه‌مدت، بدون وعده‌های دروغین
-              </p>
-            </motion.div>
-
-            <div className="grid md:grid-cols-3 gap-8">
+          <div className="container relative z-10 max-w-5xl mx-auto">
+            <div className="text-center">
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                className="text-center p-6"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
               >
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
-                  <Compass className="h-8 w-8 text-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold mb-3">شفافیت</h3>
-                <p className="text-muted-foreground">
-                  یک نقشه ساده و واقعی برای شروع.
-                  <br />
-                  نه پیچیده، نه رویایی.
+                <Badge variant="secondary" className="mb-6 px-4 py-2 text-sm font-medium">
+                  آکادمی بدون مرز
+                </Badge>
+                
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
+                  پروژه نجات
+                </h1>
+                
+                <p className="text-xl md:text-2xl text-muted-foreground mb-4 max-w-2xl mx-auto">
+                  برنامه جامع کسب درآمد بین‌المللی
                 </p>
-              </motion.div>
+                
+                <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed">
+                  مسیر عملی برای ایجاد درآمد پایدار از بازارهای جهانی
+                </p>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-center p-6"
-              >
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
-                  <Heart className="h-8 w-8 text-foreground" />
+                {/* Stats */}
+                <div className="flex flex-wrap justify-center gap-8 mb-10">
+                  {stats.map((stat, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
+                      className="text-center"
+                    >
+                      <div className="text-3xl md:text-4xl font-bold text-primary">{stat.value}</div>
+                      <div className="text-sm text-muted-foreground">{stat.label}</div>
+                    </motion.div>
+                  ))}
                 </div>
-                <h3 className="text-lg font-semibold mb-3">همدلی</h3>
-                <p className="text-muted-foreground">
-                  می‌دونیم چقدر سخته.
-                  <br />
-                  این پروژه از جای درد نوشته شده.
-                </p>
-              </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                className="text-center p-6"
-              >
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
-                  <Shield className="h-8 w-8 text-foreground" />
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button 
+                    onClick={scrollToEnrollment}
+                    size="lg"
+                    className="h-14 px-8 text-lg rounded-xl shadow-lg shadow-primary/20"
+                  >
+                    ثبت‌نام در پروژه نجات
+                    <ChevronLeft className="mr-2 h-5 w-5" />
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    size="lg"
+                    onClick={() => document.querySelector('#features')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="h-14 px-8 text-lg rounded-xl"
+                  >
+                    اطلاعات بیشتر
+                    <ArrowDown className="mr-2 h-5 w-5" />
+                  </Button>
                 </div>
-                <h3 className="text-lg font-semibold mb-3">صداقت</h3>
-                <p className="text-muted-foreground">
-                  بدون هایپ.
-                  <br />
-                  بدون وعده پول‌دار شدن سریع.
-                </p>
               </motion.div>
             </div>
           </div>
         </section>
 
-        {/* Quote Section */}
-        <section className="py-24 px-4 bg-muted/30">
-          <div className="container max-w-2xl mx-auto text-center">
+        {/* Problem Statement */}
+        <section className="py-20 px-4 bg-muted/30">
+          <div className="container max-w-4xl mx-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
+              className="text-center"
             >
-              <Quote className="h-12 w-12 text-muted-foreground/30 mx-auto mb-8" />
-              
-              <blockquote className="text-2xl md:text-3xl font-medium text-foreground leading-relaxed mb-8">
-                «من خسته شدم از همه‌چی. فقط می‌خوام یه راهی پیدا کنم که بتونم نفس بکشم.»
-              </blockquote>
-              
-              <p className="text-muted-foreground">
-                — اگه این حرف آشناست، این پروژه برای توئه.
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
+                چالش‌های اقتصادی امروز
+              </h2>
+              <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-10">
+                در شرایط اقتصادی فعلی، بسیاری از افراد به دنبال راه‌حل‌های عملی برای ایجاد 
+                درآمد پایدار هستند. پروژه نجات با ارائه یک برنامه ساختارمند، مسیر روشنی 
+                را پیش روی شما قرار می‌دهد.
               </p>
+              
+              <div className="grid md:grid-cols-3 gap-6">
+                <Card className="border-border/50 bg-background">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+                      <TrendingUp className="h-6 w-6 text-destructive" />
+                    </div>
+                    <h3 className="font-semibold mb-2">کاهش ارزش درآمد</h3>
+                    <p className="text-sm text-muted-foreground">
+                      حقوق و درآمد ریالی دیگر پاسخگوی نیازها نیست
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="border-border/50 bg-background">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
+                      <Target className="h-6 w-6 text-amber-500" />
+                    </div>
+                    <h3 className="font-semibold mb-2">نبود مسیر مشخص</h3>
+                    <p className="text-sm text-muted-foreground">
+                      اطلاعات پراکنده و بدون برنامه عملی
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="border-border/50 bg-background">
+                  <CardContent className="p-6 text-center">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                      <Globe className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="font-semibold mb-2">دسترسی به بازار جهانی</h3>
+                    <p className="text-sm text-muted-foreground">
+                      نیاز به راهنمای عملی برای ورود به بازارهای بین‌المللی
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
             </motion.div>
           </div>
         </section>
 
-        {/* What You'll Get Section */}
-        <section className="py-24 px-4 bg-background">
-          <div className="container max-w-3xl mx-auto">
+        {/* Features Section */}
+        <section id="features" className="py-20 px-4 bg-background">
+          <div className="container max-w-5xl mx-auto">
             <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-center mb-16"
+              className="text-center mb-14"
             >
+              <Badge variant="outline" className="mb-4">
+                ویژگی‌های پروژه
+              </Badge>
               <h2 className="text-2xl md:text-4xl font-bold text-foreground mb-4">
-                چی بهت می‌دیم؟
+                چه چیزی در پروژه نجات یاد می‌گیرید؟
               </h2>
-              <p className="text-lg text-muted-foreground">
-                نه کتاب ۵۰۰ صفحه‌ای. نه ویدیوی ۱۰ ساعته.
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                یک برنامه کامل و ساختارمند برای شروع کسب درآمد بین‌المللی
               </p>
             </motion.div>
 
-            <div className="space-y-6">
-              {[
-                "یک نگاه واقع‌بینانه به وضعیت اقتصادی",
-                "راه‌های عملی برای شروع درآمدزایی بدون سرمایه زیاد",
-                "یک چک‌لیست کوتاه برای قدم اول",
-                "مسیرهای کسب‌وکار بین‌المللی که از ایران قابل انجامن",
-                "دسترسی به پشتیبانی و سوالات"
-              ].map((item, index) => (
+            <div className="grid md:grid-cols-2 gap-6">
+              {features.map((feature, index) => (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="flex items-start gap-4 p-5 rounded-xl bg-muted/30 border border-border/50"
                 >
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Check className="h-4 w-4 text-primary" />
-                  </div>
-                  <p className="text-lg text-foreground">{item}</p>
+                  <Card className="h-full border-border/50 hover:border-primary/30 transition-colors">
+                    <CardContent className="p-6 flex gap-5">
+                      <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <feature.icon className="h-7 w-7 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                        <p className="text-muted-foreground">{feature.description}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </motion.div>
               ))}
             </div>
           </div>
         </section>
 
+        {/* What's Included */}
+        <section className="py-20 px-4 bg-muted/30">
+          <div className="container max-w-4xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+              >
+                <Badge variant="outline" className="mb-4">
+                  محتوای پروژه
+                </Badge>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
+                  با ثبت‌نام چه چیزهایی دریافت می‌کنید؟
+                </h2>
+                <p className="text-muted-foreground mb-8 leading-relaxed">
+                  پروژه نجات شامل تمام ابزارها و راهنماهای لازم برای شروع مسیر 
+                  کسب درآمد بین‌المللی است.
+                </p>
+                
+                <ul className="space-y-4">
+                  {benefits.map((benefit, index) => (
+                    <motion.li
+                      key={index}
+                      initial={{ opacity: 0, x: -10 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.4, delay: index * 0.1 }}
+                      className="flex items-start gap-3"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Check className="h-4 w-4 text-primary" />
+                      </div>
+                      <span className="text-foreground">{benefit}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="grid grid-cols-2 gap-4"
+              >
+                <Card className="bg-background border-border/50">
+                  <CardContent className="p-5 text-center">
+                    <BookOpen className="h-8 w-8 text-primary mx-auto mb-3" />
+                    <h4 className="font-semibold mb-1">محتوای آموزشی</h4>
+                    <p className="text-sm text-muted-foreground">ویدیو و مستندات کامل</p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-background border-border/50">
+                  <CardContent className="p-5 text-center">
+                    <Award className="h-8 w-8 text-primary mx-auto mb-3" />
+                    <h4 className="font-semibold mb-1">گواهینامه</h4>
+                    <p className="text-sm text-muted-foreground">پس از تکمیل دوره</p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-background border-border/50">
+                  <CardContent className="p-5 text-center">
+                    <Users className="h-8 w-8 text-primary mx-auto mb-3" />
+                    <h4 className="font-semibold mb-1">جامعه همراهان</h4>
+                    <p className="text-sm text-muted-foreground">دسترسی به گروه خصوصی</p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-background border-border/50">
+                  <CardContent className="p-5 text-center">
+                    <MessageCircle className="h-8 w-8 text-primary mx-auto mb-3" />
+                    <h4 className="font-semibold mb-1">پشتیبانی</h4>
+                    <p className="text-sm text-muted-foreground">پاسخگویی به سوالات</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
         {/* Who Is This For */}
-        <section className="py-24 px-4 bg-muted/20">
-          <div className="container max-w-3xl mx-auto">
+        <section className="py-20 px-4 bg-background">
+          <div className="container max-w-4xl mx-auto">
             <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
+              className="text-center mb-14"
             >
-              <h2 className="text-2xl md:text-4xl font-bold text-foreground mb-12 text-center">
-                این پروژه برای کیه؟
+              <Badge variant="outline" className="mb-4">
+                مخاطبان پروژه
+              </Badge>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                این پروژه برای چه کسانی مناسب است؟
               </h2>
+            </motion.div>
 
-              <div className="grid sm:grid-cols-2 gap-6">
-                {[
-                  { icon: Users, text: "کسی که خسته شده از وضعیت مالیش" },
-                  { icon: Clock, text: "کسی که وقت زیادی برای دوره‌های طولانی نداره" },
-                  { icon: MapPin, text: "کسی که می‌خواد از ایران کار بین‌المللی کنه" },
-                  { icon: Heart, text: "کسی که دنبال یه امید واقعی می‌گرده" }
-                ].map((item, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className="flex items-center gap-4 p-5 bg-background rounded-xl border border-border/50"
-                  >
-                    <item.icon className="h-6 w-6 text-muted-foreground flex-shrink-0" />
-                    <p className="text-foreground">{item.text}</p>
-                  </motion.div>
-                ))}
+            <div className="grid sm:grid-cols-2 gap-5">
+              {targetAudience.map((item, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  <Card className="border-border/50 hover:border-primary/30 transition-colors">
+                    <CardContent className="p-5 flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <item.icon className="h-6 w-6 text-primary" />
+                      </div>
+                      <p className="text-foreground font-medium">{item.text}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Trust Section */}
+        <section className="py-16 px-4 bg-muted/30">
+          <div className="container max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="flex flex-wrap justify-center gap-8 md:gap-16"
+            >
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="h-6 w-6 text-primary" />
+                <span className="text-foreground font-medium">ضمانت بازگشت وجه</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Award className="h-6 w-6 text-primary" />
+                <span className="text-foreground font-medium">پشتیبانی ۲۴ ساعته</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Users className="h-6 w-6 text-primary" />
+                <span className="text-foreground font-medium">جامعه فعال</span>
               </div>
             </motion.div>
           </div>
         </section>
 
-        {/* The Message Section */}
-        <section className="py-24 px-4 bg-background">
-          <div className="container max-w-2xl mx-auto text-center">
+        {/* CTA Section */}
+        <section className="py-20 px-4 bg-primary/5">
+          <div className="container max-w-3xl mx-auto text-center">
             <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="space-y-8"
+              transition={{ duration: 0.6 }}
             >
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                یه حرف آخر
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                آماده شروع هستید؟
               </h2>
-              
-              <div className="text-lg md:text-xl text-muted-foreground leading-relaxed space-y-6">
-                <p>
-                  ما قول نمی‌دیم زندگیت یک‌شبه عوض بشه.
-                </p>
-                <p>
-                  قول نمی‌دیم میلیاردر بشی.
-                </p>
-                <p>
-                  فقط قول می‌دیم یه مسیر واضح و قابل فهم بهت نشون بدیم
-                  <br />
-                  که اگه بخوای، می‌تونی ازش شروع کنی.
-                </p>
-              </div>
-
-              <div className="pt-8">
-                <p className="text-xl md:text-2xl font-medium text-foreground">
-                  بقیه‌اش دست خودته.
-                </p>
-              </div>
+              <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
+                همین امروز به جمع شرکت‌کنندگان پروژه نجات بپیوندید و مسیر 
+                جدید کسب درآمد خود را آغاز کنید.
+              </p>
+              <Button 
+                onClick={scrollToEnrollment}
+                size="lg"
+                className="h-14 px-10 text-lg rounded-xl shadow-lg shadow-primary/20"
+              >
+                ثبت‌نام در پروژه نجات
+                <ChevronLeft className="mr-2 h-5 w-5" />
+              </Button>
             </motion.div>
           </div>
         </section>
 
         {/* Enrollment Section */}
-        <section id="enrollment-section" className="py-24 px-4 bg-muted/30">
+        <section id="enrollment-section" className="py-20 px-4 bg-background">
           <div className="container max-w-lg mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-center mb-10"
+              className="text-center mb-8"
             >
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-                آماده‌ای شروع کنی؟
+              <Badge variant="secondary" className="mb-4">
+                فرم ثبت‌نام
+              </Badge>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                ثبت‌نام در پروژه نجات
               </h2>
               <p className="text-muted-foreground">
-                ثبت‌نام رایگانه. تعهدی نداری. فقط شروع کن.
+                اطلاعات خود را وارد کنید تا دسترسی دریافت کنید
               </p>
             </motion.div>
 
@@ -371,25 +493,28 @@ const RescueProjectLanding = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <DirectEnrollmentForm 
-                courseSlug={courseSlug}
-                courseName="پروژه نجات"
-                className="border border-border/50 shadow-lg"
-              >
-                <Heart className="ml-2 h-5 w-5" />
-                شروع پروژه نجات
-              </DirectEnrollmentForm>
+              <Card className="border-border/50 shadow-xl">
+                <CardContent className="p-6">
+                  <DirectEnrollmentForm 
+                    courseSlug={courseSlug}
+                    courseName="پروژه نجات"
+                  >
+                    ثبت‌نام و دریافت دسترسی
+                  </DirectEnrollmentForm>
+                </CardContent>
+              </Card>
             </motion.div>
           </div>
         </section>
 
-        {/* Footer Note */}
-        <section className="py-16 px-4 bg-background border-t border-border/30">
-          <div className="container max-w-2xl mx-auto text-center">
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              پروژه نجات بخشی از آکادمی بدون مرز است.
-              <br />
-              این پروژه با هدف کمک به افرادی طراحی شده که در شرایط اقتصادی سخت هستند و به دنبال راه‌حل‌های واقعی می‌گردند.
+        {/* Footer */}
+        <section className="py-12 px-4 bg-muted/30 border-t border-border/30">
+          <div className="container max-w-3xl mx-auto text-center">
+            <p className="text-sm text-muted-foreground">
+              پروژه نجات بخشی از مجموعه آموزشی <strong>آکادمی بدون مرز</strong> است.
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              تمامی حقوق محفوظ است © ۱۴۰۳
             </p>
           </div>
         </section>
