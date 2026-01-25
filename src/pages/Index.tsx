@@ -6,6 +6,7 @@ import QuickAccess from "@/components/QuickAccess";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
 import HubBanner from "@/components/HubBanner";
+import RescueProjectBanner from "@/components/RescueProjectBanner";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -377,6 +378,7 @@ const Index = () => {
       
       <Hero />
       <QuickAccess />
+      <RescueProjectBanner />
       <HubBanner />
 
       {/* Academy Students Statistics Section */}
