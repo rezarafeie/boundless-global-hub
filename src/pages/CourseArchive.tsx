@@ -3,6 +3,7 @@ import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
+import RescueProjectBanner from "@/components/RescueProjectBanner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
@@ -160,6 +161,8 @@ const CourseArchive = () => {
         ctaLink="#courses"
         backgroundType="glow"
       />
+      
+      <RescueProjectBanner />
       
       <section id="courses" className="py-16">
         <div className="container">
