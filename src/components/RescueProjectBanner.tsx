@@ -6,8 +6,9 @@ import { Shield, ArrowRight, Target, Compass } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const RescueProjectBanner = () => {
+  console.log('RescueProjectBanner is rendering');
   return (
-    <section className="py-8">
+    <section className="py-8 bg-background">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
