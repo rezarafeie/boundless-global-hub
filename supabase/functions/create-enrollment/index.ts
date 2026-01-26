@@ -164,6 +164,47 @@ Deno.serve(async (req) => {
           .eq('id', existingEnrollmentByEmail.id)
           .single();
 
+        // Get course and user data for webhook
+        const { data: courseData } = await supabase
+          .from('courses')
+          .select('*')
+          .eq('id', course_id)
+          .single();
+
+        const { data: userData } = await supabase
+          .from('chat_users')
+          .select('*')
+          .eq('id', existingEnrollmentByEmail.chat_user_id || resolvedChatUserId)
+          .single();
+
+        // Send webhook for existing enrollment re-registration attempt
+        try {
+          console.log('📤 Sending enrollment_existing webhook...');
+          const webhookPayload = {
+            event_type: 'enrollment_created',
+            timestamp: new Date().toISOString(),
+            data: {
+              enrollment: fullEnrollment,
+              user: userData || { name: full_name, email, phone, country_code: country_code || '+98' },
+              course: courseData,
+              is_existing_enrollment: true,
+              is_free_enrollment: fullEnrollment.payment_amount === 0
+            }
+          };
+
+          await fetch(`${supabaseUrl}/functions/v1/send-enrollment-webhook`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ eventType: 'enrollment_created', payload: webhookPayload })
+          });
+          console.log('✅ Existing enrollment webhook sent');
+        } catch (webhookError) {
+          console.error('❌ Webhook error (non-blocking):', webhookError);
+        }
+
         return new Response(
           JSON.stringify({
             success: true,
@@ -193,6 +234,47 @@ Deno.serve(async (req) => {
           .select('*')
           .eq('id', existingEnrollmentByPhone.id)
           .single();
+
+        // Get course and user data for webhook
+        const { data: courseData } = await supabase
+          .from('courses')
+          .select('*')
+          .eq('id', course_id)
+          .single();
+
+        const { data: userData } = await supabase
+          .from('chat_users')
+          .select('*')
+          .eq('id', existingEnrollmentByPhone.chat_user_id || resolvedChatUserId)
+          .single();
+
+        // Send webhook for existing enrollment re-registration attempt
+        try {
+          console.log('📤 Sending enrollment_existing webhook...');
+          const webhookPayload = {
+            event_type: 'enrollment_created',
+            timestamp: new Date().toISOString(),
+            data: {
+              enrollment: fullEnrollment,
+              user: userData || { name: full_name, email, phone, country_code: country_code || '+98' },
+              course: courseData,
+              is_existing_enrollment: true,
+              is_free_enrollment: fullEnrollment.payment_amount === 0
+            }
+          };
+
+          await fetch(`${supabaseUrl}/functions/v1/send-enrollment-webhook`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ eventType: 'enrollment_created', payload: webhookPayload })
+          });
+          console.log('✅ Existing enrollment webhook sent');
+        } catch (webhookError) {
+          console.error('❌ Webhook error (non-blocking):', webhookError);
+        }
 
         return new Response(
           JSON.stringify({
