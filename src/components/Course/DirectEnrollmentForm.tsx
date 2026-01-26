@@ -139,7 +139,8 @@ const DirectEnrollmentForm: React.FC<DirectEnrollmentFormProps> = ({
         country_code: formData.countryCode,
         payment_amount: 0,
         payment_method: 'free',
-        payment_status: 'completed'
+        payment_status: 'completed',
+        force_create: true // Always create new enrollment record, even if user already enrolled
       };
 
       console.log('Creating enrollment via edge function:', enrollmentData);
