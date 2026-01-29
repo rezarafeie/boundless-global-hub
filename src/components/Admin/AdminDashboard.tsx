@@ -21,6 +21,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import AIGreetingBanner from './AIGreetingBanner';
+import PopularCoursesCard from './PopularCoursesCard';
 
 interface DashboardStats {
   totalRevenue: number;
@@ -451,48 +452,7 @@ const AdminDashboard: React.FC = () => {
         </Card>
 
         {/* Popular Courses */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              دوره‌های محبوب
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-16 bg-muted rounded-lg animate-pulse"></div>
-                ))}
-              </div>
-            ) : stats.popularCourses.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                هنوز دوره‌ای وجود ندارد
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {stats.popularCourses.map((course, index) => {
-                  const enrollmentCount = course.enrollments?.length || 0;
-                  
-                  return (
-                    <div key={course.id} className="flex items-center justify-between p-4 bg-muted rounded-lg hover:bg-muted/80 transition-colors">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium truncate">{course.title}</h4>
-                        <p className="text-sm text-muted-foreground">دوره فعال</p>
-                      </div>
-                      <div className="text-left">
-                        <p className="font-medium">{enrollmentCount} ثبت‌نام</p>
-                        <Badge variant="secondary">
-                          #{index + 1}
-                        </Badge>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <PopularCoursesCard loading={loading} />
       </div>
 
       {/* Pending Payments Section */}
