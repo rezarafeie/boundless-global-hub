@@ -749,6 +749,23 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       const lastNameToLink = lastName.trim();
       
       console.log('🔗 Linking email to user:', emailToLink, 'User ID:', userToUpdate.id);
+
+      // Check if another user already has this email
+      if (emailToLink) {
+        const { data: existingEmailUser } = await supabase
+          .from('chat_users')
+          .select('id, name, phone')
+          .eq('email', emailToLink)
+          .neq('id', userToUpdate.id)
+          .maybeSingle();
+
+        if (existingEmailUser) {
+          console.warn('⚠️ Email already used by another user:', existingEmailUser.id);
+          throw new Error(
+            `این ایمیل (${emailToLink}) قبلاً توسط حساب دیگری استفاده شده است. لطفاً با پشتیبانی تماس بگیرید.`
+          );
+        }
+      }
       
       const { error: updateError } = await supabase
         .from('chat_users')
