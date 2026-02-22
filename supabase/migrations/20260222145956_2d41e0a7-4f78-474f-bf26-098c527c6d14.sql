@@ -1,0 +1,1 @@
+UPDATE chat_users SET country_code = '+49' WHERE id = 36592;
