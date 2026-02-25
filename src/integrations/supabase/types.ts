@@ -4704,39 +4704,283 @@ export type Database = {
       }
       webinar_entries: {
         Row: {
+          allow_late_responses: boolean
           created_at: string
           description: string | null
+          ended_at: string | null
+          host_name: string | null
           id: string
+          iframe_embed_code: string | null
           slug: string
           start_date: string
+          status: string
           telegram_channel_link: string | null
           title: string
           updated_at: string
           webinar_link: string
         }
         Insert: {
+          allow_late_responses?: boolean
           created_at?: string
           description?: string | null
+          ended_at?: string | null
+          host_name?: string | null
           id?: string
+          iframe_embed_code?: string | null
           slug: string
           start_date: string
+          status?: string
           telegram_channel_link?: string | null
           title: string
           updated_at?: string
           webinar_link: string
         }
         Update: {
+          allow_late_responses?: boolean
           created_at?: string
           description?: string | null
+          ended_at?: string | null
+          host_name?: string | null
           id?: string
+          iframe_embed_code?: string | null
           slug?: string
           start_date?: string
+          status?: string
           telegram_channel_link?: string | null
           title?: string
           updated_at?: string
           webinar_link?: string
         }
         Relationships: []
+      }
+      webinar_interactions: {
+        Row: {
+          activated_at: string | null
+          created_at: string
+          ended_at: string | null
+          id: string
+          options: Json | null
+          order_index: number
+          question: string | null
+          settings: Json
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          webinar_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          options?: Json | null
+          order_index?: number
+          question?: string | null
+          settings?: Json
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+          webinar_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          options?: Json | null
+          order_index?: number
+          question?: string | null
+          settings?: Json
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          webinar_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_interactions_webinar_id_fkey"
+            columns: ["webinar_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webinar_participants: {
+        Row: {
+          display_name: string | null
+          id: string
+          interactions_completed: number
+          is_active_badge: boolean
+          joined_at: string
+          last_seen_at: string | null
+          phone: string
+          webinar_id: string
+        }
+        Insert: {
+          display_name?: string | null
+          id?: string
+          interactions_completed?: number
+          is_active_badge?: boolean
+          joined_at?: string
+          last_seen_at?: string | null
+          phone: string
+          webinar_id: string
+        }
+        Update: {
+          display_name?: string | null
+          id?: string
+          interactions_completed?: number
+          is_active_badge?: boolean
+          joined_at?: string
+          last_seen_at?: string | null
+          phone?: string
+          webinar_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_participants_webinar_id_fkey"
+            columns: ["webinar_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webinar_question_upvotes: {
+        Row: {
+          created_at: string
+          id: string
+          participant_id: string
+          question_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          participant_id: string
+          question_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          participant_id?: string
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_question_upvotes_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webinar_question_upvotes_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webinar_questions: {
+        Row: {
+          created_at: string
+          id: string
+          is_answered: boolean
+          is_featured: boolean
+          is_hidden: boolean
+          is_pinned: boolean
+          participant_id: string
+          question_text: string
+          updated_at: string
+          upvotes: number
+          webinar_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_answered?: boolean
+          is_featured?: boolean
+          is_hidden?: boolean
+          is_pinned?: boolean
+          participant_id: string
+          question_text: string
+          updated_at?: string
+          upvotes?: number
+          webinar_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_answered?: boolean
+          is_featured?: boolean
+          is_hidden?: boolean
+          is_pinned?: boolean
+          participant_id?: string
+          question_text?: string
+          updated_at?: string
+          upvotes?: number
+          webinar_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_questions_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webinar_questions_webinar_id_fkey"
+            columns: ["webinar_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webinar_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          participant_id: string
+          reaction_type: string
+          webinar_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          participant_id: string
+          reaction_type: string
+          webinar_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          participant_id?: string
+          reaction_type?: string
+          webinar_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_reactions_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webinar_reactions_webinar_id_fkey"
+            columns: ["webinar_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       webinar_registrations: {
         Row: {
@@ -4766,6 +5010,51 @@ export type Database = {
             columns: ["webinar_id"]
             isOneToOne: false
             referencedRelation: "webinar_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webinar_responses: {
+        Row: {
+          answer: Json
+          created_at: string
+          id: string
+          interaction_id: string
+          is_correct: boolean | null
+          participant_id: string
+          points: number | null
+        }
+        Insert: {
+          answer: Json
+          created_at?: string
+          id?: string
+          interaction_id: string
+          is_correct?: boolean | null
+          participant_id: string
+          points?: number | null
+        }
+        Update: {
+          answer?: Json
+          created_at?: string
+          id?: string
+          interaction_id?: string
+          is_correct?: boolean | null
+          participant_id?: string
+          points?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_responses_interaction_id_fkey"
+            columns: ["interaction_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_interactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webinar_responses_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_participants"
             referencedColumns: ["id"]
           },
         ]
