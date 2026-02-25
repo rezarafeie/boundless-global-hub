@@ -6,10 +6,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Plus, Edit, Trash2, Users, Download, ExternalLink } from 'lucide-react';
+import { Calendar, Plus, Edit, Trash2, Users, Download, ExternalLink, Radio } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 interface Webinar {
   id: string;
@@ -38,6 +39,7 @@ interface WebinarRegistration {
 
 const WebinarManagement: React.FC = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [webinars, setWebinars] = useState<Webinar[]>([]);
   const [registrations, setRegistrations] = useState<WebinarRegistration[]>([]);
   const [entries, setEntries] = useState<WebinarSignup[]>([]);
@@ -47,6 +49,8 @@ const WebinarManagement: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isRegistrationsModalOpen, setIsRegistrationsModalOpen] = useState(false);
   const [isEntriesModalOpen, setIsEntriesModalOpen] = useState(false);
+  const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
+  const [participants, setParticipants] = useState<any[]>([]);
   const [editingWebinar, setEditingWebinar] = useState<Webinar | null>(null);
   
   const [formData, setFormData] = useState({
@@ -74,6 +78,12 @@ const WebinarManagement: React.FC = () => {
     setSelectedWebinarTitle(webinarTitle);
     setIsEntriesModalOpen(true);
     await fetchEntries(webinarId);
+  };
+
+  const openParticipantsModal = async (webinarId: string, webinarTitle: string) => {
+    setSelectedWebinarTitle(webinarTitle);
+    setIsParticipantsModalOpen(true);
+    await fetchParticipants(webinarId);
   };
 
   const fetchWebinars = async () => {
@@ -155,6 +165,20 @@ const WebinarManagement: React.FC = () => {
     }
   };
 
+  const fetchParticipants = async (webinarId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('webinar_participants')
+        .select('*')
+        .eq('webinar_id', webinarId)
+        .order('joined_at', { ascending: false });
+      if (error) throw error;
+      setParticipants(data || []);
+    } catch (error) {
+      console.error('Error fetching participants:', error);
+    }
+  };
+
   const generateSlug = (title: string) => {
     return title
       .toLowerCase()
@@ -221,22 +245,7 @@ const WebinarManagement: React.FC = () => {
   };
 
   const handleEdit = (webinar: Webinar) => {
-    setEditingWebinar(webinar);
-    
-    const utcDate = new Date(webinar.start_date);
-    const tehranDate = new Date(utcDate.getTime() + (3.5 * 60 * 60 * 1000));
-    
-    setFormData({
-      title: webinar.title,
-      slug: webinar.slug,
-      start_date: format(tehranDate, 'yyyy-MM-dd\'T\'HH:mm'),
-      webinar_link: webinar.webinar_link,
-      description: webinar.description || '',
-      telegram_channel_link: webinar.telegram_channel_link || '',
-      iframe_embed_code: (webinar as any).iframe_embed_code || '',
-      host_name: (webinar as any).host_name || ''
-    });
-    setIsCreateModalOpen(true);
+    navigate(`/enroll/admin/webinar/${webinar.id}/edit`);
   };
 
   const handleDelete = async (webinarId: string) => {
@@ -524,7 +533,7 @@ const WebinarManagement: React.FC = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex justify-center gap-1">
+                          <div className="flex justify-center gap-1 flex-wrap">
                             <Button 
                               size="sm" 
                               variant="ghost"
@@ -540,6 +549,14 @@ const WebinarManagement: React.FC = () => {
                             >
                               <Users className="h-4 w-4 ml-1" />
                               ورودها
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => openParticipantsModal(webinar.id, webinar.title)}
+                            >
+                              <Radio className="h-4 w-4 ml-1" />
+                              شرکت‌کنندگان زنده
                             </Button>
                           </div>
                         </TableCell>
@@ -660,7 +677,46 @@ const WebinarManagement: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
+      {/* Participants Modal */}
+      <Dialog open={isParticipantsModalOpen} onOpenChange={setIsParticipantsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedWebinarTitle} - شرکت‌کنندگان زنده</DialogTitle>
+          </DialogHeader>
+          
+          {participants.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+              <p className="text-lg font-medium">هیچ شرکت‌کننده‌ای یافت نشد</p>
             </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">تعداد کل: {participants.length} نفر</p>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ردیف</TableHead>
+                    <TableHead>شماره تلفن</TableHead>
+                    <TableHead>نام نمایشی</TableHead>
+                    <TableHead>زمان ورود</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {participants.map((p: any, index: number) => (
+                    <TableRow key={p.id}>
+                      <TableCell>{index + 1}</TableCell>
+                      <TableCell dir="ltr" className="text-right">{p.phone}</TableCell>
+                      <TableCell>{p.display_name || '-'}</TableCell>
+                      <TableCell>{format(new Date(p.joined_at), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
           )}
         </DialogContent>
       </Dialog>
