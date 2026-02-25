@@ -57,7 +57,7 @@ export const useWebinarParticipant = (webinarId: string | undefined) => {
 
     const loadParticipant = async () => {
       if (!webinarId) {
-        setLoading(false);
+        // Don't set loading to false — keep waiting until webinarId is provided
         return;
       }
 
