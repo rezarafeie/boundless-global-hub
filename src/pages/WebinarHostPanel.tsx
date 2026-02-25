@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,6 +79,7 @@ const WebinarHostPanel: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { toast } = useToast();
   const { role, loading: roleLoading } = useUserRole();
+  const { user: authUser } = useAuth();
   const [webinar, setWebinar] = useState<Webinar | null>(null);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -174,7 +176,11 @@ const WebinarHostPanel: React.FC = () => {
     return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
   }
 
-  if (!role || role === 'student') {
+  // Check access: allow admin role OR messenger admin
+  const isMessengerAdmin = authUser?.isMessengerUser && authUser?.messengerData?.is_messenger_admin;
+  const hasAccess = role === 'admin' || role === 'sales_manager' || isMessengerAdmin;
+
+  if (!hasAccess) {
     return <div className="text-center py-20 text-muted-foreground">دسترسی غیرمجاز</div>;
   }
 
