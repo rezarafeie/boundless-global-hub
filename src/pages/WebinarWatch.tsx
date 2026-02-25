@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Phone, Users, ChevronDown, RefreshCw, AlertCircle } from 'lucide-react';
+import { Users, ChevronDown, RefreshCw, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useWebinarParticipant } from '@/hooks/useWebinarParticipant';
@@ -30,17 +29,15 @@ interface Webinar {
 
 const WebinarWatch: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [webinar, setWebinar] = useState<Webinar | null>(null);
   const [loading, setLoading] = useState(true);
-  const [phoneInput, setPhoneInput] = useState('');
-  const [nameInput, setNameInput] = useState('');
-  const [joining, setJoining] = useState(false);
   const [iframeFailed, setIframeFailed] = useState(false);
   const [previousOpen, setPreviousOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'interactions' | 'qa'>('interactions');
 
-  const { participant, loading: participantLoading, joinWebinar } = useWebinarParticipant(webinar?.id);
+  const { participant, loading: participantLoading } = useWebinarParticipant(webinar?.id);
   const {
     activeInteraction,
     previousInteractions,
@@ -53,6 +50,13 @@ const WebinarWatch: React.FC = () => {
   useEffect(() => {
     if (slug) fetchWebinar();
   }, [slug]);
+
+  // Redirect to login if not a participant
+  useEffect(() => {
+    if (!loading && !participantLoading && webinar && !participant) {
+      navigate(`/webinar/${slug}/login?redirect=live`, { replace: true });
+    }
+  }, [loading, participantLoading, webinar, participant, slug, navigate]);
 
   const fetchWebinar = async () => {
     try {
@@ -70,16 +74,6 @@ const WebinarWatch: React.FC = () => {
     }
   };
 
-  const handleJoin = async () => {
-    if (!phoneInput.trim()) return;
-    setJoining(true);
-    const result = await joinWebinar(phoneInput, nameInput || undefined);
-    if (!result) {
-      toast({ title: 'خطا در ورود', variant: 'destructive' });
-    }
-    setJoining(false);
-  };
-
   if (loading || participantLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -89,56 +83,14 @@ const WebinarWatch: React.FC = () => {
   }
 
   if (!webinar) return <Navigate to="/404" replace />;
+  if (!participant) return null; // Will redirect via useEffect
 
   const isLive = webinar.status === 'live';
   const isEnded = webinar.status === 'ended';
 
-  // If not joined, show join form
-  if (!participant) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md border-0 shadow-2xl">
-          <CardContent className="p-8 space-y-6">
-            <div className="text-center space-y-2">
-              <h1 className="text-2xl font-bold text-foreground">{webinar.title}</h1>
-              {isLive && <Badge className="bg-red-500 text-white">🔴 پخش زنده</Badge>}
-              {isEnded && <Badge variant="secondary">پایان‌یافته</Badge>}
-              <p className="text-sm text-muted-foreground">برای ورود شماره تلفن خود را وارد کنید</p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="relative">
-                <Phone className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={phoneInput}
-                  onChange={e => setPhoneInput(e.target.value)}
-                  placeholder="+989123456789"
-                  dir="ltr"
-                  className="pr-10"
-                  type="tel"
-                />
-              </div>
-              <Input
-                value={nameInput}
-                onChange={e => setNameInput(e.target.value)}
-                placeholder="نام نمایشی (اختیاری)"
-                dir="rtl"
-              />
-              <Button className="w-full" onClick={handleJoin} disabled={joining || !phoneInput.trim()}>
-                {joining ? 'در حال ورود...' : 'ورود به وبینار'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Calculate progress
   const totalInteractions = (activeInteraction ? 1 : 0) + previousInteractions.length;
   const myResponseCount = responses.filter(r => r.participant_id === participant.id).length;
 
-  // Extract iframe src from embed code
   const getIframeSrc = () => {
     if (!webinar.iframe_embed_code) return webinar.webinar_link;
     const match = webinar.iframe_embed_code.match(/src="([^"]+)"/);
@@ -196,7 +148,6 @@ const WebinarWatch: React.FC = () => {
               </div>
             </Card>
 
-            {/* Reactions Bar - Below video on desktop */}
             <div className="mt-3">
               <ReactionBar
                 webinarId={webinar.id}
@@ -208,7 +159,6 @@ const WebinarWatch: React.FC = () => {
 
           {/* Interaction Panel */}
           <div className="lg:col-span-1 space-y-4">
-            {/* Tab switcher */}
             <div className="flex gap-2 border-b pb-2">
               <Button
                 variant={activeTab === 'interactions' ? 'default' : 'ghost'}
@@ -231,7 +181,6 @@ const WebinarWatch: React.FC = () => {
 
             {activeTab === 'interactions' ? (
               <div className="space-y-4">
-                {/* Active Interaction */}
                 {activeInteraction ? (
                   <div>
                     <p className="text-xs text-muted-foreground mb-2">در حال دریافت تعامل جدید…</p>
@@ -252,7 +201,6 @@ const WebinarWatch: React.FC = () => {
                   </div>
                 )}
 
-                {/* Previous Interactions */}
                 {previousInteractions.length > 0 && (
                   <Collapsible open={previousOpen} onOpenChange={setPreviousOpen}>
                     <CollapsibleTrigger asChild>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,14 +17,26 @@ interface Webinar {
   webinar_link: string;
   description: string | null;
   created_at: string;
+  status: string;
 }
 
 interface SignupFormData {
   mobile_number: string;
+  display_name: string;
 }
+
+const normalizePhoneNumber = (phone: string): string => {
+  const cleaned = phone.replace(/[^\d+]/g, '');
+  if (cleaned.startsWith('+')) return cleaned;
+  if (cleaned.startsWith('00')) return '+' + cleaned.substring(2);
+  if (cleaned.startsWith('0')) return '+98' + cleaned.substring(1);
+  return '+' + cleaned;
+};
 
 const WebinarLogin: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || 'webinar'; // 'webinar' or 'live'
   const { toast } = useToast();
   const [webinar, setWebinar] = useState<Webinar | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,10 +45,19 @@ const WebinarLogin: React.FC = () => {
   const { register, handleSubmit, formState: { errors }, reset } = useForm<SignupFormData>();
 
   useEffect(() => {
-    if (slug) {
-      fetchWebinar();
-    }
+    if (slug) fetchWebinar();
   }, [slug]);
+
+  // Check if already logged in for live mode
+  useEffect(() => {
+    if (webinar && redirectTo === 'live') {
+      const storedPhone = localStorage.getItem(`webinar_phone_${webinar.id}`);
+      if (storedPhone) {
+        // Already joined, redirect to live
+        window.location.href = `/webinar/${slug}/live`;
+      }
+    }
+  }, [webinar, redirectTo, slug]);
 
   const fetchWebinar = async () => {
     try {
@@ -47,59 +68,27 @@ const WebinarLogin: React.FC = () => {
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          setWebinar(null);
-        } else {
-          throw error;
-        }
+        if (error.code === 'PGRST116') setWebinar(null);
+        else throw error;
       } else {
         setWebinar(data);
       }
     } catch (error) {
       console.error('Error fetching webinar:', error);
-      toast({
-        title: "خطا",
-        description: "خطا در دریافت اطلاعات وبینار",
-        variant: "destructive"
-      });
+      toast({ title: "خطا", description: "خطا در دریافت اطلاعات وبینار", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-
-  const normalizePhoneNumber = (phone: string): string => {
-    // Remove all non-digit and non-plus characters
-    const cleaned = phone.replace(/[^\d+]/g, '');
-    
-    // If it already has a +, keep it as is
-    if (cleaned.startsWith('+')) {
-      return cleaned;
-    }
-    
-    // If it starts with 00, convert to +
-    if (cleaned.startsWith('00')) {
-      return '+' + cleaned.substring(2);
-    }
-    
-    // If it starts with 0 (Iranian number), add +98
-    if (cleaned.startsWith('0')) {
-      return '+98' + cleaned.substring(1);
-    }
-    
-    // If no prefix, assume it needs + at the start
-    return '+' + cleaned;
-  };
-
   const onSubmit = async (data: SignupFormData) => {
     if (!webinar) return;
-    
     setSubmitting(true);
     
     try {
       const normalizedPhone = normalizePhoneNumber(data.mobile_number);
       
-      // Check if already registered
+      // Save to webinar_signups (legacy login tracking)
       const { data: existingSignup, error: checkError } = await supabase
         .from('webinar_signups')
         .select('id')
@@ -107,72 +96,66 @@ const WebinarLogin: React.FC = () => {
         .eq('mobile_number', normalizedPhone)
         .single();
 
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
+      if (checkError && checkError.code !== 'PGRST116') throw checkError;
+
+      if (!existingSignup) {
+        const { error: insertError } = await supabase
+          .from('webinar_signups')
+          .insert([{ webinar_id: webinar.id, mobile_number: normalizedPhone }]);
+        if (insertError) throw insertError;
       }
 
-      if (existingSignup) {
-        toast({
-          title: "اطلاع",
-          description: "این شماره قبلاً در وبینار ثبت‌نام شده است",
-          variant: "default"
-        });
-        window.location.href = webinar.webinar_link;
-        return;
+      // Also save to webinar_participants (unified system)
+      const { data: participant, error: participantError } = await supabase
+        .from('webinar_participants')
+        .upsert(
+          { webinar_id: webinar.id, phone: normalizedPhone, display_name: data.display_name || null },
+          { onConflict: 'webinar_id,phone' }
+        )
+        .select()
+        .single();
+
+      if (participantError) {
+        console.error('Error saving participant:', participantError);
       }
 
-      // Insert new signup
-      const { error: insertError } = await supabase
-        .from('webinar_signups')
-        .insert([{
-          webinar_id: webinar.id,
-          mobile_number: normalizedPhone
-        }]);
+      // Store phone in localStorage for session persistence
+      localStorage.setItem(`webinar_phone_${webinar.id}`, normalizedPhone);
 
-      if (insertError) throw insertError;
-
-      toast({
-        title: "موفقیت",
-        description: "در حال انتقال به وبینار...",
-      });
-
-      // Send webhook directly to Make.com
+      // Send webhook
       try {
         const webhookUrl = 'https://hook.us1.make.com/v8w9f6i37sca42qt1g1mwng1dt1xh616';
-        const webhookPayload = {
-          webinar_title: webinar.title,
-          webinar_id: webinar.id,
-          webinar_slug: webinar.slug,
-          webinar_start_date: webinar.start_date,
-          mobile_number: normalizedPhone,
-          login_time: new Date().toISOString(),
-          event_type: 'webinar_login'
-        };
-
         await fetch(webhookUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(webhookPayload)
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            webinar_title: webinar.title,
+            webinar_id: webinar.id,
+            webinar_slug: webinar.slug,
+            webinar_start_date: webinar.start_date,
+            mobile_number: normalizedPhone,
+            login_time: new Date().toISOString(),
+            event_type: 'webinar_login'
+          })
         });
-
-        console.log('Webhook sent successfully:', webhookPayload);
       } catch (webhookError) {
         console.error('Failed to send webhook:', webhookError);
       }
-      
+
+      toast({ title: "موفقیت", description: "در حال انتقال..." });
+
+      // Redirect based on context
       setTimeout(() => {
-        window.location.href = webinar.webinar_link;
-      }, 1000);
+        if (redirectTo === 'live') {
+          window.location.href = `/webinar/${slug}/live`;
+        } else {
+          window.location.href = webinar.webinar_link;
+        }
+      }, 800);
 
     } catch (error) {
       console.error('Error submitting signup:', error);
-      toast({
-        title: "خطا",
-        description: "خطا در ثبت‌نام. لطفاً دوباره تلاش کنید",
-        variant: "destructive"
-      });
+      toast({ title: "خطا", description: "خطا در ورود. لطفاً دوباره تلاش کنید", variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -186,9 +169,9 @@ const WebinarLogin: React.FC = () => {
     );
   }
 
-  if (!webinar) {
-    return <Navigate to="/404" replace />;
-  }
+  if (!webinar) return <Navigate to="/404" replace />;
+
+  const isLive = webinar.status === 'live';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/10 flex items-center justify-center p-4">
@@ -200,9 +183,7 @@ const WebinarLogin: React.FC = () => {
             </div>
             
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-foreground">
-                {webinar.title}
-              </h1>
+              <h1 className="text-2xl font-bold text-foreground">{webinar.title}</h1>
               <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
                 <span>
@@ -213,6 +194,9 @@ const WebinarLogin: React.FC = () => {
                   })}
                 </span>
               </div>
+              {isLive && redirectTo === 'live' && (
+                <span className="inline-block bg-red-500 text-white text-xs px-3 py-1 rounded-full animate-pulse">🔴 پخش زنده</span>
+              )}
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -224,9 +208,7 @@ const WebinarLogin: React.FC = () => {
                       required: 'شماره تلفن الزامی است',
                       validate: (value) => {
                         const cleaned = value.replace(/[^\d+]/g, '');
-                        if (cleaned.length < 8) {
-                          return 'شماره تلفن باید حداقل ۸ رقم باشد';
-                        }
+                        if (cleaned.length < 8) return 'شماره تلفن باید حداقل ۸ رقم باشد';
                         return true;
                       }
                     })}
@@ -237,22 +219,28 @@ const WebinarLogin: React.FC = () => {
                   />
                 </div>
                 {errors.mobile_number && (
-                  <p className="text-sm text-destructive">
-                    {errors.mobile_number.message}
-                  </p>
+                  <p className="text-sm text-destructive">{errors.mobile_number.message}</p>
                 )}
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-12 text-lg font-semibold" 
-                disabled={submitting}
-              >
+              {redirectTo === 'live' && (
+                <div>
+                  <Input
+                    {...register('display_name')}
+                    placeholder="نام نمایشی (اختیاری)"
+                    dir="rtl"
+                  />
+                </div>
+              )}
+
+              <Button type="submit" className="w-full h-12 text-lg font-semibold" disabled={submitting}>
                 {submitting ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     در حال پردازش...
                   </div>
+                ) : redirectTo === 'live' ? (
+                  'ورود به پخش زنده'
                 ) : (
                   'ورود به وبینار'
                 )}
@@ -260,7 +248,10 @@ const WebinarLogin: React.FC = () => {
             </form>
 
             <p className="text-xs text-muted-foreground text-center leading-relaxed">
-              شماره تلفن خود را وارد کنید و روی دکمه ورود به وبینار بزنید و در صفحه باز شده روی دکمه ورود به عنوان میهمان کلیک کنید
+              {redirectTo === 'live'
+                ? 'شماره تلفن خود را وارد کنید تا وارد صفحه پخش زنده شوید'
+                : 'شماره تلفن خود را وارد کنید و روی دکمه ورود به وبینار بزنید و در صفحه باز شده روی دکمه ورود به عنوان میهمان کلیک کنید'
+              }
             </p>
           </CardContent>
         </Card>
