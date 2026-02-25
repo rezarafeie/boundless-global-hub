@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Navigate, useSearchParams } from 'react-router-dom';
+import { useParams, Navigate, useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,7 +36,8 @@ const normalizePhoneNumber = (phone: string): string => {
 const WebinarLogin: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || 'webinar'; // 'webinar' or 'live'
+  const redirectTo = searchParams.get('redirect') || 'webinar';
+  const navigateTo = useNavigate();
   const { toast } = useToast();
   const [webinar, setWebinar] = useState<Webinar | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,15 +49,29 @@ const WebinarLogin: React.FC = () => {
     if (slug) fetchWebinar();
   }, [slug]);
 
-  // Check if already logged in for live mode
+  // Check if already logged in for live mode - verify participant exists in DB
   useEffect(() => {
-    if (webinar && redirectTo === 'live') {
+    const checkExistingSession = async () => {
+      if (!webinar || redirectTo !== 'live') return;
       const storedPhone = localStorage.getItem(`webinar_phone_${webinar.id}`);
-      if (storedPhone) {
-        // Already joined, redirect to live
+      if (!storedPhone) return;
+
+      // Verify the participant actually exists in DB before redirecting
+      const { data } = await supabase
+        .from('webinar_participants')
+        .select('id')
+        .eq('webinar_id', webinar.id)
+        .eq('phone', storedPhone)
+        .single();
+
+      if (data) {
         window.location.href = `/webinar/${slug}/live`;
+      } else {
+        // Invalid stored phone, clear it
+        localStorage.removeItem(`webinar_phone_${webinar.id}`);
       }
-    }
+    };
+    checkExistingSession();
   }, [webinar, redirectTo, slug]);
 
   const fetchWebinar = async () => {
@@ -147,7 +162,7 @@ const WebinarLogin: React.FC = () => {
       // Redirect based on context
       setTimeout(() => {
         if (redirectTo === 'live') {
-          window.location.href = `/webinar/${slug}/live`;
+          navigateTo(`/webinar/${slug}/live`, { replace: true });
         } else {
           window.location.href = webinar.webinar_link;
         }
