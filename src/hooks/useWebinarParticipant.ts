@@ -51,23 +51,48 @@ export const useWebinarParticipant = (webinarId: string | undefined) => {
   }, [webinarId]);
 
   useEffect(() => {
+    // Reset state when webinarId changes
+    setParticipant(null);
+    setLoading(true);
+
     const loadParticipant = async () => {
-      if (!webinarId) { setLoading(false); return; }
-      const phone = getStoredPhone();
-      if (!phone) { setLoading(false); return; }
+      if (!webinarId) {
+        setLoading(false);
+        return;
+      }
 
-      const { data } = await supabase
-        .from('webinar_participants')
-        .select('*')
-        .eq('webinar_id', webinarId)
-        .eq('phone', phone)
-        .single();
+      const phone = localStorage.getItem(`webinar_phone_${webinarId}`);
+      if (!phone) {
+        setLoading(false);
+        return;
+      }
 
-      if (data) setParticipant(data);
-      setLoading(false);
+      try {
+        const { data, error } = await supabase
+          .from('webinar_participants')
+          .select('*')
+          .eq('webinar_id', webinarId)
+          .eq('phone', phone)
+          .single();
+
+        if (error) {
+          console.error('Error loading participant:', error);
+          // Phone in localStorage but not in DB — clear it
+          if (error.code === 'PGRST116') {
+            localStorage.removeItem(`webinar_phone_${webinarId}`);
+          }
+        }
+
+        if (data) setParticipant(data);
+      } catch (err) {
+        console.error('Error loading participant:', err);
+      } finally {
+        setLoading(false);
+      }
     };
+
     loadParticipant();
-  }, [webinarId, getStoredPhone]);
+  }, [webinarId]);
 
   return { participant, loading, joinWebinar, getStoredPhone };
 };
