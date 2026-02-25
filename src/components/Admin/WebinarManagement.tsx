@@ -55,7 +55,9 @@ const WebinarManagement: React.FC = () => {
     start_date: '',
     webinar_link: '',
     description: '',
-    telegram_channel_link: ''
+    telegram_channel_link: '',
+    iframe_embed_code: '',
+    host_name: ''
   });
 
   useEffect(() => {
@@ -174,7 +176,9 @@ const WebinarManagement: React.FC = () => {
         start_date: utcDate.toISOString(),
         slug: finalSlug,
         description: formData.description || null,
-        telegram_channel_link: formData.telegram_channel_link || null
+        telegram_channel_link: formData.telegram_channel_link || null,
+        iframe_embed_code: formData.iframe_embed_code || null,
+        host_name: formData.host_name || null
       };
 
       if (editingWebinar) {
@@ -204,7 +208,7 @@ const WebinarManagement: React.FC = () => {
 
       setIsCreateModalOpen(false);
       setEditingWebinar(null);
-      setFormData({ title: '', slug: '', start_date: '', webinar_link: '', description: '', telegram_channel_link: '' });
+      setFormData({ title: '', slug: '', start_date: '', webinar_link: '', description: '', telegram_channel_link: '', iframe_embed_code: '', host_name: '' });
       fetchWebinars();
     } catch (error) {
       console.error('Error saving webinar:', error);
@@ -228,7 +232,9 @@ const WebinarManagement: React.FC = () => {
       start_date: format(tehranDate, 'yyyy-MM-dd\'T\'HH:mm'),
       webinar_link: webinar.webinar_link,
       description: webinar.description || '',
-      telegram_channel_link: webinar.telegram_channel_link || ''
+      telegram_channel_link: webinar.telegram_channel_link || '',
+      iframe_embed_code: (webinar as any).iframe_embed_code || '',
+      host_name: (webinar as any).host_name || ''
     });
     setIsCreateModalOpen(true);
   };
@@ -339,7 +345,7 @@ const WebinarManagement: React.FC = () => {
             <DialogTrigger asChild>
               <Button onClick={() => {
                 setEditingWebinar(null);
-                setFormData({ title: '', slug: '', start_date: '', webinar_link: '', description: '', telegram_channel_link: '' });
+                setFormData({ title: '', slug: '', start_date: '', webinar_link: '', description: '', telegram_channel_link: '', iframe_embed_code: '', host_name: '' });
               }}>
                 <Plus className="h-4 w-4 ml-2" />
                 ایجاد وبینار جدید
@@ -423,6 +429,24 @@ const WebinarManagement: React.FC = () => {
                     dir="ltr"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">نام میزبان (اختیاری)</label>
+                  <Input
+                    value={formData.host_name}
+                    onChange={(e) => setFormData({...formData, host_name: e.target.value})}
+                    placeholder="نام میزبان وبینار"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">کد iframe پخش زنده (اختیاری)</label>
+                  <Textarea
+                    value={formData.iframe_embed_code}
+                    onChange={(e) => setFormData({...formData, iframe_embed_code: e.target.value})}
+                    placeholder='<iframe src="..." ...></iframe>'
+                    rows={2}
+                    dir="ltr"
+                  />
+                </div>
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>
                     لغو
@@ -477,7 +501,21 @@ const WebinarManagement: React.FC = () => {
                             onClick={() => window.open(`/webinar/${webinar.slug}`, '_blank')}
                           >
                             <ExternalLink className="h-4 w-4 ml-1" />
-                            مشاهده صفحه
+                            ثبت‌نام
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => window.open(`/webinar/${webinar.slug}/live`, '_blank')}
+                          >
+                            صفحه زنده
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => window.open(`/webinar/${webinar.slug}/host`, '_blank')}
+                          >
+                            کنترل پنل
                           </Button>
                         </TableCell>
                         <TableCell className="text-center">

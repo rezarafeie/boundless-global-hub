@@ -123,6 +123,8 @@ import CourseEdit from "./pages/Admin/CourseEdit";
 import WebinarLogin from "./pages/WebinarLogin";
 import WebinarRegistration from "./pages/WebinarRegistration";
 import WebinarAdmin from "./pages/WebinarAdmin";
+import WebinarWatch from "./pages/WebinarWatch";
+import WebinarHostPanel from "./pages/WebinarHostPanel";
 
 // User Management components
 import UsersOverview from "./pages/UsersOverview";
@@ -382,6 +384,8 @@ const App = () => {
         <Route path="/enroll/admin/webinar" element={<WebinarAdmin />} />
         <Route path="/webinar/:slug" element={<WebinarRegistration />} />
         <Route path="/webinar/:slug/login" element={<WebinarLogin />} />
+        <Route path="/webinar/:slug/live" element={<WebinarWatch />} />
+        <Route path="/webinar/:slug/host" element={<WebinarHostPanel />} />
 
                      {/* Job Application Route */}
         <Route path="/job" element={<JobApplication />} />
