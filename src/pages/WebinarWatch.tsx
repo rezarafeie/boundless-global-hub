@@ -88,7 +88,7 @@ const WebinarWatch: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="h-screen flex flex-col bg-background overflow-hidden" dir="rtl">
       {/* Minimal Header */}
       <div className="border-b border-border/50 bg-card/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-2.5 flex items-center justify-between">
@@ -113,8 +113,8 @@ const WebinarWatch: React.FC = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-3">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div className="flex-1 min-h-0 container mx-auto px-4 py-3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 h-full">
           {/* Video Player */}
           <div className="lg:col-span-2">
             <Card className="overflow-hidden border-0 shadow-md rounded-xl">
@@ -142,7 +142,7 @@ const WebinarWatch: React.FC = () => {
           </div>
 
           {/* Right Panel: Active Interaction on top + Chat */}
-          <div className="lg:col-span-1 flex flex-col gap-3" style={{ height: 'calc(100vh - 100px)' }}>
+          <div className="lg:col-span-1 flex flex-col gap-3 min-h-0">
             {/* Active Interaction - shows on top when active */}
             {activeInteraction && (
               <div className="shrink-0">
