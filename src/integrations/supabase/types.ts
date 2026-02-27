@@ -4711,6 +4711,7 @@ export type Database = {
           host_name: string | null
           id: string
           iframe_embed_code: string | null
+          login_method: string
           slug: string
           start_date: string
           status: string
@@ -4727,6 +4728,7 @@ export type Database = {
           host_name?: string | null
           id?: string
           iframe_embed_code?: string | null
+          login_method?: string
           slug: string
           start_date: string
           status?: string
@@ -4743,6 +4745,7 @@ export type Database = {
           host_name?: string | null
           id?: string
           iframe_embed_code?: string | null
+          login_method?: string
           slug?: string
           start_date?: string
           status?: string
