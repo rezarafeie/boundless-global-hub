@@ -11,7 +11,8 @@ import useEmblaCarousel from 'embla-carousel-react';
 
 const TESTIMONIAL_VIDEOS = [
   { hash: 'ezi0j4r', title: 'نظر دانش‌پذیر ۱' },
-  { hash: 'czvw4g5', title: 'نظر دانش‌پذیر ۲' },
+  { hash: 'vqts522', title: 'نظر دانش‌پذیر ۲' },
+  { hash: 'czvw4g5', title: 'نظر دانش‌پذیر ۳' },
   { hash: 'doo2nh1', title: 'نظر دانش‌پذیر ۲' },
   { hash: 'shwn4qf', title: 'نظر دانش‌پذیر ۳' },
   { hash: 'jjup796', title: 'نظر دانش‌پذیر ۴' },
@@ -95,7 +96,7 @@ const BoundlessDeposit = () => {
               className="text-3xl md:text-5xl font-bold leading-tight"
             >
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                جایگاه خود را در برنامه بی‌مرز ثبت کنید
+                جایگاه خود را در برنامه بدون مرز ثبت کنید
               </span>
             </motion.h1>
 
