@@ -104,6 +104,7 @@ import UserHub from "./pages/UserHub";
 
 // Bio Links page
 import BioLinks from "./pages/BioLinks";
+import BoundlessDeposit from "./pages/BoundlessDeposit";
 
 // Messenger App (for subdomain)
 import MessengerApp from "./pages/MessengerApp";
@@ -370,6 +371,9 @@ const App = () => {
 
                     {/* Bio Links Route */}
                     <Route path="/bio" element={<BioLinks />} />
+
+                    {/* Boundless Deposit */}
+                    <Route path="/boundless-deposit" element={<BoundlessDeposit />} />
 
                      {/* App View Routes */}
                      <Route path="/app/dashboard" element={<AppDashboard />} />
