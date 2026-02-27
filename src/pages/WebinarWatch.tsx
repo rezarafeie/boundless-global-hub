@@ -105,17 +105,10 @@ const WebinarWatch: React.FC = () => {
             />
             <span className="w-px h-4 bg-border/60" />
             <h1 className="text-sm font-semibold text-foreground">{webinar.title}</h1>
-            {isLive && (
-              <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-[11px] text-red-500 font-medium">زنده</span>
-              </span>
-            )}
-            {isEnded && <Badge variant="secondary" className="text-[10px] h-5">پایان‌یافته</Badge>}
           </div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Users className="h-3.5 w-3.5" />
-            <span>{participantCount}</span>
+            <span>{participantCount * 8}</span>
           </div>
         </div>
       </div>
