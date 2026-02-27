@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Copy, Send, Phone, MessageCircle, ChevronDown, CreditCard, Shield, Users, Award } from 'lucide-react';
+import { Check, Copy, Send, Phone, MessageCircle, ChevronDown, CreditCard, Shield, Users, Award, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -35,61 +35,92 @@ const BoundlessDeposit = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground" dir="rtl">
-      {/* Hero */}
-      <section className="px-5 pt-16 pb-12 md:pt-24 md:pb-16">
-        <div className="max-w-2xl mx-auto text-center space-y-5">
-          <motion.h1
-            className="text-3xl md:text-4xl font-bold leading-tight"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            جایگاه خود را در{' '}
-            <span className="text-primary">برنامه بی‌مرز</span>{' '}
-            ثبت کنید
-          </motion.h1>
-          <motion.p
-            className="text-muted-foreground text-base md:text-lg max-w-lg mx-auto"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.15, duration: 0.5 }}
-          >
-            با پرداخت بیعانه و تأیید پرداخت، ثبت‌نام خود را تکمیل کنید.
-          </motion.p>
-          <motion.div
-            className="flex flex-wrap justify-center gap-5 text-sm text-muted-foreground"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            {[
-              { icon: Users, label: '+۱۰۰۰ شرکت‌کننده' },
-              { icon: Award, label: 'نتایج واقعی' },
-              { icon: Shield, label: 'پشتیبانی مستقیم' },
-            ].map((t, i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <t.icon size={14} className="text-primary" />
-                <span>{t.label}</span>
-              </div>
-            ))}
-          </motion.div>
+
+      {/* ──── HERO with Glow ──── */}
+      <section className="relative min-h-[50vh] pb-16 bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-slate-900 dark:via-blue-950/30 dark:to-purple-950/20 flex items-center justify-center overflow-hidden">
+        {/* Background Glows */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-32 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute -bottom-40 -left-32 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-pink-600/20 rounded-full blur-3xl animate-pulse delay-1000" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-blue-300/10 to-purple-400/10 rounded-full blur-3xl animate-pulse delay-2000" />
+        </div>
+        {/* Fade to next section */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+
+        <div className="relative z-10 container mx-auto px-5 py-16 md:py-24">
+          <div className="max-w-3xl mx-auto text-center space-y-6">
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-sm border border-blue-200/20 dark:border-blue-800/20 rounded-full px-5 py-2.5"
+            >
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">ثبت‌نام فعال است</span>
+            </motion.div>
+
+            {/* Heading */}
+            <motion.h1
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+              className="text-3xl md:text-5xl font-bold leading-tight"
+            >
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                جایگاه خود را در برنامه بی‌مرز ثبت کنید
+              </span>
+            </motion.h1>
+
+            <motion.p
+              className="text-lg md:text-xl text-slate-600 dark:text-slate-300 max-w-xl mx-auto"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.5 }}
+            >
+              با پرداخت بیعانه و تأیید پرداخت، ثبت‌نام خود را تکمیل کنید.
+            </motion.p>
+
+            {/* Trust indicators */}
+            <motion.div
+              className="flex flex-wrap justify-center gap-6 text-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+            >
+              {[
+                { icon: Users, label: '+۱۰۰۰ شرکت‌کننده' },
+                { icon: Award, label: 'نتایج واقعی' },
+                { icon: Shield, label: 'پشتیبانی مستقیم' },
+              ].map((t, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                  <t.icon size={15} className="text-blue-500" />
+                  <span>{t.label}</span>
+                </div>
+              ))}
+            </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Progress Steps */}
-      <section className="px-5 pb-12">
+      {/* ──── PROGRESS STEPS ──── */}
+      <section className="px-5 py-12 md:py-16">
         <div className="max-w-xl mx-auto">
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between relative">
+            {/* Connecting line */}
+            <div className="absolute top-4 right-[10%] left-[10%] h-[2px] bg-border rounded-full" />
+            <div className="absolute top-4 right-[10%] h-[2px] w-[20%] bg-gradient-to-l from-primary to-primary/40 rounded-full" />
+
             {STEPS.map((step, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
+              <div key={i} className="flex-1 flex flex-col items-center gap-2.5 relative z-10">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
                   i === 0
-                    ? 'bg-primary border-primary text-primary-foreground'
-                    : 'border-border text-muted-foreground'
+                    ? 'bg-primary border-primary text-primary-foreground shadow-md shadow-primary/25'
+                    : 'border-border bg-background text-muted-foreground'
                 }`}>
                   {i === 0 ? <Check size={14} /> : i + 1}
                 </div>
-                <span className={`text-[11px] text-center leading-tight ${i === 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                <span className={`text-[11px] text-center leading-tight ${i === 0 ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>
                   {step}
                 </span>
               </div>
@@ -98,50 +129,55 @@ const BoundlessDeposit = () => {
         </div>
       </section>
 
-      {/* Deposit + Card Section */}
-      <section className="px-5 pb-12">
-        <div className="max-w-md mx-auto space-y-4">
-          {/* Amount Card */}
-          <Card className="border">
-            <CardContent className="p-6 text-center space-y-4">
-              <p className="text-muted-foreground text-sm">مبلغ بیعانه</p>
-              <p className="text-3xl font-bold tracking-tight">
-                ۱,۰۰۰,۰۰۰
-                <span className="text-base text-muted-foreground mr-2">تومان</span>
-              </p>
-              <p className="text-xs text-primary flex items-center justify-center gap-1">
-                <Shield size={12} />
+      {/* ──── DEPOSIT + BANK CARD ──── */}
+      <section className="px-5 pb-14">
+        <div className="max-w-md mx-auto space-y-5">
+          {/* Amount & Online Pay */}
+          <Card className="border shadow-sm overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
+            <CardContent className="p-6 md:p-8 text-center space-y-5">
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-sm">مبلغ بیعانه</p>
+                <p className="text-4xl font-bold tracking-tight">
+                  ۱,۰۰۰,۰۰۰
+                  <span className="text-base text-muted-foreground mr-2 font-normal">تومان</span>
+                </p>
+              </div>
+              <p className="text-xs text-primary flex items-center justify-center gap-1.5 font-medium">
+                <Shield size={13} />
                 ظرفیت محدود – ثبت‌نام تا اتمام ظرفیت
               </p>
               <a href={ONLINE_PAY_URL} target="_blank" rel="noopener noreferrer">
-                <Button className="w-full h-12 rounded-xl text-base font-bold mt-2">
-                  <CreditCard size={16} className="ml-2" />
+                <Button className="w-full h-12 rounded-xl text-base font-bold gap-2">
+                  <CreditCard size={17} />
                   پرداخت آنلاین بیعانه
+                  <ArrowLeft size={15} />
                 </Button>
               </a>
             </CardContent>
           </Card>
 
-          {/* Bank Card - Always Visible */}
-          <Card className="border bg-muted/30">
-            <CardContent className="p-5 space-y-4">
+          {/* Bank Card */}
+          <Card className="border shadow-sm bg-gradient-to-br from-slate-50 to-blue-50/40 dark:from-slate-900 dark:to-blue-950/30">
+            <CardContent className="p-5 md:p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">کارت به کارت – بلو بانک</span>
+                <span className="text-xs font-medium text-muted-foreground">کارت به کارت – بلو بانک</span>
+                <div className="w-8 h-5 rounded bg-gradient-to-l from-blue-500 to-purple-400 opacity-50" />
               </div>
-              <p className="text-xl md:text-2xl font-mono tracking-[0.15em] text-foreground text-left" dir="ltr">
+              <p className="text-2xl md:text-3xl font-mono tracking-[0.15em] text-foreground text-left py-2" dir="ltr">
                 {CARD_NUMBER.replace(/(.{4})/g, '$1 ').trim()}
               </p>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between pt-1 border-t border-border/50">
                 <div>
                   <p className="text-[10px] text-muted-foreground mb-0.5">صاحب حساب</p>
-                  <p className="text-sm text-foreground">سید عباس رفیعی</p>
+                  <p className="text-sm font-medium text-foreground">سید عباس رفیعی</p>
                 </div>
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant={copied ? 'default' : 'outline'}
                   onClick={copyCard}
-                  className={`rounded-lg text-xs h-8 px-3 ${
-                    copied ? 'border-green-500 text-green-600 bg-green-50' : ''
+                  className={`rounded-lg text-xs h-8 px-3 transition-all ${
+                    copied ? 'bg-green-600 hover:bg-green-600 text-white' : ''
                   }`}
                 >
                   {copied ? <><Check size={13} className="ml-1" /> کپی شد</> : <><Copy size={13} className="ml-1" /> کپی شماره کارت</>}
@@ -152,50 +188,57 @@ const BoundlessDeposit = () => {
         </div>
       </section>
 
-      {/* Receipt */}
-      <section className="px-5 pb-12">
-        <div className="max-w-md mx-auto text-center space-y-4">
-          <h2 className="text-lg font-bold">ارسال رسید پرداخت</h2>
-          <p className="text-muted-foreground text-sm">پس از پرداخت، رسید خود را از طریق تلگرام ارسال کنید.</p>
-          <a href={RECEIPT_URL} target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" className="h-11 rounded-xl px-6 text-sm">
-              <Send size={15} className="ml-2" />
-              ارسال رسید در تلگرام
-            </Button>
-          </a>
+      {/* ──── RECEIPT ──── */}
+      <section className="px-5 pb-14">
+        <div className="max-w-md mx-auto">
+          <Card className="border shadow-sm">
+            <CardContent className="p-6 text-center space-y-4">
+              <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 flex items-center justify-center">
+                <Send size={20} className="text-primary" />
+              </div>
+              <h2 className="text-lg font-bold">ارسال رسید پرداخت</h2>
+              <p className="text-muted-foreground text-sm">پس از پرداخت، رسید خود را از طریق تلگرام ارسال کنید.</p>
+              <a href={RECEIPT_URL} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" className="h-11 rounded-xl px-6 text-sm gap-2">
+                  <Send size={14} />
+                  ارسال رسید در تلگرام
+                </Button>
+              </a>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      {/* Support */}
-      <section className="px-5 pb-12">
-        <div className="max-w-md mx-auto text-center space-y-4">
+      {/* ──── SUPPORT ──── */}
+      <section className="px-5 pb-14">
+        <div className="max-w-md mx-auto text-center space-y-5">
           <h2 className="text-lg font-bold">نیاز به کمک دارید؟</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <a href={SUPPORT_TELEGRAM} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" className="w-full h-12 rounded-xl">
-                <MessageCircle size={16} className="ml-2" />
+              <Button variant="outline" className="w-full h-12 rounded-xl gap-2">
+                <MessageCircle size={16} />
                 پشتیبانی تلگرام
               </Button>
             </a>
             <a href={SUPPORT_PHONE}>
-              <Button variant="outline" className="w-full h-12 rounded-xl">
-                <Phone size={16} className="ml-2" />
+              <Button variant="outline" className="w-full h-12 rounded-xl gap-2">
+                <Phone size={16} />
                 تماس مستقیم
-                <span className="text-[10px] text-muted-foreground mr-1">(۹ تا ۲۱)</span>
+                <span className="text-[10px] text-muted-foreground">(۹ تا ۲۱)</span>
               </Button>
             </a>
           </div>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="px-5 pb-24">
+      {/* ──── FAQ ──── */}
+      <section className="px-5 pb-28">
         <div className="max-w-md mx-auto space-y-3">
-          <h2 className="text-lg font-bold text-center mb-4">سوالات متداول</h2>
+          <h2 className="text-lg font-bold text-center mb-5">سوالات متداول</h2>
           {FAQ_ITEMS.map((item, i) => (
             <Collapsible key={i}>
-              <CollapsibleTrigger className="flex items-center justify-between w-full rounded-xl border bg-card px-4 py-3 text-sm text-right hover:bg-muted/50 transition-colors group">
-                <span>{item.q}</span>
+              <CollapsibleTrigger className="flex items-center justify-between w-full rounded-xl border bg-card px-4 py-3.5 text-sm text-right hover:bg-muted/50 transition-colors group">
+                <span className="font-medium">{item.q}</span>
                 <ChevronDown size={15} className="text-muted-foreground transition-transform group-data-[state=open]:rotate-180 shrink-0 mr-3" />
               </CollapsibleTrigger>
               <CollapsibleContent className="px-4 py-3 text-sm text-muted-foreground leading-relaxed">
@@ -206,11 +249,11 @@ const BoundlessDeposit = () => {
         </div>
       </section>
 
-      {/* Sticky Mobile CTA */}
+      {/* ──── STICKY MOBILE CTA ──── */}
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t z-50">
           <a href={ONLINE_PAY_URL} target="_blank" rel="noopener noreferrer">
-            <Button className="w-full h-12 rounded-xl text-base font-bold">
+            <Button className="w-full h-12 rounded-xl text-base font-bold shadow-lg shadow-primary/20">
               پرداخت بیعانه
             </Button>
           </a>
