@@ -189,7 +189,7 @@ const BoundlessDeposit = () => {
                 <span className="text-xs font-medium text-muted-foreground">کارت به کارت – بلو بانک</span>
                 <div className="w-8 h-5 rounded bg-gradient-to-l from-blue-500 to-purple-400 opacity-50" />
               </div>
-              <p className="text-2xl md:text-3xl font-mono tracking-[0.15em] text-foreground text-left py-2" dir="ltr">
+              <p className="text-lg md:text-2xl font-mono tracking-[0.1em] text-foreground text-left py-2" dir="ltr">
                 {CARD_NUMBER.replace(/(.{4})/g, '$1 ').trim()}
               </p>
               <div className="flex items-center justify-between pt-1 border-t border-border/50">
