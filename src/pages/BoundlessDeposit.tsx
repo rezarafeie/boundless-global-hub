@@ -10,10 +10,11 @@ import { toast } from 'sonner';
 import useEmblaCarousel from 'embla-carousel-react';
 
 const TESTIMONIAL_VIDEOS = [
-  { hash: 'ezi0j4r', title: 'نظر دانش‌پذیر ۱' },
-  { hash: 'ezi0j4r', title: 'نظر دانش‌پذیر ۲' },
-  { hash: 'ezi0j4r', title: 'نظر دانش‌پذیر ۳' },
-  { hash: 'ezi0j4r', title: 'نظر دانش‌پذیر ۴' },
+  { hash: 'czvw4g5', title: 'نظر دانش‌پذیر ۱' },
+  { hash: 'doo2nh1', title: 'نظر دانش‌پذیر ۲' },
+  { hash: 'shwn4qf', title: 'نظر دانش‌پذیر ۳' },
+  { hash: 'jjup796', title: 'نظر دانش‌پذیر ۴' },
+  { hash: 'qyui8z2', title: 'نظر دانش‌پذیر ۵' },
 ];
 
 const ONLINE_PAY_URL = 'https://checkout.rafeie.com/598491';
@@ -189,7 +190,7 @@ const BoundlessDeposit = () => {
                 <span className="text-xs font-medium text-muted-foreground">کارت به کارت – بلو بانک</span>
                 <div className="w-8 h-5 rounded bg-gradient-to-l from-blue-500 to-purple-400 opacity-50" />
               </div>
-              <p className="text-lg md:text-2xl font-mono tracking-[0.1em] text-foreground text-left py-2" dir="ltr">
+              <p className="text-sm md:text-lg font-mono tracking-[0.05em] text-foreground text-left py-2 whitespace-nowrap" dir="ltr">
                 {CARD_NUMBER.replace(/(.{4})/g, '$1 ').trim()}
               </p>
               <div className="flex items-center justify-between pt-1 border-t border-border/50">
