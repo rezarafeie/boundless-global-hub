@@ -114,7 +114,7 @@ const WebinarWatch: React.FC = () => {
       </div>
 
       <div className="flex-1 min-h-0 container mx-auto px-4 py-3">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 content-start lg:h-full">
           {/* Video Player */}
           <div className="lg:col-span-2">
             <Card className="overflow-hidden border-0 shadow-md rounded-xl">
@@ -142,7 +142,7 @@ const WebinarWatch: React.FC = () => {
           </div>
 
           {/* Right Panel: Active Interaction on top + Chat */}
-          <div className="lg:col-span-1 flex flex-col gap-3 min-h-0">
+          <div className="lg:col-span-1 flex flex-col gap-3 min-h-0 h-[42vh] md:h-[46vh] lg:h-full">
             {/* Active Interaction - shows on top when active */}
             {activeInteraction && (
               <div className="shrink-0">

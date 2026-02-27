@@ -57,6 +57,14 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
     if (data) setMessages(data as ChatMessage[]);
   }, [webinarId, chatMode, isHost]);
 
+  const appendMessage = useCallback((message: ChatMessage) => {
+    setMessages(prev => {
+      if (prev.some(m => m.id === message.id)) return prev;
+      const next = [...prev, message];
+      return next.length > 200 ? next.slice(-200) : next;
+    });
+  }, []);
+
   useEffect(() => {
     fetchMessages();
   }, [fetchMessages]);
@@ -64,8 +72,18 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
   useEffect(() => {
     if (!webinarId) return;
 
+    const pollInterval = window.setInterval(() => {
+      fetchMessages();
+    }, 3000);
+
+    return () => window.clearInterval(pollInterval);
+  }, [webinarId, fetchMessages]);
+
+  useEffect(() => {
+    if (!webinarId) return;
+
     const channel = supabase
-      .channel(`webinar-chat-${webinarId}-${Date.now()}`)
+      .channel(`webinar-chat-${webinarId}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -73,9 +91,8 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
         filter: `webinar_id=eq.${webinarId}`,
       }, (payload) => {
         const newMsg = payload.new as ChatMessage;
-        // In private mode, non-host shouldn't see private messages
         if (chatMode === 'private' && !isHost && newMsg.is_private) return;
-        setMessages(prev => [...prev].slice(-199).concat(newMsg));
+        appendMessage(newMsg);
       })
       .on('postgres_changes', {
         event: 'DELETE',
@@ -83,12 +100,20 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
         table: 'webinar_messages',
         filter: `webinar_id=eq.${webinarId}`,
       }, (payload) => {
-        setMessages(prev => prev.filter(m => m.id !== (payload.old as any).id));
+        const deletedId = (payload.old as { id?: string }).id;
+        if (!deletedId) return;
+        setMessages(prev => prev.filter(m => m.id !== deletedId));
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR') {
+          fetchMessages();
+        }
+      });
 
-    return () => { supabase.removeChannel(channel); };
-  }, [webinarId, chatMode, isHost]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [webinarId, chatMode, isHost, appendMessage, fetchMessages]);
 
   useEffect(() => {
     // Auto-scroll to bottom
@@ -98,18 +123,32 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || sending) return;
+    const trimmedMessage = newMessage.trim();
+    if (!trimmedMessage || sending) return;
+
     setSending(true);
     try {
-      const { error } = await supabase.from('webinar_messages').insert({
-        webinar_id: webinarId,
-        participant_id: participantId,
-        display_name: displayName,
-        message: newMessage.trim(),
-        is_private: chatMode === 'private',
-      });
+      const { data, error } = await supabase
+        .from('webinar_messages')
+        .insert({
+          webinar_id: webinarId,
+          participant_id: participantId,
+          display_name: displayName,
+          message: trimmedMessage,
+          is_private: chatMode === 'private',
+        })
+        .select('*')
+        .single();
+
       if (error) throw error;
+
       setNewMessage('');
+      if (data) {
+        const insertedMessage = data as ChatMessage;
+        if (!(chatMode === 'private' && !isHost && insertedMessage.is_private)) {
+          appendMessage(insertedMessage);
+        }
+      }
     } catch {
       toast({ title: 'خطا در ارسال پیام', variant: 'destructive' });
     } finally {
