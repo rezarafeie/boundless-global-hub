@@ -3,8 +3,7 @@ import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Users, ChevronDown, RefreshCw, AlertCircle } from 'lucide-react';
+import { Users, RefreshCw, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWebinarParticipant } from '@/hooks/useWebinarParticipant';
 import { useWebinarRealtime } from '@/hooks/useWebinarRealtime';
@@ -33,7 +32,6 @@ const WebinarWatch: React.FC = () => {
   const [webinar, setWebinar] = useState<Webinar | null>(null);
   const [loading, setLoading] = useState(true);
   const [iframeFailed, setIframeFailed] = useState(false);
-  const [previousOpen, setPreviousOpen] = useState(false);
 
   const { participant, loading: participantLoading } = useWebinarParticipant(webinar?.id);
   const {
@@ -95,6 +93,17 @@ const WebinarWatch: React.FC = () => {
       <div className="border-b border-border/50 bg-card/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
+            <img 
+              src="/lovable-uploads/d03b7d97-8f42-4806-a04a-add408342460.png" 
+              alt="Rafiei Academy" 
+              className="h-6 w-auto dark:hidden" 
+            />
+            <img 
+              src="/lovable-uploads/e743fe4f-8642-41ec-a4bf-7d749942d8b6.png" 
+              alt="Rafiei Academy" 
+              className="h-6 w-auto hidden dark:block" 
+            />
+            <span className="w-px h-4 bg-border/60" />
             <h1 className="text-sm font-semibold text-foreground">{webinar.title}</h1>
             {isLive && (
               <span className="flex items-center gap-1">
@@ -156,28 +165,6 @@ const WebinarWatch: React.FC = () => {
               </div>
             )}
 
-            {/* Previous Interactions - collapsible */}
-            {previousInteractions.length > 0 && (
-              <Collapsible open={previousOpen} onOpenChange={setPreviousOpen} className="shrink-0">
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="w-full justify-between text-xs h-8">
-                    تعامل‌های قبلی ({previousInteractions.length})
-                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${previousOpen ? 'rotate-180' : ''}`} />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-2 mt-1.5 max-h-48 overflow-y-auto">
-                  {previousInteractions.map(interaction => (
-                    <InteractionCard
-                      key={interaction.id}
-                      interaction={interaction}
-                      participantId={participant.id}
-                      responses={responses}
-                      isActive={false}
-                    />
-                  ))}
-                </CollapsibleContent>
-              </Collapsible>
-            )}
 
             {/* Chat Panel - fills remaining space */}
             <Card className="flex-1 min-h-0 border rounded-xl overflow-hidden flex flex-col">
