@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Navigate, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ interface Webinar {
   description: string | null;
   created_at: string;
   status: string;
+  login_method: string;
 }
 
 interface SignupFormData {
@@ -35,8 +36,6 @@ const normalizePhoneNumber = (phone: string): string => {
 
 const WebinarLogin: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || 'webinar';
   const navigateTo = useNavigate();
   const { toast } = useToast();
   const [webinar, setWebinar] = useState<Webinar | null>(null);
@@ -49,14 +48,13 @@ const WebinarLogin: React.FC = () => {
     if (slug) fetchWebinar();
   }, [slug]);
 
-  // Check if already logged in for live mode - verify participant exists in DB
+  // Check if already logged in for interactive mode - verify participant exists in DB
   useEffect(() => {
     const checkExistingSession = async () => {
-      if (!webinar || redirectTo !== 'live') return;
+      if (!webinar || webinar.login_method !== 'interactive') return;
       const storedPhone = localStorage.getItem(`webinar_phone_${webinar.id}`);
       if (!storedPhone) return;
 
-      // Verify the participant actually exists in DB before redirecting
       const { data } = await supabase
         .from('webinar_participants')
         .select('id')
@@ -67,12 +65,11 @@ const WebinarLogin: React.FC = () => {
       if (data) {
         window.location.href = `/webinar/${slug}/live`;
       } else {
-        // Invalid stored phone, clear it
         localStorage.removeItem(`webinar_phone_${webinar.id}`);
       }
     };
     checkExistingSession();
-  }, [webinar, redirectTo, slug]);
+  }, [webinar, slug]);
 
   const fetchWebinar = async () => {
     try {
@@ -159,9 +156,9 @@ const WebinarLogin: React.FC = () => {
 
       toast({ title: "موفقیت", description: "در حال انتقال..." });
 
-      // Redirect based on context
+      // Redirect based on login_method
       setTimeout(() => {
-        if (redirectTo === 'live') {
+        if (webinar.login_method === 'interactive') {
           navigateTo(`/webinar/${slug}/live`, { replace: true });
         } else {
           window.location.href = webinar.webinar_link;
@@ -187,6 +184,7 @@ const WebinarLogin: React.FC = () => {
   if (!webinar) return <Navigate to="/404" replace />;
 
   const isLive = webinar.status === 'live';
+  const isInteractive = webinar.login_method === 'interactive';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/10 flex items-center justify-center p-4">
@@ -209,7 +207,7 @@ const WebinarLogin: React.FC = () => {
                   })}
                 </span>
               </div>
-              {isLive && redirectTo === 'live' && (
+              {isLive && isInteractive && (
                 <span className="inline-block bg-red-500 text-white text-xs px-3 py-1 rounded-full animate-pulse">🔴 پخش زنده</span>
               )}
             </div>
@@ -238,7 +236,7 @@ const WebinarLogin: React.FC = () => {
                 )}
               </div>
 
-              {redirectTo === 'live' && (
+              {isInteractive && (
                 <div>
                   <Input
                     {...register('display_name')}
@@ -254,7 +252,7 @@ const WebinarLogin: React.FC = () => {
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     در حال پردازش...
                   </div>
-                ) : redirectTo === 'live' ? (
+                ) : isInteractive ? (
                   'ورود به پخش زنده'
                 ) : (
                   'ورود به وبینار'
@@ -263,7 +261,7 @@ const WebinarLogin: React.FC = () => {
             </form>
 
             <p className="text-xs text-muted-foreground text-center leading-relaxed">
-              {redirectTo === 'live'
+              {isInteractive
                 ? 'شماره تلفن خود را وارد کنید تا وارد صفحه پخش زنده شوید'
                 : 'شماره تلفن خود را وارد کنید و روی دکمه ورود به وبینار بزنید و در صفحه باز شده روی دکمه ورود به عنوان میهمان کلیک کنید'
               }

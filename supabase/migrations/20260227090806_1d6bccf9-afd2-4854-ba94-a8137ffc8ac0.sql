@@ -1,0 +1,1 @@
+ALTER TABLE webinar_entries ADD COLUMN login_method text NOT NULL DEFAULT 'redirect' CHECK (login_method IN ('redirect', 'interactive'));

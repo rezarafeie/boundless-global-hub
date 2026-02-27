@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowRight, Save } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -26,7 +28,8 @@ const WebinarEdit: React.FC = () => {
     description: '',
     telegram_channel_link: '',
     iframe_embed_code: '',
-    host_name: ''
+    host_name: '',
+    login_method: 'redirect'
   });
 
   useEffect(() => {
@@ -54,7 +57,8 @@ const WebinarEdit: React.FC = () => {
         description: data.description || '',
         telegram_channel_link: data.telegram_channel_link || '',
         iframe_embed_code: (data as any).iframe_embed_code || '',
-        host_name: (data as any).host_name || ''
+        host_name: (data as any).host_name || '',
+        login_method: (data as any).login_method || 'redirect'
       });
     } catch (error) {
       console.error('Error fetching webinar:', error);
@@ -89,7 +93,8 @@ const WebinarEdit: React.FC = () => {
         description: formData.description || null,
         telegram_channel_link: formData.telegram_channel_link || null,
         iframe_embed_code: formData.iframe_embed_code || null,
-        host_name: formData.host_name || null
+        host_name: formData.host_name || null,
+        login_method: formData.login_method
       };
 
       const { error } = await supabase
@@ -204,6 +209,27 @@ const WebinarEdit: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, host_name: e.target.value })}
                 placeholder="نام میزبان وبینار"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-3">روش ورود کاربران</label>
+              <RadioGroup
+                value={formData.login_method}
+                onValueChange={(value) => setFormData({ ...formData, login_method: value })}
+                className="flex flex-col gap-3"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="redirect" id="method-redirect" />
+                  <Label htmlFor="method-redirect" className="cursor-pointer">
+                    ریدایرکت به لینک خارجی (مانند قبل)
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="interactive" id="method-interactive" />
+                  <Label htmlFor="method-interactive" className="cursor-pointer">
+                    صفحه پخش زنده تعاملی (صفحه داخلی)
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">کد iframe پخش زنده (اختیاری)</label>
