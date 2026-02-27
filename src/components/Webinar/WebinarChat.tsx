@@ -59,19 +59,36 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
 
   useEffect(() => {
     fetchMessages();
+  }, [fetchMessages]);
+
+  useEffect(() => {
+    if (!webinarId) return;
 
     const channel = supabase
-      .channel(`webinar-chat-${webinarId}`)
+      .channel(`webinar-chat-${webinarId}-${Date.now()}`)
       .on('postgres_changes', {
-        event: '*',
+        event: 'INSERT',
         schema: 'public',
         table: 'webinar_messages',
         filter: `webinar_id=eq.${webinarId}`,
-      }, () => fetchMessages())
+      }, (payload) => {
+        const newMsg = payload.new as ChatMessage;
+        // In private mode, non-host shouldn't see private messages
+        if (chatMode === 'private' && !isHost && newMsg.is_private) return;
+        setMessages(prev => [...prev].slice(-199).concat(newMsg));
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'webinar_messages',
+        filter: `webinar_id=eq.${webinarId}`,
+      }, (payload) => {
+        setMessages(prev => prev.filter(m => m.id !== (payload.old as any).id));
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [webinarId, fetchMessages]);
+  }, [webinarId, chatMode, isHost]);
 
   useEffect(() => {
     // Auto-scroll to bottom
@@ -122,7 +139,7 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
         </div>
       )}
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5" style={{ maxHeight: 'calc(100% - 52px)' }}>
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-2 space-y-1.5">
         {messages.length === 0 ? (
           <p className="text-center text-xs text-muted-foreground py-8">هنوز پیامی نیست...</p>
         ) : (
