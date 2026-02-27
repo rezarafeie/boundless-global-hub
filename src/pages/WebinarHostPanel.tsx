@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useWebinarRealtime } from '@/hooks/useWebinarRealtime';
 import { useUserRole } from '@/hooks/useUserRole';
 import QAPanel from '@/components/Webinar/QAPanel';
+import WebinarChat from '@/components/Webinar/WebinarChat';
 
 interface Webinar {
   id: string;
@@ -30,6 +31,8 @@ interface Webinar {
   host_name: string | null;
   start_date: string;
   allow_late_responses: boolean;
+  chat_enabled: boolean;
+  chat_mode: string;
 }
 
 interface InteractionForm {
@@ -239,7 +242,8 @@ const WebinarHostPanel: React.FC = () => {
           <TabsList>
             <TabsTrigger value="live">داشبورد زنده</TabsTrigger>
             <TabsTrigger value="interactions">تعامل‌ها</TabsTrigger>
-            <TabsTrigger value="qa">پرسش و پاسخ</TabsTrigger>
+             <TabsTrigger value="qa">پرسش و پاسخ</TabsTrigger>
+            <TabsTrigger value="chat">چت</TabsTrigger>
             <TabsTrigger value="timeline">تایم‌لاین</TabsTrigger>
           </TabsList>
 
@@ -272,6 +276,45 @@ const WebinarHostPanel: React.FC = () => {
                 <span>🤔 دوباره بگو: {reactionCounts.repeat || 0}</span>
                 <span>🔥 عالی: {reactionCounts.excellent || 0}</span>
                 <span>🧠 مهم: {reactionCounts.important || 0}</span>
+              </CardContent>
+            </Card>
+
+            {/* Chat Controls */}
+            <Card>
+              <CardHeader><CardTitle className="text-sm">تنظیمات چت</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>چت فعال</Label>
+                  <Switch
+                    checked={webinar.chat_enabled}
+                    onCheckedChange={async (v) => {
+                      await supabase.from('webinar_entries').update({ chat_enabled: v }).eq('id', webinar.id);
+                      setWebinar(prev => prev ? { ...prev, chat_enabled: v } : null);
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>حالت چت</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {webinar.chat_mode === 'public' ? 'همه پیام‌ها را می‌بینند' : webinar.chat_mode === 'private' ? 'فقط میزبان می‌بیند' : 'چت خاموش'}
+                    </p>
+                  </div>
+                  <Select
+                    value={webinar.chat_mode}
+                    onValueChange={async (v) => {
+                      await supabase.from('webinar_entries').update({ chat_mode: v }).eq('id', webinar.id);
+                      setWebinar(prev => prev ? { ...prev, chat_mode: v } : null);
+                    }}
+                  >
+                    <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">عمومی</SelectItem>
+                      <SelectItem value="private">خصوصی</SelectItem>
+                      <SelectItem value="off">خاموش</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardContent>
             </Card>
 
@@ -495,6 +538,22 @@ const WebinarHostPanel: React.FC = () => {
                   webinarId={webinar.id}
                   participantId={undefined}
                   questions={questions}
+                  isHost={true}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Chat */}
+          <TabsContent value="chat">
+            <Card className="h-[500px]">
+              <CardContent className="p-0 h-full">
+                <WebinarChat
+                  webinarId={webinar.id}
+                  participantId=""
+                  displayName="میزبان"
+                  chatEnabled={true}
+                  chatMode="public"
                   isHost={true}
                 />
               </CardContent>

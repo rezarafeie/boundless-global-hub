@@ -4705,6 +4705,8 @@ export type Database = {
       webinar_entries: {
         Row: {
           allow_late_responses: boolean
+          chat_enabled: boolean
+          chat_mode: string
           created_at: string
           description: string | null
           ended_at: string | null
@@ -4722,6 +4724,8 @@ export type Database = {
         }
         Insert: {
           allow_late_responses?: boolean
+          chat_enabled?: boolean
+          chat_mode?: string
           created_at?: string
           description?: string | null
           ended_at?: string | null
@@ -4739,6 +4743,8 @@ export type Database = {
         }
         Update: {
           allow_late_responses?: boolean
+          chat_enabled?: boolean
+          chat_mode?: string
           created_at?: string
           description?: string | null
           ended_at?: string | null
@@ -4805,6 +4811,51 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "webinar_interactions_webinar_id_fkey"
+            columns: ["webinar_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webinar_messages: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          is_private: boolean
+          message: string
+          participant_id: string
+          webinar_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id?: string
+          is_private?: boolean
+          message: string
+          participant_id: string
+          webinar_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_private?: boolean
+          message?: string
+          participant_id?: string
+          webinar_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_messages_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webinar_messages_webinar_id_fkey"
             columns: ["webinar_id"]
             isOneToOne: false
             referencedRelation: "webinar_entries"
