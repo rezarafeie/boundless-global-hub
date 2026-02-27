@@ -1,12 +1,20 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Copy, Send, Phone, MessageCircle, ChevronDown, CreditCard, Shield, Users, Award, ArrowLeft } from 'lucide-react';
+import { Check, Copy, Send, Phone, MessageCircle, ChevronDown, CreditCard, Shield, Users, Award, ArrowLeft, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
+import useEmblaCarousel from 'embla-carousel-react';
+
+const TESTIMONIAL_VIDEOS = [
+  { hash: 'ezi0j4r', title: 'نظر دانش‌پذیر ۱' },
+  { hash: 'ezi0j4r', title: 'نظر دانش‌پذیر ۲' },
+  { hash: 'ezi0j4r', title: 'نظر دانش‌پذیر ۳' },
+  { hash: 'ezi0j4r', title: 'نظر دانش‌پذیر ۴' },
+];
 
 const ONLINE_PAY_URL = 'https://checkout.rafeie.com/598491';
 const RECEIPT_URL = 'https://t.me/m/P5QjZ2H4Mzg0';
@@ -26,13 +34,30 @@ const BoundlessDeposit = () => {
   const [copied, setCopied] = useState(false);
   const isMobile = useIsMobile();
 
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, direction: 'rtl', align: 'start' });
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
+
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => {
+      setCanScrollPrev(emblaApi.canScrollPrev());
+      setCanScrollNext(emblaApi.canScrollNext());
+    };
+    emblaApi.on('select', onSelect);
+    onSelect();
+    return () => { emblaApi.off('select', onSelect); };
+  }, [emblaApi]);
+
   const copyCard = async () => {
     await navigator.clipboard.writeText(CARD_NUMBER);
     setCopied(true);
     toast.success('شماره کارت کپی شد');
     setTimeout(() => setCopied(false), 2500);
   };
-
   return (
     <div className="min-h-screen bg-background text-foreground" dir="rtl">
 
@@ -227,6 +252,63 @@ const BoundlessDeposit = () => {
                 <span className="text-[10px] text-muted-foreground">(۹ تا ۲۱)</span>
               </Button>
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ──── TESTIMONIALS VIDEO SLIDER ──── */}
+      <section className="px-5 pb-14">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 flex items-center justify-center mb-3">
+              <Play size={20} className="text-primary" />
+            </div>
+            <h2 className="text-xl md:text-2xl font-bold">نظرات دانش‌پذیران بدون مرز</h2>
+            <p className="text-muted-foreground text-sm">تجربه واقعی شرکت‌کنندگان برنامه بی‌مرز را ببینید</p>
+          </div>
+
+          <div className="relative">
+            {/* Carousel */}
+            <div className="overflow-hidden rounded-2xl" ref={emblaRef}>
+              <div className="flex gap-4" style={{ direction: 'rtl' }}>
+                {TESTIMONIAL_VIDEOS.map((video, i) => (
+                  <div key={i} className="flex-[0_0_85%] sm:flex-[0_0_48%] min-w-0">
+                    <Card className="border shadow-sm overflow-hidden">
+                      <div className="relative w-full" style={{ paddingTop: '57%' }}>
+                        <iframe
+                          src={`https://www.aparat.com/video/video/embed/videohash/${video.hash}/vt/frame`}
+                          allowFullScreen
+                          className="absolute top-0 left-0 w-full h-full rounded-t-xl"
+                          title={video.title}
+                        />
+                      </div>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Nav Buttons */}
+            <div className="flex items-center justify-center gap-3 mt-5">
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full w-9 h-9"
+                onClick={scrollPrev}
+                disabled={!canScrollPrev}
+              >
+                <ChevronRight size={16} />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full w-9 h-9"
+                onClick={scrollNext}
+                disabled={!canScrollNext}
+              >
+                <ChevronLeft size={16} />
+              </Button>
+            </div>
           </div>
         </div>
       </section>
