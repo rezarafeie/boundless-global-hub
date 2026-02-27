@@ -10,7 +10,8 @@ import { toast } from 'sonner';
 import useEmblaCarousel from 'embla-carousel-react';
 
 const TESTIMONIAL_VIDEOS = [
-  { hash: 'czvw4g5', title: 'نظر دانش‌پذیر ۱' },
+  { hash: 'ezi0j4r', title: 'نظر دانش‌پذیر ۱' },
+  { hash: 'czvw4g5', title: 'نظر دانش‌پذیر ۲' },
   { hash: 'doo2nh1', title: 'نظر دانش‌پذیر ۲' },
   { hash: 'shwn4qf', title: 'نظر دانش‌پذیر ۳' },
   { hash: 'jjup796', title: 'نظر دانش‌پذیر ۴' },
