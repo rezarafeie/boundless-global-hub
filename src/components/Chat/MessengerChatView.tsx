@@ -66,7 +66,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
   const realtimeChannelsRef = useRef<any[]>([]);
   const optimisticMessagesRef = useRef<Map<string, OptimisticMessage>>(new Map());
   const lastMessageTimestamp = useRef<string>('');
-  const autoRefreshInterval = useRef<NodeJS.Timeout | null>(null);
+  const autoRefreshInterval = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debug mode flag - can be enabled via URL param
   const debugMode = new URLSearchParams(window.location.search).get('debug') === 'true';

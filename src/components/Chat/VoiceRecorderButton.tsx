@@ -18,7 +18,7 @@ const VoiceRecorderButton: React.FC<VoiceRecorderButtonProps> = ({
   const [hasPermission, setHasPermission] = useState(true);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setTimeout>;
     
     if (isRecording) {
       interval = setInterval(() => {
