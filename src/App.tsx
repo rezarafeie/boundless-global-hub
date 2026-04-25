@@ -50,6 +50,7 @@ import SmartPackLanding from "./pages/Courses/SmartPackLanding";
 import ServitLanding from "./pages/Courses/ServitLanding";
 import RescueProjectLanding from "./pages/Courses/RescueProjectLanding";
 import IranLanding from "./pages/Courses/IranLanding";
+import IRClassLanding from "./pages/Courses/IRClassLanding";
 
 // Course access and view pages
 import FreeCourseStart from "./pages/Course/FreeCourseStart";
