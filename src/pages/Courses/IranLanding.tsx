@@ -152,18 +152,6 @@ const faqs = [
   { q: "اگر نتیجه نگرفتم چه؟", a: "ما به محتوای دوره مطمئنیم. در صورت اجرای کامل آموزش‌ها و عدم رضایت، در ۷ روز اول قابل بررسی است." },
 ];
 
-// Wave divider
-const Wave = ({ flip = false, color = "muted" }: { flip?: boolean; color?: string }) => (
-  <div className={`w-full overflow-hidden leading-[0] ${flip ? "rotate-180" : ""}`}>
-    <svg viewBox="0 0 1440 80" preserveAspectRatio="none" className="w-full h-12 md:h-20">
-      <path
-        d="M0,32 C240,80 480,0 720,32 C960,64 1200,16 1440,48 L1440,80 L0,80 Z"
-        className={`fill-${color}`}
-      />
-    </svg>
-  </div>
-);
-
 const IranLanding = () => {
   const [courseId, setCourseId] = useState<string | null>(null);
   const [coursePrice, setCoursePrice] = useState<number>(18700000);
