@@ -791,7 +791,7 @@ export const messengerService = {
   async updateUserDetails(userId: number, updates: { name?: string; bio?: string; [key: string]: any }): Promise<MessengerUser> {
     const { data, error } = await supabase
       .from('chat_users')
-      .update(updates)
+      .update(updates as any)
       .eq('id', userId)
       .select('*')
       .single();
