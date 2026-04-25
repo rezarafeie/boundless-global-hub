@@ -3,7 +3,8 @@ import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
-import RescueProjectBanner from "@/components/RescueProjectBanner";
+import IRClassBanner from "@/components/IRClassBanner";
+import IranCourseBanner from "@/components/IranCourseBanner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
@@ -138,6 +139,17 @@ const CourseArchive = () => {
       category: "business" as const,
       image: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?auto=format&fit=crop&w=800&q=80",
       link: "/course/crisis-project"
+    },
+    {
+      title: "پروژه نجات | بدون مرز",
+      description: "🛟 یک چالش کوتاه و جدی برای کسانی که زیر فشار اقتصادی هستند. نه انگیزشی، نه وعده‌های بزرگ — فقط یک مسیر واقعی برای نجات خودت و ایجاد درآمد بین‌المللی.",
+      benefits: "🎯 تحلیل واقع‌بینانه بازار • مسیرهای عملی درآمد دلاری • مدل‌های کسب‌وکار بدون سرمایه • چک‌لیست‌های گام‌به‌گام • جامعه همراهان",
+      outcome: "🌟 پس از این پروژه: مسیر روشنی برای کسب درآمد بین‌المللی خواهید داشت و قدم اول را عملی برداشته‌اید.",
+      isPaid: false,
+      status: "active" as const,
+      category: "business" as const,
+      image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=800&q=80",
+      link: "/rescue"
     }
   ];
 
@@ -162,7 +174,8 @@ const CourseArchive = () => {
         backgroundType="glow"
       />
       
-      <RescueProjectBanner />
+      <IRClassBanner />
+      <IranCourseBanner />
       
       <section id="courses" className="py-16">
         <div className="container">
