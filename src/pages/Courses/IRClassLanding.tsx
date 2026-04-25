@@ -34,7 +34,7 @@ const IRAN_RED = "356 75% 48%";
 
 const IRClassLanding = () => {
   const [, setCourseId] = useState<string | null>(null);
-  const courseSlug = "ir-class";
+  const courseSlug = "ir";
 
   useEffect(() => {
     document.title = "کلاس رایگان ایران ۱۴۰۵ | راه‌اندازی بیزینس در ایران";
@@ -228,18 +228,39 @@ const IRClassLanding = () => {
                   ))}
                 </div>
 
+                {/* Quick Registration Form */}
+                <div className="max-w-md mx-auto mb-6">
+                  <Card className="border-border/50 shadow-2xl overflow-hidden bg-card/95 backdrop-blur">
+                    <div
+                      className="h-1.5"
+                      style={{
+                        background: `linear-gradient(90deg, hsl(${IRAN_GREEN}), hsl(${IRAN_RED}))`,
+                      }}
+                    />
+                    <CardContent className="p-5 md:p-6">
+                      <div className="text-center mb-4">
+                        <Badge
+                          className="mb-2 text-white border-0"
+                          style={{ background: `hsl(${IRAN_GREEN})` }}
+                        >
+                          <Gift className="h-3 w-3 ml-1" />
+                          ثبت‌نام سریع
+                        </Badge>
+                        <h3 className="text-base md:text-lg font-bold text-foreground">
+                          همین الان دسترسی رایگان بگیرید
+                        </h3>
+                      </div>
+                      <DirectEnrollmentForm
+                        courseSlug={courseSlug}
+                        courseName="کلاس دستورالعمل ایران"
+                      >
+                        دریافت دسترسی رایگان
+                      </DirectEnrollmentForm>
+                    </CardContent>
+                  </Card>
+                </div>
+
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button
-                    onClick={scrollToEnrollment}
-                    size="lg"
-                    className="h-14 px-8 text-lg rounded-xl shadow-lg text-white border-0"
-                    style={{
-                      background: `linear-gradient(90deg, hsl(${IRAN_GREEN}), hsl(${IRAN_RED}))`,
-                    }}
-                  >
-                    ثبت‌نام رایگان در کلاس
-                    <ChevronLeft className="mr-2 h-5 w-5" />
-                  </Button>
                   <Button
                     variant="outline"
                     size="lg"
@@ -248,9 +269,9 @@ const IRClassLanding = () => {
                         .querySelector("#features")
                         ?.scrollIntoView({ behavior: "smooth" })
                     }
-                    className="h-14 px-8 text-lg rounded-xl"
+                    className="h-12 px-8 rounded-xl"
                   >
-                    سرفصل‌های کلاس
+                    مشاهده سرفصل‌های کلاس
                     <ArrowDown className="mr-2 h-5 w-5" />
                   </Button>
                 </div>
