@@ -49,6 +49,7 @@ import FreeCourseLanding from "./pages/Courses/FreeCourseLanding";
 import SmartPackLanding from "./pages/Courses/SmartPackLanding";
 import ServitLanding from "./pages/Courses/ServitLanding";
 import RescueProjectLanding from "./pages/Courses/RescueProjectLanding";
+import IranLanding from "./pages/Courses/IranLanding";
 
 // Course access and view pages
 import FreeCourseStart from "./pages/Course/FreeCourseStart";
@@ -324,6 +325,8 @@ const App = () => {
                     <Route path="/crisis/slides" element={<CrisisSlidesPage />} />
                     <Route path="/daramad" element={<PassiveIncomePage />} />
                     <Route path="/rescue" element={<RescueProjectLanding />} />
+                    <Route path="/courses/iran" element={<IranLanding />} />
+                    <Route path="/iran" element={<IranLanding />} />
 
                     {/* Course access control */}
                     <Route path="/course/access/taghir" element={<TaghirAccess />} />
