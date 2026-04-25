@@ -152,18 +152,6 @@ const faqs = [
   { q: "اگر نتیجه نگرفتم چه؟", a: "ما به محتوای دوره مطمئنیم. در صورت اجرای کامل آموزش‌ها و عدم رضایت، در ۷ روز اول قابل بررسی است." },
 ];
 
-// Wave divider
-const Wave = ({ flip = false, color = "muted" }: { flip?: boolean; color?: string }) => (
-  <div className={`w-full overflow-hidden leading-[0] ${flip ? "rotate-180" : ""}`}>
-    <svg viewBox="0 0 1440 80" preserveAspectRatio="none" className="w-full h-12 md:h-20">
-      <path
-        d="M0,32 C240,80 480,0 720,32 C960,64 1200,16 1440,48 L1440,80 L0,80 Z"
-        className={`fill-${color}`}
-      />
-    </svg>
-  </div>
-);
-
 const IranLanding = () => {
   const [courseId, setCourseId] = useState<string | null>(null);
   const [coursePrice, setCoursePrice] = useState<number>(18700000);
@@ -293,7 +281,6 @@ const IranLanding = () => {
               </div>
             </div>
           </div>
-          <Wave color="muted/30" />
         </section>
 
         {/* ─── PAIN ─── */}
@@ -324,7 +311,6 @@ const IranLanding = () => {
             </div>
           </div>
         </section>
-        <Wave flip color="muted/30" />
 
         {/* ─── WHAT YOU GET ─── */}
         <section className="py-16 md:py-20 px-5 bg-background">
@@ -372,7 +358,6 @@ const IranLanding = () => {
           </div>
         </section>
 
-        <Wave color="muted/30" />
         {/* ─── CURRICULUM ─── */}
         <section className="bg-muted/30 py-16 md:py-20 px-5">
           <div className="container mx-auto max-w-5xl">
@@ -425,75 +410,161 @@ const IranLanding = () => {
             </div>
           </div>
         </section>
-        <Wave flip color="muted/30" />
 
         {/* ─── INSTRUCTORS ─── */}
-        <section className="py-16 md:py-20 px-5 bg-background">
-          <div className="container mx-auto max-w-6xl">
-            <SectionTitle title="مدرسان دوره" subtitle="۲ متخصص با تجربه که ترکیب استراتژی و اجرای ایرانی را به شما یاد می‌دهند" isCentered />
-            <div className="grid md:grid-cols-2 gap-6 mt-10">
-              {/* Reza */}
-              <Card className="overflow-hidden border hover:shadow-lg transition-all">
-                <div className="h-1" style={{ background: `hsl(${IRAN_RED})` }} />
-                <div className="p-6 flex flex-col sm:flex-row gap-5">
-                  <div className="relative shrink-0 mx-auto sm:mx-0">
-                    <div className="absolute inset-0 rounded-2xl blur-xl opacity-30"
-                      style={{ background: `hsl(${IRAN_RED})` }} />
-                    <div className="relative w-32 h-32 rounded-2xl overflow-hidden border-2"
-                      style={{ borderColor: `hsl(${IRAN_RED} / 0.2)` }}>
-                      <img src="/lovable-uploads/6eccb7da-2d9d-4f23-bda8-fb9072b17465.png" alt="رضا رفیعی"
-                        className="w-full h-full object-cover" style={{ objectPosition: "center 20%" }} />
+        <section className="relative py-20 md:py-28 px-5 bg-background overflow-hidden">
+          {/* soft glows */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-20 right-0 w-[400px] h-[400px] rounded-full blur-3xl opacity-30"
+              style={{ background: `radial-gradient(circle, hsl(${IRAN_RED} / 0.15), transparent 70%)` }} />
+            <div className="absolute bottom-20 left-0 w-[400px] h-[400px] rounded-full blur-3xl opacity-30"
+              style={{ background: `radial-gradient(circle, hsl(${IRAN_GREEN} / 0.15), transparent 70%)` }} />
+          </div>
+
+          <div className="relative z-10 container mx-auto max-w-6xl">
+            <div className="text-center mb-16">
+              <Badge variant="outline" className="mb-4">
+                <Users className="h-3 w-3 ml-1" />
+                مدرسان دوره
+              </Badge>
+              <h2 className="text-3xl md:text-5xl font-black mb-3 tracking-tight">
+                دو ذهن، یک مأموریت
+              </h2>
+              <p className="text-muted-foreground max-w-xl mx-auto">
+                ترکیب استراتژی بین‌المللی با اجرای دقیق در پلتفرم‌های ایرانی
+              </p>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-8">
+              {/* ─── REZA ─── */}
+              <div className="group">
+                <Card className="overflow-hidden border-0 shadow-xl bg-card relative h-full">
+                  <div className="absolute top-0 inset-x-0 h-1" style={{ background: `hsl(${IRAN_RED})` }} />
+
+                  {/* Portrait */}
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    <img src="/lovable-uploads/6eccb7da-2d9d-4f23-bda8-fb9072b17465.png" alt="رضا رفیعی"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      style={{ objectPosition: "center 15%" }} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+
+                    {/* Floating badge */}
+                    <div className="absolute top-4 right-4 backdrop-blur-md bg-background/70 border rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-bold"
+                      style={{ borderColor: `hsl(${IRAN_RED} / 0.3)`, color: `hsl(${IRAN_RED})` }}>
+                      <Award className="h-3 w-3" />
+                      مدرس اصلی
                     </div>
-                  </div>
-                  <div className="flex-1 space-y-3 text-center sm:text-right">
-                    <div>
-                      <h3 className="text-xl font-bold">رضا رفیعی</h3>
+
+                    {/* Name overlay */}
+                    <div className="absolute bottom-0 inset-x-0 p-6 text-right">
+                      <h3 className="text-3xl font-black mb-1">رضا رفیعی</h3>
                       <p className="text-sm text-muted-foreground">بنیان‌گذار آکادمی رفیعی</p>
                     </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      مربی، کارآفرین و بنیان‌گذار آکادمی رفیعی با بیش از ۳۷۰ هزار دانشجو. متخصص استراتژی، مدیریت بحران و کسب‌وکار بین‌المللی.
-                    </p>
-                    <div className="flex gap-3 justify-center sm:justify-start text-xs">
-                      <div><span className="font-bold" style={{ color: `hsl(${IRAN_RED})` }}>+۳۷۰K</span> دانشجو</div>
-                      <div><span className="font-bold" style={{ color: `hsl(${IRAN_RED})` }}>۱۲+</span> سال تجربه</div>
-                    </div>
                   </div>
-                </div>
-              </Card>
 
-              {/* Matin */}
-              <Card className="overflow-hidden border hover:shadow-lg transition-all">
-                <div className="h-1" style={{ background: `hsl(${IRAN_GREEN})` }} />
-                <div className="p-6 flex flex-col sm:flex-row gap-5">
-                  <div className="relative shrink-0 mx-auto sm:mx-0">
-                    <div className="absolute inset-0 rounded-2xl blur-xl opacity-30"
-                      style={{ background: `hsl(${IRAN_GREEN})` }} />
-                    <div className="relative w-32 h-32 rounded-2xl overflow-hidden border-2"
-                      style={{ borderColor: `hsl(${IRAN_GREEN} / 0.2)` }}>
-                      <img src="/lovable-uploads/724e94ed-8140-4749-af7a-f025b21a6d33.png" alt="متین پورخالقی"
-                        className="w-full h-full object-cover" />
+                  <CardContent className="p-6 space-y-5">
+                    {/* Quote */}
+                    <div className="relative pr-4 border-r-2" style={{ borderColor: `hsl(${IRAN_RED})` }}>
+                      <p className="text-sm leading-relaxed italic text-foreground/80">
+                        «در ایران فرصت هست — فقط باید زاویه دید را عوض کرد.»
+                      </p>
                     </div>
-                  </div>
-                  <div className="flex-1 space-y-3 text-center sm:text-right">
-                    <div>
-                      <h3 className="text-xl font-bold">متین پورخالقی</h3>
+
+                    {/* Bio */}
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      مربی، کارآفرین و بنیان‌گذار آکادمی رفیعی با بیش از ۳۷۰ هزار دانشجو در سراسر جهان. متخصص استراتژی، مدیریت بحران و کسب‌وکار بین‌المللی.
+                    </p>
+
+                    {/* Expertise tags */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {["استراتژی بیزینس", "مدیریت بحران", "کسب‌وکار بین‌المللی", "سخنران TEDx"].map((t) => (
+                        <span key={t} className="text-xs px-2.5 py-1 rounded-md bg-muted text-muted-foreground">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Stats grid */}
+                    <div className="grid grid-cols-3 gap-3 pt-4 border-t">
+                      <div className="text-center">
+                        <div className="text-xl font-black" style={{ color: `hsl(${IRAN_RED})` }}>+۳۷۰K</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">دانشجو</div>
+                      </div>
+                      <div className="text-center border-x">
+                        <div className="text-xl font-black" style={{ color: `hsl(${IRAN_RED})` }}>۱۲+</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">سال تجربه</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xl font-black" style={{ color: `hsl(${IRAN_RED})` }}>۴۰+</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">دوره منتشره</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* ─── MATIN ─── */}
+              <div className="group">
+                <Card className="overflow-hidden border-0 shadow-xl bg-card relative h-full">
+                  <div className="absolute top-0 inset-x-0 h-1" style={{ background: `hsl(${IRAN_GREEN})` }} />
+
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    <img src="/lovable-uploads/724e94ed-8140-4749-af7a-f025b21a6d33.png" alt="متین پورخالقی"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+
+                    <div className="absolute top-4 right-4 backdrop-blur-md bg-background/70 border rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-bold"
+                      style={{ borderColor: `hsl(${IRAN_GREEN} / 0.3)`, color: `hsl(${IRAN_GREEN})` }}>
+                      <Award className="h-3 w-3" />
+                      متخصص بازار ایران
+                    </div>
+
+                    <div className="absolute bottom-0 inset-x-0 p-6 text-right">
+                      <h3 className="text-3xl font-black mb-1">متین پورخالقی</h3>
                       <p className="text-sm text-muted-foreground">بنیان‌گذار آژانس دیجیتال «دیان»</p>
                     </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      متخصص فروش در پلتفرم‌های ایرانی (باسلام، دیوار، یکتانت)، برندسازی و فروش فایل دیجیتال. مشاور رشد بیش از ۵۰ برند.
-                    </p>
-                    <div className="flex gap-3 justify-center sm:justify-start text-xs">
-                      <div><span className="font-bold" style={{ color: `hsl(${IRAN_GREEN})` }}>+۴۵K</span> دانش‌پذیر</div>
-                      <div><span className="font-bold" style={{ color: `hsl(${IRAN_GREEN})` }}>+۵۰</span> برند مشاوره</div>
-                    </div>
                   </div>
-                </div>
-              </Card>
+
+                  <CardContent className="p-6 space-y-5">
+                    <div className="relative pr-4 border-r-2" style={{ borderColor: `hsl(${IRAN_GREEN})` }}>
+                      <p className="text-sm leading-relaxed italic text-foreground/80">
+                        «پلتفرم‌های ایرانی، گنج‌های پنهانی هستند که اکثر کسب‌وکارها هنوز کشفشان نکرده‌اند.»
+                      </p>
+                    </div>
+
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      متخصص فروش در پلتفرم‌های ایرانی (باسلام، دیوار، یکتانت)، برندسازی، فروش فایل دیجیتال و راه‌اندازی فروشگاه اینترنتی. مشاور رشد بیش از ۵۰ برند.
+                    </p>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {["باسلام", "دیوار", "یکتانت", "برندسازی", "AI Marketing"].map((t) => (
+                        <span key={t} className="text-xs px-2.5 py-1 rounded-md bg-muted text-muted-foreground">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3 pt-4 border-t">
+                      <div className="text-center">
+                        <div className="text-xl font-black" style={{ color: `hsl(${IRAN_GREEN})` }}>+۴۵K</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">دانش‌پذیر</div>
+                      </div>
+                      <div className="text-center border-x">
+                        <div className="text-xl font-black" style={{ color: `hsl(${IRAN_GREEN})` }}>+۵۰</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">برند مشاوره</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xl font-black" style={{ color: `hsl(${IRAN_GREEN})` }}>دیان</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">آژانس دیجیتال</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </section>
 
-        <Wave color="muted/30" />
         {/* ─── COMPARISON ─── */}
         <section className="bg-muted/30 py-16 md:py-20 px-5">
           <div className="container mx-auto max-w-3xl">
@@ -519,7 +590,6 @@ const IranLanding = () => {
             </Card>
           </div>
         </section>
-        <Wave flip color="muted/30" />
 
         {/* ─── TESTIMONIALS ─── */}
         <section className="py-16 md:py-20 px-5 bg-background">
@@ -553,7 +623,6 @@ const IranLanding = () => {
           </div>
         </section>
 
-        <Wave color="muted/30" />
         {/* ─── AUDIENCE ─── */}
         <section className="bg-muted/30 py-16 md:py-20 px-5">
           <div className="container mx-auto max-w-6xl">
@@ -572,7 +641,6 @@ const IranLanding = () => {
             </div>
           </div>
         </section>
-        <Wave flip color="muted/30" />
 
         {/* ─── OUTCOMES ─── */}
         <section className="py-16 md:py-20 px-5 bg-background">
@@ -592,7 +660,6 @@ const IranLanding = () => {
           </div>
         </section>
 
-        <Wave color="muted/30" />
         {/* ─── GUARANTEE ─── */}
         <section className="bg-muted/30 py-16 md:py-20 px-5">
           <div className="container mx-auto max-w-3xl">
@@ -611,7 +678,6 @@ const IranLanding = () => {
             </Card>
           </div>
         </section>
-        <Wave flip color="muted/30" />
 
         {/* ─── FAQ ─── */}
         <section className="py-16 md:py-20 px-5 bg-background">
