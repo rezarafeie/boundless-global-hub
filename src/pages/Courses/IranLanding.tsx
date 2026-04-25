@@ -293,7 +293,6 @@ const IranLanding = () => {
               </div>
             </div>
           </div>
-          <Wave color="muted/30" />
         </section>
 
         {/* ─── PAIN ─── */}
@@ -324,7 +323,6 @@ const IranLanding = () => {
             </div>
           </div>
         </section>
-        <Wave flip color="muted/30" />
 
         {/* ─── WHAT YOU GET ─── */}
         <section className="py-16 md:py-20 px-5 bg-background">
@@ -372,7 +370,6 @@ const IranLanding = () => {
           </div>
         </section>
 
-        <Wave color="muted/30" />
         {/* ─── CURRICULUM ─── */}
         <section className="bg-muted/30 py-16 md:py-20 px-5">
           <div className="container mx-auto max-w-5xl">
@@ -425,7 +422,6 @@ const IranLanding = () => {
             </div>
           </div>
         </section>
-        <Wave flip color="muted/30" />
 
         {/* ─── INSTRUCTORS ─── */}
         <section className="py-16 md:py-20 px-5 bg-background">
@@ -493,7 +489,6 @@ const IranLanding = () => {
           </div>
         </section>
 
-        <Wave color="muted/30" />
         {/* ─── COMPARISON ─── */}
         <section className="bg-muted/30 py-16 md:py-20 px-5">
           <div className="container mx-auto max-w-3xl">
@@ -519,7 +514,6 @@ const IranLanding = () => {
             </Card>
           </div>
         </section>
-        <Wave flip color="muted/30" />
 
         {/* ─── TESTIMONIALS ─── */}
         <section className="py-16 md:py-20 px-5 bg-background">
@@ -553,7 +547,6 @@ const IranLanding = () => {
           </div>
         </section>
 
-        <Wave color="muted/30" />
         {/* ─── AUDIENCE ─── */}
         <section className="bg-muted/30 py-16 md:py-20 px-5">
           <div className="container mx-auto max-w-6xl">
@@ -572,7 +565,6 @@ const IranLanding = () => {
             </div>
           </div>
         </section>
-        <Wave flip color="muted/30" />
 
         {/* ─── OUTCOMES ─── */}
         <section className="py-16 md:py-20 px-5 bg-background">
@@ -592,7 +584,6 @@ const IranLanding = () => {
           </div>
         </section>
 
-        <Wave color="muted/30" />
         {/* ─── GUARANTEE ─── */}
         <section className="bg-muted/30 py-16 md:py-20 px-5">
           <div className="container mx-auto max-w-3xl">
@@ -611,7 +602,6 @@ const IranLanding = () => {
             </Card>
           </div>
         </section>
-        <Wave flip color="muted/30" />
 
         {/* ─── FAQ ─── */}
         <section className="py-16 md:py-20 px-5 bg-background">
