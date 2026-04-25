@@ -328,6 +328,8 @@ const App = () => {
                     <Route path="/rescue" element={<RescueProjectLanding />} />
                     <Route path="/courses/iran" element={<IranLanding />} />
                     <Route path="/iran" element={<IranLanding />} />
+                    <Route path="/ir-class" element={<IRClassLanding />} />
+                    <Route path="/courses/ir-class" element={<IRClassLanding />} />
 
                     {/* Course access control */}
                     <Route path="/course/access/taghir" element={<TaghirAccess />} />
