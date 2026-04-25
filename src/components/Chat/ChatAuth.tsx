@@ -21,7 +21,7 @@ const ChatAuth: React.FC<ChatAuthProps> = ({ onAuthenticated }) => {
   const [checkingApproval, setCheckingApproval] = useState(false);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setTimeout>;
     if (isRegistered) {
       interval = setInterval(checkApprovalStatus, 30000);
     }

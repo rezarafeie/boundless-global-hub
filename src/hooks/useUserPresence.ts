@@ -7,7 +7,7 @@ interface UseUserPresenceOptions {
 }
 
 export const useUserPresence = ({ userId, enabled = true }: UseUserPresenceOptions) => {
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const intervalRef = useRef<ReturnType<typeof setTimeout>>();
   const isOnlineRef = useRef(true);
 
   useEffect(() => {

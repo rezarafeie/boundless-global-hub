@@ -7,7 +7,7 @@ interface UseDoubleTapOptions {
 
 export const useDoubleTap = ({ onDoubleTap, delay = 300 }: UseDoubleTapOptions) => {
   const tapCount = useRef(0);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleTap = useCallback(() => {
     tapCount.current += 1;
