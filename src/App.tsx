@@ -51,6 +51,7 @@ import ServitLanding from "./pages/Courses/ServitLanding";
 import RescueProjectLanding from "./pages/Courses/RescueProjectLanding";
 import IranLanding from "./pages/Courses/IranLanding";
 import IranCCLanding from "./pages/Courses/IranCCLanding";
+import BoundlessCCLanding from "./pages/Courses/BoundlessCCLanding";
 import IRClassLanding from "./pages/Courses/IRClassLanding";
 
 // Course access and view pages
