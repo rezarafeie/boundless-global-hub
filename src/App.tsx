@@ -330,8 +330,10 @@ const App = () => {
                     <Route path="/rescue" element={<RescueProjectLanding />} />
                     <Route path="/courses/iran" element={<IranLanding />} />
                     <Route path="/iran" element={<IranLanding />} />
-                    <Route path="/iran/cc" element={<IranCCLanding />} />
-                    <Route path="/courses/iran/cc" element={<IranCCLanding />} />
+                   <Route path="/iran/cc" element={<IranCCLanding />} />
+                   <Route path="/courses/iran/cc" element={<IranCCLanding />} />
+                   <Route path="/boundless/cc" element={<BoundlessCCLanding />} />
+                   <Route path="/courses/boundless/cc" element={<BoundlessCCLanding />} />
                     <Route path="/ir-class" element={<IRClassLanding />} />
                     <Route path="/courses/ir-class" element={<IRClassLanding />} />
 
