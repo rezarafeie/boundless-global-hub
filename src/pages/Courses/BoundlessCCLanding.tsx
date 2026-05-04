@@ -1,0 +1,625 @@
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import MainLayout from "@/components/Layout/MainLayout";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  PlayCircle, Flame, ShieldCheck, Clock, Users, CheckCircle2, Check, X,
+  Sparkles, MessageCircle, ArrowLeft, Layers,
+  Infinity as InfinityIcon, Gift, AlertTriangle,
+  DollarSign, Heart, Hourglass, Ban, Globe,
+} from "lucide-react";
+
+const BRAND = "212 90% 45%";
+const ACCENT = "32 95% 50%";
+
+/* ───────── DATA ───────── */
+
+const transformations = [
+  { name: "آرش م.", role: "فریلنسر، تورنتو", text: "از ایران مهاجرت کردم و نمی‌دونستم چطور درآمد دلاری بسازم. الان از Upwork ماهانه ۴ هزار دلار می‌گیرم.", badge: "درآمد دلاری" },
+  { name: "نیلوفر ک.", role: "صاحب برند، دبی", text: "محصولم رو روی شاپیفای راه انداختم و الان به ۸ کشور ارسال دارم.", badge: "فروش بین‌المللی" },
+  { name: "رضا ش.", role: "کارآفرین، استانبول", text: "دوره بدون مرز کل ذهنیت من رو نسبت به کسب‌وکار جهانی عوض کرد.", badge: "تحول ذهنی" },
+  { name: "مریم ت.", role: "دیجیتال نومد، بالی", text: "از یک کارمند معمولی به یک فریلنسر بین‌المللی با مشتری‌های ۵ کشور تبدیل شدم.", badge: "زندگی نومد" },
+  { name: "سعید ن.", role: "صاحب آژانس، برلین", text: "آژانس مارکتینگ خودم رو با مشتری‌های اروپایی راه انداختم.", badge: "آژانس بین‌المللی" },
+  { name: "لیلا ج.", role: "محصول دیجیتال، لندن", text: "محصول دیجیتالم رو روی Gumroad فروختم و درآمد پسیو ساختم.", badge: "درآمد پسیو" },
+];
+
+const scenarios = [
+  "دلتان می‌خواهد درآمد دلاری/یورویی پایدار داشته باشید.",
+  "می‌خواهید مهاجرت کنید ولی نمی‌دانید چطور درآمد بین‌المللی بسازید.",
+  "از وابستگی به اقتصاد ریالی و تورم خسته شده‌اید.",
+  "ایده دارید ولی نمی‌دانید کدام بیزینس مدل برای بازار جهانی مناسب است.",
+  "بلد نیستید روی پلتفرم‌های جهانی (Upwork، Shopify، Stripe) فعال شوید.",
+  "می‌خواهید برند شخصی بین‌المللی بسازید ولی مسیر مشخصی ندارید.",
+];
+
+const benefits = [
+  "یک بیزینس مدل بین‌المللی متناسب با مهارت‌های خودتان انتخاب می‌کنید.",
+  "اکانت Upwork، Fiverr و LinkedIn حرفه‌ای می‌سازید.",
+  "درگاه پرداخت بین‌المللی (Stripe / Wise / Payoneer) راه می‌اندازید.",
+  "فروشگاه Shopify یا سایت خدماتی راه‌اندازی می‌کنید.",
+  "از AI برای محتوا، فروش و اتوماسیون استفاده می‌کنید.",
+  "درآمد ارزی پایدار و مقاوم به تورم می‌سازید.",
+];
+
+const costs = [
+  { icon: DollarSign, color: ACCENT, title: "هزینه مالی", items: [
+    "از دست دادن فرصت‌های دلاری بازار جهانی",
+    "وابستگی به درآمد ریالی و تورم",
+    "هدر دادن مهارت‌ها در بازار محدود داخلی",
+    "نداشتن سرمایه ارزی برای آینده",
+  ]},
+  { icon: Heart, color: ACCENT, title: "هزینه عاطفی", items: [
+    "احساس محدود بودن در یک جغرافیا",
+    "ناامیدی از شرایط اقتصادی",
+    "استرس مداوم برای آینده مالی",
+    "نداشتن مسیر روشن برای رشد جهانی",
+  ]},
+  { icon: Hourglass, color: BRAND, title: "هزینه زمانی", items: [
+    "ماه‌ها صرف یادگیری بدون نتیجه",
+    "آزمون و خطا روی پلتفرم‌های اشتباه",
+    "تأخیر در ساخت پورتفولیو بین‌المللی",
+    "از دست دادن سال‌های طلایی کاری",
+  ]},
+  { icon: Ban, color: BRAND, title: "هزینه فرصت", items: [
+    "از دست دادن مشتریان جهانی پولساز",
+    "محرومیت از پلتفرم‌های پرترافیک خارجی",
+    "نداشتن برند شخصی بین‌المللی",
+    "عقب ماندن از موج جدید کار از راه دور",
+  ]},
+];
+
+const compareRows = [
+  { f: "تمرکز بر بازار جهانی و درآمد ارزی", us: true, others: false },
+  { f: "آموزش پلتفرم‌های بین‌المللی (Upwork, Shopify, Stripe)", us: true, others: false },
+  { f: "راه‌اندازی درگاه پرداخت ارزی برای ایرانیان", us: true, others: false },
+  { f: "ساخت برند شخصی جهانی", us: true, others: false },
+  { f: "AI و اتوماسیون فروش بین‌المللی", us: true, others: false },
+  { f: "چند مدرس با تجربه واقعی بازار جهانی", us: true, others: "گاهی" },
+  { f: "دسترسی مادام‌العمر و آپدیت رایگان", us: true, others: "گاهی" },
+  { f: "گارانتی بازگشت وجه", us: true, others: false },
+];
+
+const forYou = [
+  "می‌خواهید یک کسب‌وکار آنلاین بین‌المللی واقعی راه بیندازید.",
+  "قصد مهاجرت دارید و می‌خواهید قبل از آن درآمد ارزی بسازید.",
+  "دنبال درآمد دلاری/یورویی پایدار و مقاوم به تورم هستید.",
+  "می‌خواهید برند شخصی بین‌المللی داشته باشید.",
+  "می‌خواهید از AI برای رشد بیزینس جهانی استفاده کنید.",
+  "حاضرید قدم به قدم اجرا کنید — نه فقط تماشا.",
+];
+
+const techniques = [
+  { en: "Global Mindset", fa: "ذهنیت جهانی", desc: "تفکر بدون مرز و حذف باورهای محدودکننده." },
+  { en: "Skill Stacking", fa: "چیدن مهارت‌ها", desc: "ترکیب مهارت‌ها برای ساخت پروپوزیشن منحصربه‌فرد." },
+  { en: "Freelancing", fa: "فریلنسینگ بین‌المللی", desc: "Upwork، Fiverr، Toptal و LinkedIn." },
+  { en: "E-commerce", fa: "تجارت الکترونیک جهانی", desc: "Shopify، Etsy و Amazon FBA." },
+  { en: "Digital Products", fa: "محصولات دیجیتال", desc: "فروش روی Gumroad، Lemon Squeezy و Podia." },
+  { en: "Service Agency", fa: "آژانس خدماتی", desc: "ساخت آژانس از راه دور با مشتری‌های جهانی." },
+  { en: "Payment Gateway", fa: "درگاه پرداخت ارزی", desc: "Stripe، Wise، Payoneer و راه‌حل‌های ایرانیان." },
+  { en: "Personal Brand", fa: "برند شخصی جهانی", desc: "LinkedIn، X و یوتیوب برای رشد بین‌المللی." },
+  { en: "Global Marketing", fa: "مارکتینگ بین‌المللی", desc: "گوگل ادز، متا ادز و کمپین‌های جهانی." },
+  { en: "Sales Funnel", fa: "قیف فروش جهانی", desc: "ایمیل مارکتینگ، لندینگ و تبدیل بین‌المللی." },
+  { en: "AI Automation", fa: "اتوماسیون با AI", desc: "ChatGPT، Claude و n8n برای اسکیل." },
+  { en: "Tax & Legal", fa: "مالیات و حقوق بین‌المللی", desc: "ساختار قانونی LLC، Estonia e-Residency و …" },
+];
+
+const guarantees = [
+  { icon: "💯", title: "ضمانت رضایت", desc: "اگر تا پایان هفته اول راضی نبودید، کل وجه برمی‌گردد." },
+  { icon: "🎯", title: "ضمانت نتیجه", desc: "اگر اجرا کنید و نتیجه نگیرید، وجه شما برگشت داده می‌شود." },
+  { icon: "⏱️", title: "ضمانت زمانی", desc: "تا پایان دوره وقت دارید تصمیم بگیرید — بدون هیچ سوالی." },
+];
+
+const faqs = [
+  { q: "این دوره برای چه کسانی است؟", a: "هر کسی که می‌خواهد درآمد ارزی و کسب‌وکار بین‌المللی واقعی داشته باشد — از مبتدی تا حرفه‌ای." },
+  { q: "آیا برای شروع به مهارت خاصی نیاز دارم؟", a: "خیر. دوره از صفر شروع می‌شود و شما را تا اجرای کامل پیش می‌برد." },
+  { q: "چقدر طول می‌کشد دوره را تمام کنم؟", a: "بسته به سرعت شما ۴ تا ۸ هفته. دسترسی شما مادام‌العمر است." },
+  { q: "بعد از خرید چقدر زمان می‌برد دسترسی پیدا کنم؟", a: "بلافاصله پس از پرداخت، دسترسی فعال می‌شود." },
+  { q: "آیا پشتیبانی دارد؟", a: "بله. تیم پشتیبانی آکادمی رفیعی پاسخگوی شماست." },
+  { q: "اگر از ایران هستم، می‌توانم درآمد ارزی بگیرم؟", a: "بله. در دوره روش‌های دریافت ارز برای ایرانیان به‌طور کامل آموزش داده شده." },
+  { q: "آیا گواهی پایان دوره دارد؟", a: "بله. گواهی رسمی آکادمی رفیعی صادر می‌شود." },
+  { q: "اگر نتیجه نگرفتم چه؟", a: "گارانتی بازگشت وجه داریم. در صورت اجرا و عدم نتیجه، وجه شما برمی‌گردد." },
+];
+
+/* ───────── COMPONENT ───────── */
+
+const BoundlessCCLanding: React.FC = () => {
+  const [coursePrice, setCoursePrice] = useState<number>(28700000);
+  const [originalPrice] = useState<number>(55000000);
+  const courseSlug = "boundless";
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("courses").select("id, price").eq("slug", courseSlug).maybeSingle();
+        if (data?.price) setCoursePrice(Number(data.price));
+      } catch (e) { console.error(e); }
+    })();
+  }, []);
+
+  const goEnroll = () => { window.location.href = "/enroll/?course=boundless"; };
+  const fmt = (n: number) => new Intl.NumberFormat("fa-IR").format(n);
+
+  const StickyCTA = () => (
+    <Button
+      onClick={goEnroll}
+      size="lg"
+      className="text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
+      style={{ background: `linear-gradient(135deg, hsl(${BRAND}), hsl(${BRAND} / 0.85))` }}
+    >
+      <Flame className="ml-2 h-5 w-5" />
+      همین الان شروع کنید — {fmt(coursePrice)} تومان
+    </Button>
+  );
+
+  return (
+    <MainLayout>
+      <head>
+        <title>دوره بدون مرز | راه‌اندازی بیزینس آنلاین بین‌المللی و درآمد ارزی</title>
+        <meta name="description" content="دوره جامع بدون مرز: بیزینس بین‌المللی، درآمد ارزی پایدار، Upwork، Shopify، Stripe، AI و گارانتی بازگشت وجه." />
+      </head>
+
+      <div dir="rtl" className="min-h-screen bg-background text-foreground">
+
+        {/* HERO */}
+        <section className="relative py-12 md:py-20 border-y" style={{ borderColor: `hsl(${BRAND} / 0.25)` }}>
+          <div className="container mx-auto px-4 max-w-5xl">
+            <div className="text-center mb-8">
+              <Badge
+                className="mb-4 text-white border-0 px-4 py-2"
+                style={{ background: `linear-gradient(135deg, hsl(${BRAND}), hsl(${ACCENT}))` }}
+              >
+                <PlayCircle className="ml-2 h-4 w-4" />
+                ویدیو معرفی دوره را حتماً تماشا کنید
+              </Badge>
+              <h1 className="text-3xl md:text-5xl font-extrabold mb-4">
+                دوره جامع <span style={{ color: `hsl(${BRAND})` }}>بدون مرز</span>
+              </h1>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                در این ویدیو با جزئیات دوره و روش‌های ساخت بیزینس بین‌المللی و درآمد ارزی آشنا می‌شوید.
+              </p>
+            </div>
+
+            <Card className="overflow-hidden border-2" style={{ borderColor: `hsl(${BRAND} / 0.3)` }}>
+              <div className="aspect-video bg-black flex items-center justify-center">
+                <iframe
+                  className="w-full h-full"
+                  src="https://www.aparat.com/video/video/embed/videohash/placeholder/vt/frame"
+                  title="معرفی دوره بدون مرز"
+                  allowFullScreen
+                />
+              </div>
+            </Card>
+
+            <div className="text-center mt-6 flex flex-col items-center gap-3">
+              <p className="text-sm text-muted-foreground">
+                ⏱️ مدت زمان: ۲۰ دقیقه | 🎯 این ویدیو می‌تواند نقطه عطف بیزینس جهانی شما باشد
+              </p>
+              <StickyCTA />
+            </div>
+          </div>
+        </section>
+
+        {/* PRICING */}
+        <section className="py-16 md:py-20">
+          <div className="container mx-auto px-4 max-w-4xl text-center">
+            <Badge variant="outline" className="mb-4" style={{ borderColor: `hsl(${ACCENT})`, color: `hsl(${ACCENT})` }}>
+              <Flame className="ml-1 h-3 w-3" /> پیشنهاد ویژه
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">دوره بدون مرز — ۱۴۰۵</h2>
+            <p className="text-muted-foreground mb-6">سرمایه‌گذاری روی پایدارترین مدل کسب‌وکار جهانی</p>
+
+            <div className="flex items-center justify-center gap-4 mb-3 flex-wrap">
+              <span className="text-2xl line-through text-muted-foreground">{fmt(originalPrice)}</span>
+              <span className="text-5xl md:text-6xl font-extrabold" style={{ color: `hsl(${BRAND})` }}>
+                {fmt(coursePrice)}
+              </span>
+              <span className="text-xl">تومان</span>
+            </div>
+            <Badge className="text-white border-0" style={{ background: `hsl(${ACCENT})` }}>
+              تخفیف محدود — فقط امروز
+            </Badge>
+
+            <div className="mt-8"><StickyCTA /></div>
+          </div>
+        </section>
+
+        {/* WHAT YOU GET */}
+        <section className="py-16 bg-muted/30">
+          <div className="container mx-auto px-4 max-w-5xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">دقیقاً چی دریافت می‌کنید؟</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              {[
+                "۴۰+ اپیزود ویدیویی عملی و قابل اجرا",
+                "تیم مدرسان متخصص بازار جهانی",
+                "فایل‌ها و چک‌لیست‌های آماده (تمپلیت Upwork، Stripe، Shopify)",
+                "پرامپت‌های AI برای محتوا، فروش و اتوماسیون",
+                "ورک‌بوک PDF + خلاصه هر فاز",
+                "پشتیبانی تخصصی تیم رفیعی",
+                "دسترسی مادام‌العمر + آپدیت‌های آینده رایگان",
+                "گواهی رسمی پایان دوره از آکادمی رفیعی",
+                "هدیه: مزه بدون مرز + کلاس‌های جانبی",
+                "گارانتی ۱۰۰٪ بازگشت وجه",
+              ].map((item, i) => (
+                <Card key={i} className="border-r-4" style={{ borderRightColor: `hsl(${BRAND})` }}>
+                  <CardContent className="p-4 flex items-start gap-3">
+                    <div className="flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-white font-bold text-sm" style={{ background: `hsl(${BRAND})` }}>
+                      {i + 1}
+                    </div>
+                    <p className="pt-1">{item}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <div className="text-center mt-10"><StickyCTA /></div>
+          </div>
+        </section>
+
+        {/* SOCIAL PROOF */}
+        <section className="py-16">
+          <div className="container mx-auto px-4 max-w-5xl">
+            <Badge className="mx-auto block w-fit mb-3 text-white border-0" style={{ background: `hsl(${BRAND})` }}>
+              <Sparkles className="ml-1 h-3 w-3 inline" /> موفقیت‌های واقعی
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">داستان‌های تحول واقعی</h2>
+            <p className="text-center text-muted-foreground mb-10">کسانی که با این دوره وارد بازار جهانی شدند</p>
+
+            <div className="grid md:grid-cols-3 gap-6 mb-10">
+              {[
+                { num: "+۸۵٪", label: "افزایش درآمد ارزی" },
+                { num: "+۵,۰۰۰", label: "دانشجوی بدون مرز" },
+                { num: "۹۷٪", label: "رضایت دانشجویان" },
+              ].map((s, i) => (
+                <Card key={i} className="text-center">
+                  <CardContent className="p-6">
+                    <div className="text-4xl font-extrabold" style={{ color: `hsl(${BRAND})` }}>{s.num}</div>
+                    <p className="text-muted-foreground mt-2">{s.label}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {transformations.map((t, i) => (
+                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
+                  <Card className="h-full">
+                    <CardContent className="p-5">
+                      <p className="text-sm leading-relaxed mb-4">"{t.text}"</p>
+                      <div className="border-t pt-3">
+                        <p className="font-bold text-sm">{t.name}</p>
+                        <p className="text-xs text-muted-foreground">{t.role}</p>
+                        <Badge className="mt-2 text-white border-0" style={{ background: `hsl(${BRAND})` }}>
+                          <CheckCircle2 className="ml-1 h-3 w-3" /> {t.badge}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* SCENARIOS */}
+        <section className="py-16 bg-muted/30">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">خودتان را در این موقعیت‌ها تصور کنید:</h2>
+            <div className="space-y-3">
+              {scenarios.map((s, i) => (
+                <Card key={i} className="border-r-4" style={{ borderRightColor: `hsl(${ACCENT})` }}>
+                  <CardContent className="p-4 flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: `hsl(${ACCENT})` }} />
+                    <p>{s}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <p className="text-center text-lg mt-8">برای همه این چالش‌ها، یک راه‌حل تضمینی وجود دارد:</p>
+            <p className="text-center text-2xl font-bold mt-2" style={{ color: `hsl(${BRAND})` }}>دوره جامع بدون مرز</p>
+          </div>
+        </section>
+
+        {/* BENEFITS */}
+        <section className="py-16">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">با این دوره:</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              {benefits.map((b, i) => (
+                <div key={i} className="flex items-start gap-3 p-4 rounded-lg bg-muted/40">
+                  <CheckCircle2 className="h-6 w-6 flex-shrink-0" style={{ color: `hsl(${BRAND})` }} />
+                  <p>{b}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* COST OF NOT CHANGING */}
+        <section className="py-16 bg-muted/30">
+          <div className="container mx-auto px-4 max-w-5xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">هزینه واقعی تغییر نکردن چیست؟</h2>
+            <p className="text-center text-muted-foreground mb-10">ماندن در شرایط فعلی، گران‌ترین انتخاب است</p>
+            <div className="grid md:grid-cols-2 gap-5">
+              {costs.map((c, i) => (
+                <Card key={i} className="border-2" style={{ borderColor: `hsl(${c.color} / 0.3)` }}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="h-12 w-12 rounded-lg flex items-center justify-center" style={{ background: `hsl(${c.color} / 0.12)`, color: `hsl(${c.color})` }}>
+                        <c.icon className="h-6 w-6" />
+                      </div>
+                      <h3 className="font-bold text-lg">{c.title}</h3>
+                    </div>
+                    <ul className="space-y-2">
+                      {c.items.map((it, j) => (
+                        <li key={j} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <span className="mt-1">•</span><span>{it}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <Card className="mt-8 border-2 text-center" style={{ borderColor: `hsl(${BRAND})`, background: `hsl(${BRAND} / 0.05)` }}>
+              <CardContent className="p-6">
+                <p className="text-lg font-medium">هزینه تغییر نکردن خیلی بیشتر از سرمایه‌گذاری {fmt(coursePrice)} تومان است.</p>
+                <p className="text-muted-foreground mt-2">یک تصمیم امروز، مسیر ۱۰ سال آینده شما را عوض می‌کند.</p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* COMPARISON */}
+        <section className="py-16">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">چرا دوره بدون مرز متفاوت است؟</h2>
+            <Card className="overflow-hidden">
+              <table className="w-full text-sm md:text-base">
+                <thead style={{ background: `hsl(${BRAND} / 0.1)` }}>
+                  <tr>
+                    <th className="text-right p-4">ویژگی</th>
+                    <th className="text-center p-4" style={{ color: `hsl(${BRAND})` }}>دوره بدون مرز</th>
+                    <th className="text-center p-4 text-muted-foreground">دوره‌های دیگر</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {compareRows.map((r, i) => (
+                    <tr key={i} className="border-t">
+                      <td className="p-4">{r.f}</td>
+                      <td className="p-4 text-center">
+                        {r.us === true ? <Check className="inline h-5 w-5" style={{ color: `hsl(${BRAND})` }} /> : <span className="text-sm text-muted-foreground">{String(r.us)}</span>}
+                      </td>
+                      <td className="p-4 text-center">
+                        {r.others === false ? <X className="inline h-5 w-5 text-muted-foreground/50" /> : <span className="text-sm text-muted-foreground">{String(r.others)}</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+          </div>
+        </section>
+
+        {/* FOR YOU IF */}
+        <section className="py-16 bg-muted/30">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">این دوره برای شما مناسب است اگر:</h2>
+            <div className="space-y-3">
+              {forYou.map((f, i) => (
+                <div key={i} className="flex items-start gap-3 p-4 rounded-lg bg-background border-r-4" style={{ borderRightColor: `hsl(${BRAND})` }}>
+                  <CheckCircle2 className="h-5 w-5 mt-0.5" style={{ color: `hsl(${BRAND})` }} />
+                  <p>{f}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-center text-lg mt-8 font-medium">شما لایق یک کسب‌وکار جهانی قوی و درآمد ارزی پایدار هستید.</p>
+          </div>
+        </section>
+
+        {/* TIMELINE */}
+        <section className="py-16">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">تحول شما در ۴ تا ۸ هفته</h2>
+            <p className="text-center text-muted-foreground mb-10">از یک ایده مبهم به یک کسب‌وکار جهانی واقعی</p>
+            <div className="grid md:grid-cols-3 gap-5">
+              {[
+                { w: "هفته ۱-۲", t: "ذهنیت + انتخاب مدل", d: "ذهنیت بدون مرز و انتخاب بهترین بیزینس مدل برای شما." },
+                { w: "هفته ۳-۵", t: "ساخت زیرساخت جهانی", d: "Upwork، Shopify، Stripe، Wise و برند شخصی." },
+                { w: "هفته ۶-۸", t: "اولین درآمد ارزی", d: "کمپین، فروش و دریافت اولین مشتری بین‌المللی." },
+              ].map((s, i) => (
+                <Card key={i} className="text-center">
+                  <CardContent className="p-6">
+                    <Badge className="mb-3 text-white border-0" style={{ background: `hsl(${BRAND})` }}>{s.w}</Badge>
+                    <h3 className="font-bold text-lg mb-2">{s.t}</h3>
+                    <p className="text-sm text-muted-foreground">{s.d}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <div className="text-center mt-10"><StickyCTA /></div>
+          </div>
+        </section>
+
+        {/* BONUSES */}
+        <section className="py-16 bg-muted/30">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <Badge className="mx-auto block w-fit mb-3 text-white border-0" style={{ background: `hsl(${ACCENT})` }}>
+              <Gift className="ml-1 h-3 w-3 inline" /> هدایای ویژه
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-2">بونس‌های ویژه دوره</h2>
+            <p className="text-center text-muted-foreground mb-10">قیمت اصلی پکیج: <span className="line-through">{fmt(originalPrice)} تومان</span></p>
+
+            <div className="space-y-4">
+              {[
+                { t: "ورک‌بوک کامل تمام اپیزودها + چک‌لیست‌ها", v: "۴,۰۰۰,۰۰۰" },
+                { t: "پرامپت‌های AI برای بیزینس بین‌المللی", v: "۳,۵۰۰,۰۰۰" },
+                { t: "دوره مزه بدون مرز", v: "۲,۰۰۰,۰۰۰" },
+                { t: "وبینار ذهن‌آگاهی برای کارآفرینان جهانی", v: "۱,۵۰۰,۰۰۰" },
+              ].map((b, i) => (
+                <Card key={i}>
+                  <CardContent className="p-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline">{i + 1}</Badge>
+                      <span>{b.t}</span>
+                    </div>
+                    <div className="text-left">
+                      <span className="text-sm line-through text-muted-foreground block">{b.v}</span>
+                      <Badge style={{ background: `hsl(${BRAND})` }} className="text-white border-0">رایگان</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <Card className="mt-8 text-center border-2" style={{ borderColor: `hsl(${BRAND})`, background: `hsl(${BRAND} / 0.05)` }}>
+              <CardContent className="p-6">
+                <p className="text-muted-foreground mb-1">مجموع ارزش پکیج:</p>
+                <p className="text-2xl font-bold line-through text-muted-foreground">{fmt(originalPrice)} تومان</p>
+                <p className="mt-2 text-muted-foreground">قیمت ویژه شما:</p>
+                <p className="text-4xl md:text-5xl font-extrabold mt-1" style={{ color: `hsl(${BRAND})` }}>{fmt(coursePrice)} تومان</p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* TECHNIQUES */}
+        <section className="py-16">
+          <div className="container mx-auto px-4 max-w-6xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">۱۲ مهارت کلیدی دوره بدون مرز</h2>
+            <p className="text-center text-muted-foreground mb-10">هر مهارت با مثال واقعی و قابل اجرا در بازار جهانی</p>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {techniques.map((t, i) => (
+                <Card key={i} className="border-t-4" style={{ borderTopColor: `hsl(${BRAND})` }}>
+                  <CardContent className="p-5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="h-7 w-7 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: `hsl(${BRAND})` }}>{i + 1}</span>
+                      <h3 className="font-bold">{t.fa}</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-2">{t.en}</p>
+                    <p className="text-sm">{t.desc}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* DETAILS */}
+        <section className="py-16 bg-muted/30">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">جزئیات دوره</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { i: Clock, l: "مدت", v: "۴۰+ اپیزود" },
+                { i: Layers, l: "فاز", v: "۵ فاز عملی" },
+                { i: Users, l: "مدرس", v: "تیم متخصص" },
+                { i: InfinityIcon, l: "دسترسی", v: "مادام‌العمر" },
+              ].map((x, i) => (
+                <Card key={i} className="text-center">
+                  <CardContent className="p-5">
+                    <x.i className="h-8 w-8 mx-auto mb-2" style={{ color: `hsl(${BRAND})` }} />
+                    <p className="text-xs text-muted-foreground">{x.l}</p>
+                    <p className="font-bold mt-1">{x.v}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* GUARANTEES */}
+        <section className="py-16">
+          <div className="container mx-auto px-4 max-w-5xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">۳ ضمانت قدرتمند برای آرامش خاطر شما</h2>
+            <p className="text-center text-muted-foreground mb-10">ریسک تصمیم با ماست، نه با شما</p>
+            <div className="grid md:grid-cols-3 gap-5">
+              {guarantees.map((g, i) => (
+                <Card key={i} className="text-center border-2" style={{ borderColor: `hsl(${BRAND} / 0.3)` }}>
+                  <CardContent className="p-6">
+                    <div className="text-5xl mb-3">{g.icon}</div>
+                    <h3 className="font-bold mb-2">{g.title}</h3>
+                    <p className="text-sm text-muted-foreground">{g.desc}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <p className="text-center mt-8 text-sm text-muted-foreground">چرا این ضمانت‌ها را می‌دهیم؟ چون ۹۷٪ دانشجویان ما کاملاً راضی هستند.</p>
+          </div>
+        </section>
+
+        {/* INVEST */}
+        <section className="py-16 bg-muted/30">
+          <div className="container mx-auto px-4 max-w-3xl text-center">
+            <Globe className="h-12 w-12 mx-auto mb-4" style={{ color: `hsl(${BRAND})` }} />
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">روی خودت سرمایه‌گذاری کن</h2>
+            <p className="text-lg text-muted-foreground mb-3">بهترین سرمایه‌گذاری نه طلاست، نه دلار، نه ارز دیجیتال.</p>
+            <p className="text-xl font-medium" style={{ color: `hsl(${BRAND})` }}>بهترین سرمایه‌گذاری، سرمایه‌گذاری روی مهارت‌های جهانی توست.</p>
+            <div className="mt-8"><StickyCTA /></div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="py-16">
+          <div className="container mx-auto px-4 max-w-3xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">سوالات متداول</h2>
+            <Accordion type="single" collapsible className="space-y-3">
+              {faqs.map((f, i) => (
+                <AccordionItem key={i} value={`q-${i}`} className="border rounded-lg px-4">
+                  <AccordionTrigger className="text-right font-medium">❓ {f.q}</AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">{f.a}</AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </section>
+
+        {/* FINAL CTA */}
+        <section className="py-20 text-white" style={{ background: `linear-gradient(135deg, hsl(${BRAND}), hsl(${ACCENT}))` }}>
+          <div className="container mx-auto px-4 max-w-3xl text-center">
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-4">زندگی کوتاه است — دیگر منتظر نمانید</h2>
+            <p className="text-lg opacity-90 mb-8">
+              راه اول: همین‌طور که هستید بمانید و امیدوار باشید همه چی خودش درست شود.<br />
+              راه دوم: امروز تصمیم بگیرید و بیزینس بین‌المللی خودتان را بسازید.
+            </p>
+
+            <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white mb-6">
+              <CardContent className="p-6">
+                <p className="opacity-90">قیمت دوره بعدی به</p>
+                <p className="text-3xl font-bold mt-1">{fmt(originalPrice)} تومان</p>
+                <p className="opacity-90 mt-1">افزایش پیدا می‌کند.</p>
+              </CardContent>
+            </Card>
+
+            <Button onClick={goEnroll} size="lg" className="bg-white text-black hover:bg-white/90 font-bold text-lg px-8 py-6 rounded-xl shadow-2xl">
+              <Flame className="ml-2 h-5 w-5" style={{ color: `hsl(${ACCENT})` }} />
+              بله، می‌خواهم وارد بازار جهانی شوم — {fmt(coursePrice)} تومان
+              <ArrowLeft className="mr-2 h-5 w-5" />
+            </Button>
+
+            <p className="text-sm opacity-80 mt-4">
+              <ShieldCheck className="ml-1 h-4 w-4 inline" />
+              گارانتی بازگشت وجه بدون سوال
+            </p>
+          </div>
+        </section>
+
+        {/* CONTACT */}
+        <section className="py-12">
+          <div className="container mx-auto px-4 max-w-2xl text-center">
+            <h3 className="text-2xl font-bold mb-2">هنوز سوالی دارید؟</h3>
+            <p className="text-muted-foreground mb-5">با ما در تماس باشید — خوشحال می‌شویم کمک‌تان کنیم.</p>
+            <Button variant="outline" size="lg" asChild>
+              <a href="/contact"><MessageCircle className="ml-2 h-4 w-4" /> تماس با پشتیبانی</a>
+            </Button>
+          </div>
+        </section>
+      </div>
+    </MainLayout>
+  );
+};
+
+export default BoundlessCCLanding;
