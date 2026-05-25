@@ -47,6 +47,7 @@ const AdminSettingsPanel: React.FC = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<SettingsTab>('system');
   const [useFullLeadsSystem, setUseFullLeadsSystem] = useState(false);
+  const [quickEnrollEnabled, setQuickEnrollEnabled] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   useEffect(() => {
