@@ -134,6 +134,14 @@ const QuickEnrollPopover: React.FC<QuickEnrollPopoverProps> = ({
 
   const trigger = React.cloneElement(children, {
     onClick: (e: React.MouseEvent) => {
+      if (enabled && !loadingSetting) {
+        // Intercept: skip child's original onClick, open quick enroll
+        e.preventDefault();
+        e.stopPropagation();
+        setOpen(true);
+        return;
+      }
+      // Quick enroll disabled → run original handler, then fallback if needed
       children.props.onClick?.(e);
       if (!e.defaultPrevented) handleTriggerClick(e);
     },

@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import IframeModal from "@/components/IframeModal";
 import { useCourseSettings } from "@/hooks/useCourseSettings";
 import MobileStickyButton from "@/components/MobileStickyButton";
+import QuickEnrollPopover from "@/components/Course/QuickEnrollPopover";
 import { useBlackFridayContext } from '@/contexts/BlackFridayContext';
 import CourseDiscountBanner from '@/components/BlackFriday/CourseDiscountBanner';
 import { supabase } from '@/integrations/supabase/client';
@@ -240,15 +241,17 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
 
             {/* CTA Button */}
             <motion.div variants={itemVariants} className="mb-8">
-              <Button 
-                onClick={handleStartCourse}
-                size="lg" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-xl font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
-              >
-                <Play className="w-6 h-6 ml-3" />
-                شروع دوره رایگان
-                <ChevronRight className="w-6 h-6 mr-3" />
-              </Button>
+              <QuickEnrollPopover courseSlug={courseSlug || ''}>
+                <Button 
+                  onClick={handleStartCourse}
+                  size="lg" 
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-xl font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+                >
+                  <Play className="w-6 h-6 ml-3" />
+                  شروع دوره رایگان
+                  <ChevronRight className="w-6 h-6 mr-3" />
+                </Button>
+              </QuickEnrollPopover>
               <p className="text-sm text-muted-foreground mt-3">
                 ✨ ثبت‌نام رایگان بدون نیاز به کارت بانکی
               </p>
@@ -477,15 +480,17 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
             </p>
             
             <div className="hidden md:block">
-              <Button 
-                onClick={handleStartCourse}
-                size="lg" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-12 py-6 text-xl font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
-              >
-                <Rocket className="w-6 h-6 ml-3" />
-                شروع تحول همین الان
-                <ChevronRight className="w-6 h-6 mr-3" />
-              </Button>
+              <QuickEnrollPopover courseSlug={courseSlug || ''}>
+                <Button 
+                  onClick={handleStartCourse}
+                  size="lg" 
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-12 py-6 text-xl font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+                >
+                  <Rocket className="w-6 h-6 ml-3" />
+                  شروع تحول همین الان
+                  <ChevronRight className="w-6 h-6 mr-3" />
+                </Button>
+              </QuickEnrollPopover>
             </div>
 
             <div className="flex items-center justify-center gap-4 mt-8 text-sm text-muted-foreground">
@@ -507,9 +512,11 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
       </motion.section>
 
       {/* Mobile Sticky Button */}
-      <MobileStickyButton onClick={handleStartCourse}>
-        شروع دوره رایگان
-      </MobileStickyButton>
+      <QuickEnrollPopover courseSlug={courseSlug || ''}>
+        <MobileStickyButton onClick={handleStartCourse}>
+          شروع دوره رایگان
+        </MobileStickyButton>
+      </QuickEnrollPopover>
 
       <IframeModal 
         isOpen={isModalOpen}
