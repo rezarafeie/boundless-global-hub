@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import MainLayout from "@/components/Layout/MainLayout";
 import { supabase } from "@/integrations/supabase/client";
+import QuickEnrollPopover from "@/components/Course/QuickEnrollPopover";
 import {
   PlayCircle, Flame, ShieldCheck, Star, Clock, Users, CheckCircle2, Check, X,
   Award, Sparkles, Target, Rocket, TrendingUp, MessageCircle, ArrowLeft,
@@ -146,15 +147,16 @@ const IranCCLanding: React.FC = () => {
   const fmt = (n: number) => new Intl.NumberFormat("fa-IR").format(n);
 
   const StickyCTA = () => (
-    <Button
-      onClick={goEnroll}
-      size="lg"
-      className="text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
-      style={{ background: `linear-gradient(135deg, hsl(${IRAN_GREEN}), hsl(${IRAN_GREEN} / 0.85))` }}
-    >
-      <Flame className="ml-2 h-5 w-5" />
-      همین الان شروع کنید — {fmt(coursePrice)} تومان
-    </Button>
+    <QuickEnrollPopover courseSlug="iran" fallbackHref="/enroll/?course=iran">
+      <Button
+        size="lg"
+        className="text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
+        style={{ background: `linear-gradient(135deg, hsl(${IRAN_GREEN}), hsl(${IRAN_GREEN} / 0.85))` }}
+      >
+        <Flame className="ml-2 h-5 w-5" />
+        همین الان شروع کنید — {fmt(coursePrice)} تومان
+      </Button>
+    </QuickEnrollPopover>
   );
 
   return (
@@ -693,15 +695,17 @@ const IranCCLanding: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Button
-              onClick={goEnroll}
-              size="lg"
-              className="bg-white text-black hover:bg-white/90 font-bold text-lg px-8 py-6 rounded-xl shadow-2xl"
-            >
-              <Flame className="ml-2 h-5 w-5" style={{ color: `hsl(${IRAN_RED})` }} />
-              بله، می‌خواهم بیزینسم را در ایران راه بیندازم — {fmt(coursePrice)} تومان
-              <ArrowLeft className="mr-2 h-5 w-5" />
-            </Button>
+            <QuickEnrollPopover courseSlug="iran" fallbackHref="/enroll/?course=iran">
+              <Button
+                size="lg"
+                className="bg-white text-black hover:bg-white/90 font-bold text-lg px-8 py-6 rounded-xl shadow-2xl"
+              >
+                <Flame className="ml-2 h-5 w-5" style={{ color: `hsl(${IRAN_RED})` }} />
+                بله، می‌خواهم بیزینسم را در ایران راه بیندازم — {fmt(coursePrice)} تومان
+                <ArrowLeft className="mr-2 h-5 w-5" />
+              </Button>
+            </QuickEnrollPopover>
+
 
             <p className="text-sm opacity-80 mt-4">
               <ShieldCheck className="ml-1 h-4 w-4 inline" />

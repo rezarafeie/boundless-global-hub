@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import MainLayout from "@/components/Layout/MainLayout";
 import { supabase } from "@/integrations/supabase/client";
+import QuickEnrollPopover from "@/components/Course/QuickEnrollPopover";
 import {
   PlayCircle, Flame, ShieldCheck, Clock, Users, CheckCircle2, Check, X,
   Sparkles, MessageCircle, ArrowLeft, Layers,
@@ -145,15 +146,16 @@ const BoundlessCCLanding: React.FC = () => {
   const fmt = (n: number) => new Intl.NumberFormat("fa-IR").format(n);
 
   const StickyCTA = () => (
-    <Button
-      onClick={goEnroll}
-      size="lg"
-      className="text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
-      style={{ background: `linear-gradient(135deg, hsl(${BRAND}), hsl(${BRAND} / 0.85))` }}
-    >
-      <Flame className="ml-2 h-5 w-5" />
-      همین الان شروع کنید — {fmt(coursePrice)} تومان
-    </Button>
+    <QuickEnrollPopover courseSlug="boundless" fallbackHref="/enroll/?course=boundless">
+      <Button
+        size="lg"
+        className="text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
+        style={{ background: `linear-gradient(135deg, hsl(${BRAND}), hsl(${BRAND} / 0.85))` }}
+      >
+        <Flame className="ml-2 h-5 w-5" />
+        همین الان شروع کنید — {fmt(coursePrice)} تومان
+      </Button>
+    </QuickEnrollPopover>
   );
 
   return (
@@ -594,11 +596,13 @@ const BoundlessCCLanding: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Button onClick={goEnroll} size="lg" className="bg-white text-black hover:bg-white/90 font-bold text-lg px-8 py-6 rounded-xl shadow-2xl">
-              <Flame className="ml-2 h-5 w-5" style={{ color: `hsl(${ACCENT})` }} />
-              بله، می‌خواهم وارد بازار جهانی شوم — {fmt(coursePrice)} تومان
-              <ArrowLeft className="mr-2 h-5 w-5" />
-            </Button>
+            <QuickEnrollPopover courseSlug="boundless" fallbackHref="/enroll/?course=boundless">
+              <Button size="lg" className="bg-white text-black hover:bg-white/90 font-bold text-lg px-8 py-6 rounded-xl shadow-2xl">
+                <Flame className="ml-2 h-5 w-5" style={{ color: `hsl(${ACCENT})` }} />
+                بله، می‌خواهم وارد بازار جهانی شوم — {fmt(coursePrice)} تومان
+                <ArrowLeft className="mr-2 h-5 w-5" />
+              </Button>
+            </QuickEnrollPopover>
 
             <p className="text-sm opacity-80 mt-4">
               <ShieldCheck className="ml-1 h-4 w-4 inline" />
