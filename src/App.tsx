@@ -1,4 +1,5 @@
 
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -9,173 +10,137 @@ import { NotificationProvider } from "./contexts/NotificationContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { BlackFridayProvider } from "./contexts/BlackFridayContext";
 import { shouldShowMessengerOnly, shouldShowShortlinkOnly } from "./utils/subdomainDetection";
-
-// Import all pages
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import NotFound from "./pages/NotFound";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import Blog from "./pages/Blog";
-import Magazine from "./pages/Magazine";
-import CourseArchive from "./pages/CourseArchive";
-import FreeCourses from "./pages/FreeCourses";
-import PaidCourses from "./pages/PaidCourses";
-import Support from "./pages/Support";
-import Checkout from "./pages/Checkout";
-import PaymentRequest from "./pages/PaymentRequest";
-import Enroll from "./pages/Enroll";
-import EnrollSuccess from "./pages/EnrollSuccess";
-import EnrollPending from "./pages/EnrollPending";
-import EnrollAdmin from "./pages/EnrollAdmin";
-import EnrollReject from "./pages/EnrollReject";
-import EnrollmentAdmin from "./pages/EnrollmentAdmin";
-import EnrollmentEmailAdmin from "./pages/EnrollmentEmailAdmin";
-import EnrollmentDetails from "./pages/EnrollmentDetails";
-import AdminEnrollmentDetails from "./pages/AdminEnrollmentDetails";
-import CourseManagement from "./pages/Course/CourseManagement";
-import CourseAccess from "./pages/CourseAccess";
-
-// SSO pages
-import SSOAccess from "./pages/SSOAccess";
-import SSOLogin from "./pages/SSOLogin";
-
-// Course pages
-import MetaverseLanding from "./pages/Courses/MetaverseLanding";
-import InstagramLanding from "./pages/Courses/InstagramLanding";
-import InstagramEssentialsLanding from "./pages/Courses/InstagramEssentialsLanding";
-import BoundlessLanding from "./pages/Courses/BoundlessLanding";
-import FreeCourseLanding from "./pages/Courses/FreeCourseLanding";
-import SmartPackLanding from "./pages/Courses/SmartPackLanding";
-import ServitLanding from "./pages/Courses/ServitLanding";
-import RescueProjectLanding from "./pages/Courses/RescueProjectLanding";
-import IranLanding from "./pages/Courses/IranLanding";
-import IranCCLanding from "./pages/Courses/IranCCLanding";
-import BoundlessCCLanding from "./pages/Courses/BoundlessCCLanding";
-import IRClassLanding from "./pages/Courses/IRClassLanding";
-
-// Course access and view pages
-import FreeCourseStart from "./pages/Course/FreeCourseStart";
-import FreeCourseView from "./pages/Course/FreeCourseView";
-import PaidCourseStart from "./pages/Course/PaidCourseStart";
-import PaidCourseView from "./pages/Course/PaidCourseView";
-import MetaverseFreePage from "./pages/Course/MetaverseFreePage";
-import ChangeCoursePage from "./pages/Course/ChangeCoursePage";
-import AmericanBusinessPage from "./pages/Course/AmericanBusinessPage";
-import BoundlessTastePage from "./pages/Course/BoundlessTastePage";
-import PassiveIncomePage from "./pages/Course/PassiveIncomePage";
-import SmartLifePage from "./pages/Course/SmartLifePage";
-import CrisisProjectPage from "./pages/Course/CrisisProjectPage";
-import CrisisSlidesPage from "./pages/Course/CrisisSlidesPage";
-
-// Course access pages
-import TaghirAccess from "./pages/Course/Access/TaghirAccess";
-import BoundlessTasteAccess from "./pages/Course/Access/BoundlessTasteAccess";
-import AmericanBusinessAccess from "./pages/Course/Access/AmericanBusinessAccess";
-import PassiveIncomeAccess from "./pages/Course/Access/PassiveIncomeAccess";
-
-// Hub and admin pages
-import BorderlessHub from "./pages/BorderlessHub";
-import BorderlessHubChat from "./pages/BorderlessHubChat";
-import BorderlessHubMessenger from "./pages/BorderlessHubMessenger";
-import BorderlessHubAdmin from "./pages/BorderlessHubAdmin";
-import BorderlessHubMessengerAdmin from "./pages/BorderlessHubMessengerAdmin";
-import BorderlessHubUnifiedAdmin from "./pages/BorderlessHubUnifiedAdmin";
-import BorderlessHubSupportDashboard from "./pages/BorderlessHubSupportDashboard";
-import MessengerPending from "./pages/MessengerPending";
-
-// Assessment and other pages
-import AssessmentCenter from "./pages/AssessmentCenter";
-import TestLanding from "./pages/Assessment/TestLanding";
-import Dashboard from "./pages/Dashboard/Dashboard";
-import UserDashboard from "./pages/Dashboard";
-import InstructorProfile from "./pages/InstructorProfile";
-import AIAssistant from "./pages/AIAssistant";
-import SolidarityLanding from "./pages/Solidarity/SolidarityLanding";
-import TelegramRedirect from "./pages/Redirect/TelegramRedirect";
-import Start from "./pages/Start";
-import RezaRafiei from "./pages/RezaRafiei";
-
-// English pages
-import EnIndex from "./pages/en/Index";
-import EnFreeCourses from "./pages/en/FreeCourses";
-import EnPaidCourses from "./pages/en/PaidCourses";
-import EnCourseArchive from "./pages/en/CourseArchive";
-import EnAssessmentCenter from "./pages/en/AssessmentCenter";
-
-// User Hub page
-import UserHub from "./pages/UserHub";
-
-// Bio Links page
-import BioLinks from "./pages/BioLinks";
-import BoundlessDeposit from "./pages/BoundlessDeposit";
-
-// Messenger App (for subdomain)
-import MessengerApp from "./pages/MessengerApp";
-import MessengerProfile from "./pages/MessengerProfile";
-
-// Short link redirect page
-import ShortLinkRedirect from "./pages/ShortLinkRedirect";
-
-// Smart Test pages
-import SmartTest from "./pages/SmartTest";
-import SmartTestResults from "./pages/SmartTestResults";
-
-// Import the new component
-import CourseContentManagement from "./pages/Course/CourseContentManagement";
-import CourseCreate from "./pages/Admin/CourseCreate";
-import CourseEdit from "./pages/Admin/CourseEdit";
-import WebinarLogin from "./pages/WebinarLogin";
-import WebinarRegistration from "./pages/WebinarRegistration";
-import WebinarAdmin from "./pages/WebinarAdmin";
-import WebinarWatch from "./pages/WebinarWatch";
-import WebinarHostPanel from "./pages/WebinarHostPanel";
-import WebinarEdit from "./pages/WebinarEdit";
-
-// User Management components
-import UsersOverview from "./pages/UsersOverview";
-import UserDetail from "./pages/UserDetail";
-
-// Test Admin components
-import EnrollAdminTests from "./pages/EnrollAdminTests";
-import TestEnrollmentAdminDetails from "./pages/TestEnrollmentAdminDetails";
-
-// Test components
-import Tests from "./pages/Tests";
-import TestAccess from "./pages/TestAccess";
-import TestResult from "./pages/TestResult";
-import TestEnrollmentSuccessPage from "./pages/TestEnrollmentSuccessPage";
 import AnalyticsTracker from "./components/Analytics/AnalyticsTracker";
 
-// App View Components
-import AppDashboard from "./pages/App/AppDashboard";
-import AppMyCourses from "./pages/App/AppMyCourses";
-import AppCourseDetail from "./pages/App/AppCourseDetail";
-import AppLessonView from "./pages/App/AppLessonView";
-import AppTests from "./pages/App/AppTests";
-import AppLearning from "./pages/App/AppLearning";
-import AppProfile from "./pages/App/AppProfile";
+// Eager-load only the landing page (LCP)
+import Index from "./pages/Index";
 
-// Job Application
-import JobApplication from "./pages/JobApplication";
-import Internship from "./pages/Internship";
-import DailyReport from "./pages/DailyReport";
-
-// Invoice pages
-import InvoiceView from "./pages/InvoiceView";
-import InvoiceAdmin from "./pages/InvoiceAdmin";
-import InvoicePaymentCallback from "./pages/InvoicePaymentCallback";
-
-// Consultation pages
-import ConsultationBooking from "./pages/ConsultationBooking";
-import LeadRequest from "./pages/LeadRequest";
+// Lazy-load every other page to enable route-level code splitting
+const Auth = lazy(() => import("./pages/Auth"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Blog = lazy(() => import("./pages/Blog"));
+const Magazine = lazy(() => import("./pages/Magazine"));
+const CourseArchive = lazy(() => import("./pages/CourseArchive"));
+const FreeCourses = lazy(() => import("./pages/FreeCourses"));
+const PaidCourses = lazy(() => import("./pages/PaidCourses"));
+const Support = lazy(() => import("./pages/Support"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const PaymentRequest = lazy(() => import("./pages/PaymentRequest"));
+const Enroll = lazy(() => import("./pages/Enroll"));
+const EnrollSuccess = lazy(() => import("./pages/EnrollSuccess"));
+const EnrollPending = lazy(() => import("./pages/EnrollPending"));
+const EnrollAdmin = lazy(() => import("./pages/EnrollAdmin"));
+const EnrollReject = lazy(() => import("./pages/EnrollReject"));
+const EnrollmentAdmin = lazy(() => import("./pages/EnrollmentAdmin"));
+const EnrollmentEmailAdmin = lazy(() => import("./pages/EnrollmentEmailAdmin"));
+const EnrollmentDetails = lazy(() => import("./pages/EnrollmentDetails"));
+const AdminEnrollmentDetails = lazy(() => import("./pages/AdminEnrollmentDetails"));
+const CourseManagement = lazy(() => import("./pages/Course/CourseManagement"));
+const CourseAccess = lazy(() => import("./pages/CourseAccess"));
+const SSOAccess = lazy(() => import("./pages/SSOAccess"));
+const SSOLogin = lazy(() => import("./pages/SSOLogin"));
+const MetaverseLanding = lazy(() => import("./pages/Courses/MetaverseLanding"));
+const InstagramLanding = lazy(() => import("./pages/Courses/InstagramLanding"));
+const InstagramEssentialsLanding = lazy(() => import("./pages/Courses/InstagramEssentialsLanding"));
+const BoundlessLanding = lazy(() => import("./pages/Courses/BoundlessLanding"));
+const FreeCourseLanding = lazy(() => import("./pages/Courses/FreeCourseLanding"));
+const SmartPackLanding = lazy(() => import("./pages/Courses/SmartPackLanding"));
+const ServitLanding = lazy(() => import("./pages/Courses/ServitLanding"));
+const RescueProjectLanding = lazy(() => import("./pages/Courses/RescueProjectLanding"));
+const IranLanding = lazy(() => import("./pages/Courses/IranLanding"));
+const IranCCLanding = lazy(() => import("./pages/Courses/IranCCLanding"));
+const BoundlessCCLanding = lazy(() => import("./pages/Courses/BoundlessCCLanding"));
+const IRClassLanding = lazy(() => import("./pages/Courses/IRClassLanding"));
+const FreeCourseStart = lazy(() => import("./pages/Course/FreeCourseStart"));
+const FreeCourseView = lazy(() => import("./pages/Course/FreeCourseView"));
+const PaidCourseStart = lazy(() => import("./pages/Course/PaidCourseStart"));
+const PaidCourseView = lazy(() => import("./pages/Course/PaidCourseView"));
+const MetaverseFreePage = lazy(() => import("./pages/Course/MetaverseFreePage"));
+const ChangeCoursePage = lazy(() => import("./pages/Course/ChangeCoursePage"));
+const AmericanBusinessPage = lazy(() => import("./pages/Course/AmericanBusinessPage"));
+const BoundlessTastePage = lazy(() => import("./pages/Course/BoundlessTastePage"));
+const PassiveIncomePage = lazy(() => import("./pages/Course/PassiveIncomePage"));
+const SmartLifePage = lazy(() => import("./pages/Course/SmartLifePage"));
+const CrisisProjectPage = lazy(() => import("./pages/Course/CrisisProjectPage"));
+const CrisisSlidesPage = lazy(() => import("./pages/Course/CrisisSlidesPage"));
+const TaghirAccess = lazy(() => import("./pages/Course/Access/TaghirAccess"));
+const BoundlessTasteAccess = lazy(() => import("./pages/Course/Access/BoundlessTasteAccess"));
+const AmericanBusinessAccess = lazy(() => import("./pages/Course/Access/AmericanBusinessAccess"));
+const PassiveIncomeAccess = lazy(() => import("./pages/Course/Access/PassiveIncomeAccess"));
+const BorderlessHub = lazy(() => import("./pages/BorderlessHub"));
+const BorderlessHubChat = lazy(() => import("./pages/BorderlessHubChat"));
+const BorderlessHubAdmin = lazy(() => import("./pages/BorderlessHubAdmin"));
+const BorderlessHubMessengerAdmin = lazy(() => import("./pages/BorderlessHubMessengerAdmin"));
+const BorderlessHubSupportDashboard = lazy(() => import("./pages/BorderlessHubSupportDashboard"));
+const MessengerPending = lazy(() => import("./pages/MessengerPending"));
+const AssessmentCenter = lazy(() => import("./pages/AssessmentCenter"));
+const TestLanding = lazy(() => import("./pages/Assessment/TestLanding"));
+const UserDashboard = lazy(() => import("./pages/Dashboard"));
+const InstructorProfile = lazy(() => import("./pages/InstructorProfile"));
+const AIAssistant = lazy(() => import("./pages/AIAssistant"));
+const SolidarityLanding = lazy(() => import("./pages/Solidarity/SolidarityLanding"));
+const TelegramRedirect = lazy(() => import("./pages/Redirect/TelegramRedirect"));
+const Start = lazy(() => import("./pages/Start"));
+const RezaRafiei = lazy(() => import("./pages/RezaRafiei"));
+const EnIndex = lazy(() => import("./pages/en/Index"));
+const EnFreeCourses = lazy(() => import("./pages/en/FreeCourses"));
+const EnPaidCourses = lazy(() => import("./pages/en/PaidCourses"));
+const EnCourseArchive = lazy(() => import("./pages/en/CourseArchive"));
+const EnAssessmentCenter = lazy(() => import("./pages/en/AssessmentCenter"));
+const UserHub = lazy(() => import("./pages/UserHub"));
+const BioLinks = lazy(() => import("./pages/BioLinks"));
+const BoundlessDeposit = lazy(() => import("./pages/BoundlessDeposit"));
+const MessengerApp = lazy(() => import("./pages/MessengerApp"));
+const MessengerProfile = lazy(() => import("./pages/MessengerProfile"));
+const ShortLinkRedirect = lazy(() => import("./pages/ShortLinkRedirect"));
+const SmartTest = lazy(() => import("./pages/SmartTest"));
+const SmartTestResults = lazy(() => import("./pages/SmartTestResults"));
+const CourseContentManagement = lazy(() => import("./pages/Course/CourseContentManagement"));
+const CourseCreate = lazy(() => import("./pages/Admin/CourseCreate"));
+const CourseEdit = lazy(() => import("./pages/Admin/CourseEdit"));
+const WebinarLogin = lazy(() => import("./pages/WebinarLogin"));
+const WebinarRegistration = lazy(() => import("./pages/WebinarRegistration"));
+const WebinarAdmin = lazy(() => import("./pages/WebinarAdmin"));
+const WebinarWatch = lazy(() => import("./pages/WebinarWatch"));
+const WebinarHostPanel = lazy(() => import("./pages/WebinarHostPanel"));
+const WebinarEdit = lazy(() => import("./pages/WebinarEdit"));
+const UsersOverview = lazy(() => import("./pages/UsersOverview"));
+const UserDetail = lazy(() => import("./pages/UserDetail"));
+const EnrollAdminTests = lazy(() => import("./pages/EnrollAdminTests"));
+const TestEnrollmentAdminDetails = lazy(() => import("./pages/TestEnrollmentAdminDetails"));
+const Tests = lazy(() => import("./pages/Tests"));
+const TestAccess = lazy(() => import("./pages/TestAccess"));
+const TestResult = lazy(() => import("./pages/TestResult"));
+const TestEnrollmentSuccessPage = lazy(() => import("./pages/TestEnrollmentSuccessPage"));
+const AppDashboard = lazy(() => import("./pages/App/AppDashboard"));
+const AppMyCourses = lazy(() => import("./pages/App/AppMyCourses"));
+const AppCourseDetail = lazy(() => import("./pages/App/AppCourseDetail"));
+const AppLessonView = lazy(() => import("./pages/App/AppLessonView"));
+const AppTests = lazy(() => import("./pages/App/AppTests"));
+const AppLearning = lazy(() => import("./pages/App/AppLearning"));
+const AppProfile = lazy(() => import("./pages/App/AppProfile"));
+const JobApplication = lazy(() => import("./pages/JobApplication"));
+const Internship = lazy(() => import("./pages/Internship"));
+const DailyReport = lazy(() => import("./pages/DailyReport"));
+const InvoiceView = lazy(() => import("./pages/InvoiceView"));
+const InvoiceAdmin = lazy(() => import("./pages/InvoiceAdmin"));
+const InvoicePaymentCallback = lazy(() => import("./pages/InvoicePaymentCallback"));
+const ConsultationBooking = lazy(() => import("./pages/ConsultationBooking"));
+const LeadRequest = lazy(() => import("./pages/LeadRequest"));
 
 const queryClient = new QueryClient();
 
+const RouteFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
 const App = () => {
-  // Check if we're on the shortlink subdomain
   const isShortlinkOnly = shouldShowShortlinkOnly();
-  
+
   if (isShortlinkOnly) {
     return (
       <QueryClientProvider client={queryClient}>
@@ -187,10 +152,12 @@ const App = () => {
                   <TooltipProvider>
                     <Toaster />
                     <AnalyticsTracker />
-                    <Routes>
-                      <Route path="/:slug" element={<ShortLinkRedirect />} />
-                      <Route path="/" element={<ShortLinkRedirect />} />
-                    </Routes>
+                    <Suspense fallback={<RouteFallback />}>
+                      <Routes>
+                        <Route path="/:slug" element={<ShortLinkRedirect />} />
+                        <Route path="/" element={<ShortLinkRedirect />} />
+                      </Routes>
+                    </Suspense>
                   </TooltipProvider>
                 </AuthProvider>
               </NotificationProvider>
@@ -201,9 +168,8 @@ const App = () => {
     );
   }
 
-  // Check if we're on the messenger subdomain
   const isMessengerOnly = shouldShowMessengerOnly();
-  
+
   if (isMessengerOnly) {
     return (
       <QueryClientProvider client={queryClient}>
@@ -215,10 +181,12 @@ const App = () => {
                   <TooltipProvider>
                     <Toaster />
                     <AnalyticsTracker />
-                    <Routes>
-                      <Route path="/hub/messenger" element={<MessengerApp />} />
-                      <Route path="*" element={<MessengerApp />} />
-                    </Routes>
+                    <Suspense fallback={<RouteFallback />}>
+                      <Routes>
+                        <Route path="/hub/messenger" element={<MessengerApp />} />
+                        <Route path="*" element={<MessengerApp />} />
+                      </Routes>
+                    </Suspense>
                   </TooltipProvider>
                 </AuthProvider>
               </NotificationProvider>
@@ -240,192 +208,167 @@ const App = () => {
                   <TooltipProvider>
                     <Toaster />
                     <AnalyticsTracker />
-                    <Routes>
-                    {/* Main pages */}
-                    <Route path="/" element={<Index />} />
-                    <Route path="/start" element={<Start />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/blog" element={<Blog />} />
-                    <Route path="/magazine" element={<Magazine />} />
-                    <Route path="/courses" element={<CourseArchive />} />
-                    <Route path="/course" element={<CourseArchive />} />
-                    <Route path="/free-courses" element={<FreeCourses />} />
-                    <Route path="/paid-courses" element={<PaidCourses />} />
-                    <Route path="/support" element={<Support />} />
-                    <Route path="/checkout" element={<Checkout />} />
-                    <Route path="/payment-request" element={<PaymentRequest />} />
-                    
-                    {/* Enrollment pages */}
-                    <Route path="/enroll" element={<Enroll />} />
-                    <Route path="/enroll/success" element={<EnrollSuccess />} />
-                    <Route path="/test-enrollment-success" element={<TestEnrollmentSuccessPage />} />
-                    <Route path="/enroll/details" element={<EnrollmentDetails />} />
-                    <Route path="/admin-enrollment-details" element={<AdminEnrollmentDetails />} />
-                    <Route path="/enroll/admin/enrollment/:id" element={<AdminEnrollmentDetails />} />
-                    <Route path="/enroll/pending" element={<EnrollPending />} />
-                    <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
-                    <Route path="/enroll/admin/tests" element={<EnrollAdminTests />} />
-                    <Route path="/test-enrollment/admin/:id" element={<TestEnrollmentAdminDetails />} />
-                    <Route path="/enroll/admin/email" element={<EnrollmentEmailAdmin />} />
-                    <Route path="/admin/course/create" element={<CourseCreate />} />
-                    <Route path="/admin/course/edit/:courseId" element={<CourseEdit />} />
-                    <Route path="/enroll/admin/course/:courseId" element={<CourseManagement />} />
-                    <Route path="/enroll/admin/course/:courseId/lessons" element={<CourseContentManagement />} />
-                    <Route path="/enroll/reject" element={<EnrollReject />} />
-                    
-                    {/* Smart Test routes */}
-                    <Route path="/smart-test" element={<SmartTest />} />
-                    <Route path="/smart-test/results" element={<SmartTestResults />} />
-                    
-                    {/* User Management routes */}
-                    <Route path="/enroll/admin/users" element={<UsersOverview />} />
-                    <Route path="/enroll/admin/users/:userId" element={<UserDetail />} />
-                    <Route path="/user/detail/:userId" element={<UserDetail />} />
-                    <Route path="/user-detail/:userId" element={<UserDetail />} />
-                    
-                    {/* SSO Access routes */}
-                    <Route path="/sso-access" element={<SSOAccess />} />
-                    <Route path="/sso-login" element={<SSOLogin />} />
-                    
-                    {/* Course Access */}
-                    <Route path="/course-access" element={<CourseAccess />} />
+                    <Suspense fallback={<RouteFallback />}>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/start" element={<Start />} />
+                        <Route path="/auth" element={<Auth />} />
+                        <Route path="/about" element={<About />} />
+                        <Route path="/contact" element={<Contact />} />
+                        <Route path="/blog" element={<Blog />} />
+                        <Route path="/magazine" element={<Magazine />} />
+                        <Route path="/courses" element={<CourseArchive />} />
+                        <Route path="/course" element={<CourseArchive />} />
+                        <Route path="/free-courses" element={<FreeCourses />} />
+                        <Route path="/paid-courses" element={<PaidCourses />} />
+                        <Route path="/support" element={<Support />} />
+                        <Route path="/checkout" element={<Checkout />} />
+                        <Route path="/payment-request" element={<PaymentRequest />} />
 
-                    {/* Course landing pages */}
-                    <Route path="/courses/metaverse" element={<MetaverseLanding />} />
-                    <Route path="/courses/instagram" element={<InstagramLanding />} />
-                    <Route path="/courses/instagram-essentials" element={<InstagramEssentialsLanding />} />
-                    <Route path="/courses/boundless" element={<BoundlessLanding />} />
-                    <Route path="/courses/free-course" element={
-                      <FreeCourseLanding 
-                        title="Free Course"
-                        englishTitle="Free Course"
-                        description="Start your learning journey with our free course"
-                        benefitOne="Basic concepts"
-                        benefitTwo="Practical exercises"
-                        iconType="book"
-                        iframeUrl="https://example.com/course-iframe"
-                      />
-                    } />
-                    <Route path="/courses/smart-pack" element={<SmartPackLanding />} />
-                    <Route path="/courses/servit" element={<ServitLanding />} />
+                        <Route path="/enroll" element={<Enroll />} />
+                        <Route path="/enroll/success" element={<EnrollSuccess />} />
+                        <Route path="/test-enrollment-success" element={<TestEnrollmentSuccessPage />} />
+                        <Route path="/enroll/details" element={<EnrollmentDetails />} />
+                        <Route path="/admin-enrollment-details" element={<AdminEnrollmentDetails />} />
+                        <Route path="/enroll/admin/enrollment/:id" element={<AdminEnrollmentDetails />} />
+                        <Route path="/enroll/pending" element={<EnrollPending />} />
+                        <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
+                        <Route path="/enroll/admin/tests" element={<EnrollAdminTests />} />
+                        <Route path="/test-enrollment/admin/:id" element={<TestEnrollmentAdminDetails />} />
+                        <Route path="/enroll/admin/email" element={<EnrollmentEmailAdmin />} />
+                        <Route path="/admin/course/create" element={<CourseCreate />} />
+                        <Route path="/admin/course/edit/:courseId" element={<CourseEdit />} />
+                        <Route path="/enroll/admin/course/:courseId" element={<CourseManagement />} />
+                        <Route path="/enroll/admin/course/:courseId/lessons" element={<CourseContentManagement />} />
+                        <Route path="/enroll/reject" element={<EnrollReject />} />
 
-                    {/* Course access pages */}
-                    <Route path="/course/free-start" element={<FreeCourseStart />} />
-                    <Route path="/course/free-view" element={<FreeCourseView />} />
-                    <Route path="/course/paid-start" element={<PaidCourseStart />} />
-                    <Route path="/course/paid-view" element={<PaidCourseView />} />
-                    <Route path="/course/metaverse-free" element={<MetaverseFreePage />} />
-                    <Route path="/course/change" element={<ChangeCoursePage />} />
-                    <Route path="/taghir" element={<ChangeCoursePage />} />
-                    <Route path="/course/american-business" element={<AmericanBusinessPage />} />
-                    <Route path="/course/boundless-taste" element={<BoundlessTastePage />} />
-                    <Route path="/course/passive-income" element={<PassiveIncomePage />} />
-                    <Route path="/course/smart-life" element={<SmartLifePage />} />
-                    <Route path="/course/crisis-project" element={<CrisisProjectPage />} />
-                    <Route path="/crisis" element={<CrisisProjectPage />} />
-                    <Route path="/crisis/slides" element={<CrisisSlidesPage />} />
-                    <Route path="/daramad" element={<PassiveIncomePage />} />
-                    <Route path="/rescue" element={<RescueProjectLanding />} />
-                    <Route path="/courses/iran" element={<IranLanding />} />
-                    <Route path="/iran" element={<IranLanding />} />
-                   <Route path="/iran/cc" element={<IranCCLanding />} />
-                   <Route path="/courses/iran/cc" element={<IranCCLanding />} />
-                   <Route path="/boundless/cc" element={<BoundlessCCLanding />} />
-                   <Route path="/courses/boundless/cc" element={<BoundlessCCLanding />} />
-                    <Route path="/ir-class" element={<IRClassLanding />} />
-                    <Route path="/courses/ir-class" element={<IRClassLanding />} />
+                        <Route path="/smart-test" element={<SmartTest />} />
+                        <Route path="/smart-test/results" element={<SmartTestResults />} />
 
-                    {/* Course access control */}
-                    <Route path="/course/access/taghir" element={<TaghirAccess />} />
-                    <Route path="/course/access/boundless-taste" element={<BoundlessTasteAccess />} />
-                    <Route path="/course/access/american-business" element={<AmericanBusinessAccess />} />
-                    <Route path="/course/access/passive-income" element={<PassiveIncomeAccess />} />
+                        <Route path="/enroll/admin/users" element={<UsersOverview />} />
+                        <Route path="/enroll/admin/users/:userId" element={<UserDetail />} />
+                        <Route path="/user/detail/:userId" element={<UserDetail />} />
+                        <Route path="/user-detail/:userId" element={<UserDetail />} />
 
-                    {/* Dashboard */}
-                    <Route path="/dashboard" element={<UserDashboard />} />
+                        <Route path="/sso-access" element={<SSOAccess />} />
+                        <Route path="/sso-login" element={<SSOLogin />} />
 
-                    {/* Hub pages */}
-                    <Route path="/hub/*" element={<BorderlessHub />} />
-                    <Route path="/hub/chat" element={<BorderlessHubChat />} />
-                    <Route path="/hub/messenger" element={<MessengerApp />} />
-                    <Route path="/hub/messenger/pending" element={<MessengerPending />} />
-                    <Route path="/hub/admin" element={<BorderlessHubAdmin />} />
-                    <Route path="/hub/support" element={<BorderlessHubSupportDashboard />} />
-                    <Route path="/hub/messenger-admin" element={<BorderlessHubMessengerAdmin />} />
-                    <Route path="/messenger-pending" element={<MessengerPending />} />
-                    <Route path="/profile" element={<MessengerProfile />} />
+                        <Route path="/course-access" element={<CourseAccess />} />
 
-                    {/* Assessment */}
-                    <Route path="/assessment" element={<AssessmentCenter />} />
-                    <Route path="/assessment/:slug" element={<TestLanding />} />
-                    <Route path="/tests" element={<Tests />} />
-                    <Route path="/access" element={<TestAccess />} />
-                    <Route path="/test-result" element={<TestResult />} />
+                        <Route path="/courses/metaverse" element={<MetaverseLanding />} />
+                        <Route path="/courses/instagram" element={<InstagramLanding />} />
+                        <Route path="/courses/instagram-essentials" element={<InstagramEssentialsLanding />} />
+                        <Route path="/courses/boundless" element={<BoundlessLanding />} />
+                        <Route path="/courses/free-course" element={
+                          <FreeCourseLanding
+                            title="Free Course"
+                            englishTitle="Free Course"
+                            description="Start your learning journey with our free course"
+                            benefitOne="Basic concepts"
+                            benefitTwo="Practical exercises"
+                            iconType="book"
+                            iframeUrl="https://example.com/course-iframe"
+                          />
+                        } />
+                        <Route path="/courses/smart-pack" element={<SmartPackLanding />} />
+                        <Route path="/courses/servit" element={<ServitLanding />} />
 
-                    {/* Other pages */}
-                    <Route path="/instructor" element={<InstructorProfile />} />
-                    <Route path="/reza-rafiei" element={<RezaRafiei />} />
-                    <Route path="/ai-assistant" element={<AIAssistant />} />
-                    <Route path="/solidarity" element={<SolidarityLanding />} />
-                    <Route path="/telegram" element={<TelegramRedirect />} />
+                        <Route path="/course/free-start" element={<FreeCourseStart />} />
+                        <Route path="/course/free-view" element={<FreeCourseView />} />
+                        <Route path="/course/paid-start" element={<PaidCourseStart />} />
+                        <Route path="/course/paid-view" element={<PaidCourseView />} />
+                        <Route path="/course/metaverse-free" element={<MetaverseFreePage />} />
+                        <Route path="/course/change" element={<ChangeCoursePage />} />
+                        <Route path="/taghir" element={<ChangeCoursePage />} />
+                        <Route path="/course/american-business" element={<AmericanBusinessPage />} />
+                        <Route path="/course/boundless-taste" element={<BoundlessTastePage />} />
+                        <Route path="/course/passive-income" element={<PassiveIncomePage />} />
+                        <Route path="/course/smart-life" element={<SmartLifePage />} />
+                        <Route path="/course/crisis-project" element={<CrisisProjectPage />} />
+                        <Route path="/crisis" element={<CrisisProjectPage />} />
+                        <Route path="/crisis/slides" element={<CrisisSlidesPage />} />
+                        <Route path="/daramad" element={<PassiveIncomePage />} />
+                        <Route path="/rescue" element={<RescueProjectLanding />} />
+                        <Route path="/courses/iran" element={<IranLanding />} />
+                        <Route path="/iran" element={<IranLanding />} />
+                        <Route path="/iran/cc" element={<IranCCLanding />} />
+                        <Route path="/courses/iran/cc" element={<IranCCLanding />} />
+                        <Route path="/boundless/cc" element={<BoundlessCCLanding />} />
+                        <Route path="/courses/boundless/cc" element={<BoundlessCCLanding />} />
+                        <Route path="/ir-class" element={<IRClassLanding />} />
+                        <Route path="/courses/ir-class" element={<IRClassLanding />} />
 
-                    {/* English routes */}
-                    <Route path="/en" element={<EnIndex />} />
-                    <Route path="/en/free-courses" element={<EnFreeCourses />} />
-                    <Route path="/en/paid-courses" element={<EnPaidCourses />} />
-                    <Route path="/en/courses" element={<EnCourseArchive />} />
-                    <Route path="/en/assessment" element={<EnAssessmentCenter />} />
+                        <Route path="/course/access/taghir" element={<TaghirAccess />} />
+                        <Route path="/course/access/boundless-taste" element={<BoundlessTasteAccess />} />
+                        <Route path="/course/access/american-business" element={<AmericanBusinessAccess />} />
+                        <Route path="/course/access/passive-income" element={<PassiveIncomeAccess />} />
 
-                    {/* User Hub Route */}
-                    <Route path="/user-hub" element={<UserHub />} />
+                        <Route path="/dashboard" element={<UserDashboard />} />
 
-                    {/* Bio Links Route */}
-                    <Route path="/bio" element={<BioLinks />} />
+                        <Route path="/hub/*" element={<BorderlessHub />} />
+                        <Route path="/hub/chat" element={<BorderlessHubChat />} />
+                        <Route path="/hub/messenger" element={<MessengerApp />} />
+                        <Route path="/hub/messenger/pending" element={<MessengerPending />} />
+                        <Route path="/hub/admin" element={<BorderlessHubAdmin />} />
+                        <Route path="/hub/support" element={<BorderlessHubSupportDashboard />} />
+                        <Route path="/hub/messenger-admin" element={<BorderlessHubMessengerAdmin />} />
+                        <Route path="/messenger-pending" element={<MessengerPending />} />
+                        <Route path="/profile" element={<MessengerProfile />} />
 
-                    {/* Boundless Deposit */}
-                    <Route path="/boundless-deposit" element={<BoundlessDeposit />} />
+                        <Route path="/assessment" element={<AssessmentCenter />} />
+                        <Route path="/assessment/:slug" element={<TestLanding />} />
+                        <Route path="/tests" element={<Tests />} />
+                        <Route path="/access" element={<TestAccess />} />
+                        <Route path="/test-result" element={<TestResult />} />
 
-                     {/* App View Routes */}
-                     <Route path="/app/dashboard" element={<AppDashboard />} />
-                     <Route path="/app/my-courses" element={<AppMyCourses />} />
-                     <Route path="/app/course/:slug" element={<AppCourseDetail />} />
-                     <Route path="/app/course/:courseSlug/lesson/:lessonNumber" element={<AppLessonView />} />
-                     <Route path="/app/lesson/:lessonNumber" element={<AppLessonView />} />
-                     <Route path="/app/tests" element={<AppTests />} />
-                     <Route path="/app/learning" element={<AppLearning />} />
-                     <Route path="/app/profile" element={<AppProfile />} />
+                        <Route path="/instructor" element={<InstructorProfile />} />
+                        <Route path="/reza-rafiei" element={<RezaRafiei />} />
+                        <Route path="/ai-assistant" element={<AIAssistant />} />
+                        <Route path="/solidarity" element={<SolidarityLanding />} />
+                        <Route path="/telegram" element={<TelegramRedirect />} />
 
-                     {/* Webinar Routes */}
-        <Route path="/enroll/admin/webinar" element={<WebinarAdmin />} />
-        <Route path="/enroll/admin/webinar/:webinarId/edit" element={<WebinarEdit />} />
-        <Route path="/webinar/:slug" element={<WebinarRegistration />} />
-        <Route path="/webinar/:slug/login" element={<WebinarLogin />} />
-        <Route path="/webinar/:slug/live" element={<WebinarWatch />} />
-        <Route path="/webinar/:slug/host" element={<WebinarHostPanel />} />
+                        <Route path="/en" element={<EnIndex />} />
+                        <Route path="/en/free-courses" element={<EnFreeCourses />} />
+                        <Route path="/en/paid-courses" element={<EnPaidCourses />} />
+                        <Route path="/en/courses" element={<EnCourseArchive />} />
+                        <Route path="/en/assessment" element={<EnAssessmentCenter />} />
 
-                     {/* Job Application Route */}
-        <Route path="/job" element={<JobApplication />} />
-        <Route path="/internship" element={<Internship />} />
-                    <Route path="/report" element={<DailyReport />} />
+                        <Route path="/user-hub" element={<UserHub />} />
+                        <Route path="/bio" element={<BioLinks />} />
+                        <Route path="/boundless-deposit" element={<BoundlessDeposit />} />
 
-                    {/* Invoice Routes */}
-                    <Route path="/invoice/:invoiceId" element={<InvoiceView />} />
-                    <Route path="/invoice/:invoiceId/callback" element={<InvoicePaymentCallback />} />
-                    <Route path="/enroll/admin/invoice/:invoiceId" element={<InvoiceAdmin />} />
+                        <Route path="/app/dashboard" element={<AppDashboard />} />
+                        <Route path="/app/my-courses" element={<AppMyCourses />} />
+                        <Route path="/app/course/:slug" element={<AppCourseDetail />} />
+                        <Route path="/app/course/:courseSlug/lesson/:lessonNumber" element={<AppLessonView />} />
+                        <Route path="/app/lesson/:lessonNumber" element={<AppLessonView />} />
+                        <Route path="/app/tests" element={<AppTests />} />
+                        <Route path="/app/learning" element={<AppLearning />} />
+                        <Route path="/app/profile" element={<AppProfile />} />
 
-                    {/* Consultation Routes */}
-                    <Route path="/consultations" element={<ConsultationBooking />} />
+                        <Route path="/enroll/admin/webinar" element={<WebinarAdmin />} />
+                        <Route path="/enroll/admin/webinar/:webinarId/edit" element={<WebinarEdit />} />
+                        <Route path="/webinar/:slug" element={<WebinarRegistration />} />
+                        <Route path="/webinar/:slug/login" element={<WebinarLogin />} />
+                        <Route path="/webinar/:slug/live" element={<WebinarWatch />} />
+                        <Route path="/webinar/:slug/host" element={<WebinarHostPanel />} />
 
-                    {/* Lead Request Route */}
-                    <Route path="/request" element={<LeadRequest />} />
+                        <Route path="/job" element={<JobApplication />} />
+                        <Route path="/internship" element={<Internship />} />
+                        <Route path="/report" element={<DailyReport />} />
 
-                    {/* 404 fallback */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </TooltipProvider>
-              </BlackFridayProvider>
+                        <Route path="/invoice/:invoiceId" element={<InvoiceView />} />
+                        <Route path="/invoice/:invoiceId/callback" element={<InvoicePaymentCallback />} />
+                        <Route path="/enroll/admin/invoice/:invoiceId" element={<InvoiceAdmin />} />
+
+                        <Route path="/consultations" element={<ConsultationBooking />} />
+                        <Route path="/request" element={<LeadRequest />} />
+
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
+                  </TooltipProvider>
+                </BlackFridayProvider>
               </AuthProvider>
             </NotificationProvider>
           </LanguageProvider>
