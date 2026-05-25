@@ -4,6 +4,33 @@ import App from './App.tsx'
 import './index.css'
 import { isMessengerSubdomain } from './utils/subdomainDetection'
 
+const clearPreviewServiceWorkers = () => {
+  if (!import.meta.env.DEV || !('serviceWorker' in navigator)) return;
+
+  Promise.all([
+    navigator.serviceWorker.getRegistrations().then((registrations) =>
+      Promise.all(registrations.map((registration) => registration.unregister()))
+    ),
+    'caches' in window
+      ? caches.keys().then((cacheNames) =>
+          Promise.all(
+            cacheNames
+              .filter((cacheName) => cacheName.startsWith('rafiei-academy'))
+              .map((cacheName) => caches.delete(cacheName))
+          )
+        )
+      : Promise.resolve(),
+  ]).then(() => {
+    const reloadKey = 'rafiei-preview-sw-cleared-v2';
+    if (navigator.serviceWorker.controller && !sessionStorage.getItem(reloadKey)) {
+      sessionStorage.setItem(reloadKey, 'true');
+      window.location.reload();
+    }
+  });
+};
+
+clearPreviewServiceWorkers();
+
 // Update manifest and title for messenger subdomain
 if (isMessengerSubdomain()) {
   // Update manifest
@@ -33,18 +60,6 @@ createRoot(document.getElementById("root")!).render(<App />);
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     if (import.meta.env.DEV) {
-      navigator.serviceWorker.getRegistrations().then((registrations) => {
-        registrations.forEach((registration) => registration.unregister());
-      });
-
-      if ('caches' in window) {
-        caches.keys().then((cacheNames) => {
-          cacheNames
-            .filter((cacheName) => cacheName.startsWith('rafiei-academy'))
-            .forEach((cacheName) => caches.delete(cacheName));
-        });
-      }
-
       return;
     }
 
