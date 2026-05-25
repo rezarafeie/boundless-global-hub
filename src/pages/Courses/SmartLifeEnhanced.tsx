@@ -369,14 +369,16 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
 
               {/* CTA Button */}
               <motion.div variants={itemVariants} className="mb-12">
-                <Button 
-                  size="lg" 
-                  onClick={handleStartCourse}
-                  className="px-12 py-4 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300"
-                >
-                  <PlayCircle className="w-5 h-5 mr-2" />
-                  شروع دوره رایگان
-                </Button>
+                <QuickEnrollPopover courseSlug={courseSlug}>
+                  <Button 
+                    size="lg" 
+                    onClick={handleStartCourse}
+                    className="px-12 py-4 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300"
+                  >
+                    <PlayCircle className="w-5 h-5 mr-2" />
+                    شروع دوره رایگان
+                  </Button>
+                </QuickEnrollPopover>
               </motion.div>
 
               {/* Stats */}
@@ -805,14 +807,16 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
               </div>
 
               <div className="space-y-6">
-                <Button 
-                  size="lg" 
-                  onClick={handleStartCourse}
-                  className="px-10 py-4 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300"
-                >
-                  <PlayCircle className="w-5 h-5 mr-2" />
-                  همین حالا شروع کن
-                </Button>
+                <QuickEnrollPopover courseSlug={courseSlug}>
+                  <Button 
+                    size="lg" 
+                    onClick={handleStartCourse}
+                    className="px-10 py-4 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300"
+                  >
+                    <PlayCircle className="w-5 h-5 mr-2" />
+                    همین حالا شروع کن
+                  </Button>
+                </QuickEnrollPopover>
                 
                 <div className="flex flex-wrap gap-3 justify-center text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
@@ -835,14 +839,16 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
 
         {/* Mobile Sticky Button */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t lg:hidden z-50">
-          <Button 
-            onClick={handleStartCourse}
-            className="w-full py-4 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
-            size="lg"
-          >
-            <PlayCircle className="w-5 h-5 mr-2" />
-            شروع رایگان
-          </Button>
+          <QuickEnrollPopover courseSlug={courseSlug}>
+            <Button 
+              onClick={handleStartCourse}
+              className="w-full py-4 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
+              size="lg"
+            >
+              <PlayCircle className="w-5 h-5 mr-2" />
+              شروع رایگان
+            </Button>
+          </QuickEnrollPopover>
         </div>
 
         {/* Modal */}
