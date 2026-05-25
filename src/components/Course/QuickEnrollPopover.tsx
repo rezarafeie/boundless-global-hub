@@ -27,6 +27,7 @@ const QuickEnrollPopover: React.FC<QuickEnrollPopoverProps> = ({
   const { enabled, loading: loadingSetting } = useQuickEnrollSetting();
   const { user, isAuthenticated } = useAuth();
   const countryOptions = getCountryCodeOptions();
+  const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
