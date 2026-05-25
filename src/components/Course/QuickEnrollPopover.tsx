@@ -113,7 +113,8 @@ const QuickEnrollPopover: React.FC<QuickEnrollPopoverProps> = ({
         });
         if (error || !resp?.success) throw new Error(resp?.error || error?.message || 'خطا در ثبت‌نام');
         toast.success('ثبت‌نام انجام شد');
-        window.location.href = `/enroll/success?course=${course.slug}&email=${form.email}&enrollment=${resp.enrollment.id}&status=OK&Authority=FREE_COURSE`;
+        setOpen(false);
+        navigate(`/enroll/success?course=${course.slug}&email=${form.email}&enrollment=${resp.enrollment.id}&status=OK&Authority=FREE_COURSE`);
       } else {
         const { data, error } = await supabase.functions.invoke('zarinpal-request', {
           body: {
