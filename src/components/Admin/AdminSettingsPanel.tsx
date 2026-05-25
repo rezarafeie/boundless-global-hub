@@ -47,18 +47,20 @@ const AdminSettingsPanel: React.FC = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<SettingsTab>('system');
   const [useFullLeadsSystem, setUseFullLeadsSystem] = useState(false);
+  const [quickEnrollEnabled, setQuickEnrollEnabled] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   useEffect(() => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('admin_settings')
-        .select('use_full_leads_system')
+        .select('use_full_leads_system, quick_enroll_enabled' as any)
         .eq('id', 1)
         .single();
       
       if (data && !error) {
-        setUseFullLeadsSystem(data.use_full_leads_system || false);
+        setUseFullLeadsSystem((data as any).use_full_leads_system || false);
+        setQuickEnrollEnabled((data as any).quick_enroll_enabled || false);
       }
       setLoadingSettings(false);
     };
@@ -83,6 +85,24 @@ const AdminSettingsPanel: React.FC = () => {
       toast({
         title: "ذخیره شد",
         description: checked ? "سیستم مدیریت لید کامل فعال شد" : "سیستم مدیریت لید ساده فعال شد"
+      });
+    }
+  };
+
+  const handleToggleQuickEnroll = async (checked: boolean) => {
+    setQuickEnrollEnabled(checked);
+    const { error } = await supabase
+      .from('admin_settings')
+      .update({ quick_enroll_enabled: checked, updated_at: new Date().toISOString() } as any)
+      .eq('id', 1);
+
+    if (error) {
+      toast({ title: "خطا", description: "خطا در ذخیره تنظیمات", variant: "destructive" });
+      setQuickEnrollEnabled(!checked);
+    } else {
+      toast({
+        title: "ذخیره شد",
+        description: checked ? "ثبت‌نام سریع فعال شد" : "ثبت‌نام سریع غیرفعال شد"
       });
     }
   };
@@ -120,6 +140,29 @@ const AdminSettingsPanel: React.FC = () => {
                     />
                     <span className="text-sm text-muted-foreground">کامل</span>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Label htmlFor="quick-enroll" className="text-base font-medium">
+                      ثبت‌نام سریع
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {quickEnrollEnabled
+                        ? "با کلیک روی دکمه ثبت‌نام، فرم سریع داخل صفحه باز می‌شود"
+                        : "کلیک روی دکمه ثبت‌نام به صفحه /enroll هدایت می‌شود"
+                      }
+                    </p>
+                  </div>
+                  <Switch
+                    id="quick-enroll"
+                    checked={quickEnrollEnabled}
+                    onCheckedChange={handleToggleQuickEnroll}
+                    disabled={loadingSettings}
+                  />
                 </div>
               </CardContent>
             </Card>
