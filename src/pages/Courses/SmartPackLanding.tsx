@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
+import QuickEnrollPopover from "@/components/Course/QuickEnrollPopover";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -658,15 +659,16 @@ const SmartPackLanding = () => {
 
             {/* CTA Button */}
             <motion.div variants={itemVariants} className="mb-8">
-              <Button 
-                onClick={scrollToCheckout}
-                size="lg" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-xl font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
-              >
-                <Play className="w-6 h-6 ml-3" />
-                شروع کسب‌وکار هوشمند
-                <ChevronRight className="w-6 h-6 mr-3" />
-              </Button>
+              <QuickEnrollPopover courseSlug="smart-pack" fallbackHref="/enroll/?course=smart-pack">
+                <Button 
+                  size="lg" 
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-xl font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+                >
+                  <Play className="w-6 h-6 ml-3" />
+                  شروع کسب‌وکار هوشمند
+                  <ChevronRight className="w-6 h-6 mr-3" />
+                </Button>
+              </QuickEnrollPopover>
               <p className="text-sm text-muted-foreground mt-3">
                 ✨ دسترسی فوری + ضمانت ۳۰ روزه بازگشت وجه
               </p>
@@ -1047,9 +1049,11 @@ const SmartPackLanding = () => {
                   <p className="text-muted-foreground mb-6">
                     در همین صفحه روی دکمه خرید بزنید و رزرو خودتان در دوره را تکمیل کنید.
                   </p>
-                  <Button onClick={() => window.location.href = '/enroll/?course=smart-pack'} className="w-full">
-                    خرید آنلاین
-                  </Button>
+                  <QuickEnrollPopover courseSlug="smart-pack" fallbackHref="/enroll/?course=smart-pack">
+                    <Button className="w-full">
+                      خرید آنلاین
+                    </Button>
+                  </QuickEnrollPopover>
                 </CardContent>
               </Card>
             </motion.div>
@@ -1070,14 +1074,15 @@ const SmartPackLanding = () => {
                    <p className="text-sm text-muted-foreground mb-6">
                      رسید خود را در قسمت کارت به کارت ثبت سفارش بارگذاری نمایید
                    </p>
-                   <Button 
-                     variant="outline" 
-                     className="w-full"
-                     onClick={() => window.location.href = '/enroll/?course=smart-pack'}
-                   >
-                     <MessageCircle className="w-4 h-4 ml-2" />
-                     ثبت سفارش
-                   </Button>
+                   <QuickEnrollPopover courseSlug="smart-pack" fallbackHref="/enroll/?course=smart-pack">
+                     <Button 
+                       variant="outline" 
+                       className="w-full"
+                     >
+                       <MessageCircle className="w-4 h-4 ml-2" />
+                       ثبت سفارش
+                     </Button>
+                   </QuickEnrollPopover>
                 </CardContent>
               </Card>
             </motion.div>
@@ -1682,14 +1687,15 @@ const SmartPackLanding = () => {
               </div>
               
               {/* CTA Button */}
-              <Button 
-                onClick={handlePurchaseClick}
-                size="lg" 
-                className="w-full md:w-auto bg-foreground text-background hover:bg-foreground/90 px-12 py-4 text-lg font-semibold rounded-xl transition-all duration-300 hover:scale-105"
-              >
-                <Zap className="w-5 h-5 ml-3" />
-                شروع کسب‌وکار هوشمند
-              </Button>
+              <QuickEnrollPopover courseSlug="smart-pack" fallbackHref="/enroll/?course=smart-pack">
+                <Button 
+                  size="lg" 
+                  className="w-full md:w-auto bg-foreground text-background hover:bg-foreground/90 px-12 py-4 text-lg font-semibold rounded-xl transition-all duration-300 hover:scale-105"
+                >
+                  <Zap className="w-5 h-5 ml-3" />
+                  شروع کسب‌وکار هوشمند
+                </Button>
+              </QuickEnrollPopover>
             </div>
             
             {/* Additional Info */}
@@ -1701,9 +1707,11 @@ const SmartPackLanding = () => {
       </section>
 
       {/* Mobile Sticky Button */}
-      <MobileStickyButton onClick={handlePurchaseClick}>
-        شروع کسب‌وکار با AI + بونوس‌های ویژه
-      </MobileStickyButton>
+      <QuickEnrollPopover courseSlug="smart-pack" fallbackHref="/enroll/?course=smart-pack">
+        <MobileStickyButton onClick={handlePurchaseClick}>
+          شروع کسب‌وکار با AI + بونوس‌های ویژه
+        </MobileStickyButton>
+      </QuickEnrollPopover>
     </MainLayout>
   );
 };
