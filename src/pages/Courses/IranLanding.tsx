@@ -9,6 +9,7 @@ import SectionTitle from "@/components/SectionTitle";
 import { useBlackFridayContext } from "@/contexts/BlackFridayContext";
 import CourseDiscountBanner from "@/components/BlackFriday/CourseDiscountBanner";
 import { supabase } from "@/integrations/supabase/client";
+import QuickEnrollPopover from "@/components/Course/QuickEnrollPopover";
 import {
   Flag, ShieldCheck, Wifi, Brain, Briefcase, Package, Megaphone, Users,
   CheckCircle2, Sparkles, Target, Layers, Rocket, PlayCircle, Lightbulb,
@@ -257,11 +258,13 @@ const IranLanding = () => {
                         <span className="text-base text-muted-foreground mr-2 font-normal">تومان</span>
                       </p>
                     </div>
-                    <Button onClick={goEnroll} className="w-full h-12 rounded-xl text-base font-bold gap-2">
-                      <Rocket size={17} />
-                      ثبت‌نام در دوره ایران
-                      <ArrowLeft size={15} />
-                    </Button>
+                    <QuickEnrollPopover courseSlug="iran" fallbackHref="/enroll/?course=iran">
+                      <Button className="w-full h-12 rounded-xl text-base font-bold gap-2">
+                        <Rocket size={17} />
+                        ثبت‌نام در دوره ایران
+                        <ArrowLeft size={15} />
+                      </Button>
+                    </QuickEnrollPopover>
                     <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
                       <ShieldCheck size={13} />
                       پرداخت امن • دسترسی فوری • گواهی پایان دوره
@@ -350,9 +353,11 @@ const IranLanding = () => {
                   <span>قیمت ویژه شما:</span>
                 </div>
                 <p className="text-4xl font-black">{formatPrice(finalPrice)} <span className="text-base font-normal">تومان</span></p>
-                <Button onClick={goEnroll} size="lg" className="w-full md:w-auto h-12 px-8 rounded-xl font-bold gap-2">
-                  <Rocket size={17} /> الان ثبت‌نام می‌کنم
-                </Button>
+                <QuickEnrollPopover courseSlug="iran" fallbackHref="/enroll/?course=iran">
+                  <Button size="lg" className="w-full md:w-auto h-12 px-8 rounded-xl font-bold gap-2">
+                    <Rocket size={17} /> الان ثبت‌نام می‌کنم
+                  </Button>
+                </QuickEnrollPopover>
               </CardContent>
             </Card>
           </div>
@@ -717,11 +722,13 @@ const IranLanding = () => {
                   <div className="text-sm text-muted-foreground line-through">{formatPrice(coursePrice)} تومان</div>
                 )}
                 <div className="text-3xl font-black">{formatPrice(finalPrice)} <span className="text-base font-normal">تومان</span></div>
-                <Button onClick={goEnroll} size="lg" className="w-full h-12 rounded-xl text-base font-bold gap-2">
-                  <PlayCircle size={18} />
-                  ثبت‌نام در دوره ایران
-                  <ArrowLeft size={15} />
-                </Button>
+                <QuickEnrollPopover courseSlug="iran" fallbackHref="/enroll/?course=iran">
+                  <Button size="lg" className="w-full h-12 rounded-xl text-base font-bold gap-2">
+                    <PlayCircle size={18} />
+                    ثبت‌نام در دوره ایران
+                    <ArrowLeft size={15} />
+                  </Button>
+                </QuickEnrollPopover>
                 <p className="text-xs text-muted-foreground">دسترسی فوری • مادام‌العمر • گواهی پایان دوره</p>
               </CardContent>
             </Card>
@@ -730,10 +737,12 @@ const IranLanding = () => {
 
         {/* Sticky mobile CTA */}
         <div className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-background/95 backdrop-blur border-t p-3">
-          <Button onClick={goEnroll} className="w-full h-12 rounded-xl font-bold gap-2">
-            <Rocket size={16} />
-            ثبت‌نام در دوره ایران — {formatPrice(finalPrice)} ت
-          </Button>
+          <QuickEnrollPopover courseSlug="iran" fallbackHref="/enroll/?course=iran">
+            <Button className="w-full h-12 rounded-xl font-bold gap-2">
+              <Rocket size={16} />
+              ثبت‌نام در دوره ایران — {formatPrice(finalPrice)} ت
+            </Button>
+          </QuickEnrollPopover>
         </div>
       </div>
     </MainLayout>

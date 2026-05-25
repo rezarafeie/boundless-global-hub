@@ -42,6 +42,7 @@ import AparatPlayer from "@/components/AparatPlayer";
 import { useBlackFridayContext } from '@/contexts/BlackFridayContext';
 import CourseDiscountBanner from '@/components/BlackFriday/CourseDiscountBanner';
 import { supabase } from '@/integrations/supabase/client';
+import QuickEnrollPopover from '@/components/Course/QuickEnrollPopover';
 
 
 const BoundlessLanding = () => {
@@ -331,14 +332,15 @@ const BoundlessLanding = () => {
                   فرصت استثنایی برای عضویت در دوره تخصصی شروع بدون مرز مجدداً فراهم شده است. با بهره‌گیری از این موقعیت طلایی، مسیر حرفه‌ای خود را در عرصه کسب‌وکار بین‌المللی آغاز نمایید.
                 </p>
                 
-                <Button 
-                  onClick={handleEnrollClick}
-                  size="lg"
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-3 text-lg font-medium rounded-lg border-0 hover:from-green-600 hover:to-emerald-600 transition-all mb-3 w-full"
-                >
-                  <CheckCircle className="ml-2" size={20} />
-                  ثبت‌نام در دوره
-                </Button>
+                <QuickEnrollPopover courseSlug="boundless" fallbackHref={enrollmentUrl}>
+                  <Button 
+                    size="lg"
+                    className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-3 text-lg font-medium rounded-lg border-0 hover:from-green-600 hover:to-emerald-600 transition-all mb-3 w-full"
+                  >
+                    <CheckCircle className="ml-2" size={20} />
+                    ثبت‌نام در دوره
+                  </Button>
+                </QuickEnrollPopover>
 
                 {/* Small Student Login Button */}
                 <div className="mt-3">
@@ -694,14 +696,15 @@ const BoundlessLanding = () => {
               transition={{ duration: 0.8, delay: 0.6 }}
               className="space-y-3"
             >
-              <Button 
-                onClick={handleEnrollClick}
-                size="lg"
-                className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg px-8 py-3 text-lg font-medium border-0"
-              >
-                <CheckCircle className="ml-2" size={20} />
-                ثبت‌نام در دوره شروع بدون مرز
-              </Button>
+              <QuickEnrollPopover courseSlug="boundless" fallbackHref={enrollmentUrl}>
+                <Button 
+                  size="lg"
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg px-8 py-3 text-lg font-medium border-0"
+                >
+                  <CheckCircle className="ml-2" size={20} />
+                  ثبت‌نام در دوره شروع بدون مرز
+                </Button>
+              </QuickEnrollPopover>
 
               {/* Small Student Login Button */}
               <div className="mt-4">
@@ -730,14 +733,15 @@ const BoundlessLanding = () => {
 
       {/* Sticky Registration Button */}
       <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-auto">
-        <Button 
-          onClick={handleEnrollClick}
-          size="lg"
-          className="w-full md:w-auto bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3 text-base font-medium rounded-lg border-0 shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300"
-        >
-          <CheckCircle className="ml-2" size={18} />
-          ثبت‌نام در دوره
-        </Button>
+        <QuickEnrollPopover courseSlug="boundless" fallbackHref={enrollmentUrl}>
+          <Button 
+            size="lg"
+            className="w-full md:w-auto bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3 text-base font-medium rounded-lg border-0 shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300"
+          >
+            <CheckCircle className="ml-2" size={18} />
+            ثبت‌نام در دوره
+          </Button>
+        </QuickEnrollPopover>
       </div>
 
 
