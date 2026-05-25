@@ -16,9 +16,16 @@
     
     <!-- Manifest -->
     <link rel="manifest" href="/manifest.json" />
-    
-    <!-- Fonts -->
+
+    <!-- Preconnect to critical origins (Supabase, font CDN) -->
+    <link rel="preconnect" href="https://ihhetvwuhqohbfgkqoxw.supabase.co" crossorigin />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="dns-prefetch" href="https://ihhetvwuhqohbfgkqoxw.supabase.co" />
+
+    <!-- Fonts (preload + async) -->
+    <link rel="preload" as="style" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" />
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet" type="text/css" />
+    
     
     <!-- OneSignal Web Push SDK - Only load script, no initialization -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
