@@ -30,32 +30,28 @@ if (isMessengerSubdomain()) {
 
 createRoot(document.getElementById("root")!).render(<App />);
 
-// Register single service worker for PWA with mobile optimization
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // Always use the main service worker (consolidated)
+    if (import.meta.env.DEV) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => registration.unregister());
+      });
+
+      if ('caches' in window) {
+        caches.keys().then((cacheNames) => {
+          cacheNames
+            .filter((cacheName) => cacheName.startsWith('rafiei-academy'))
+            .forEach((cacheName) => caches.delete(cacheName));
+        });
+      }
+
+      return;
+    }
+
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
         console.log('✅ SW registered successfully:', registration.scope);
-        
-        // Mobile-specific service worker handling
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        if (isMobile) {
-          console.log('Mobile device detected - service worker optimized for mobile');
-          
-          // Force update on mobile for immediate changes
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('New service worker available on mobile - updating');
-                  newWorker.postMessage({ type: 'SKIP_WAITING' });
-                }
-              });
-            }
-          });
-        }
+        registration.update();
       })
       .catch((registrationError) => {
         console.log('SW registration failed:', registrationError);
