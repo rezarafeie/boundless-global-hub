@@ -15,15 +15,15 @@ export const useQuickEnrollSetting = () => {
       return;
     }
     if (!pending) {
-      pending = supabase
-        .from('admin_settings')
-        .select('quick_enroll_enabled')
-        .eq('id', 1)
-        .maybeSingle()
-        .then(({ data }) => {
-          cached = !!(data as any)?.quick_enroll_enabled;
-          return cached;
-        });
+      pending = (async () => {
+        const { data } = await supabase
+          .from('admin_settings')
+          .select('quick_enroll_enabled' as any)
+          .eq('id', 1)
+          .maybeSingle();
+        cached = !!(data as any)?.quick_enroll_enabled;
+        return cached;
+      })();
     }
     pending.then((v) => {
       setEnabled(v);
