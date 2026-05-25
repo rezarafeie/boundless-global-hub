@@ -143,6 +143,29 @@ const AdminSettingsPanel: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Label htmlFor="quick-enroll" className="text-base font-medium">
+                      ثبت‌نام سریع
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {quickEnrollEnabled
+                        ? "با کلیک روی دکمه ثبت‌نام، فرم سریع داخل صفحه باز می‌شود"
+                        : "کلیک روی دکمه ثبت‌نام به صفحه /enroll هدایت می‌شود"
+                      }
+                    </p>
+                  </div>
+                  <Switch
+                    id="quick-enroll"
+                    checked={quickEnrollEnabled}
+                    onCheckedChange={handleToggleQuickEnroll}
+                    disabled={loadingSettings}
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </div>
         );
       case 'webhooks':
