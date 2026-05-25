@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'rafiei-academy-v7';
+const CACHE_NAME = 'rafiei-academy-v8';
 const urlsToCache = [
   '/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png',
   '/lovable-uploads/3e31ce9b-58ae-45b0-9eb0-ffe088c9b64e.png',
@@ -203,12 +203,13 @@ self.addEventListener('fetch', function(event) {
   const isNavigation = event.request.mode === 'navigate';
   const isScriptOrStyle = ['script', 'style', 'worker'].includes(event.request.destination);
 
-  if (isNavigation || isScriptOrStyle) {
+  if (isNavigation || isScriptOrStyle || requestUrl.origin !== self.location.origin) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  if (requestUrl.origin !== self.location.origin) {
+  if (!requestUrl.pathname.startsWith('/lovable-uploads/')) {
+    event.respondWith(fetch(event.request));
     return;
   }
 
@@ -230,7 +231,7 @@ self.addEventListener('activate', function(event) {
     caches.keys().then(function(cacheNames) {
       return Promise.all(
         cacheNames.map(function(cacheName) {
-          if (cacheName !== CACHE_NAME) {
+          if (cacheName !== CACHE_NAME || cacheName.startsWith('rafiei-academy')) {
             console.log('🗑️ Deleting old cache on mobile:', cacheName);
             return caches.delete(cacheName);
           }
@@ -239,6 +240,10 @@ self.addEventListener('activate', function(event) {
     }).then(() => {
       console.log('✅ Service worker activated successfully on mobile');
       return self.clients.claim();
+    }).then(() => {
+      return self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    }).then((clientList) => {
+      return Promise.all(clientList.map((client) => client.navigate(client.url)));
     })
   );
 });
