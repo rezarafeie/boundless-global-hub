@@ -1,12 +1,17 @@
 
 // Unified Service Worker with OneSignal Integration
-const CACHE_NAME = 'rafiei-academy-v8';
+const CACHE_NAME = 'rafiei-academy-v6';
 const urlsToCache = [
+  '/',
+  '/hub/messenger',
+  '/static/js/bundle.js',
+  '/static/css/main.css',
   '/lovable-uploads/10f756a4-56ae-4a72-9b78-749f6440ccbc.png',
   '/lovable-uploads/3e31ce9b-58ae-45b0-9eb0-ffe088c9b64e.png',
   '/lovable-uploads/d03b7d97-8f42-4806-a04a-add408342460.png',
   '/lovable-uploads/6ee3e71a-c27b-49b7-b51c-14ce664d8043.png',
-  '/lovable-uploads/a77fd37e-3b28-461c-a4de-b1b0b2f771b7.png'
+  '/lovable-uploads/a77fd37e-3b28-461c-a4de-b1b0b2f771b7.png',
+  'https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css'
 ];
 
 // Import OneSignal SDK
@@ -200,11 +205,13 @@ self.addEventListener('install', function(event) {
     caches.open(CACHE_NAME)
       .then(function(cache) {
         console.log('📦 [Unified SW] Caching app resources');
-        return Promise.allSettled(urlsToCache.map((url) => cache.add(url)));
+        return cache.addAll(urlsToCache);
       })
       .then(() => {
         console.log('✅ [Unified SW] Service worker installed successfully');
-        self.skipWaiting();
+        if (isMobile()) {
+          self.skipWaiting();
+        }
       })
       .catch((error) => {
         console.error('❌ [Unified SW] Service worker install failed:', error);
@@ -214,32 +221,23 @@ self.addEventListener('install', function(event) {
 
 // Fetch event for offline functionality
 self.addEventListener('fetch', function(event) {
-  if (event.request.method !== 'GET' || event.request.url.includes('onesignal.com')) {
+  // Skip OneSignal API requests
+  if (event.request.url.includes('onesignal.com')) {
     return;
   }
-
-  const requestUrl = new URL(event.request.url);
-  const isNavigation = event.request.mode === 'navigate';
-  const isScriptOrStyle = ['script', 'style', 'worker'].includes(event.request.destination);
-
-  if (isNavigation || isScriptOrStyle || requestUrl.origin !== self.location.origin) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
-
-  if (!requestUrl.pathname.startsWith('/lovable-uploads/')) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
-
+  
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-        return response;
+    caches.match(event.request)
+      .then(function(response) {
+        if (response) {
+          return response;
+        }
+        
+        return fetch(event.request).catch((error) => {
+          console.error('❌ [Unified SW] Network fetch failed:', error);
+          throw error;
+        });
       })
-      .catch(() => caches.match(event.request))
   );
 });
 
@@ -250,7 +248,7 @@ self.addEventListener('activate', function(event) {
     caches.keys().then(function(cacheNames) {
       return Promise.all(
         cacheNames.map(function(cacheName) {
-          if (cacheName !== CACHE_NAME || cacheName.startsWith('rafiei-academy')) {
+          if (cacheName !== CACHE_NAME) {
             console.log('🗑️ [Unified SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -258,11 +256,9 @@ self.addEventListener('activate', function(event) {
       );
     }).then(() => {
       console.log('✅ [Unified SW] Service worker activated successfully');
-      return self.clients.claim();
-    }).then(() => {
-      return self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    }).then((clientList) => {
-      return Promise.all(clientList.map((client) => client.navigate(client.url)));
+      if (isMobile()) {
+        return self.clients.claim();
+      }
     })
   );
 });
