@@ -8,6 +8,7 @@ import CountdownTimer from "@/components/CountdownTimer";
 import { motion } from "framer-motion";
 import IframeModal from "@/components/IframeModal";
 import { useCourseSettings } from "@/hooks/useCourseSettings";
+import QuickEnrollPopover from "@/components/Course/QuickEnrollPopover";
 interface FreeCourseLandingProps {
   title: string;
   englishTitle: string;
@@ -205,10 +206,12 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
             </motion.div>
             
             <motion.div variants={itemVariants}>
-              <Button onClick={handleStartCourse} size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 rounded-full px-12 py-6 text-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-                <Play className="mr-3" size={24} />
-                شروع رایگان همین الان
-              </Button>
+              <QuickEnrollPopover courseSlug={courseSlug || ''}>
+                <Button onClick={handleStartCourse} size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 rounded-full px-12 py-6 text-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                  <Play className="mr-3" size={24} />
+                  شروع رایگان همین الان
+                </Button>
+              </QuickEnrollPopover>
               <p className="text-sm text-gray-500 mt-3">✨ ثبت‌نام رایگان - بدون نیاز به کارت اعتباری</p>
             </motion.div>
           </motion.div>
@@ -576,10 +579,12 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
             هزاران نفر قبل از شما این تصمیم را گرفتند و زندگی‌شان تغییر کرد
           </motion.p>
           <motion.div variants={itemVariants} className="space-y-6">
-            <Button onClick={handleStartCourse} size="lg" className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:from-green-600 hover:to-blue-600 rounded-full px-12 py-6 text-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
-              <Play className="mr-3" size={24} />
-              شروع رایگان - همین الان!
-            </Button>
+            <QuickEnrollPopover courseSlug={courseSlug || ''}>
+              <Button onClick={handleStartCourse} size="lg" className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:from-green-600 hover:to-blue-600 rounded-full px-12 py-6 text-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+                <Play className="mr-3" size={24} />
+                شروع رایگان - همین الان!
+              </Button>
+            </QuickEnrollPopover>
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 max-w-md mx-auto">
               <p className="text-sm text-gray-300 mb-2">
                 ✅ ثبت‌نام رایگان - بدون نیاز به کارت اعتباری
@@ -598,10 +603,12 @@ const FreeCourseLanding: React.FC<FreeCourseLandingProps> = ({
       {/* Fixed Bottom Enrollment Button */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg p-4">
         <div className="container max-w-4xl mx-auto">
-          <Button onClick={handleStartCourse} size="lg" className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white hover:from-green-600 hover:to-blue-600 rounded-full px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]">
-            <Play className="mr-3" size={20} />
-            شروع رایگان همین الان
-          </Button>
+          <QuickEnrollPopover courseSlug={courseSlug || ''}>
+            <Button onClick={handleStartCourse} size="lg" className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white hover:from-green-600 hover:to-blue-600 rounded-full px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]">
+              <Play className="mr-3" size={20} />
+              شروع رایگان همین الان
+            </Button>
+          </QuickEnrollPopover>
         </div>
       </div>
 

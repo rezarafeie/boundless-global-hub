@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import IframeModal from "@/components/IframeModal";
 import { useCourseSettings } from "@/hooks/useCourseSettings";
+import QuickEnrollPopover from "@/components/Course/QuickEnrollPopover";
 import { 
   PlayCircle, 
   CheckCircle, 
