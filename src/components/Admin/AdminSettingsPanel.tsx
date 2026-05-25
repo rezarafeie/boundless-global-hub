@@ -54,12 +54,13 @@ const AdminSettingsPanel: React.FC = () => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('admin_settings')
-        .select('use_full_leads_system')
+        .select('use_full_leads_system, quick_enroll_enabled' as any)
         .eq('id', 1)
         .single();
       
       if (data && !error) {
-        setUseFullLeadsSystem(data.use_full_leads_system || false);
+        setUseFullLeadsSystem((data as any).use_full_leads_system || false);
+        setQuickEnrollEnabled((data as any).quick_enroll_enabled || false);
       }
       setLoadingSettings(false);
     };
@@ -84,6 +85,24 @@ const AdminSettingsPanel: React.FC = () => {
       toast({
         title: "ذخیره شد",
         description: checked ? "سیستم مدیریت لید کامل فعال شد" : "سیستم مدیریت لید ساده فعال شد"
+      });
+    }
+  };
+
+  const handleToggleQuickEnroll = async (checked: boolean) => {
+    setQuickEnrollEnabled(checked);
+    const { error } = await supabase
+      .from('admin_settings')
+      .update({ quick_enroll_enabled: checked, updated_at: new Date().toISOString() } as any)
+      .eq('id', 1);
+
+    if (error) {
+      toast({ title: "خطا", description: "خطا در ذخیره تنظیمات", variant: "destructive" });
+      setQuickEnrollEnabled(!checked);
+    } else {
+      toast({
+        title: "ذخیره شد",
+        description: checked ? "ثبت‌نام سریع فعال شد" : "ثبت‌نام سریع غیرفعال شد"
       });
     }
   };
