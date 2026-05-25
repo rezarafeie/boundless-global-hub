@@ -17,6 +17,7 @@ import { Star, Zap, Clock, Play, BookOpen, Users, Award, ArrowRight } from "luci
 import { TetherlandService } from "@/lib/tetherlandService";
 import { useBlackFridayContext } from "@/contexts/BlackFridayContext";
 import BlackFridayBanner from "@/components/BlackFriday/BlackFridayBanner";
+import QuickEnrollPopover from "@/components/Course/QuickEnrollPopover";
 
 const Index = () => {
   const { translations } = useLanguage();
@@ -308,15 +309,17 @@ const Index = () => {
 
               {/* Actions */}
               <div className="space-y-3 mt-auto">
-                <Button 
-                  asChild 
-                  className={`w-full h-12 bg-gradient-to-r ${config.buttonBg} text-white font-medium shadow-lg ${config.buttonShadow} transition-all duration-300`}
+                <QuickEnrollPopover
+                  courseSlug={course.slug}
+                  fallbackHref={`/enroll?course=${course.slug}`}
                 >
-                  <Link to={`/enroll?course=${course.slug}`} className="flex items-center justify-center gap-2">
+                  <Button
+                    className={`w-full h-12 bg-gradient-to-r ${config.buttonBg} text-white font-medium shadow-lg ${config.buttonShadow} transition-all duration-300 flex items-center justify-center gap-2`}
+                  >
                     <span>{course.price === 0 ? 'شروع دوره رایگان' : 'ثبت‌نام در دوره'}</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                </Button>
+                  </Button>
+                </QuickEnrollPopover>
                 
                 <Button asChild variant="ghost" size="sm" className={`w-full ${config.ghostHover}`}>
                   <Link to={`/courses/${course.slug}`} className="flex items-center justify-center gap-2">
