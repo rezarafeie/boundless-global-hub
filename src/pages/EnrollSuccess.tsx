@@ -992,6 +992,41 @@ const EnrollSuccess: React.FC = () => {
   };
 
   if (verifying) {
+    // For free courses, show a skeleton of the success page (snappier UX)
+    if (authority === 'FREE_COURSE') {
+      return (
+        <MainLayout>
+          <div className="container mx-auto px-4 py-8 min-w-0">
+            <div className="max-w-2xl mx-auto min-w-0">
+              <Card className="bg-card/80 backdrop-blur-sm border shadow-xl">
+                <CardHeader className="text-center">
+                  <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
+                    <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  </div>
+                  <CardTitle className="text-2xl text-green-700 dark:text-green-400 mb-2">
+                    🎉 ثبت‌نام موفقیت‌آمیز!
+                  </CardTitle>
+                  <p className="text-muted-foreground">
+                    در حال آماده‌سازی اطلاعات دوره...
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-3">
+                    <div className="h-24 w-full rounded-xl bg-muted animate-pulse" />
+                    <div className="h-40 w-full rounded-xl bg-muted animate-pulse" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="h-14 rounded-lg bg-muted animate-pulse" />
+                      <div className="h-14 rounded-lg bg-muted animate-pulse" />
+                    </div>
+                    <div className="h-32 w-full rounded-xl bg-muted animate-pulse" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </MainLayout>
+      );
+    }
     return (
       <MainLayout>
         <div className="min-h-screen flex items-center justify-center">
