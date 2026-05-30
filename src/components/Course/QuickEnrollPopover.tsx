@@ -159,15 +159,28 @@ const QuickEnrollPopover: React.FC<QuickEnrollPopoverProps> = ({
         <SheetContent
           side="bottom"
           dir="rtl"
-          className="rounded-t-3xl border-t border-border p-0 max-h-[88vh] overflow-hidden"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          className="rounded-t-3xl border-t border-border p-0 overflow-hidden flex flex-col"
+          style={{
+            maxHeight: '100dvh',
+            height: 'auto',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+          }}
         >
           {/* Drag handle */}
-          <div className="flex justify-center pt-3 pb-1">
+          <div className="flex justify-center pt-3 pb-1 shrink-0">
             <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
           </div>
 
-          <div className="px-5 pb-5 pt-2 overflow-y-auto max-h-[80vh]">
+          <div
+            className="px-5 pb-8 pt-2 overflow-y-auto flex-1"
+            style={{ maxHeight: 'calc(100dvh - 2rem)', WebkitOverflowScrolling: 'touch' }}
+            onFocus={(e) => {
+              const t = e.target as HTMLElement;
+              if (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA') {
+                setTimeout(() => t.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+              }
+            }}
+          >
             <div className="flex items-center gap-2 mb-4">
               <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
                 <Zap className="h-4 w-4 text-primary" />
