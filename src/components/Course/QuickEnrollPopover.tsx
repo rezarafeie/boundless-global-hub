@@ -161,9 +161,9 @@ const QuickEnrollPopover: React.FC<QuickEnrollPopoverProps> = ({
           dir="rtl"
           className="rounded-b-3xl border-b border-border p-0 overflow-hidden flex flex-col"
           style={{
-            maxHeight: '100dvh',
+            top: 'calc(env(safe-area-inset-top) + 4rem)',
+            maxHeight: 'calc(100dvh - env(safe-area-inset-top) - 4rem)',
             height: 'auto',
-            paddingTop: 'env(safe-area-inset-top)',
           }}
         >
           {/* Drag handle */}
