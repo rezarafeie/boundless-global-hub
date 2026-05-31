@@ -157,13 +157,13 @@ const QuickEnrollPopover: React.FC<QuickEnrollPopoverProps> = ({
       {trigger}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
-          side="bottom"
+          side="top"
           dir="rtl"
-          className="rounded-t-3xl border-t border-border p-0 overflow-hidden flex flex-col"
+          className="rounded-b-3xl border-b border-border p-0 overflow-hidden flex flex-col"
           style={{
             maxHeight: '100dvh',
             height: 'auto',
-            paddingBottom: 'env(safe-area-inset-bottom)',
+            paddingTop: 'env(safe-area-inset-top)',
           }}
         >
           {/* Drag handle */}
