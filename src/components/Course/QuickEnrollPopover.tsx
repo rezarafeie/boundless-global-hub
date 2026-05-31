@@ -161,9 +161,9 @@ const QuickEnrollPopover: React.FC<QuickEnrollPopoverProps> = ({
           dir="rtl"
           className="rounded-b-3xl border-b border-border p-0 overflow-hidden flex flex-col"
           style={{
-            maxHeight: '100dvh',
+            top: 'calc(env(safe-area-inset-top) + 4rem)',
+            maxHeight: 'calc(100dvh - env(safe-area-inset-top) - 4rem)',
             height: 'auto',
-            paddingTop: 'env(safe-area-inset-top)',
           }}
         >
           {/* Drag handle */}
@@ -173,7 +173,7 @@ const QuickEnrollPopover: React.FC<QuickEnrollPopoverProps> = ({
 
           <div
             className="px-5 pb-8 pt-2 overflow-y-auto flex-1"
-            style={{ maxHeight: 'calc(100dvh - 2rem)', WebkitOverflowScrolling: 'touch' }}
+            style={{ maxHeight: 'calc(100dvh - env(safe-area-inset-top) - 6rem)', WebkitOverflowScrolling: 'touch' }}
             onFocus={(e) => {
               const t = e.target as HTMLElement;
               if (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA') {
