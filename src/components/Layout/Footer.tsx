@@ -3,6 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { BookOpen, Mail, MessageCircle, Phone, Home, User, MapPin } from "lucide-react";
+import enamadAsset from "@/assets/enamad.png.asset.json";
 
 const Footer = () => {
   const { translations } = useLanguage();
