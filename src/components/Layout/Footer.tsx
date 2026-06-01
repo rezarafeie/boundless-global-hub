@@ -3,6 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { BookOpen, Mail, MessageCircle, Phone, Home, User, MapPin } from "lucide-react";
+import enamadAsset from "@/assets/enamad.png.asset.json";
 
 const Footer = () => {
   const { translations } = useLanguage();
@@ -186,10 +187,19 @@ const Footer = () => {
       {/* Footer Bottom - Enhanced */}
       <div className="border-t border-gray-700 bg-gray-900/50">
         <div className="container py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-gray-400 text-base">
               {translations.footerCopyright}
             </p>
+            <a
+              href="https://trustseal.enamad.ir/?id=657703&code=null"
+              target="_blank"
+              rel="noopener noreferrer"
+              referrerPolicy="origin"
+              className="inline-block bg-white rounded-lg p-2 hover:opacity-90 transition-opacity"
+            >
+              <img src={enamadAsset.url} alt="eNamad" className="h-16 w-auto" />
+            </a>
             <div className="flex items-center space-x-8 rtl:space-x-reverse">
               <Link 
                 to="/terms" 
