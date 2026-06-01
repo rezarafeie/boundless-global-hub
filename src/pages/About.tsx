@@ -58,23 +58,6 @@ const About = () => {
             </Card>
           </div>
 
-          <div className="text-center mb-12">
-            <a
-              referrerPolicy="origin"
-              target="_blank"
-              rel="noopener noreferrer"
-              href="https://trustseal.enamad.ir/?id=657703&Code=ZXXN93ctCQvJHhtAnVEx8cD9aFssx7rY"
-              className="inline-block"
-            >
-              <img
-                referrerPolicy="origin"
-                src="https://trustseal.enamad.ir/logo.aspx?id=657703&Code=ZXXN93ctCQvJHhtAnVEx8cD9aFssx7rY"
-                alt="نماد اعتماد الکترونیکی"
-                className="cursor-pointer h-24 w-auto"
-              />
-            </a>
-          </div>
-
           <div className="text-center bg-gray-50 p-8 rounded-lg">
             <h2 className="text-2xl font-bold mb-4">آماده شروع هستید؟</h2>
             <p className="text-gray-600 mb-6">
