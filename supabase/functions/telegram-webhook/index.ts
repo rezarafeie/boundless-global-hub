@@ -741,13 +741,16 @@ async function findChatUserByPhone(local: string) {
   return data?.[0] ?? null;
 }
 
-async function startLogin(chat_id: number) {
+async function startLogin(chat_id: number, message_id?: number) {
   await setSession(chat_id, null, 'awaiting_phone', {});
-  await sendMessage(chat_id, [
+  const txt = [
     `🔐 <b>ورود به حساب</b>`, ``,
     `لطفاً شماره موبایل خود را ارسال کنید (مثال: <code>09120000000</code>)`, ``,
     `/cancel برای انصراف`,
-  ].join('\n'));
+  ].join('\n');
+  const kbd: InlineKeyboard = [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]];
+  if (message_id) await editMessage(chat_id, message_id, txt, kbd);
+  else await sendMessage(chat_id, txt, { keyboard: kbd });
 }
 
 async function handlePhoneInput(chat_id: number, text: string) {
