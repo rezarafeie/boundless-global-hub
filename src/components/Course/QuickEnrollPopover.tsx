@@ -24,7 +24,34 @@ const QuickEnrollPopover: React.FC<QuickEnrollPopoverProps> = ({
   fallbackHref,
   onFallback,
 }) => {
-  const { enabled, loading: loadingSetting } = useQuickEnrollSetting();
+  const { enabled: settingEnabled, loading: loadingSetting } = useQuickEnrollSetting();
+  const [isFreeCourse, setIsFreeCourse] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('courses')
+        .select('price, sale_price, is_sale_enabled, sale_expires_at, pre_launch_price, is_pre_launch_enabled, pre_launch_ends_at, use_dollar_price, usd_price' as any)
+        .eq('slug', courseSlug)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      const c: any = data;
+      const now = new Date();
+      const isPrelaunch = c.is_pre_launch_enabled && c.pre_launch_price != null &&
+        (!c.pre_launch_ends_at || new Date(c.pre_launch_ends_at) > now);
+      const isSale = c.is_sale_enabled && c.sale_price != null &&
+        (!c.sale_expires_at || new Date(c.sale_expires_at) > now);
+      const finalPrice = isPrelaunch ? c.pre_launch_price : isSale ? c.sale_price : c.price;
+      const hasDollar = !!c.use_dollar_price && !!c.usd_price && Number(c.usd_price) > 0;
+      setIsFreeCourse(!hasDollar && (!finalPrice || Number(finalPrice) === 0));
+    })();
+    return () => { cancelled = true; };
+  }, [courseSlug]);
+
+  // Quick enroll only for free courses
+  const enabled = settingEnabled && isFreeCourse === true;
+
   const { user, isAuthenticated } = useAuth();
   const countryOptions = getCountryCodeOptions();
   const navigate = useNavigate();
