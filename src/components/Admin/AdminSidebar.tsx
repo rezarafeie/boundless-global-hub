@@ -25,7 +25,8 @@ import {
   Calculator,
   Kanban,
   Receipt,
-  Video
+  Video,
+  FileText
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -56,6 +57,7 @@ const menuItems = [
   { id: 'users', label: 'کاربران', icon: Users },
   { id: 'analytics', label: 'آنالیتیکس', icon: TrendingUp },
   { id: 'crm', label: 'CRM', icon: MessageSquare },
+  { id: 'telegram-forms', label: 'فرم‌های تلگرام', icon: FileText },
   { id: 'settings', label: 'تنظیمات', icon: Settings },
 ];
 

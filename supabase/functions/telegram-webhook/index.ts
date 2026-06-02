@@ -6,6 +6,7 @@ import {
   answerCallback,
   escapeHtml,
   formatTehran,
+  downloadFile,
   type InlineKeyboard,
 } from '../_shared/telegram.ts';
 
@@ -974,7 +975,351 @@ async function studentEnroll(chat_id: number, message_id: number, user: BotUser,
   }
 }
 
+// ============ Forms System ============
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY') ?? '';
+
+async function getActiveForms() {
+  const { data } = await supabase.from('telegram_forms')
+    .select('id, title, description, require_login')
+    .eq('is_active', true).order('created_at', { ascending: false }).limit(20);
+  return data ?? [];
+}
+
+async function formsKeyboardRows(): Promise<InlineKeyboard> {
+  const forms = await getActiveForms();
+  return forms.map((f: any) => [{ text: `📝 ${f.title}`, callback_data: `form:start:${f.id.slice(0, 8)}` }]);
+}
+
+async function buildStartKeyboard(authed: boolean, role: Role): Promise<InlineKeyboard> {
+  const formRows = await formsKeyboardRows();
+  const base = authed ? mainMenu(role) : loginMenu();
+  return [...formRows, ...base];
+}
+
+async function findFormByPrefix(prefix: string) {
+  const { data } = await supabase.from('telegram_forms').select('*').eq('is_active', true).limit(500);
+  return (data ?? []).find((f: any) => f.id.startsWith(prefix));
+}
+
+async function getFormFields(form_id: string) {
+  const { data } = await supabase.from('telegram_form_fields')
+    .select('*').eq('form_id', form_id).order('order_index');
+  return data ?? [];
+}
+
+function fieldPrompt(field: any, index: number, total: number): string {
+  const req = field.required ? ' <i>(الزامی)</i>' : ' <i>(اختیاری — برای رد کردن /skip)</i>';
+  const hint = field.help_text ? `\n<i>${escapeHtml(field.help_text)}</i>` : '';
+  const typeHints: Record<string, string> = {
+    text: '✍️ پاسخ متنی کوتاه بنویسید.',
+    long_text: '✍️ پاسخ متنی خود را بنویسید.',
+    phone: '📱 شماره موبایل را ارسال کنید (مثال: 09120000000).',
+    email: '📧 ایمیل را ارسال کنید.',
+    number: '🔢 یک عدد ارسال کنید.',
+    dropdown: '👇 یکی از گزینه‌های زیر را انتخاب کنید:',
+    image: '🖼 یک عکس ارسال کنید.',
+    voice: '🎤 یک پیام صوتی ضبط و ارسال کنید.',
+    file: '📎 یک فایل ارسال کنید.',
+  };
+  return [
+    `📝 سؤال ${index + 1} از ${total}`,
+    ``,
+    `<b>${escapeHtml(field.label)}</b>${req}${hint}`,
+    ``,
+    typeHints[field.field_type] || typeHints.text,
+    ``,
+    `/cancel برای انصراف`,
+  ].join('\n');
+}
+
+async function startForm(chat_id: number, message_id: number, formId: string, user: BotUser | null) {
+  const form = await findFormByPrefix(formId);
+  if (!form) {
+    await editMessage(chat_id, message_id, '❌ فرم یافت نشد.', [[{ text: '🏠', callback_data: 'menu:home' }]]);
+    return;
+  }
+  if (form.require_login && !user) {
+    await editMessage(chat_id, message_id,
+      `🔒 برای شرکت در «${escapeHtml(form.title)}» باید وارد حساب کاربری خود شوید.`,
+      [[{ text: '🔐 ورود', callback_data: 'login:start' }]]);
+    return;
+  }
+  const fields = await getFormFields(form.id);
+  if (!fields.length) {
+    await editMessage(chat_id, message_id, '⚠️ این فرم هیچ فیلدی ندارد.', [[{ text: '🏠', callback_data: 'menu:home' }]]);
+    return;
+  }
+  const { data: sub, error } = await supabase.from('telegram_form_submissions').insert({
+    form_id: form.id, chat_id, chat_user_id: user?.id ?? null, status: 'in_progress',
+  }).select('id').single();
+  if (error || !sub) {
+    await editMessage(chat_id, message_id, `❌ خطا: ${escapeHtml(error?.message ?? '')}`, [[{ text: '🏠', callback_data: 'menu:home' }]]);
+    return;
+  }
+  await setSession(chat_id, user?.id ?? null, 'awaiting_form_field', {
+    submission_id: sub.id, form_id: form.id, field_index: 0,
+  });
+  await editMessage(chat_id, message_id,
+    `📋 <b>${escapeHtml(form.title)}</b>\n${form.description ? escapeHtml(form.description) : ''}`,
+    [[{ text: '⬅️ انصراف', callback_data: 'form:cancel' }]]);
+  await askField(chat_id, sub.id, form.id, 0);
+}
+
+async function askField(chat_id: number, submission_id: string, form_id: string, index: number) {
+  const fields = await getFormFields(form_id);
+  const field = fields[index];
+  if (!field) return;
+  const text = fieldPrompt(field, index, fields.length);
+  if (field.field_type === 'dropdown') {
+    const opts: string[] = Array.isArray(field.options) ? field.options : (field.options?.values ?? []);
+    const kbd: InlineKeyboard = opts.map((o, i) => [{ text: o, callback_data: `form:opt:${i}` }]);
+    kbd.push([{ text: '❌ انصراف', callback_data: 'form:cancel' }]);
+    await sendMessage(chat_id, text, { keyboard: kbd });
+  } else {
+    await sendMessage(chat_id, text, { keyboard: [[{ text: '❌ انصراف', callback_data: 'form:cancel' }]] });
+  }
+}
+
+function validateFieldValue(field: any, text: string): { ok: boolean; value?: string; error?: string } {
+  const t = text.trim();
+  if (field.field_type === 'phone') {
+    const norm = normalizePhoneIR(t);
+    if (!norm) return { ok: false, error: 'شماره معتبر نیست (مثال: 09120000000).' };
+    return { ok: true, value: norm.formatted };
+  }
+  if (field.field_type === 'email') {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) return { ok: false, error: 'ایمیل معتبر نیست.' };
+    return { ok: true, value: t };
+  }
+  if (field.field_type === 'number') {
+    if (!/^-?\d+(\.\d+)?$/.test(t)) return { ok: false, error: 'لطفاً فقط عدد ارسال کنید.' };
+    return { ok: true, value: t };
+  }
+  return { ok: true, value: t };
+}
+
+async function uploadTelegramFile(submission_id: string, field_id: string, file_id: string, bucket: string, ext: string) {
+  const f = await downloadFile(file_id);
+  if (!f) return null;
+  const path = `telegram-forms/${submission_id}/${field_id}.${ext}`;
+  const { error } = await supabase.storage.from(bucket).upload(path, f.bytes, {
+    contentType: f.mime, upsert: true,
+  });
+  if (error) { console.error('upload error:', error); return null; }
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return { url: data.publicUrl, mime: f.mime };
+}
+
+async function saveAnswerAndAdvance(
+  chat_id: number,
+  user_id: number | null,
+  submission_id: string,
+  form_id: string,
+  field: any,
+  field_index: number,
+  answer: { value_text?: string | null; value_json?: any; file_url?: string | null; file_mime?: string | null },
+) {
+  await supabase.from('telegram_form_answers').insert({
+    submission_id, field_id: field.id,
+    value_text: answer.value_text ?? null,
+    value_json: answer.value_json ?? null,
+    file_url: answer.file_url ?? null,
+    file_mime: answer.file_mime ?? null,
+  });
+  const fields = await getFormFields(form_id);
+  const next = field_index + 1;
+  if (next >= fields.length) {
+    await completeSubmission(chat_id, user_id, submission_id, form_id);
+  } else {
+    await setSession(chat_id, user_id, 'awaiting_form_field', { submission_id, form_id, field_index: next });
+    await askField(chat_id, submission_id, form_id, next);
+  }
+}
+
+async function completeSubmission(chat_id: number, user_id: number | null, submission_id: string, form_id: string) {
+  await supabase.from('telegram_form_submissions').update({
+    status: 'completed', completed_at: new Date().toISOString(),
+  }).eq('id', submission_id);
+  await clearSession(chat_id);
+  const { data: form } = await supabase.from('telegram_forms').select('title, ai_prompt').eq('id', form_id).single();
+  await sendMessage(chat_id, `✅ <b>فرم با موفقیت ثبت شد!</b>\n\nاز پاسخگویی شما متشکریم. 🙏`,
+    { keyboard: [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]] });
+  if (form?.ai_prompt) {
+    await runFormAIAnalysis(chat_id, submission_id, form.ai_prompt, form.title);
+  }
+}
+
+async function buildFormDataText(submission_id: string): Promise<string> {
+  const { data: sub } = await supabase.from('telegram_form_submissions')
+    .select('id, form_id, chat_id, telegram_form_answers(value_text, value_json, file_url, telegram_form_fields(label, field_type, order_index))')
+    .eq('id', submission_id).single();
+  if (!sub) return '';
+  const answers = (sub as any).telegram_form_answers ?? [];
+  answers.sort((a: any, b: any) => (a.telegram_form_fields?.order_index ?? 0) - (b.telegram_form_fields?.order_index ?? 0));
+  return answers.map((a: any) => {
+    const label = a.telegram_form_fields?.label ?? '?';
+    const val = a.value_text ?? (a.file_url ? `[فایل: ${a.file_url}]` : (a.value_json ? JSON.stringify(a.value_json) : '-'));
+    return `${label}: ${val}`;
+  }).join('\n');
+}
+
+async function runFormAIAnalysis(chat_id: number, submission_id: string, prompt: string, formTitle: string) {
+  if (!LOVABLE_API_KEY) {
+    await sendMessage(chat_id, '⚠️ تحلیل هوش مصنوعی فعال نیست (کلید پیکربندی نشده).');
+    return;
+  }
+  const dataText = await buildFormDataText(submission_id);
+  const userContent = `پاسخ‌های ارسال‌شده در فرم «${formTitle}»:\n\n${dataText}`;
+
+  // Send initial message to edit later
+  const init = await sendMessage(chat_id, '🤖 <i>در حال تحلیل پاسخ‌ها با هوش مصنوعی...</i>');
+  const msgId = (init as any)?.result?.message_id;
+  if (!msgId) return;
+
+  try {
+    const resp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: prompt },
+          { role: 'user', content: userContent },
+        ],
+        stream: true,
+      }),
+    });
+
+    if (!resp.ok || !resp.body) {
+      const errText = await resp.text().catch(() => '');
+      await editMessage(chat_id, msgId, `❌ خطای AI: ${escapeHtml(errText.slice(0, 200))}`);
+      return;
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    let full = '';
+    let lastEdit = 0;
+
+    const flush = async (final = false) => {
+      const now = Date.now();
+      if (!final && now - lastEdit < 1300) return;
+      lastEdit = now;
+      const shown = full.length > 3800 ? full.slice(-3800) : full;
+      try {
+        await editMessage(chat_id, msgId, `🤖 <b>تحلیل هوش مصنوعی:</b>\n\n${escapeHtml(shown)}${final ? '' : ' ▌'}`);
+      } catch (e) {
+        // Telegram errors on identical content — ignore
+      }
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop() ?? '';
+      for (const line of lines) {
+        const l = line.trim();
+        if (!l.startsWith('data:')) continue;
+        const payload = l.slice(5).trim();
+        if (payload === '[DONE]') continue;
+        try {
+          const j = JSON.parse(payload);
+          const delta = j.choices?.[0]?.delta?.content;
+          if (delta) {
+            full += delta;
+            await flush(false);
+          }
+        } catch {}
+      }
+    }
+    await flush(true);
+    await supabase.from('telegram_form_submissions').update({
+      ai_response: full, status: 'analyzed',
+    }).eq('id', submission_id);
+  } catch (e: any) {
+    await editMessage(chat_id, msgId, `❌ خطا در تحلیل: ${escapeHtml(e?.message ?? String(e))}`);
+  }
+}
+
+async function cancelForm(chat_id: number, message_id: number) {
+  const session = await getSession(chat_id);
+  const subId = session?.context?.submission_id;
+  if (subId) {
+    await supabase.from('telegram_form_submissions').update({ status: 'cancelled' }).eq('id', subId);
+  }
+  await clearSession(chat_id);
+  const user = await resolveUser(chat_id);
+  const kbd = await buildStartKeyboard(!!user, user?.role ?? null);
+  await editMessage(chat_id, message_id, '❌ فرم لغو شد.', kbd);
+}
+
+async function handleFormMessage(chat_id: number, user_id: number | null, msg: any, session: any) {
+  const { submission_id, form_id, field_index } = session.context;
+  const fields = await getFormFields(form_id);
+  const field = fields[field_index];
+  if (!field) { await clearSession(chat_id); return; }
+
+  const text: string = msg.text ?? '';
+  if (text === '/cancel') {
+    await supabase.from('telegram_form_submissions').update({ status: 'cancelled' }).eq('id', submission_id);
+    await clearSession(chat_id);
+    await sendMessage(chat_id, '❌ فرم لغو شد.');
+    return;
+  }
+  if (text === '/skip') {
+    if (field.required) { await sendMessage(chat_id, '⚠️ این فیلد الزامی است و قابل رد کردن نیست.'); return; }
+    await saveAnswerAndAdvance(chat_id, user_id, submission_id, form_id, field, field_index, { value_text: null });
+    return;
+  }
+
+  // Photo
+  if (field.field_type === 'image') {
+    const photos = msg.photo;
+    if (!photos?.length) { await sendMessage(chat_id, '⚠️ لطفاً یک عکس ارسال کنید.'); return; }
+    const best = photos[photos.length - 1];
+    const up = await uploadTelegramFile(submission_id, field.id, best.file_id, 'messenger-files', 'jpg');
+    if (!up) { await sendMessage(chat_id, '❌ خطا در آپلود عکس.'); return; }
+    await sendMessage(chat_id, '✅ عکس دریافت شد.');
+    await saveAnswerAndAdvance(chat_id, user_id, submission_id, form_id, field, field_index, { file_url: up.url, file_mime: up.mime });
+    return;
+  }
+  if (field.field_type === 'voice') {
+    const voice = msg.voice ?? msg.audio;
+    if (!voice?.file_id) { await sendMessage(chat_id, '⚠️ لطفاً یک پیام صوتی ارسال کنید.'); return; }
+    const up = await uploadTelegramFile(submission_id, field.id, voice.file_id, 'voice-messages', 'ogg');
+    if (!up) { await sendMessage(chat_id, '❌ خطا در آپلود صدا.'); return; }
+    await sendMessage(chat_id, '✅ پیام صوتی دریافت شد.');
+    await saveAnswerAndAdvance(chat_id, user_id, submission_id, form_id, field, field_index, { file_url: up.url, file_mime: up.mime });
+    return;
+  }
+  if (field.field_type === 'file') {
+    const doc = msg.document;
+    if (!doc?.file_id) { await sendMessage(chat_id, '⚠️ لطفاً یک فایل ارسال کنید.'); return; }
+    const ext = (doc.file_name?.split('.').pop() ?? 'bin').toLowerCase();
+    const up = await uploadTelegramFile(submission_id, field.id, doc.file_id, 'messenger-files', ext);
+    if (!up) { await sendMessage(chat_id, '❌ خطا در آپلود فایل.'); return; }
+    await sendMessage(chat_id, '✅ فایل دریافت شد.');
+    await saveAnswerAndAdvance(chat_id, user_id, submission_id, form_id, field, field_index, { file_url: up.url, file_mime: up.mime });
+    return;
+  }
+  if (field.field_type === 'dropdown') {
+    await sendMessage(chat_id, '👇 لطفاً از دکمه‌های گزینه‌ها انتخاب کنید.');
+    return;
+  }
+
+  // text-based
+  if (!text) { await sendMessage(chat_id, '⚠️ لطفاً یک پاسخ متنی ارسال کنید.'); return; }
+  const v = validateFieldValue(field, text);
+  if (!v.ok) { await sendMessage(chat_id, `⚠️ ${v.error}`); return; }
+  await saveAnswerAndAdvance(chat_id, user_id, submission_id, form_id, field, field_index, { value_text: v.value });
+}
+
 // ============ Update routing ============
+
+
 async function handleUpdate(update: any) {
   if (update.callback_query) {
     const cq = update.callback_query;
@@ -983,14 +1328,40 @@ async function handleUpdate(update: any) {
     const data: string = cq.data;
     await answerCallback(cq.id);
 
-    // Handle login callbacks before user-resolution
+    // Handle login + form callbacks before user-resolution
     if (data === 'login:start') { await startLogin(chat_id); return; }
+    if (data === 'form:cancel') { await cancelForm(chat_id, message_id); return; }
 
-    const user = await resolveUser(chat_id);
+    const userEarly = await resolveUser(chat_id);
+    if (data.startsWith('form:start:')) {
+      const prefix = data.split(':')[2];
+      await startForm(chat_id, message_id, prefix, userEarly);
+      return;
+    }
+    if (data.startsWith('form:opt:')) {
+      const session = await getSession(chat_id);
+      if (session?.state !== 'awaiting_form_field') {
+        await sendMessage(chat_id, '⚠️ جلسه فرم منقضی شده. /start را بزنید.');
+        return;
+      }
+      const idx = parseInt(data.split(':')[2]);
+      const fields = await getFormFields(session.context.form_id);
+      const field = fields[session.context.field_index];
+      if (!field || field.field_type !== 'dropdown') return;
+      const opts: string[] = Array.isArray(field.options) ? field.options : (field.options?.values ?? []);
+      const choice = opts[idx];
+      if (!choice) return;
+      await sendMessage(chat_id, `✅ انتخاب شد: <b>${escapeHtml(choice)}</b>`);
+      await saveAnswerAndAdvance(chat_id, session.user_id, session.context.submission_id, session.context.form_id, field, session.context.field_index, { value_text: choice });
+      return;
+    }
+
+    const user = userEarly;
     if (!user) {
       await sendMessage(chat_id, '🚫 حساب شما لینک نشده. /start را بزنید.');
       return;
     }
+
 
     const [action, ...rest] = data.split(':');
 
@@ -999,7 +1370,8 @@ async function handleUpdate(update: any) {
         const sub = rest[0];
         if (sub === 'home') {
           await clearSession(chat_id);
-          await editMessage(chat_id, message_id, welcomeText(user), mainMenu(user.role));
+          const homeKbd = await buildStartKeyboard(true, user.role);
+          await editMessage(chat_id, message_id, welcomeText(user), homeKbd);
         } else if (sub === 'my_leads') {
           await renderLeadsList(chat_id, message_id, user, 'my', 0);
         } else if (sub === 'all_leads') {
@@ -1180,24 +1552,29 @@ async function handleUpdate(update: any) {
     const session = await getSession(chat_id);
     if (text === '/cancel' || text === '/start') {
       await clearSession(chat_id);
+      const kbd = await buildStartKeyboard(false, null);
       await sendMessage(chat_id, [
         `👋 <b>به ربات آکادمی رفیعی خوش آمدید</b>`, ``,
-        `برای ورود به حساب کاربری خود، روی دکمه زیر بزنید.`, ``,
+        `از فرم‌های زیر استفاده کنید یا با شماره موبایل وارد شوید.`, ``,
         `Chat ID شما: <code>${chat_id}</code>`,
-      ].join('\n'), { keyboard: loginMenu() });
+      ].join('\n'), { keyboard: kbd });
       return;
     }
     if (session?.state === 'awaiting_phone' && text) { await handlePhoneInput(chat_id, text); return; }
     if (session?.state === 'awaiting_otp' && text) { await handleOtpInput(chat_id, text); return; }
-    await sendMessage(chat_id, 'برای ورود /start را بزنید.', { keyboard: loginMenu() });
+    if (session?.state === 'awaiting_form_field') { await handleFormMessage(chat_id, null, msg, session); return; }
+    const kbd = await buildStartKeyboard(false, null);
+    await sendMessage(chat_id, 'برای ورود /start را بزنید.', { keyboard: kbd });
     return;
   }
 
   if (text === '/start') {
     await clearSession(chat_id);
-    await sendMessage(chat_id, welcomeText(user), { keyboard: mainMenu(user.role) });
+    const kbd = await buildStartKeyboard(true, user.role);
+    await sendMessage(chat_id, welcomeText(user), { keyboard: kbd });
     return;
   }
+
   if (text === '/cancel') {
     await sendMessage(chat_id, '✅ لغو شد.', { keyboard: mainMenu(user.role) });
     return;
@@ -1208,6 +1585,11 @@ async function handleUpdate(update: any) {
   }
 
   const session = await getSession(chat_id);
+  if (session?.state === 'awaiting_form_field') {
+    await handleFormMessage(chat_id, user.id, msg, session);
+    return;
+  }
+
   if (session?.state === 'awaiting_note' && text) {
     const enrollment_id = session.context.enrollment_id;
     const { data: enr } = await supabase.from('enrollments').select('phone, course_id').eq('id', enrollment_id).maybeSingle();

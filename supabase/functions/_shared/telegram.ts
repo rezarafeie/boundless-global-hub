@@ -68,6 +68,23 @@ export function answerCallback(callback_query_id: string, text?: string) {
   return tgCall('answerCallbackQuery', { callback_query_id, text: text ?? '' });
 }
 
+export async function getFileUrl(file_id: string): Promise<string | null> {
+  const res = await tgCall('getFile', { file_id });
+  const path = res?.result?.file_path;
+  if (!path) return null;
+  return `https://api.telegram.org/file/bot${BOT_TOKEN}/${path}`;
+}
+
+export async function downloadFile(file_id: string): Promise<{ bytes: Uint8Array; mime: string } | null> {
+  const url = await getFileUrl(file_id);
+  if (!url) return null;
+  const r = await fetch(url);
+  if (!r.ok) return null;
+  const mime = r.headers.get('content-type') ?? 'application/octet-stream';
+  const bytes = new Uint8Array(await r.arrayBuffer());
+  return { bytes, mime };
+}
+
 export function escapeHtml(s: string | null | undefined): string {
   if (!s) return '';
   return s
