@@ -1266,14 +1266,40 @@ async function handleUpdate(update: any) {
     const data: string = cq.data;
     await answerCallback(cq.id);
 
-    // Handle login callbacks before user-resolution
+    // Handle login + form callbacks before user-resolution
     if (data === 'login:start') { await startLogin(chat_id); return; }
+    if (data === 'form:cancel') { await cancelForm(chat_id, message_id); return; }
 
-    const user = await resolveUser(chat_id);
+    const userEarly = await resolveUser(chat_id);
+    if (data.startsWith('form:start:')) {
+      const prefix = data.split(':')[2];
+      await startForm(chat_id, message_id, prefix, userEarly);
+      return;
+    }
+    if (data.startsWith('form:opt:')) {
+      const session = await getSession(chat_id);
+      if (session?.state !== 'awaiting_form_field') {
+        await sendMessage(chat_id, '⚠️ جلسه فرم منقضی شده. /start را بزنید.');
+        return;
+      }
+      const idx = parseInt(data.split(':')[2]);
+      const fields = await getFormFields(session.context.form_id);
+      const field = fields[session.context.field_index];
+      if (!field || field.field_type !== 'dropdown') return;
+      const opts: string[] = Array.isArray(field.options) ? field.options : (field.options?.values ?? []);
+      const choice = opts[idx];
+      if (!choice) return;
+      await sendMessage(chat_id, `✅ انتخاب شد: <b>${escapeHtml(choice)}</b>`);
+      await saveAnswerAndAdvance(chat_id, session.user_id, session.context.submission_id, session.context.form_id, field, session.context.field_index, { value_text: choice });
+      return;
+    }
+
+    const user = userEarly;
     if (!user) {
       await sendMessage(chat_id, '🚫 حساب شما لینک نشده. /start را بزنید.');
       return;
     }
+
 
     const [action, ...rest] = data.split(':');
 
