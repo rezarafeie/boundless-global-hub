@@ -149,10 +149,15 @@ const WebinarHostPanel: React.FC = () => {
 
   const pushLive = async (interactionId: string) => {
     // End any active interaction first
-    if (activeInteraction) {
+    if (activeInteraction && activeInteraction.id !== interactionId) {
       await supabase.from('webinar_interactions').update({ status: 'ended', ended_at: new Date().toISOString() }).eq('id', activeInteraction.id);
     }
-    await supabase.from('webinar_interactions').update({ status: 'active', activated_at: new Date().toISOString() }).eq('id', interactionId);
+    // Reset previous responses so users can answer again on reactivation
+    const target = interactions.find(i => i.id === interactionId);
+    if (target?.status === 'ended') {
+      await supabase.from('webinar_responses').delete().eq('interaction_id', interactionId);
+    }
+    await supabase.from('webinar_interactions').update({ status: 'active', activated_at: new Date().toISOString(), ended_at: null }).eq('id', interactionId);
     refetchInteractions();
     toast({ title: 'تعامل فعال شد 🚀' });
   };
@@ -518,6 +523,16 @@ const WebinarHostPanel: React.FC = () => {
                               <Button size="sm" variant="destructive" onClick={() => endInteraction(interaction.id)}>
                                 <Square className="h-3 w-3 ml-1" />پایان
                               </Button>
+                            )}
+                            {interaction.status === 'ended' && (
+                              <>
+                                <Button size="sm" onClick={() => pushLive(interaction.id)}>
+                                  <Play className="h-3 w-3 ml-1" />فعال‌سازی مجدد
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => deleteInteraction(interaction.id)}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </>
                             )}
                           </div>
                         </div>

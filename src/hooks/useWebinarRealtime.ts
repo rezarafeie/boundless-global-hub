@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Interaction {
@@ -45,6 +45,7 @@ export const useWebinarRealtime = (webinarId: string | undefined) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [reactionCounts, setReactionCounts] = useState<Record<string, number>>({});
   const [participantCount, setParticipantCount] = useState(0);
+  const interactionIdsRef = useRef<string[]>([]);
 
   const fetchInteractions = useCallback(async () => {
     if (!webinarId) return;
@@ -112,10 +113,11 @@ export const useWebinarRealtime = (webinarId: string | undefined) => {
     const channel = supabase
       .channel(`webinar-${webinarId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_interactions', filter: `webinar_id=eq.${webinarId}` }, () => fetchInteractions())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_responses' }, () => {
-        // Refetch responses for current interactions
-        const ids = interactions.map(i => i.id);
-        if (ids.length) fetchResponses(ids);
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_responses' }, (payload: any) => {
+        const newId = payload?.new?.interaction_id || payload?.old?.interaction_id;
+        if (newId && interactionIdsRef.current.includes(newId)) {
+          fetchResponses(interactionIdsRef.current);
+        }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_questions', filter: `webinar_id=eq.${webinarId}` }, () => fetchQuestions())
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'webinar_reactions', filter: `webinar_id=eq.${webinarId}` }, () => fetchReactionCounts())
@@ -128,6 +130,7 @@ export const useWebinarRealtime = (webinarId: string | undefined) => {
   // Fetch responses whenever interactions change
   useEffect(() => {
     const ids = interactions.map(i => i.id);
+    interactionIdsRef.current = ids;
     if (ids.length) fetchResponses(ids);
   }, [interactions, fetchResponses]);
 
