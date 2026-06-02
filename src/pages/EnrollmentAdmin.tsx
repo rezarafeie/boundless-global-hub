@@ -497,11 +497,12 @@ const EnrollmentAdmin: React.FC = () => {
             </Suspense>
           </ErrorBoundary>
         );
+      case 'forms':
       case 'telegram-forms':
         return (
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
-              <TelegramFormsManagement />
+              <FormsManagement />
             </Suspense>
           </ErrorBoundary>
         );
