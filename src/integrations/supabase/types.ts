@@ -4497,40 +4497,55 @@ export type Database = {
       }
       telegram_forms: {
         Row: {
+          ai_enabled: boolean
           ai_prompt: string | null
+          confirmation_message: string | null
+          confirmation_type: string
           created_at: string
           created_by: string | null
           description: string | null
           id: string
           is_active: boolean
+          redirect_url: string | null
           require_login: boolean
           slug: string | null
           title: string
           updated_at: string
+          webhook_url: string | null
         }
         Insert: {
+          ai_enabled?: boolean
           ai_prompt?: string | null
+          confirmation_message?: string | null
+          confirmation_type?: string
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
+          redirect_url?: string | null
           require_login?: boolean
           slug?: string | null
           title: string
           updated_at?: string
+          webhook_url?: string | null
         }
         Update: {
+          ai_enabled?: boolean
           ai_prompt?: string | null
+          confirmation_message?: string | null
+          confirmation_type?: string
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
+          redirect_url?: string | null
           require_login?: boolean
           slug?: string | null
           title?: string
           updated_at?: string
+          webhook_url?: string | null
         }
         Relationships: []
       }
