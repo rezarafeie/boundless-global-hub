@@ -1290,10 +1290,10 @@ async function streamAiToTelegram(chat_id: number, messages: AiMsg[]): Promise<s
     if (!force && (now - lastEditAt < 1300 || full === lastEditedText)) return;
     lastEditAt = now;
     lastEditedText = full;
-    const display = (full || '⏳ ...').slice(0, 4000);
+    const display = (full || '⏳ ...').slice(0, 3900);
     try {
-      await editMessage(chat_id, messageId, escapeHtml(display));
-    } catch (e) { /* ignore edit errors */ }
+      await editMessage(chat_id, messageId, mdToTelegramHtml(display));
+    } catch (e) { /* ignore edit errors (e.g. unchanged) */ }
   };
 
   try {
@@ -1323,9 +1323,8 @@ async function streamAiToTelegram(chat_id: number, messages: AiMsg[]): Promise<s
   }
   await tryEdit(true);
   if (messageId && full) {
-    // Final edit with action button
     try {
-      await editMessage(chat_id, messageId, escapeHtml(full).slice(0, 4000),
+      await editMessage(chat_id, messageId, mdToTelegramHtml(full).slice(0, 4000),
         [[{ text: '⏹ پایان گفت‌وگو', callback_data: 'ai:end' }]]);
     } catch { /* ignore */ }
   } else if (!full) {
