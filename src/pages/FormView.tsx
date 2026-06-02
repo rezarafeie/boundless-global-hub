@@ -286,10 +286,51 @@ const FormView: React.FC = () => {
     );
   }
 
-  if (done) {
+  // ===== Stage: AI analysis (shown first when ai_enabled) =====
+  if (stage === 'ai') {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5" dir="rtl">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-xl">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl">
+          <Card className="border-2 shadow-lg">
+            <CardContent className="p-6 md:p-10 space-y-5">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                  <Sparkles className="w-7 h-7 text-primary-foreground" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
+                    تحلیل اختصاصی شما
+                    {aiLoading && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">هوش مصنوعی در حال بررسی پاسخ‌های شماست</p>
+                </div>
+              </div>
+              <div className="p-5 rounded-2xl bg-primary/5 border border-primary/15 min-h-[180px] text-sm md:text-base text-foreground/90">
+                {aiStream
+                  ? <MarkdownLite text={aiStream} />
+                  : <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin" /> در حال آماده‌سازی تحلیل...</div>}
+              </div>
+              <div className="flex justify-end pt-2">
+                <Button size="lg" onClick={proceedFromAi} disabled={!aiDone && aiLoading}>
+                  ادامه <ArrowLeft className="w-4 h-4 mr-1" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ===== Stage: Confirmation =====
+  if (stage === 'confirm') {
+    const d = confirmData ?? {};
+    const ctype: string = d.confirmation_type ?? 'message';
+    const course = d.confirmation_course;
+    const test = d.confirmation_test;
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5" dir="rtl">
+        <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-xl">
           <Card className="border-2">
             <CardContent className="p-8 md:p-10 text-center space-y-5">
               <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.15, type: 'spring' }}
@@ -297,20 +338,45 @@ const FormView: React.FC = () => {
                 <CheckCircle2 className="w-12 h-12 text-green-500" />
               </motion.div>
               <h2 className="text-2xl md:text-3xl font-bold">با تشکر!</h2>
-              <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                {done.message ?? 'پاسخ شما با موفقیت ثبت شد. به زودی با شما در ارتباط خواهیم بود.'}
-              </p>
 
-              {(aiLoading || aiStream) && (
-                <div className="text-right space-y-2 pt-4 border-t mt-4">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-                    <Sparkles className="w-4 h-4" /> تحلیل هوش مصنوعی
-                    {aiLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+              {ctype === 'course' && course ? (
+                <div className="text-right space-y-4">
+                  <div className="flex items-center gap-2 text-sm text-primary justify-center">
+                    <BookOpen className="w-4 h-4" /> دوره پیشنهادی برای شما
                   </div>
-                  <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 whitespace-pre-wrap text-sm leading-loose min-h-[60px]">
-                    {aiStream || <span className="text-muted-foreground">در حال آماده‌سازی تحلیل...</span>}
+                  <div className="p-5 rounded-2xl border-2 border-primary/30 bg-primary/5 space-y-3">
+                    <h3 className="text-xl font-bold">{course.title}</h3>
+                    {course.description && (
+                      <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{course.description}</p>
+                    )}
+                    <Link to={course.redirect_url || `/courses/${course.slug || course.id}`}>
+                      <Button size="lg" className="w-full">
+                        مشاهده دوره <ExternalLink className="w-4 h-4 mr-2" />
+                      </Button>
+                    </Link>
                   </div>
                 </div>
+              ) : ctype === 'test' && test ? (
+                <div className="text-right space-y-4">
+                  <div className="flex items-center gap-2 text-sm text-primary justify-center">
+                    <ClipboardCheck className="w-4 h-4" /> آزمون پیشنهادی برای شما
+                  </div>
+                  <div className="p-5 rounded-2xl border-2 border-primary/30 bg-primary/5 space-y-3">
+                    <h3 className="text-xl font-bold">{test.title}</h3>
+                    {test.description && (
+                      <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{test.description}</p>
+                    )}
+                    <Link to={`/assessment/test/${test.slug || test.id}`}>
+                      <Button size="lg" className="w-full">
+                        شرکت در آزمون <ExternalLink className="w-4 h-4 mr-2" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                  {d.confirmation_message ?? 'پاسخ شما با موفقیت ثبت شد. به زودی با شما در ارتباط خواهیم بود.'}
+                </p>
               )}
 
               <Link to="/"><Button variant="outline" className="mt-2">بازگشت به خانه</Button></Link>
@@ -320,6 +386,7 @@ const FormView: React.FC = () => {
       </div>
     );
   }
+
 
   const renderMessageField = (f: Field) => {
     const content = f.options?.content ?? f.help_text ?? f.label ?? '';
