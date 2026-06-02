@@ -204,6 +204,7 @@ export type Database = {
         Row: {
           id: number
           manual_approval_enabled: boolean
+          manual_payment_enabled: boolean
           quick_enroll_enabled: boolean
           telegram_ai_assistant_enabled: boolean
           telegram_notify_consultation: boolean
@@ -211,12 +212,14 @@ export type Database = {
           telegram_notify_lead_assigned: boolean
           updated_at: string
           use_full_leads_system: boolean | null
+          zarinpal_enabled: boolean
           zarinpal_proxy_url: string | null
           zarinpal_use_proxy: boolean
         }
         Insert: {
           id?: number
           manual_approval_enabled?: boolean
+          manual_payment_enabled?: boolean
           quick_enroll_enabled?: boolean
           telegram_ai_assistant_enabled?: boolean
           telegram_notify_consultation?: boolean
@@ -224,12 +227,14 @@ export type Database = {
           telegram_notify_lead_assigned?: boolean
           updated_at?: string
           use_full_leads_system?: boolean | null
+          zarinpal_enabled?: boolean
           zarinpal_proxy_url?: string | null
           zarinpal_use_proxy?: boolean
         }
         Update: {
           id?: number
           manual_approval_enabled?: boolean
+          manual_payment_enabled?: boolean
           quick_enroll_enabled?: boolean
           telegram_ai_assistant_enabled?: boolean
           telegram_notify_consultation?: boolean
@@ -237,6 +242,7 @@ export type Database = {
           telegram_notify_lead_assigned?: boolean
           updated_at?: string
           use_full_leads_system?: boolean | null
+          zarinpal_enabled?: boolean
           zarinpal_proxy_url?: string | null
           zarinpal_use_proxy?: boolean
         }
