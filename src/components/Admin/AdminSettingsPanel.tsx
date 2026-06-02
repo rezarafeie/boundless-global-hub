@@ -6,6 +6,7 @@ import DiscountManagement from '@/components/Admin/DiscountManagement';
 import { DataImportSection } from '@/components/admin/DataImportSection';
 import EmailSettings from '@/components/Admin/EmailSettings';
 import BlackFridaySettings from '@/components/Admin/BlackFridaySettings';
+import { TelegramBotManagement } from '@/components/Admin/TelegramBotManagement';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -256,6 +257,7 @@ const AdminSettingsPanel: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+            <TelegramBotManagement />
           </div>
         );
       case 'webhooks':
