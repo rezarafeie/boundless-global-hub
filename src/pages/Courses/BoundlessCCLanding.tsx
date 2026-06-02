@@ -850,10 +850,13 @@ const BoundlessCCLanding: React.FC = () => {
             )}
 
             <QuickEnrollPopover courseSlug="boundless" fallbackHref="/enroll/?course=boundless">
-              <Button size="lg" className="bg-white text-black hover:bg-white/90 font-bold text-lg px-8 py-6 rounded-xl shadow-2xl">
-                <Flame className="ml-2 h-5 w-5" style={{ color: `hsl(${ACCENT})` }} />
+              <Button
+                size="lg"
+                className="bg-white text-black hover:bg-white/90 font-bold text-base sm:text-lg px-4 sm:px-8 py-5 sm:py-6 rounded-xl shadow-2xl w-full max-w-md mx-auto whitespace-normal leading-relaxed"
+              >
+                <Flame className="ml-2 h-5 w-5 shrink-0" style={{ color: `hsl(${ACCENT})` }} />
                 بله، می‌خواهم وارد بازار جهانی شوم — {fmt(coursePrice)} تومان
-                <ArrowLeft className="mr-2 h-5 w-5" />
+                <ArrowLeft className="mr-2 h-5 w-5 shrink-0" />
               </Button>
             </QuickEnrollPopover>
 
