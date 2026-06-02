@@ -91,6 +91,7 @@ const FormsManagement: React.FC = () => {
       ai_prompt: '', ai_enabled: false, require_login: false,
       webhook_url: '', confirmation_type: 'message',
       confirmation_message: '', redirect_url: '',
+      confirmation_course_id: null, confirmation_test_id: null,
     },
     fields: [],
   });
