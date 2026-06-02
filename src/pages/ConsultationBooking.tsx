@@ -220,6 +220,11 @@ const ConsultationBooking: React.FC = () => {
           console.error('Webhook error:', webhookError);
           // Don't fail the booking if webhook fails
         }
+
+        // Telegram notification to admins/sales managers
+        supabase.functions.invoke('telegram-notify', {
+          body: { type: 'consultation_booking', booking_id: bookingData.id }
+        }).catch(e => console.warn('telegram-notify failed:', e));
       }
       
       setBookingSuccess(true);
