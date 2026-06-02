@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { zarinpalFetch } from "../_shared/zarinpal.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,7 +30,7 @@ serve(async (req) => {
     const amountInRial = amount * 10;
     
     // Create payment request with Zarinpal
-    const zarinpalResponse = await fetch("https://api.zarinpal.com/pg/v4/payment/request.json", {
+    const zarinpalResponse = await zarinpalFetch("/pg/v4/payment/request.json", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -8,6 +8,8 @@ import EmailSettings from '@/components/Admin/EmailSettings';
 import BlackFridaySettings from '@/components/Admin/BlackFridaySettings';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -48,19 +50,24 @@ const AdminSettingsPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('system');
   const [useFullLeadsSystem, setUseFullLeadsSystem] = useState(false);
   const [quickEnrollEnabled, setQuickEnrollEnabled] = useState(false);
+  const [zarinpalUseProxy, setZarinpalUseProxy] = useState(false);
+  const [zarinpalProxyUrl, setZarinpalProxyUrl] = useState('');
+  const [savingProxyUrl, setSavingProxyUrl] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   useEffect(() => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('admin_settings')
-        .select('use_full_leads_system, quick_enroll_enabled' as any)
+        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url' as any)
         .eq('id', 1)
         .single();
       
       if (data && !error) {
         setUseFullLeadsSystem((data as any).use_full_leads_system || false);
         setQuickEnrollEnabled((data as any).quick_enroll_enabled || false);
+        setZarinpalUseProxy((data as any).zarinpal_use_proxy || false);
+        setZarinpalProxyUrl((data as any).zarinpal_proxy_url || '');
       }
       setLoadingSettings(false);
     };
@@ -104,6 +111,39 @@ const AdminSettingsPanel: React.FC = () => {
         title: "ذخیره شد",
         description: checked ? "ثبت‌نام سریع فعال شد" : "ثبت‌نام سریع غیرفعال شد"
       });
+    }
+  };
+
+  const handleToggleZarinpalProxy = async (checked: boolean) => {
+    setZarinpalUseProxy(checked);
+    const { error } = await supabase
+      .from('admin_settings')
+      .update({ zarinpal_use_proxy: checked, updated_at: new Date().toISOString() } as any)
+      .eq('id', 1);
+
+    if (error) {
+      toast({ title: "خطا", description: "خطا در ذخیره تنظیمات", variant: "destructive" });
+      setZarinpalUseProxy(!checked);
+    } else {
+      toast({
+        title: "ذخیره شد",
+        description: checked ? "پروکسی زرین‌پال فعال شد" : "پروکسی زرین‌پال غیرفعال شد"
+      });
+    }
+  };
+
+  const handleSaveProxyUrl = async () => {
+    setSavingProxyUrl(true);
+    const { error } = await supabase
+      .from('admin_settings')
+      .update({ zarinpal_proxy_url: zarinpalProxyUrl.trim() || null, updated_at: new Date().toISOString() } as any)
+      .eq('id', 1);
+    setSavingProxyUrl(false);
+
+    if (error) {
+      toast({ title: "خطا", description: "خطا در ذخیره آدرس پروکسی", variant: "destructive" });
+    } else {
+      toast({ title: "ذخیره شد", description: "آدرس پروکسی زرین‌پال ذخیره شد" });
     }
   };
 
@@ -163,6 +203,56 @@ const AdminSettingsPanel: React.FC = () => {
                     onCheckedChange={handleToggleQuickEnroll}
                     disabled={loadingSettings}
                   />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">پروکسی زرین‌پال</CardTitle>
+                <CardDescription>
+                  در صورت فعال بودن، درخواست‌های زرین‌پال از طریق آدرس پروکسی (سرور داخل ایران) ارسال می‌شوند.
+                  زمانی استفاده کنید که Supabase نمی‌تواند مستقیم به api.zarinpal.com متصل شود.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 pt-0 space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Label htmlFor="zarinpal-proxy" className="text-base font-medium">
+                      فعال‌سازی پروکسی زرین‌پال
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {zarinpalUseProxy
+                        ? "درخواست‌ها از طریق آدرس پروکسی ارسال می‌شوند"
+                        : "اتصال مستقیم به api.zarinpal.com"}
+                    </p>
+                  </div>
+                  <Switch
+                    id="zarinpal-proxy"
+                    checked={zarinpalUseProxy}
+                    onCheckedChange={handleToggleZarinpalProxy}
+                    disabled={loadingSettings}
+                  />
+                </div>
+                <div className="space-y-2 p-4 border rounded-lg">
+                  <Label htmlFor="zarinpal-proxy-url" className="text-base font-medium">
+                    آدرس پروکسی
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    آدرس پایه پروکسی بدون اسلش انتهایی. مسیر <code className="text-xs">/pg/v4/payment/request.json</code> و <code className="text-xs">/pg/v4/payment/verify.json</code> باید به <code className="text-xs">api.zarinpal.com</code> فوروارد شوند.
+                  </p>
+                  <div className="flex gap-2 flex-col sm:flex-row">
+                    <Input
+                      id="zarinpal-proxy-url"
+                      dir="ltr"
+                      placeholder="https://ipg.rafiei.co"
+                      value={zarinpalProxyUrl}
+                      onChange={(e) => setZarinpalProxyUrl(e.target.value)}
+                      disabled={loadingSettings}
+                    />
+                    <Button onClick={handleSaveProxyUrl} disabled={savingProxyUrl || loadingSettings}>
+                      {savingProxyUrl ? 'در حال ذخیره...' : 'ذخیره'}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
