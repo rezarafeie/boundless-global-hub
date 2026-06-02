@@ -14,6 +14,12 @@ import {
   DollarSign, Heart, Hourglass, Ban, Globe, Timer, TrendingDown, Zap,
 } from "lucide-react";
 import EnhancedCountdownTimer from "@/components/EnhancedCountdownTimer";
+import AparatPlayer from "@/components/AparatPlayer";
+
+const TESTIMONIAL_VIDEOS = [
+  "vqts522","soudgij","doo2nh1","dfx47wa","uxz9y4e","hwd436a","axz3j27",
+  "czvw4g5","bhb47wq","eytmo57","qfr8eqb","shwn4qf","jjup796","qyui8z2",
+];
 import { TetherlandService } from "@/lib/tetherlandService";
 
 const BRAND = "212 90% 45%";
