@@ -7,6 +7,7 @@ import {
   escapeHtml,
   formatTehran,
   downloadFile,
+  mdToTelegramHtml,
   type InlineKeyboard,
 } from '../_shared/telegram.ts';
 
