@@ -14,11 +14,25 @@ import {
   DollarSign, Heart, Hourglass, Ban, Globe, Timer, TrendingDown, Zap,
 } from "lucide-react";
 import EnhancedCountdownTimer from "@/components/EnhancedCountdownTimer";
-import AparatPlayer from "@/components/AparatPlayer";
+import ArvanPlayer from "@/components/ArvanPlayer";
 
+const HERO_VIDEO = "https://rafiei.arvanvod.ir/d7maAb4xV6/eQqGzlNBWk/origin_config.json";
+const FEATURED_TESTIMONIAL = "https://rafiei.arvanvod.ir/d7maAb4xV6/9YrZ9oOaPJ/origin_config.json";
 const TESTIMONIAL_VIDEOS = [
-  "vqts522","soudgij","doo2nh1","dfx47wa","uxz9y4e","hwd436a","axz3j27",
-  "czvw4g5","bhb47wq","eytmo57","qfr8eqb","shwn4qf","jjup796","qyui8z2",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/v6xBdLB5QM/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/KVgAgy238p/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/L3VxZeMnjZ/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/mQGK8WJajz/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/6n42Ey2Pd5/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/5gwDQmD2O9/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/gZ1MWVL6z0/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/kyWoDrnQwL/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/oPeQA43Gbm/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/QMXOKeDRgN/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/bWXwrXvxJG/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/nKOXWgXW43/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/aXm9y4ZJg2/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/jGzbwL3gvR/origin_config.json",
 ];
 import { TetherlandService } from "@/lib/tetherlandService";
 
