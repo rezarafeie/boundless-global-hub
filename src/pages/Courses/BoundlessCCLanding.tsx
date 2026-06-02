@@ -14,11 +14,25 @@ import {
   DollarSign, Heart, Hourglass, Ban, Globe, Timer, TrendingDown, Zap,
 } from "lucide-react";
 import EnhancedCountdownTimer from "@/components/EnhancedCountdownTimer";
-import AparatPlayer from "@/components/AparatPlayer";
+import ArvanPlayer from "@/components/ArvanPlayer";
 
+const HERO_VIDEO = "https://rafiei.arvanvod.ir/d7maAb4xV6/eQqGzlNBWk/origin_config.json";
+const FEATURED_TESTIMONIAL = "https://rafiei.arvanvod.ir/d7maAb4xV6/9YrZ9oOaPJ/origin_config.json";
 const TESTIMONIAL_VIDEOS = [
-  "vqts522","soudgij","doo2nh1","dfx47wa","uxz9y4e","hwd436a","axz3j27",
-  "czvw4g5","bhb47wq","eytmo57","qfr8eqb","shwn4qf","jjup796","qyui8z2",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/v6xBdLB5QM/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/KVgAgy238p/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/L3VxZeMnjZ/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/mQGK8WJajz/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/6n42Ey2Pd5/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/5gwDQmD2O9/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/gZ1MWVL6z0/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/kyWoDrnQwL/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/oPeQA43Gbm/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/QMXOKeDRgN/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/bWXwrXvxJG/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/nKOXWgXW43/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/aXm9y4ZJg2/origin_config.json",
+  "https://rafiei.arvanvod.ir/d7maAb4xV6/jGzbwL3gvR/origin_config.json",
 ];
 import { TetherlandService } from "@/lib/tetherlandService";
 
@@ -229,7 +243,7 @@ const BoundlessCCLanding: React.FC = () => {
             </div>
 
             <Card className="overflow-hidden border-2" style={{ borderColor: `hsl(${BRAND} / 0.3)` }}>
-              <AparatPlayer videoHash="c47mjrd" />
+              <ArvanPlayer configUrl={HERO_VIDEO} />
             </Card>
 
             <div className="text-center mt-6 flex flex-col items-center gap-3">
@@ -237,28 +251,6 @@ const BoundlessCCLanding: React.FC = () => {
                 ⏱️ مدت زمان: ۲۰ دقیقه | 🎯 این ویدیو می‌تواند نقطه عطف بیزینس جهانی شما باشد
               </p>
               <StickyCTA />
-            </div>
-          </div>
-        </section>
-
-        {/* VIDEO TESTIMONIALS */}
-        <section className="py-16 md:py-20 bg-muted/30">
-          <div className="container mx-auto px-4 max-w-6xl">
-            <div className="text-center mb-10">
-              <Badge variant="outline" className="mb-4" style={{ borderColor: `hsl(${BRAND})`, color: `hsl(${BRAND})` }}>
-                تجربه‌های واقعی
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-extrabold mb-3">تجربه‌های واقعی دانشجویان</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                ببینید دانشجویان دوره بدون مرز چه می‌گویند.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {TESTIMONIAL_VIDEOS.map((hash) => (
-                <Card key={hash} className="overflow-hidden border-2" style={{ borderColor: `hsl(${BRAND} / 0.2)` }}>
-                  <AparatPlayer videoHash={hash} />
-                </Card>
-              ))}
             </div>
           </div>
         </section>
@@ -468,6 +460,35 @@ const BoundlessCCLanding: React.FC = () => {
                     </CardContent>
                   </Card>
                 </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* VIDEO TESTIMONIALS */}
+        <section className="py-16 md:py-20 bg-muted/30">
+          <div className="container mx-auto px-4 max-w-6xl">
+            <div className="text-center mb-10">
+              <Badge variant="outline" className="mb-4" style={{ borderColor: `hsl(${BRAND})`, color: `hsl(${BRAND})` }}>
+                تجربه‌های واقعی
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-extrabold mb-3">تجربه‌های واقعی دانشجویان</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                ببینید دانشجویان دوره بدون مرز چه می‌گویند.
+              </p>
+            </div>
+
+            {/* Featured big frame */}
+            <Card className="overflow-hidden border-2 mb-8 max-w-4xl mx-auto" style={{ borderColor: `hsl(${BRAND} / 0.4)` }}>
+              <ArvanPlayer configUrl={FEATURED_TESTIMONIAL} />
+            </Card>
+
+            {/* Other testimonials grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {TESTIMONIAL_VIDEOS.map((url) => (
+                <Card key={url} className="overflow-hidden border-2" style={{ borderColor: `hsl(${BRAND} / 0.2)` }}>
+                  <ArvanPlayer configUrl={url} />
+                </Card>
               ))}
             </div>
           </div>
