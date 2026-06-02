@@ -83,7 +83,8 @@ async function clearSession(chat_id: number) {
 }
 
 // ============ Menus ============
-function mainMenu(role: Role): InlineKeyboard {
+async function mainMenu(user: BotUser | null): Promise<InlineKeyboard> {
+  const role = user?.role ?? null;
   if (role === 'admin') {
     return [
       [{ text: '📋 لیدهای من', callback_data: 'menu:my_leads' }],
@@ -107,13 +108,29 @@ function mainMenu(role: Role): InlineKeyboard {
       [{ text: '📊 عملکرد امروز', callback_data: 'menu:reports' }],
     ];
   }
-  // Default: student
-  return [
-    [{ text: '🎓 دوره‌های من', callback_data: 'student:my_courses' }],
-    [{ text: '🧪 آزمون‌های من', callback_data: 'student:my_tests' }],
-    [{ text: '🛒 ثبت‌نام در دوره جدید', callback_data: 'student:browse:0' }],
-    [{ text: '👤 پروفایل', callback_data: 'student:profile' }],
-  ];
+  // Default: student — hide my_courses / my_tests when empty
+  const rows: InlineKeyboard = [];
+  let courseCount = 0, testCount = 0;
+  if (user?.id) {
+    const { data: u } = await supabase.from('chat_users').select('phone').eq('id', user.id).maybeSingle();
+    const phone = u?.phone ?? user.phone ?? null;
+    if (phone) {
+      const variants = [phone, `0${phone}`, phone.replace(/^0/, '')];
+      const [{ count: cc }, { count: tc }] = await Promise.all([
+        supabase.from('enrollments').select('id', { count: 'exact', head: true })
+          .in('phone', variants).in('payment_status', ['success', 'completed']),
+        supabase.from('test_enrollments').select('id', { count: 'exact', head: true })
+          .in('phone', variants),
+      ]);
+      courseCount = cc ?? 0;
+      testCount = tc ?? 0;
+    }
+  }
+  if (courseCount > 0) rows.push([{ text: '🎓 دوره‌های من', callback_data: 'student:my_courses' }]);
+  if (testCount > 0) rows.push([{ text: '🧪 آزمون‌های من', callback_data: 'student:my_tests' }]);
+  rows.push([{ text: '🛒 ثبت‌نام در دوره جدید', callback_data: 'student:browse:0' }]);
+  rows.push([{ text: '👤 پروفایل', callback_data: 'student:profile' }]);
+  return rows;
 }
 
 function loginMenu(): InlineKeyboard {
