@@ -411,7 +411,7 @@ const FormView: React.FC = () => {
             )}
           </div>
         )}
-        <div className="text-base leading-loose whitespace-pre-wrap text-muted-foreground">{content}</div>
+        <MarkdownLite text={content} className="text-base text-muted-foreground" />
       </div>
     );
   };
