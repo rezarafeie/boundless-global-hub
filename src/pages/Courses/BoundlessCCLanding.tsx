@@ -152,13 +152,17 @@ const BoundlessCCLanding: React.FC = () => {
         let saleToman: number | null = data.sale_price ? Number(data.sale_price) : null;
 
         if (data.use_dollar_price && data.usd_price) {
+          // Try live Tetherland rate; fall back to ratio from stored toman price.
+          let rate = 0;
           try {
-            priceToman = await TetherlandService.convertUSDToIRR(Number(data.usd_price));
-            if (saleToman !== null) {
-              saleToman = await TetherlandService.convertUSDToIRR(saleToman);
-            }
+            rate = await TetherlandService.getUSDTToIRRRate();
           } catch (err) {
-            console.error("USD conversion failed", err);
+            console.error("Tetherland rate fetch failed, using stored price ratio", err);
+          }
+          if (!rate && priceToman > 0) rate = priceToman / Number(data.usd_price);
+          if (rate > 0) {
+            priceToman = Math.round(Number(data.usd_price) * rate);
+            if (saleToman !== null) saleToman = Math.round(saleToman * rate);
           }
         }
 
