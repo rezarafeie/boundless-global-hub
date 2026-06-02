@@ -11,8 +11,9 @@ import {
   PlayCircle, Flame, ShieldCheck, Clock, Users, CheckCircle2, Check, X,
   Sparkles, MessageCircle, ArrowLeft, Layers,
   Infinity as InfinityIcon, Gift, AlertTriangle,
-  DollarSign, Heart, Hourglass, Ban, Globe,
+  DollarSign, Heart, Hourglass, Ban, Globe, Timer, TrendingDown, Zap,
 } from "lucide-react";
+import EnhancedCountdownTimer from "@/components/EnhancedCountdownTimer";
 
 const BRAND = "212 90% 45%";
 const ACCENT = "32 95% 50%";
