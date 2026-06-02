@@ -206,6 +206,56 @@ const AdminSettingsPanel: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">پروکسی زرین‌پال</CardTitle>
+                <CardDescription>
+                  در صورت فعال بودن، درخواست‌های زرین‌پال از طریق آدرس پروکسی (سرور داخل ایران) ارسال می‌شوند.
+                  زمانی استفاده کنید که Supabase نمی‌تواند مستقیم به api.zarinpal.com متصل شود.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 pt-0 space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Label htmlFor="zarinpal-proxy" className="text-base font-medium">
+                      فعال‌سازی پروکسی زرین‌پال
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {zarinpalUseProxy
+                        ? "درخواست‌ها از طریق آدرس پروکسی ارسال می‌شوند"
+                        : "اتصال مستقیم به api.zarinpal.com"}
+                    </p>
+                  </div>
+                  <Switch
+                    id="zarinpal-proxy"
+                    checked={zarinpalUseProxy}
+                    onCheckedChange={handleToggleZarinpalProxy}
+                    disabled={loadingSettings}
+                  />
+                </div>
+                <div className="space-y-2 p-4 border rounded-lg">
+                  <Label htmlFor="zarinpal-proxy-url" className="text-base font-medium">
+                    آدرس پروکسی
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    آدرس پایه پروکسی بدون اسلش انتهایی. مسیر <code className="text-xs">/pg/v4/payment/request.json</code> و <code className="text-xs">/pg/v4/payment/verify.json</code> باید به <code className="text-xs">api.zarinpal.com</code> فوروارد شوند.
+                  </p>
+                  <div className="flex gap-2 flex-col sm:flex-row">
+                    <Input
+                      id="zarinpal-proxy-url"
+                      dir="ltr"
+                      placeholder="https://ipg.rafiei.co"
+                      value={zarinpalProxyUrl}
+                      onChange={(e) => setZarinpalProxyUrl(e.target.value)}
+                      disabled={loadingSettings}
+                    />
+                    <Button onClick={handleSaveProxyUrl} disabled={savingProxyUrl || loadingSettings}>
+                      {savingProxyUrl ? 'در حال ذخیره...' : 'ذخیره'}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         );
       case 'webhooks':
