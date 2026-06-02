@@ -38,6 +38,7 @@ export const TelegramBotManagement = () => {
     telegram_notify_lead_assigned: true,
     telegram_notify_consultation: true,
     telegram_notify_daily_summary: true,
+    telegram_ai_assistant_enabled: false,
   });
 
   const fetchUsers = async () => {
@@ -55,7 +56,7 @@ export const TelegramBotManagement = () => {
   const fetchSettings = async () => {
     const { data } = await supabase
       .from('admin_settings')
-      .select('telegram_notify_lead_assigned, telegram_notify_consultation, telegram_notify_daily_summary' as any)
+      .select('telegram_notify_lead_assigned, telegram_notify_consultation, telegram_notify_daily_summary, telegram_ai_assistant_enabled' as any)
       .eq('id', 1)
       .maybeSingle();
     if (data) setNotifySettings(data as any);
@@ -154,6 +155,7 @@ export const TelegramBotManagement = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           {[
+            { key: 'telegram_ai_assistant_enabled', label: '🤖 فعال‌سازی دستیار هوشمند AI در منوی ربات' },
             { key: 'telegram_notify_lead_assigned', label: 'اعلان تخصیص لید جدید به کارشناس' },
             { key: 'telegram_notify_consultation', label: 'اعلان رزرو مشاوره جدید' },
             { key: 'telegram_notify_daily_summary', label: 'خلاصه روزانه عملکرد' },

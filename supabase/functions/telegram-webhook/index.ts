@@ -991,6 +991,243 @@ async function formsKeyboardRows(): Promise<InlineKeyboard> {
   return forms.map((f: any) => [{ text: `📝 ${f.title}`, callback_data: `form:start:${f.id.slice(0, 8)}` }]);
 }
 
+// ============ AI Assistant ============
+async function isAiAssistantEnabled(): Promise<boolean> {
+  const { data } = await supabase
+    .from('admin_settings')
+    .select('telegram_ai_assistant_enabled')
+    .eq('id', 1)
+    .maybeSingle();
+  return Boolean((data as any)?.telegram_ai_assistant_enabled);
+}
+
+async function aiKeyboardRows(): Promise<InlineKeyboard> {
+  if (!(await isAiAssistantEnabled())) return [];
+  return [[{ text: '🤖 دستیار هوشمند', callback_data: 'ai:start' }]];
+}
+
+async function startAiChat(chat_id: number, message_id: number | null, user: BotUser | null) {
+  await setSession(chat_id, user?.id ?? null, 'ai_chat', { messages: [] });
+  const txt = [
+    `🤖 <b>دستیار هوشمند آکادمی رفیعی</b>`,
+    ``,
+    `هر سوالی دارید بپرسید — می‌توانید متن، عکس، فایل صوتی یا سند ارسال کنید.`,
+    ``,
+    `برای خروج از گفت‌وگو روی دکمه زیر بزنید یا /cancel ارسال کنید.`,
+  ].join('\n');
+  const kbd: InlineKeyboard = [[{ text: '⏹ پایان گفت‌وگو', callback_data: 'ai:end' }], [{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]];
+  if (message_id) await editMessage(chat_id, message_id, txt, kbd);
+  else await sendMessage(chat_id, txt, { keyboard: kbd });
+}
+
+async function endAiChat(chat_id: number, message_id: number, user: BotUser | null) {
+  await clearSession(chat_id);
+  const homeKbd = await buildStartKeyboard(!!user, user?.role ?? null);
+  await editMessage(chat_id, message_id, '✅ گفت‌وگو پایان یافت.', homeKbd);
+}
+
+const AI_SYSTEM_PROMPT = `شما دستیار هوشمند فارسی‌زبان آکادمی رفیعی هستید. به سوالات کاربران به صورت دقیق، دوستانه و کاربردی پاسخ دهید. اگر کاربر عکس، فایل صوتی یا سند ارسال کرد، محتوای آن را تحلیل و توضیح دهید. پاسخ‌ها را به فارسی و در صورت لزوم با استفاده از قالب‌بندی ساده ارائه کنید.`;
+
+async function tgSendChatAction(chat_id: number, action: string) {
+  try {
+    const token = Deno.env.get('TELEGRAM_BOT_TOKEN') ?? '';
+    await fetch(`https://api.telegram.org/bot${token}/sendChatAction`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id, action }),
+    });
+  } catch { /* ignore */ }
+}
+
+async function fileToDataUrl(file_id: string): Promise<{ dataUrl: string; mime: string } | null> {
+  const f = await downloadFile(file_id);
+  if (!f) return null;
+  // base64 encode
+  let bin = '';
+  const bytes = f.bytes;
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  const b64 = btoa(bin);
+  return { dataUrl: `data:${f.mime};base64,${b64}`, mime: f.mime };
+}
+
+type AiMsg = { role: 'system' | 'user' | 'assistant'; content: any };
+
+async function buildUserContentFromMessage(msg: any): Promise<any> {
+  const parts: any[] = [];
+  const text: string = msg.caption ?? msg.text ?? '';
+  if (text) parts.push({ type: 'text', text });
+
+  // Photo
+  if (Array.isArray(msg.photo) && msg.photo.length) {
+    const largest = msg.photo[msg.photo.length - 1];
+    const f = await fileToDataUrl(largest.file_id);
+    if (f) parts.push({ type: 'image_url', image_url: { url: f.dataUrl } });
+  }
+  // Voice / audio
+  if (msg.voice?.file_id) {
+    const f = await fileToDataUrl(msg.voice.file_id);
+    if (f) {
+      const format = f.mime.includes('ogg') ? 'ogg' : (f.mime.includes('mp3') ? 'mp3' : 'ogg');
+      const b64 = f.dataUrl.split(',')[1];
+      parts.push({ type: 'input_audio', input_audio: { data: b64, format } });
+    }
+  }
+  if (msg.audio?.file_id) {
+    const f = await fileToDataUrl(msg.audio.file_id);
+    if (f) {
+      const b64 = f.dataUrl.split(',')[1];
+      const format = f.mime.includes('mp3') || f.mime.includes('mpeg') ? 'mp3' : 'ogg';
+      parts.push({ type: 'input_audio', input_audio: { data: b64, format } });
+    }
+  }
+  // Document — if image mime treat as image, else attach as text note (small text files only)
+  if (msg.document?.file_id) {
+    const mime = msg.document.mime_type ?? '';
+    if (mime.startsWith('image/')) {
+      const f = await fileToDataUrl(msg.document.file_id);
+      if (f) parts.push({ type: 'image_url', image_url: { url: f.dataUrl } });
+    } else if (mime.startsWith('text/') || mime.includes('json') || mime.includes('csv')) {
+      const f = await downloadFile(msg.document.file_id);
+      if (f && f.bytes.length < 200_000) {
+        const txt = new TextDecoder().decode(f.bytes);
+        parts.push({ type: 'text', text: `\n\n[محتوای فایل ${msg.document.file_name ?? ''}]\n${txt}` });
+      } else {
+        parts.push({ type: 'text', text: `\n\n[کاربر فایلی به نام ${msg.document.file_name ?? 'سند'} با نوع ${mime} ارسال کرد که محتوای آن قابل پردازش متنی نیست.]` });
+      }
+    } else {
+      parts.push({ type: 'text', text: `\n\n[کاربر فایلی به نام ${msg.document.file_name ?? 'سند'} با نوع ${mime} ارسال کرد. لطفاً توضیح بخواهید.]` });
+    }
+  }
+  // Video — just mention
+  if (msg.video?.file_id) {
+    parts.push({ type: 'text', text: `\n\n[کاربر ویدیویی ارسال کرد. در حال حاضر پردازش ویدیو ممکن نیست.]` });
+  }
+
+  if (!parts.length) parts.push({ type: 'text', text: '(پیام خالی)' });
+  return parts;
+}
+
+async function streamAiToTelegram(chat_id: number, messages: AiMsg[]): Promise<string> {
+  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  if (!apiKey) {
+    await sendMessage(chat_id, '❌ کلید LOVABLE_API_KEY تنظیم نشده است.');
+    return '';
+  }
+
+  await tgSendChatAction(chat_id, 'typing');
+
+  const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Lovable-API-Key': apiKey,
+      'X-Lovable-AIG-SDK': 'vercel-ai-sdk',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'google/gemini-2.5-flash',
+      stream: true,
+      messages,
+    }),
+  });
+
+  if (!res.ok || !res.body) {
+    const errTxt = await res.text().catch(() => '');
+    if (res.status === 429) { await sendMessage(chat_id, '⚠️ محدودیت تعداد درخواست. کمی بعد دوباره تلاش کنید.'); return ''; }
+    if (res.status === 402) { await sendMessage(chat_id, '⚠️ اعتبار سرویس هوش مصنوعی تمام شده است. لطفاً به مدیر اطلاع دهید.'); return ''; }
+    console.error('AI gateway error', res.status, errTxt);
+    await sendMessage(chat_id, '❌ خطا در ارتباط با هوش مصنوعی.');
+    return '';
+  }
+
+  // Send placeholder message we'll keep editing
+  const placeholder = await sendMessage(chat_id, '⏳ ...');
+  const messageId: number | null = (placeholder as any)?.result?.message_id ?? null;
+
+  let full = '';
+  let lastEditedText = '';
+  let lastEditAt = 0;
+  const decoder = new TextDecoder();
+  const reader = res.body.getReader();
+  let buf = '';
+
+  const tryEdit = async (force = false) => {
+    if (!messageId) return;
+    const now = Date.now();
+    if (!force && (now - lastEditAt < 1300 || full === lastEditedText)) return;
+    lastEditAt = now;
+    lastEditedText = full;
+    const display = (full || '⏳ ...').slice(0, 4000);
+    try {
+      await editMessage(chat_id, messageId, escapeHtml(display));
+    } catch (e) { /* ignore edit errors */ }
+  };
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, idx).trim();
+        buf = buf.slice(idx + 1);
+        if (!line.startsWith('data:')) continue;
+        const data = line.slice(5).trim();
+        if (data === '[DONE]') break;
+        try {
+          const json = JSON.parse(data);
+          const delta = json.choices?.[0]?.delta?.content;
+          if (typeof delta === 'string') {
+            full += delta;
+            await tryEdit(false);
+          }
+        } catch { /* ignore parse */ }
+      }
+    }
+  } catch (e) {
+    console.error('stream read error', e);
+  }
+  await tryEdit(true);
+  if (messageId && full) {
+    // Final edit with action button
+    try {
+      await editMessage(chat_id, messageId, escapeHtml(full).slice(0, 4000),
+        [[{ text: '⏹ پایان گفت‌وگو', callback_data: 'ai:end' }]]);
+    } catch { /* ignore */ }
+  } else if (!full) {
+    await sendMessage(chat_id, '❌ پاسخی دریافت نشد.');
+  }
+  return full;
+}
+
+async function handleAiChat(chat_id: number, user: BotUser | null, msg: any, session: any) {
+  // Build user content
+  const userContent = await buildUserContentFromMessage(msg);
+
+  // Conversation history
+  const history: AiMsg[] = Array.isArray(session?.context?.messages) ? session.context.messages : [];
+  const messages: AiMsg[] = [
+    { role: 'system', content: AI_SYSTEM_PROMPT },
+    ...history,
+    { role: 'user', content: userContent },
+  ];
+
+  const reply = await streamAiToTelegram(chat_id, messages);
+
+  // Persist only text snippets in history (avoid huge base64 blobs)
+  const userTextOnly = Array.isArray(userContent)
+    ? userContent.filter((p: any) => p.type === 'text').map((p: any) => p.text).join(' ').slice(0, 2000) || '[رسانه]'
+    : String(userContent);
+  const newHistory = [...history, { role: 'user' as const, content: userTextOnly }];
+  if (reply) newHistory.push({ role: 'assistant' as const, content: reply.slice(0, 2000) });
+  // Keep last 12 turns
+  const trimmed = newHistory.slice(-12);
+  await setSession(chat_id, user?.id ?? null, 'ai_chat', { messages: trimmed });
+}
+
 // ============ Webinars ============
 async function getActiveWebinars() {
   const { data } = await supabase
@@ -1084,9 +1321,9 @@ async function registerWebinar(chat_id: number, message_id: number, prefix: stri
 }
 
 async function buildStartKeyboard(authed: boolean, role: Role): Promise<InlineKeyboard> {
-  const [formRows, webinarRows] = await Promise.all([formsKeyboardRows(), webinarsKeyboardRows()]);
+  const [formRows, webinarRows, aiRows] = await Promise.all([formsKeyboardRows(), webinarsKeyboardRows(), aiKeyboardRows()]);
   const base = authed ? mainMenu(role) : loginMenu();
-  return [...webinarRows, ...formRows, ...base];
+  return [...aiRows, ...webinarRows, ...formRows, ...base];
 }
 
 async function findFormByPrefix(prefix: string) {
@@ -1424,6 +1661,16 @@ async function handleUpdate(update: any) {
     // Handle login + form + webinar callbacks before user-resolution
     if (data === 'login:start') { await startLogin(chat_id); return; }
     if (data === 'form:cancel') { await cancelForm(chat_id, message_id); return; }
+    if (data === 'ai:start') {
+      const u = await resolveUser(chat_id);
+      await startAiChat(chat_id, message_id, u);
+      return;
+    }
+    if (data === 'ai:end') {
+      const u = await resolveUser(chat_id);
+      await endAiChat(chat_id, message_id, u);
+      return;
+    }
 
     const userEarly = await resolveUser(chat_id);
     if (data.startsWith('webinar:view:')) {
@@ -1671,6 +1918,7 @@ async function handleUpdate(update: any) {
     if (session?.state === 'awaiting_phone' && text) { await handlePhoneInput(chat_id, text); return; }
     if (session?.state === 'awaiting_otp' && text) { await handleOtpInput(chat_id, text); return; }
     if (session?.state === 'awaiting_form_field') { await handleFormMessage(chat_id, null, msg, session); return; }
+    if (session?.state === 'ai_chat') { await handleAiChat(chat_id, null, msg, session); return; }
     const kbd = await buildStartKeyboard(false, null);
     await sendMessage(chat_id, 'برای ورود /start را بزنید.', { keyboard: kbd });
     return;
@@ -1695,6 +1943,10 @@ async function handleUpdate(update: any) {
   const session = await getSession(chat_id);
   if (session?.state === 'awaiting_form_field') {
     await handleFormMessage(chat_id, user.id, msg, session);
+    return;
+  }
+  if (session?.state === 'ai_chat') {
+    await handleAiChat(chat_id, user, msg, session);
     return;
   }
 
