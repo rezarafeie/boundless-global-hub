@@ -4442,32 +4442,47 @@ export type Database = {
       telegram_form_submissions: {
         Row: {
           ai_response: string | null
-          chat_id: number
+          chat_id: number | null
           chat_user_id: number | null
           completed_at: string | null
           created_at: string
+          crm_note_id: string | null
           form_id: string
+          full_name: string | null
           id: string
+          lead_request_id: string | null
+          phone: string | null
+          source: string
           status: string
         }
         Insert: {
           ai_response?: string | null
-          chat_id: number
+          chat_id?: number | null
           chat_user_id?: number | null
           completed_at?: string | null
           created_at?: string
+          crm_note_id?: string | null
           form_id: string
+          full_name?: string | null
           id?: string
+          lead_request_id?: string | null
+          phone?: string | null
+          source?: string
           status?: string
         }
         Update: {
           ai_response?: string | null
-          chat_id?: number
+          chat_id?: number | null
           chat_user_id?: number | null
           completed_at?: string | null
           created_at?: string
+          crm_note_id?: string | null
           form_id?: string
+          full_name?: string | null
           id?: string
+          lead_request_id?: string | null
+          phone?: string | null
+          source?: string
           status?: string
         }
         Relationships: [
@@ -4489,6 +4504,7 @@ export type Database = {
           id: string
           is_active: boolean
           require_login: boolean
+          slug: string | null
           title: string
           updated_at: string
         }
@@ -4500,6 +4516,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           require_login?: boolean
+          slug?: string | null
           title: string
           updated_at?: string
         }
@@ -4511,6 +4528,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           require_login?: boolean
+          slug?: string | null
           title?: string
           updated_at?: string
         }
