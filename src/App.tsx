@@ -169,6 +169,7 @@ import InvoicePaymentCallback from "./pages/InvoicePaymentCallback";
 // Consultation pages
 import ConsultationBooking from "./pages/ConsultationBooking";
 import LeadRequest from "./pages/LeadRequest";
+import FormView from "./pages/FormView";
 
 const queryClient = new QueryClient();
 
