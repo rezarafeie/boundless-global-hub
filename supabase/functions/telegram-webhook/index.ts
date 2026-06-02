@@ -1138,6 +1138,17 @@ async function handleUpdate(update: any) {
           return;
         }
       }
+
+      if (action === 'student') {
+        const sub = rest[0];
+        if (sub === 'my_courses') { await studentMyCourses(chat_id, message_id, user); return; }
+        if (sub === 'my_tests') { await studentMyTests(chat_id, message_id, user); return; }
+        if (sub === 'browse') { await studentBrowse(chat_id, message_id, parseInt(rest[1] ?? '0')); return; }
+        if (sub === 'course') { await studentCourseDetail(chat_id, message_id, user, rest[1]); return; }
+        if (sub === 'enroll') { await studentEnroll(chat_id, message_id, user, rest[1]); return; }
+        if (sub === 'profile') { await studentProfile(chat_id, message_id, user); return; }
+        if (sub === 'logout') { await studentLogout(chat_id, message_id, user); return; }
+      }
     } catch (e: any) {
       console.error('callback error:', e, 'data:', data);
       try {
