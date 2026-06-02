@@ -73,6 +73,9 @@ export default function InvoiceView() {
   const [uploading, setUploading] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [gatewaysLoaded, setGatewaysLoaded] = useState(false);
+  const [zarinpalEnabled, setZarinpalEnabled] = useState(true);
+  const [zibalEnabled, setZibalEnabled] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,6 +83,19 @@ export default function InvoiceView() {
       fetchInvoice();
     }
   }, [invoiceId]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('admin_settings')
+        .select('zarinpal_enabled, zibal_enabled' as any)
+        .eq('id', 1)
+        .single();
+      setZarinpalEnabled((data as any)?.zarinpal_enabled !== false);
+      setZibalEnabled((data as any)?.zibal_enabled === true);
+      setGatewaysLoaded(true);
+    })();
+  }, []);
 
   const fetchInvoice = async () => {
     try {
