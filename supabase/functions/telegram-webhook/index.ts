@@ -753,15 +753,17 @@ async function startLogin(chat_id: number, message_id?: number) {
   else await sendMessage(chat_id, txt, { keyboard: kbd });
 }
 
+const BACK_HOME_KBD: InlineKeyboard = [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]];
+
 async function handlePhoneInput(chat_id: number, text: string) {
   const norm = normalizePhoneIR(text);
   if (!norm) {
-    await sendMessage(chat_id, '❌ شماره معتبر نیست. لطفاً به فرمت <code>09120000000</code> ارسال کنید.');
+    await sendMessage(chat_id, '❌ شماره معتبر نیست. لطفاً به فرمت <code>09120000000</code> ارسال کنید.', { keyboard: BACK_HOME_KBD });
     return;
   }
   const user = await findChatUserByPhone(norm.local);
   if (!user) {
-    await sendMessage(chat_id, '❌ کاربری با این شماره در سایت یافت نشد. ابتدا در سایت ثبت‌نام کنید.');
+    await sendMessage(chat_id, '❌ کاربری با این شماره در سایت یافت نشد. ابتدا در سایت ثبت‌نام کنید.', { keyboard: BACK_HOME_KBD });
     return;
   }
   // Call send-otp
@@ -773,22 +775,22 @@ async function handlePhoneInput(chat_id: number, text: string) {
     });
     const json = await res.json();
     if (!res.ok) {
-      await sendMessage(chat_id, `❌ ارسال کد ناموفق: ${escapeHtml(json?.error ?? 'خطا')}`);
+      await sendMessage(chat_id, `❌ ارسال کد ناموفق: ${escapeHtml(json?.error ?? 'خطا')}`, { keyboard: BACK_HOME_KBD });
       return;
     }
   } catch (e: any) {
-    await sendMessage(chat_id, `❌ خطا در ارسال پیامک: ${escapeHtml(e?.message)}`);
+    await sendMessage(chat_id, `❌ خطا در ارسال پیامک: ${escapeHtml(e?.message)}`, { keyboard: BACK_HOME_KBD });
     return;
   }
   await setSession(chat_id, user.id, 'awaiting_otp', { phone_local: norm.local, phone_formatted: norm.formatted, chat_user_id: user.id });
-  await sendMessage(chat_id, `📨 کد ۴ رقمی برای <b>${escapeHtml(user.name)}</b> ارسال شد.\n\nلطفاً کد را ارسال کنید:`);
+  await sendMessage(chat_id, `📨 کد ۴ رقمی برای <b>${escapeHtml(user.name)}</b> ارسال شد.\n\nلطفاً کد را ارسال کنید:`, { keyboard: BACK_HOME_KBD });
 }
 
 async function handleOtpInput(chat_id: number, text: string) {
   const session = await getSession(chat_id);
-  if (!session?.context?.phone_local) { await sendMessage(chat_id, '❌ جلسه منقضی شده. /start را بزنید.'); return; }
+  if (!session?.context?.phone_local) { await sendMessage(chat_id, '❌ جلسه منقضی شده. /start را بزنید.', { keyboard: BACK_HOME_KBD }); return; }
   const code = text.trim().replace(/\D/g, '');
-  if (!/^\d{4}$/.test(code)) { await sendMessage(chat_id, '❌ کد باید ۴ رقم باشد.'); return; }
+  if (!/^\d{4}$/.test(code)) { await sendMessage(chat_id, '❌ کد باید ۴ رقم باشد.', { keyboard: BACK_HOME_KBD }); return; }
 
   const res = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/verify-otp`, {
     method: 'POST',
@@ -797,7 +799,7 @@ async function handleOtpInput(chat_id: number, text: string) {
   });
   const json = await res.json();
   if (!res.ok || !json.success) {
-    await sendMessage(chat_id, `❌ کد نامعتبر یا منقضی. دوباره تلاش کنید یا /cancel.`);
+    await sendMessage(chat_id, `❌ کد نامعتبر یا منقضی. دوباره تلاش کنید یا /cancel.`, { keyboard: BACK_HOME_KBD });
     return;
   }
 
@@ -806,12 +808,12 @@ async function handleOtpInput(chat_id: number, text: string) {
   const { error } = await supabase.from('chat_users')
     .update({ telegram_chat_id: chat_id, telegram_linked_at: new Date().toISOString() })
     .eq('id', session.context.chat_user_id);
-  if (error) { await sendMessage(chat_id, `❌ خطا در لینک حساب: ${error.message}`); return; }
+  if (error) { await sendMessage(chat_id, `❌ خطا در لینک حساب: ${error.message}`, { keyboard: BACK_HOME_KBD }); return; }
 
   await clearSession(chat_id);
   const user = await resolveUser(chat_id);
   if (user) {
-    await sendMessage(chat_id, `✅ <b>ورود موفق!</b>\n\n${welcomeText(user)}`, { keyboard: await mainMenu(user) });
+    await sendMessage(chat_id, `✅ <b>ورود موفق!</b>\n\n${welcomeText(user)}`, { keyboard: await buildStartKeyboard(user) });
   }
 }
 
