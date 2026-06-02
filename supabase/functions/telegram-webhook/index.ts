@@ -6,6 +6,7 @@ import {
   answerCallback,
   escapeHtml,
   formatTehran,
+  downloadFile,
   type InlineKeyboard,
 } from '../_shared/telegram.ts';
 
