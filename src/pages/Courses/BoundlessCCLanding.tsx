@@ -387,7 +387,7 @@ const BoundlessCCLanding: React.FC = () => {
               ))}
             </div>
             <p className="text-center text-lg mt-8">برای همه این چالش‌ها، یک راه‌حل تضمینی وجود دارد:</p>
-            <p className="text-center text-2xl font-bold mt-2" style={{ color: `hsl(${BRAND})` }}>دوره جامع بدون مرز</p>
+            <p className="text-center text-2xl font-bold mt-2" style={{ color: `hsl(${BRAND})` }}>دوره شروع بدون مرز</p>
           </div>
         </section>
 
