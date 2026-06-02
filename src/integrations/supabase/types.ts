@@ -4499,7 +4499,9 @@ export type Database = {
         Row: {
           ai_enabled: boolean
           ai_prompt: string | null
+          confirmation_course_id: string | null
           confirmation_message: string | null
+          confirmation_test_id: string | null
           confirmation_type: string
           created_at: string
           created_by: string | null
@@ -4516,7 +4518,9 @@ export type Database = {
         Insert: {
           ai_enabled?: boolean
           ai_prompt?: string | null
+          confirmation_course_id?: string | null
           confirmation_message?: string | null
+          confirmation_test_id?: string | null
           confirmation_type?: string
           created_at?: string
           created_by?: string | null
@@ -4533,7 +4537,9 @@ export type Database = {
         Update: {
           ai_enabled?: boolean
           ai_prompt?: string | null
+          confirmation_course_id?: string | null
           confirmation_message?: string | null
+          confirmation_test_id?: string | null
           confirmation_type?: string
           created_at?: string
           created_by?: string | null
@@ -4547,7 +4553,22 @@ export type Database = {
           updated_at?: string
           webhook_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "telegram_forms_confirmation_course_id_fkey"
+            columns: ["confirmation_course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telegram_forms_confirmation_test_id_fkey"
+            columns: ["confirmation_test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       telegram_notification_queue: {
         Row: {

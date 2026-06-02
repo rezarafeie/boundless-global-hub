@@ -32,6 +32,8 @@ interface FormRow {
   confirmation_type: string;
   confirmation_message: string | null;
   redirect_url: string | null;
+  confirmation_course_id: string | null;
+  confirmation_test_id: string | null;
   created_at: string;
 }
 
@@ -67,6 +69,29 @@ const slugify = (s: string) =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 60);
 
+const CourseTestPicker: React.FC<{
+  kind: 'course' | 'test';
+  value: string | null;
+  onChange: (v: string | null) => void;
+}> = ({ kind, value, onChange }) => {
+  const [items, setItems] = useState<{ id: string; title: string }[]>([]);
+  useEffect(() => {
+    (async () => {
+      const table = kind === 'course' ? 'courses' : 'tests';
+      const { data } = await supabase.from(table as any).select('id, title').eq('is_active', true).order('title');
+      setItems((data as any) ?? []);
+    })();
+  }, [kind]);
+  return (
+    <Select value={value ?? ''} onValueChange={v => onChange(v || null)}>
+      <SelectTrigger><SelectValue placeholder={kind === 'course' ? 'انتخاب دوره...' : 'انتخاب آزمون...'} /></SelectTrigger>
+      <SelectContent>
+        {items.map(it => <SelectItem key={it.id} value={it.id}>{it.title}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  );
+};
+
 const FormsManagement: React.FC = () => {
   const { toast } = useToast();
   const [forms, setForms] = useState<FormRow[]>([]);
@@ -89,6 +114,7 @@ const FormsManagement: React.FC = () => {
       ai_prompt: '', ai_enabled: false, require_login: false,
       webhook_url: '', confirmation_type: 'message',
       confirmation_message: '', redirect_url: '',
+      confirmation_course_id: null, confirmation_test_id: null,
     },
     fields: [],
   });
@@ -113,6 +139,8 @@ const FormsManagement: React.FC = () => {
       confirmation_type: f.confirmation_type ?? 'message',
       confirmation_message: f.confirmation_message ?? null,
       redirect_url: f.redirect_url?.trim() || null,
+      confirmation_course_id: f.confirmation_type === 'course' ? (f.confirmation_course_id || null) : null,
+      confirmation_test_id: f.confirmation_type === 'test' ? (f.confirmation_test_id || null) : null,
     };
     let formId = f.id;
     if (formId) {
@@ -410,11 +438,25 @@ const FormEditor: React.FC<{
                   <SelectContent>
                     <SelectItem value="message">نمایش پیام تشکر</SelectItem>
                     <SelectItem value="redirect">انتقال به URL</SelectItem>
+                    <SelectItem value="course">معرفی دوره</SelectItem>
+                    <SelectItem value="test">معرفی آزمون</SelectItem>
                   </SelectContent>
                 </Select>
                 {editor.form.confirmation_type === 'redirect' ? (
                   <Input value={editor.form.redirect_url ?? ''} onChange={e => updateForm({ redirect_url: e.target.value })}
                     placeholder="https://..." dir="ltr" />
+                ) : editor.form.confirmation_type === 'course' ? (
+                  <CourseTestPicker
+                    kind="course"
+                    value={editor.form.confirmation_course_id ?? null}
+                    onChange={v => updateForm({ confirmation_course_id: v })}
+                  />
+                ) : editor.form.confirmation_type === 'test' ? (
+                  <CourseTestPicker
+                    kind="test"
+                    value={editor.form.confirmation_test_id ?? null}
+                    onChange={v => updateForm({ confirmation_test_id: v })}
+                  />
                 ) : (
                   <Textarea value={editor.form.confirmation_message ?? ''} onChange={e => updateForm({ confirmation_message: e.target.value })}
                     rows={3} placeholder="مثال: ممنون از پاسخ‌تان! به زودی با شما تماس می‌گیریم." />

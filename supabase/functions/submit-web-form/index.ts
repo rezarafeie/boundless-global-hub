@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
 
     const { data: form, error: formErr } = await supabase
       .from('telegram_forms')
-      .select('id, title, is_active, require_login, webhook_url, confirmation_type, confirmation_message, redirect_url, ai_enabled, ai_prompt')
+      .select('id, title, is_active, require_login, webhook_url, confirmation_type, confirmation_message, redirect_url, confirmation_course_id, confirmation_test_id, ai_enabled, ai_prompt')
       .eq('id', body.form_id)
       .single();
     if (formErr || !form) {
@@ -176,6 +176,22 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Resolve course / test for confirmation if set
+    let confirmationCourse: any = null;
+    let confirmationTest: any = null;
+    if (form.confirmation_type === 'course' && form.confirmation_course_id) {
+      const { data: c } = await supabase.from('courses')
+        .select('id, title, slug, description, price, redirect_url')
+        .eq('id', form.confirmation_course_id).maybeSingle();
+      confirmationCourse = c;
+    }
+    if (form.confirmation_type === 'test' && form.confirmation_test_id) {
+      const { data: t } = await supabase.from('tests')
+        .select('id, title, slug, description, price')
+        .eq('id', form.confirmation_test_id).maybeSingle();
+      confirmationTest = t;
+    }
+
     return new Response(JSON.stringify({
       ok: true,
       submission_id: sub.id,
@@ -185,6 +201,8 @@ Deno.serve(async (req) => {
       confirmation_type: form.confirmation_type ?? 'message',
       confirmation_message: form.confirmation_message,
       redirect_url: form.redirect_url,
+      confirmation_course: confirmationCourse,
+      confirmation_test: confirmationTest,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (e) {
     return new Response(JSON.stringify({ error: (e as Error).message }), {

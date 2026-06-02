@@ -1,6 +1,7 @@
 // Manually trigger AI analysis for a Telegram form submission
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { sendMessage, editMessage, escapeHtml } from '../_shared/telegram.ts';
+import { markdownToTelegramHtml } from '../_shared/markdown.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -66,8 +67,9 @@ async function run(submission_id: string) {
     if (!final && now - lastEdit < 1300) return;
     lastEdit = now;
     const shown = full.length > 3800 ? full.slice(-3800) : full;
+    const htmlBody = markdownToTelegramHtml(shown);
     try {
-      await editMessage(sub.chat_id, msgId, `🤖 <b>تحلیل هوش مصنوعی:</b>\n\n${escapeHtml(shown)}${final ? '' : ' ▌'}`);
+      await editMessage(sub.chat_id, msgId, `🤖 <b>تحلیل هوش مصنوعی:</b>\n\n${htmlBody}${final ? '' : ' ▌'}`);
     } catch {}
   };
   while (true) {
