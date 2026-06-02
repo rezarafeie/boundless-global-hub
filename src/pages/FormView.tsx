@@ -223,36 +223,33 @@ const FormView: React.FC = () => {
       const d = data as any;
       if (d?.error) throw new Error(d.error);
 
-      // AI streaming (if enabled or there's an ai_analysis field)
-      if ((form.ai_enabled || hasAiField) && d?.submission_id) {
+      const showAiFirst = (form.ai_enabled || hasAiField) && d?.submission_id;
+      setConfirmData(d);
+      if (showAiFirst) {
+        setStage('ai');
         startAiStream(d.submission_id);
-      }
-
-      // Confirmation/redirect handling
-      if (d?.confirmation_type === 'redirect' && d?.redirect_url) {
-        // Allow short delay so AI can show or for UX
-        if (hasAiField) {
-          // show AI then redirect after stream done is handled separately
-          setDone({ message: 'در حال هدایت به صفحه بعدی...' });
-          // We'll redirect via effect below when aiDone
-          const target = d.redirect_url;
-          const tick = () => {
-            if (aiDone || !hasAiField) { window.location.href = target; return; }
-            setTimeout(tick, 500);
-          };
-          setTimeout(tick, 1500);
-        } else {
+      } else {
+        // No AI: jump straight to confirmation (handle redirect immediately)
+        if (d?.confirmation_type === 'redirect' && d?.redirect_url) {
           window.location.href = d.redirect_url;
           return;
         }
-      } else {
-        setDone({ message: d?.confirmation_message ?? undefined });
+        setStage('confirm');
       }
     } catch (e: any) {
       toast({ title: 'ارسال ناموفق بود', description: e.message ?? 'خطا', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const proceedFromAi = () => {
+    const d = confirmData;
+    if (d?.confirmation_type === 'redirect' && d?.redirect_url) {
+      window.location.href = d.redirect_url;
+      return;
+    }
+    setStage('confirm');
   };
 
   if (loading) {
