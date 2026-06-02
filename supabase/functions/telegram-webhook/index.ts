@@ -30,6 +30,7 @@ interface BotUser {
   name: string;
   role: Role;
   telegram_chat_id: number;
+  phone?: string | null;
 }
 interface Filters {
   course_id?: string;
@@ -42,13 +43,13 @@ interface Filters {
 async function resolveUser(chat_id: number): Promise<BotUser | null> {
   const { data } = await supabase
     .from('chat_users')
-    .select('id, name, role, is_messenger_admin, telegram_chat_id')
+    .select('id, name, role, is_messenger_admin, telegram_chat_id, phone')
     .eq('telegram_chat_id', chat_id)
     .maybeSingle();
   if (!data) return null;
   let role: Role = (data.role as Role) ?? 'student';
   if (data.is_messenger_admin) role = 'admin';
-  return { id: data.id, name: data.name, role, telegram_chat_id: chat_id };
+  return { id: data.id, name: data.name, role, telegram_chat_id: chat_id, phone: data.phone };
 }
 
 // ============ Session state ============
