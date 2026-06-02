@@ -208,12 +208,13 @@ const FormsManagement: React.FC = () => {
   );
 };
 
-// ============ Editor ============
+// ============ Editor (full page) ============
 const FormEditor: React.FC<{
   editor: { form: Partial<FormRow>; fields: FieldRow[] };
   setEditor: (e: any) => void;
   onSave: () => void;
-}> = ({ editor, setEditor, onSave }) => {
+  onCancel: () => void;
+}> = ({ editor, setEditor, onSave, onCancel }) => {
   const updateForm = (patch: Partial<FormRow>) => setEditor({ ...editor, form: { ...editor.form, ...patch } });
   const updateField = (i: number, patch: Partial<FieldRow>) => {
     const fields = [...editor.fields];
