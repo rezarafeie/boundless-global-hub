@@ -140,18 +140,31 @@ const BoundlessCCLanding: React.FC = () => {
       try {
         const { data } = await supabase
           .from("courses")
-          .select("price, is_sale_enabled, sale_price, sale_expires_at")
+          .select("price, is_sale_enabled, sale_price, sale_expires_at, use_dollar_price, usd_price")
           .eq("slug", courseSlug)
           .maybeSingle();
         if (!data) return;
-        const price = Number(data.price) || 0;
-        const salePrice = data.sale_price ? Number(data.sale_price) : null;
         const notExpired =
           !data.sale_expires_at || new Date(data.sale_expires_at) > new Date();
+
+        let priceToman = Number(data.price) || 0;
+        let saleToman: number | null = data.sale_price ? Number(data.sale_price) : null;
+
+        if (data.use_dollar_price && data.usd_price) {
+          try {
+            priceToman = await TetherlandService.convertUSDToIRR(Number(data.usd_price));
+            if (saleToman !== null) {
+              saleToman = await TetherlandService.convertUSDToIRR(saleToman);
+            }
+          } catch (err) {
+            console.error("USD conversion failed", err);
+          }
+        }
+
         const discountOn =
-          !!data.is_sale_enabled && !!salePrice && salePrice < price && notExpired;
-        setOriginalPrice(price);
-        setCoursePrice(discountOn ? (salePrice as number) : price);
+          !!data.is_sale_enabled && !!saleToman && saleToman < priceToman && notExpired;
+        setOriginalPrice(priceToman);
+        setCoursePrice(discountOn ? (saleToman as number) : priceToman);
         setSaleEndsAt(discountOn ? data.sale_expires_at : null);
         setHasDiscount(discountOn);
       } catch (e) { console.error(e); }
