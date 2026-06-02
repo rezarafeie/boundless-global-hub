@@ -1421,11 +1421,26 @@ async function handleUpdate(update: any) {
     const data: string = cq.data;
     await answerCallback(cq.id);
 
-    // Handle login + form callbacks before user-resolution
+    // Handle login + form + webinar callbacks before user-resolution
     if (data === 'login:start') { await startLogin(chat_id); return; }
     if (data === 'form:cancel') { await cancelForm(chat_id, message_id); return; }
 
     const userEarly = await resolveUser(chat_id);
+    if (data.startsWith('webinar:view:')) {
+      const prefix = data.split(':')[2];
+      await renderWebinar(chat_id, message_id, prefix, userEarly);
+      return;
+    }
+    if (data.startsWith('webinar:reg:')) {
+      const prefix = data.split(':')[2];
+      if (!userEarly) {
+        await editMessage(chat_id, message_id, '🔐 برای ثبت‌نام ابتدا وارد حساب شوید.',
+          [[{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }], [{ text: '🏠', callback_data: 'menu:home' }]]);
+        return;
+      }
+      await registerWebinar(chat_id, message_id, prefix, userEarly);
+      return;
+    }
     if (data.startsWith('form:start:')) {
       const prefix = data.split(':')[2];
       await startForm(chat_id, message_id, prefix, userEarly);
