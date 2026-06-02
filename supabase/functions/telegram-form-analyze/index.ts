@@ -1,6 +1,7 @@
 // Manually trigger AI analysis for a Telegram form submission
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { sendMessage, editMessage, escapeHtml } from '../_shared/telegram.ts';
+import { markdownToTelegramHtml } from '../_shared/markdown.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
