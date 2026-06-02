@@ -38,12 +38,12 @@ interface ManualPaymentSectionProps {
   course?: Course;
   test?: Test;
   formData: FormData;
-  onPaymentMethodChange: (method: 'zarinpal' | 'manual') => void;
-  selectedMethod: 'zarinpal' | 'manual';
-  finalRialPrice?: number | null; // For dollar-priced courses
-  discountedPrice?: number | null; // For discounted price
-  salePrice?: number | null; // For sale price
-  isOnSale?: boolean; // Sale status
+  onPaymentMethodChange: (method: 'zarinpal' | 'zibal' | 'manual') => void;
+  selectedMethod: 'zarinpal' | 'zibal' | 'manual';
+  finalRialPrice?: number | null;
+  discountedPrice?: number | null;
+  salePrice?: number | null;
+  isOnSale?: boolean;
 }
 
 const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
@@ -66,6 +66,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   const [enrollmentId, setEnrollmentId] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [zarinpalEnabled, setZarinpalEnabled] = useState(true);
+  const [zibalEnabled, setZibalEnabled] = useState(false);
   const [manualEnabled, setManualEnabled] = useState(true);
   const [methodsLoaded, setMethodsLoaded] = useState(false);
 
@@ -74,20 +75,27 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
     (async () => {
       const { data } = await supabase
         .from('admin_settings')
-        .select('zarinpal_enabled, manual_payment_enabled' as any)
+        .select('zarinpal_enabled, zibal_enabled, manual_payment_enabled' as any)
         .eq('id', 1)
         .single();
       if (cancelled) return;
       const z = (data as any)?.zarinpal_enabled !== false;
+      const zb = (data as any)?.zibal_enabled === true;
       const m = (data as any)?.manual_payment_enabled !== false;
       setZarinpalEnabled(z);
+      setZibalEnabled(zb);
       setManualEnabled(m);
       setMethodsLoaded(true);
       // Auto-switch if currently selected method is disabled
-      if (selectedMethod === 'zarinpal' && !z && m) {
-        onPaymentMethodChange('manual');
-      } else if (selectedMethod === 'manual' && !m && z) {
-        onPaymentMethodChange('zarinpal');
+      if (selectedMethod === 'zarinpal' && !z) {
+        if (zb) onPaymentMethodChange('zibal');
+        else if (m) onPaymentMethodChange('manual');
+      } else if (selectedMethod === 'zibal' && !zb) {
+        if (z) onPaymentMethodChange('zarinpal');
+        else if (m) onPaymentMethodChange('manual');
+      } else if (selectedMethod === 'manual' && !m) {
+        if (z) onPaymentMethodChange('zarinpal');
+        else if (zb) onPaymentMethodChange('zibal');
       }
     })();
     return () => {
