@@ -13,6 +13,7 @@ import QuickEnrollPopover from "@/components/Course/QuickEnrollPopover";
 import { useBlackFridayContext } from '@/contexts/BlackFridayContext';
 import CourseDiscountBanner from '@/components/BlackFriday/CourseDiscountBanner';
 import { supabase } from '@/integrations/supabase/client';
+import AparatPlayer from "@/components/AparatPlayer";
 
 interface BoundlessTasteEnhancedProps {
   title: string;
@@ -291,6 +292,33 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
         </div>
       </section>
 
+      {/* Video Preview */}
+      <motion.section
+        className="py-16 bg-background"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={containerVariants}
+      >
+        <div className="container max-w-4xl mx-auto px-6">
+          <motion.div className="text-center mb-8" variants={itemVariants}>
+            <h2 className="text-3xl md:text-4xl font-black text-foreground mb-4">
+              🎬 پیش‌نمایش دوره
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              نگاهی کوتاه به محتوای دوره مزه بدون مرز
+            </p>
+          </motion.div>
+          <motion.div variants={itemVariants}>
+            <Card className="overflow-hidden border-2 border-primary/20 shadow-2xl">
+              <CardContent className="p-0">
+                <AparatPlayer videoHash="c47mjrd" />
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </motion.section>
+
       {/* Course Modules */}
       <motion.section 
         className="py-16 bg-background" 
@@ -414,6 +442,53 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
                     <p className="text-muted-foreground italic leading-relaxed">
                       "{testimonial.text}"
                     </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Video Testimonials */}
+      <motion.section
+        className="py-16 bg-background"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={containerVariants}
+      >
+        <div className="container max-w-7xl mx-auto px-6">
+          <motion.div className="text-center mb-12" variants={itemVariants}>
+            <h2 className="text-3xl md:text-4xl font-black text-foreground mb-6">
+              🎤 تجربه‌های واقعی دانشجویان
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              صدها دانشجو مسیر بدون مرز را طی کرده‌اند. نظرات و تجربه‌هایشان را از زبان خودشان بشنوید.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              "vqts522",
+              "soudgij",
+              "doo2nh1",
+              "dfx47wa",
+              "uxz9y4e",
+              "hwd436a",
+              "axz3j27",
+              "czvw4g5",
+              "bhb47wq",
+              "eytmo57",
+              "qfr8eqb",
+              "shwn4qf",
+              "jjup796",
+              "qyui8z2",
+            ].map((hash, index) => (
+              <motion.div key={hash} variants={itemVariants}>
+                <Card className="overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-colors shadow-lg">
+                  <CardContent className="p-0">
+                    <AparatPlayer videoHash={hash} />
                   </CardContent>
                 </Card>
               </motion.div>
