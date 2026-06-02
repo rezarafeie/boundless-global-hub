@@ -292,6 +292,33 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
         </div>
       </section>
 
+      {/* Video Preview */}
+      <motion.section
+        className="py-16 bg-background"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={containerVariants}
+      >
+        <div className="container max-w-4xl mx-auto px-6">
+          <motion.div className="text-center mb-8" variants={itemVariants}>
+            <h2 className="text-3xl md:text-4xl font-black text-foreground mb-4">
+              🎬 پیش‌نمایش دوره
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              نگاهی کوتاه به محتوای دوره مزه بدون مرز
+            </p>
+          </motion.div>
+          <motion.div variants={itemVariants}>
+            <Card className="overflow-hidden border-2 border-primary/20 shadow-2xl">
+              <CardContent className="p-0">
+                <AparatPlayer videoHash="c47mjrd" />
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </motion.section>
+
       {/* Course Modules */}
       <motion.section 
         className="py-16 bg-background" 
