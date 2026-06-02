@@ -701,6 +701,279 @@ async function renderReports(chat_id: number, message_id: number | null, user: B
   else await sendMessage(chat_id, text, { keyboard });
 }
 
+// ============ Student / Login flow ============
+const ACADEMY_BASE = 'https://academy.rafiei.co';
+
+function normalizePhoneIR(input: string): { local: string; formatted: string } | null {
+  // local: 9XXXXXXXXX (no leading 0)  formatted: +989XXXXXXXXX
+  const digits = input.replace(/\D/g, '');
+  let local = digits;
+  if (local.startsWith('98')) local = local.slice(2);
+  if (local.startsWith('0')) local = local.slice(1);
+  if (!/^9\d{9}$/.test(local)) return null;
+  return { local, formatted: `+98${local}` };
+}
+
+async function findChatUserByPhone(local: string) {
+  const variants = [local, `0${local}`, `+98${local}`, `98${local}`];
+  const { data } = await supabase.from('chat_users')
+    .select('id, name, phone, email, role, is_messenger_admin')
+    .in('phone', variants).limit(1);
+  return data?.[0] ?? null;
+}
+
+async function startLogin(chat_id: number) {
+  await setSession(chat_id, null, 'awaiting_phone', {});
+  await sendMessage(chat_id, [
+    `🔐 <b>ورود به حساب</b>`, ``,
+    `لطفاً شماره موبایل خود را ارسال کنید (مثال: <code>09120000000</code>)`, ``,
+    `/cancel برای انصراف`,
+  ].join('\n'));
+}
+
+async function handlePhoneInput(chat_id: number, text: string) {
+  const norm = normalizePhoneIR(text);
+  if (!norm) {
+    await sendMessage(chat_id, '❌ شماره معتبر نیست. لطفاً به فرمت <code>09120000000</code> ارسال کنید.');
+    return;
+  }
+  const user = await findChatUserByPhone(norm.local);
+  if (!user) {
+    await sendMessage(chat_id, '❌ کاربری با این شماره در سایت یافت نشد. ابتدا در سایت ثبت‌نام کنید.');
+    return;
+  }
+  // Call send-otp
+  try {
+    const res = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+      body: JSON.stringify({ phone: norm.local, countryCode: '+98' }),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      await sendMessage(chat_id, `❌ ارسال کد ناموفق: ${escapeHtml(json?.error ?? 'خطا')}`);
+      return;
+    }
+  } catch (e: any) {
+    await sendMessage(chat_id, `❌ خطا در ارسال پیامک: ${escapeHtml(e?.message)}`);
+    return;
+  }
+  await setSession(chat_id, user.id, 'awaiting_otp', { phone_local: norm.local, phone_formatted: norm.formatted, chat_user_id: user.id });
+  await sendMessage(chat_id, `📨 کد ۴ رقمی برای <b>${escapeHtml(user.name)}</b> ارسال شد.\n\nلطفاً کد را ارسال کنید:`);
+}
+
+async function handleOtpInput(chat_id: number, text: string) {
+  const session = await getSession(chat_id);
+  if (!session?.context?.phone_local) { await sendMessage(chat_id, '❌ جلسه منقضی شده. /start را بزنید.'); return; }
+  const code = text.trim().replace(/\D/g, '');
+  if (!/^\d{4}$/.test(code)) { await sendMessage(chat_id, '❌ کد باید ۴ رقم باشد.'); return; }
+
+  const res = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/verify-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+    body: JSON.stringify({ phone: session.context.phone_local, otpCode: code }),
+  });
+  const json = await res.json();
+  if (!res.ok || !json.success) {
+    await sendMessage(chat_id, `❌ کد نامعتبر یا منقضی. دوباره تلاش کنید یا /cancel.`);
+    return;
+  }
+
+  // Unlink any other account holding this chat_id, then link this user
+  await supabase.from('chat_users').update({ telegram_chat_id: null }).eq('telegram_chat_id', chat_id);
+  const { error } = await supabase.from('chat_users')
+    .update({ telegram_chat_id: chat_id, telegram_linked_at: new Date().toISOString() })
+    .eq('id', session.context.chat_user_id);
+  if (error) { await sendMessage(chat_id, `❌ خطا در لینک حساب: ${error.message}`); return; }
+
+  await clearSession(chat_id);
+  const user = await resolveUser(chat_id);
+  if (user) {
+    await sendMessage(chat_id, `✅ <b>ورود موفق!</b>\n\n${welcomeText(user)}`, { keyboard: mainMenu(user.role) });
+  }
+}
+
+// ----- Student menu actions -----
+async function studentProfile(chat_id: number, message_id: number, user: BotUser) {
+  const { data: u } = await supabase.from('chat_users')
+    .select('name, phone, email, country_code, created_at').eq('id', user.id).maybeSingle();
+  if (!u) return;
+  const text = [
+    `👤 <b>پروفایل</b>`, ``,
+    `نام: <b>${escapeHtml(u.name)}</b>`,
+    `موبایل: <code>${escapeHtml(u.phone)}</code>`,
+    `ایمیل: <code>${escapeHtml(u.email ?? '-')}</code>`,
+    `عضو از: ${formatTehran(u.created_at)}`,
+  ].join('\n');
+  await editMessage(chat_id, message_id, text, [
+    [{ text: '🚪 خروج (لغو لینک)', callback_data: 'student:logout' }],
+    [{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }],
+  ]);
+}
+
+async function studentLogout(chat_id: number, message_id: number, user: BotUser) {
+  await supabase.from('chat_users').update({ telegram_chat_id: null, telegram_linked_at: null }).eq('id', user.id);
+  await clearSession(chat_id);
+  await editMessage(chat_id, message_id, '✅ حساب از تلگرام جدا شد. برای ورود مجدد /start را بزنید.', []);
+}
+
+async function studentMyCourses(chat_id: number, message_id: number, user: BotUser) {
+  const { data: u } = await supabase.from('chat_users').select('phone').eq('id', user.id).maybeSingle();
+  if (!u) return;
+  const variants = [u.phone, `0${u.phone}`, u.phone.replace(/^0/, '')];
+  const { data: enrolls } = await supabase.from('enrollments')
+    .select('id, course_id, payment_status, created_at, courses(id, slug, title, redirect_url)')
+    .in('phone', variants).in('payment_status', ['success', 'completed'])
+    .order('created_at', { ascending: false }).limit(50);
+
+  if (!enrolls?.length) {
+    await editMessage(chat_id, message_id, '📭 هنوز در دوره‌ای ثبت‌نام نکرده‌اید.', [
+      [{ text: '🛒 مشاهده دوره‌ها', callback_data: 'student:browse:0' }],
+      [{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }],
+    ]);
+    return;
+  }
+  const keyboard: InlineKeyboard = enrolls.map((e: any) => [{
+    text: `📚 ${e.courses?.title ?? '-'}`, callback_data: `student:course:${e.course_id.slice(0, 8)}`,
+  }]);
+  keyboard.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
+  await editMessage(chat_id, message_id, `🎓 <b>دوره‌های من</b> (${enrolls.length})`, keyboard);
+}
+
+async function studentCourseDetail(chat_id: number, message_id: number, user: BotUser, coursePrefix: string) {
+  const { data: courses } = await supabase.from('courses').select('id, slug, title, description, redirect_url').limit(500);
+  const course = (courses ?? []).find((c: any) => c.id.startsWith(coursePrefix));
+  if (!course) { await editMessage(chat_id, message_id, '❌ دوره یافت نشد.', [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
+
+  // Verify user owns this course
+  const { data: u } = await supabase.from('chat_users').select('phone').eq('id', user.id).maybeSingle();
+  const variants = [u?.phone, `0${u?.phone}`].filter(Boolean) as string[];
+  const { data: owns } = await supabase.from('enrollments').select('id')
+    .in('phone', variants).eq('course_id', course.id).in('payment_status', ['success', 'completed']).limit(1);
+  if (!owns?.length) { await editMessage(chat_id, message_id, '🚫 شما در این دوره ثبت‌نام نکرده‌اید.', [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
+
+  const { data: lessons } = await supabase.from('course_lessons')
+    .select('id, title, lesson_number, order_index').eq('course_id', course.id)
+    .order('order_index', { ascending: true }).limit(30);
+
+  const text = [
+    `📚 <b>${escapeHtml(course.title)}</b>`,
+    course.description ? escapeHtml(String(course.description).slice(0, 200)) : '',
+    ``,
+    lessons?.length ? `<b>درس‌ها (${lessons.length}):</b>` : '📭 درسی ثبت نشده.',
+  ].filter(Boolean).join('\n');
+
+  const keyboard: InlineKeyboard = (lessons ?? []).map((l: any) => [{
+    text: `▶️ ${l.lesson_number ? `${l.lesson_number}. ` : ''}${l.title}`,
+    url: `${ACADEMY_BASE}/app/course/${course.slug}/lesson/${l.lesson_number ?? l.order_index ?? 1}`,
+  }]);
+  keyboard.push([{ text: '🌐 صفحه دوره', url: course.redirect_url || `${ACADEMY_BASE}/course/${course.slug}` }]);
+  keyboard.push([{ text: '⬅️ بازگشت', callback_data: 'student:my_courses' }, { text: '🏠', callback_data: 'menu:home' }]);
+  await editMessage(chat_id, message_id, text, keyboard);
+}
+
+async function studentMyTests(chat_id: number, message_id: number, user: BotUser) {
+  const { data: u } = await supabase.from('chat_users').select('phone').eq('id', user.id).maybeSingle();
+  const variants = [u?.phone, `0${u?.phone}`].filter(Boolean) as string[];
+  const { data: tests } = await supabase.from('test_enrollments')
+    .select('id, payment_status, enrollment_status, created_at, tests(title, slug)')
+    .in('phone', variants).order('created_at', { ascending: false }).limit(30);
+
+  if (!tests?.length) {
+    await editMessage(chat_id, message_id, '📭 هنوز در آزمونی ثبت‌نام نکرده‌اید.', [[{ text: '🏠', callback_data: 'menu:home' }]]);
+    return;
+  }
+  const lines = [`🧪 <b>آزمون‌های من</b>`, ``];
+  tests.forEach((t: any, i) => {
+    const status = t.enrollment_status || t.payment_status || '-';
+    lines.push(`${i + 1}. <b>${escapeHtml(t.tests?.title ?? '-')}</b> — ${escapeHtml(status)}`);
+  });
+  await editMessage(chat_id, message_id, lines.join('\n'), [
+    [{ text: '🌐 مرکز سنجش', url: `${ACADEMY_BASE}/assessment-center` }],
+    [{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }],
+  ]);
+}
+
+async function studentBrowse(chat_id: number, message_id: number, page: number) {
+  const { data: courses, count } = await supabase.from('courses')
+    .select('id, slug, title, price, is_active', { count: 'exact' })
+    .eq('is_active', true).order('created_at', { ascending: false })
+    .range(page * 6, page * 6 + 5);
+
+  if (!courses?.length) {
+    await editMessage(chat_id, message_id, '📭 دوره‌ای موجود نیست.', [[{ text: '🏠', callback_data: 'menu:home' }]]);
+    return;
+  }
+  const lines = [`🛒 <b>دوره‌های موجود</b> — صفحه ${page + 1}`, ''];
+  const keyboard: InlineKeyboard = [];
+  courses.forEach((c: any) => {
+    const price = c.price > 0 ? `${Number(c.price).toLocaleString('fa-IR')} تومان` : 'رایگان';
+    lines.push(`• <b>${escapeHtml(c.title)}</b> — ${price}`);
+    keyboard.push([{ text: `📖 ${c.title}`, callback_data: `student:enroll:${c.id.slice(0, 8)}` }]);
+  });
+  const nav: any[] = [];
+  if (page > 0) nav.push({ text: '⬅️', callback_data: `student:browse:${page - 1}` });
+  if ((page + 1) * 6 < (count ?? 0)) nav.push({ text: '➡️', callback_data: `student:browse:${page + 1}` });
+  if (nav.length) keyboard.push(nav);
+  keyboard.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
+  await editMessage(chat_id, message_id, lines.join('\n'), keyboard);
+}
+
+async function studentEnroll(chat_id: number, message_id: number, user: BotUser, coursePrefix: string) {
+  const { data: courses } = await supabase.from('courses').select('id, slug, title, price, redirect_url').eq('is_active', true).limit(500);
+  const course = (courses ?? []).find((c: any) => c.id.startsWith(coursePrefix));
+  if (!course) { await editMessage(chat_id, message_id, '❌ دوره یافت نشد.', [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
+
+  const { data: u } = await supabase.from('chat_users').select('name, phone, email, country_code').eq('id', user.id).maybeSingle();
+  if (!u) return;
+
+  if (Number(course.price) > 0) {
+    const url = course.redirect_url || `${ACADEMY_BASE}/course/${course.slug}`;
+    await editMessage(chat_id, message_id,
+      `💳 <b>${escapeHtml(course.title)}</b>\n\nقیمت: <b>${Number(course.price).toLocaleString('fa-IR')} تومان</b>\n\nبرای ثبت‌نام و پرداخت روی دکمه زیر بزنید:`,
+      [
+        [{ text: '🛒 ثبت‌نام و پرداخت', url }],
+        [{ text: '⬅️ بازگشت', callback_data: 'student:browse:0' }],
+      ]);
+    return;
+  }
+
+  // Free course → enroll directly
+  try {
+    const res = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/create-enrollment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+      body: JSON.stringify({
+        course_id: course.id,
+        full_name: u.name,
+        email: u.email || `${u.phone}@telegram.local`,
+        phone: u.phone,
+        country_code: u.country_code || '+98',
+        payment_amount: 0,
+        payment_method: 'free',
+        payment_status: 'completed',
+        chat_user_id: user.id,
+        force_create: true,
+      }),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      await editMessage(chat_id, message_id, `❌ خطا: ${escapeHtml(json?.error ?? 'ناموفق')}`,
+        [[{ text: '⬅️ بازگشت', callback_data: 'student:browse:0' }]]);
+      return;
+    }
+    await editMessage(chat_id, message_id,
+      `✅ <b>ثبت‌نام موفق</b>\n\nشما در «${escapeHtml(course.title)}» ثبت‌نام شدید.`,
+      [
+        [{ text: '🎓 مشاهده دوره', callback_data: `student:course:${course.id.slice(0, 8)}` }],
+        [{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }],
+      ]);
+  } catch (e: any) {
+    await editMessage(chat_id, message_id, `❌ خطا: ${escapeHtml(e?.message)}`,
+      [[{ text: '🏠', callback_data: 'menu:home' }]]);
+  }
+}
+
 // ============ Update routing ============
 async function handleUpdate(update: any) {
   if (update.callback_query) {
