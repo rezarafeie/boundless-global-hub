@@ -14,6 +14,12 @@ import {
   DollarSign, Heart, Hourglass, Ban, Globe, Timer, TrendingDown, Zap,
 } from "lucide-react";
 import EnhancedCountdownTimer from "@/components/EnhancedCountdownTimer";
+import AparatPlayer from "@/components/AparatPlayer";
+
+const TESTIMONIAL_VIDEOS = [
+  "vqts522","soudgij","doo2nh1","dfx47wa","uxz9y4e","hwd436a","axz3j27",
+  "czvw4g5","bhb47wq","eytmo57","qfr8eqb","shwn4qf","jjup796","qyui8z2",
+];
 import { TetherlandService } from "@/lib/tetherlandService";
 
 const BRAND = "212 90% 45%";
@@ -223,14 +229,7 @@ const BoundlessCCLanding: React.FC = () => {
             </div>
 
             <Card className="overflow-hidden border-2" style={{ borderColor: `hsl(${BRAND} / 0.3)` }}>
-              <div className="aspect-video bg-black flex items-center justify-center">
-                <iframe
-                  className="w-full h-full"
-                  src="https://www.aparat.com/video/video/embed/videohash/placeholder/vt/frame"
-                  title="معرفی دوره بدون مرز"
-                  allowFullScreen
-                />
-              </div>
+              <AparatPlayer videoHash="c47mjrd" />
             </Card>
 
             <div className="text-center mt-6 flex flex-col items-center gap-3">
@@ -238,6 +237,28 @@ const BoundlessCCLanding: React.FC = () => {
                 ⏱️ مدت زمان: ۲۰ دقیقه | 🎯 این ویدیو می‌تواند نقطه عطف بیزینس جهانی شما باشد
               </p>
               <StickyCTA />
+            </div>
+          </div>
+        </section>
+
+        {/* VIDEO TESTIMONIALS */}
+        <section className="py-16 md:py-20 bg-muted/30">
+          <div className="container mx-auto px-4 max-w-6xl">
+            <div className="text-center mb-10">
+              <Badge variant="outline" className="mb-4" style={{ borderColor: `hsl(${BRAND})`, color: `hsl(${BRAND})` }}>
+                تجربه‌های واقعی
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-extrabold mb-3">تجربه‌های واقعی دانشجویان</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                ببینید دانشجویان دوره بدون مرز چه می‌گویند.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {TESTIMONIAL_VIDEOS.map((hash) => (
+                <Card key={hash} className="overflow-hidden border-2" style={{ borderColor: `hsl(${BRAND} / 0.2)` }}>
+                  <AparatPlayer videoHash={hash} />
+                </Card>
+              ))}
             </div>
           </div>
         </section>
