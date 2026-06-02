@@ -69,6 +69,29 @@ const slugify = (s: string) =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 60);
 
+const CourseTestPicker: React.FC<{
+  kind: 'course' | 'test';
+  value: string | null;
+  onChange: (v: string | null) => void;
+}> = ({ kind, value, onChange }) => {
+  const [items, setItems] = useState<{ id: string; title: string }[]>([]);
+  useEffect(() => {
+    (async () => {
+      const table = kind === 'course' ? 'courses' : 'tests';
+      const { data } = await supabase.from(table as any).select('id, title').eq('is_active', true).order('title');
+      setItems((data as any) ?? []);
+    })();
+  }, [kind]);
+  return (
+    <Select value={value ?? ''} onValueChange={v => onChange(v || null)}>
+      <SelectTrigger><SelectValue placeholder={kind === 'course' ? 'انتخاب دوره...' : 'انتخاب آزمون...'} /></SelectTrigger>
+      <SelectContent>
+        {items.map(it => <SelectItem key={it.id} value={it.id}>{it.title}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  );
+};
+
 const FormsManagement: React.FC = () => {
   const { toast } = useToast();
   const [forms, setForms] = useState<FormRow[]>([]);
