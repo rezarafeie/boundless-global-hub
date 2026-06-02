@@ -238,67 +238,94 @@ const FormEditor: React.FC<{
   };
 
   return (
-    <Dialog open onOpenChange={() => setEditor(null)}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{editor.form.id ? 'ویرایش فرم' : 'فرم جدید'}</DialogTitle>
-        </DialogHeader>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={onCancel}>
+            <ArrowRight className="w-4 h-4 ml-1" /> بازگشت
+          </Button>
+          <h2 className="text-2xl font-bold">{editor.form.id ? 'ویرایش فرم' : 'فرم جدید'}</h2>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onCancel}>انصراف</Button>
+          <Button onClick={onSave}>ذخیره فرم</Button>
+        </div>
+      </div>
 
-        <div className="space-y-4">
-          <div>
-            <Label>عنوان فرم *</Label>
-            <Input value={editor.form.title ?? ''} onChange={e => updateForm({ title: e.target.value })} />
-          </div>
-          <div>
-            <Label className="flex items-center gap-1"><LinkIcon className="w-3 h-3" /> آدرس وب (slug)</Label>
-            <Input
-              value={editor.form.slug ?? ''}
-              onChange={e => updateForm({ slug: e.target.value })}
-              placeholder="مثلاً: contact-us — خودکار از عنوان ساخته می‌شود"
-              dir="ltr"
-            />
-            <p className="text-xs text-muted-foreground mt-1">فرم در آدرس <code>/form/{editor.form.slug || 'auto'}</code> در دسترس خواهد بود.</p>
-          </div>
-          <div>
-            <Label>توضیحات</Label>
-            <Textarea value={editor.form.description ?? ''} onChange={e => updateForm({ description: e.target.value })} rows={2} />
-          </div>
-          <div className="flex gap-4">
-            <div className="flex items-center gap-2">
-              <Switch checked={!!editor.form.is_active} onCheckedChange={v => updateForm({ is_active: v })} />
-              <Label>فعال</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={!!editor.form.require_login} onCheckedChange={v => updateForm({ require_login: v })} />
-              <Label>ورود به حساب الزامی</Label>
-            </div>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Left: form meta */}
+        <Card className="lg:col-span-1 h-fit">
+          <CardContent className="p-5 space-y-4">
+            <h3 className="font-semibold text-lg border-b pb-2">تنظیمات فرم</h3>
 
-          <div>
-            <Label>پرامپت تحلیل AI (اختیاری)</Label>
-            <Textarea
-              value={editor.form.ai_prompt ?? ''}
-              onChange={e => updateForm({ ai_prompt: e.target.value })}
-              rows={4}
-              placeholder="مثال: پاسخ‌های زیر یک فرم نظرسنجی است. آنها را تحلیل کن و خلاصه‌ای ۳ جمله‌ای ارائه بده."
-            />
-          </div>
-
-          <div className="border-t pt-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold">فیلدها</h3>
-              <Button size="sm" onClick={addField}><Plus className="w-4 h-4 ml-1" /> افزودن فیلد</Button>
+            <div>
+              <Label>عنوان فرم *</Label>
+              <Input value={editor.form.title ?? ''} onChange={e => updateForm({ title: e.target.value })} />
             </div>
-            <div className="space-y-2">
+
+            <div>
+              <Label className="flex items-center gap-1"><LinkIcon className="w-3 h-3" /> آدرس وب (slug)</Label>
+              <Input
+                value={editor.form.slug ?? ''}
+                onChange={e => updateForm({ slug: e.target.value })}
+                placeholder="مثلاً: contact-us"
+                dir="ltr"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                آدرس: <code>/form/{editor.form.slug || 'auto'}</code>
+              </p>
+            </div>
+
+            <div>
+              <Label>توضیحات</Label>
+              <Textarea value={editor.form.description ?? ''} onChange={e => updateForm({ description: e.target.value })} rows={3} />
+            </div>
+
+            <div className="space-y-3 pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <Label>فعال</Label>
+                <Switch checked={!!editor.form.is_active} onCheckedChange={v => updateForm({ is_active: v })} />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>ورود الزامی</Label>
+                <Switch checked={!!editor.form.require_login} onCheckedChange={v => updateForm({ require_login: v })} />
+              </div>
+            </div>
+
+            <div className="pt-2 border-t">
+              <Label className="flex items-center gap-1"><Sparkles className="w-3 h-3" /> پرامپت تحلیل AI</Label>
+              <Textarea
+                value={editor.form.ai_prompt ?? ''}
+                onChange={e => updateForm({ ai_prompt: e.target.value })}
+                rows={5}
+                placeholder="مثال: پاسخ‌ها را تحلیل کن و خلاصه‌ای ۳ جمله‌ای بده."
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Right: fields builder */}
+        <Card className="lg:col-span-2">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-4 border-b pb-3">
+              <div>
+                <h3 className="font-semibold text-lg">فیلدها</h3>
+                <p className="text-xs text-muted-foreground">{editor.fields.length} فیلد</p>
+              </div>
+              <Button onClick={addField}><Plus className="w-4 h-4 ml-1" /> افزودن فیلد</Button>
+            </div>
+
+            <div className="space-y-3">
               {editor.fields.map((f, i) => (
-                <Card key={i} className="p-3">
-                  <div className="flex items-start gap-2">
-                    <div className="flex flex-col">
-                      <button type="button" onClick={() => moveField(i, -1)} className="text-xs">▲</button>
+                <Card key={i} className="p-4 border-2 hover:border-primary/30 transition-colors">
+                  <div className="flex items-start gap-3">
+                    <div className="flex flex-col items-center gap-1">
+                      <button type="button" onClick={() => moveField(i, -1)} className="text-xs hover:text-primary">▲</button>
+                      <div className="text-xs font-mono text-muted-foreground">{i + 1}</div>
                       <GripVertical className="w-4 h-4 text-muted-foreground" />
-                      <button type="button" onClick={() => moveField(i, 1)} className="text-xs">▼</button>
+                      <button type="button" onClick={() => moveField(i, 1)} className="text-xs hover:text-primary">▼</button>
                     </div>
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
                         <Label className="text-xs">برچسب</Label>
                         <Input value={f.label} onChange={e => updateField(i, { label: e.target.value })} placeholder="مثلاً: نام شما" />
@@ -333,21 +360,23 @@ const FormEditor: React.FC<{
                         <Label>الزامی</Label>
                       </div>
                     </div>
-                    <Button size="sm" variant="ghost" onClick={() => removeField(i)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => removeField(i)}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
                   </div>
                 </Card>
               ))}
-              {!editor.fields.length && <p className="text-sm text-muted-foreground">هنوز فیلدی اضافه نشده.</p>}
+              {!editor.fields.length && (
+                <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-3">هنوز فیلدی اضافه نشده.</p>
+                  <Button variant="outline" onClick={addField}><Plus className="w-4 h-4 ml-1" /> افزودن اولین فیلد</Button>
+                </div>
+              )}
             </div>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setEditor(null)}>انصراف</Button>
-          <Button onClick={onSave}>ذخیره</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 
