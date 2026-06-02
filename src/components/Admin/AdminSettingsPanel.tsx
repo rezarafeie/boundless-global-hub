@@ -412,6 +412,20 @@ const AdminSettingsPanel: React.FC = () => {
             </Card>
           </div>
         );
+      case 'telegram':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold">تلگرام</h2>
+              <p className="text-muted-foreground mt-1">مدیریت ربات تلگرام</p>
+            </div>
+            <Card>
+              <CardContent className="p-6">
+                <TelegramBotManagement />
+              </CardContent>
+            </Card>
+          </div>
+        );
       case 'import':
         return (
           <div className="space-y-6">
