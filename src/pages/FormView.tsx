@@ -120,7 +120,7 @@ const FormView: React.FC = () => {
       const { data, error } = await supabase.functions.invoke('submit-web-form', {
         body: {
           form_id: form.id,
-          chat_user_id: user?.id ?? null,
+          chat_user_id: user?.id ? Number(user.id) || null : null,
           phone,
           full_name: fullName,
           answers,
