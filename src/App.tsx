@@ -169,6 +169,7 @@ import InvoicePaymentCallback from "./pages/InvoicePaymentCallback";
 // Consultation pages
 import ConsultationBooking from "./pages/ConsultationBooking";
 import LeadRequest from "./pages/LeadRequest";
+import FormView from "./pages/FormView";
 
 const queryClient = new QueryClient();
 
@@ -420,6 +421,9 @@ const App = () => {
 
                     {/* Lead Request Route */}
                     <Route path="/request" element={<LeadRequest />} />
+
+                    {/* Public Form Route */}
+                    <Route path="/form/:slug" element={<FormView />} />
 
                     {/* 404 fallback */}
                     <Route path="*" element={<NotFound />} />

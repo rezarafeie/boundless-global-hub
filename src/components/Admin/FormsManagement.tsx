@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,12 +10,13 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Edit, Eye, GripVertical, Sparkles, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Edit, Eye, GripVertical, Sparkles, RefreshCw, ArrowRight, ExternalLink, Copy, Link as LinkIcon } from 'lucide-react';
 
 type FieldType = 'text' | 'long_text' | 'phone' | 'email' | 'number' | 'dropdown' | 'image' | 'voice' | 'file';
 
 interface FormRow {
   id: string;
+  slug: string | null;
   title: string;
   description: string | null;
   is_active: boolean;
@@ -48,7 +49,13 @@ const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   file: 'فایل',
 };
 
-const TelegramFormsManagement: React.FC = () => {
+const slugify = (s: string) =>
+  s.toLowerCase().trim()
+    .replace(/[^a-z0-9\u0600-\u06FF]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+
+const FormsManagement: React.FC = () => {
   const { toast } = useToast();
   const [forms, setForms] = useState<FormRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +72,7 @@ const TelegramFormsManagement: React.FC = () => {
   useEffect(() => { loadForms(); }, []);
 
   const openNew = () => setEditor({
-    form: { title: '', description: '', is_active: true, ai_prompt: '', require_login: false },
+    form: { title: '', slug: '', description: '', is_active: true, ai_prompt: '', require_login: false },
     fields: [],
   });
 
@@ -79,17 +86,18 @@ const TelegramFormsManagement: React.FC = () => {
     if (!editor) return;
     const f = editor.form;
     if (!f.title?.trim()) { toast({ title: 'عنوان لازم است', variant: 'destructive' }); return; }
+    const finalSlug = (f.slug?.trim() || slugify(f.title)) || `form-${Date.now()}`;
     let formId = f.id;
     if (formId) {
       const { error } = await supabase.from('telegram_forms').update({
-        title: f.title, description: f.description ?? null, is_active: !!f.is_active,
+        title: f.title, slug: finalSlug, description: f.description ?? null, is_active: !!f.is_active,
         ai_prompt: f.ai_prompt ?? null, require_login: !!f.require_login,
       }).eq('id', formId);
       if (error) { toast({ title: 'خطا', description: error.message, variant: 'destructive' }); return; }
       await supabase.from('telegram_form_fields').delete().eq('form_id', formId);
     } else {
       const { data, error } = await supabase.from('telegram_forms').insert({
-        title: f.title, description: f.description ?? null, is_active: !!f.is_active,
+        title: f.title, slug: finalSlug, description: f.description ?? null, is_active: !!f.is_active,
         ai_prompt: f.ai_prompt ?? null, require_login: !!f.require_login,
       }).select('id').single();
       if (error || !data) { toast({ title: 'خطا', description: error?.message, variant: 'destructive' }); return; }
@@ -119,12 +127,24 @@ const TelegramFormsManagement: React.FC = () => {
     loadForms();
   };
 
+  const copyLink = (slug: string | null) => {
+    if (!slug) return;
+    const url = `${window.location.origin}/form/${slug}`;
+    navigator.clipboard.writeText(url);
+    toast({ title: 'لینک کپی شد', description: url });
+  };
+
+  // Submissions view (full panel, replaces popup)
+  if (viewing) {
+    return <SubmissionsTable form={viewing} onBack={() => setViewing(null)} />;
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">فرم‌های تلگرام</h2>
-          <p className="text-sm text-muted-foreground">فرم‌هایی که در ربات تلگرام به کاربران نمایش داده می‌شوند.</p>
+          <h2 className="text-2xl font-bold">فرم‌ها</h2>
+          <p className="text-sm text-muted-foreground">فرم‌هایی که در ربات تلگرام و وب‌سایت در دسترس کاربران هستند.</p>
         </div>
         <Button onClick={openNew}><Plus className="w-4 h-4 ml-2" /> فرم جدید</Button>
       </div>
@@ -140,6 +160,7 @@ const TelegramFormsManagement: React.FC = () => {
               <thead className="bg-muted/40">
                 <tr>
                   <th className="text-right p-3">عنوان</th>
+                  <th className="text-right p-3">لینک وب</th>
                   <th className="text-right p-3">وضعیت</th>
                   <th className="text-right p-3">ورود الزامی</th>
                   <th className="text-right p-3">AI</th>
@@ -150,11 +171,24 @@ const TelegramFormsManagement: React.FC = () => {
                 {forms.map(f => (
                   <tr key={f.id} className="border-t">
                     <td className="p-3 font-medium">{f.title}</td>
+                    <td className="p-3">
+                      {f.slug ? (
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs bg-muted px-2 py-1 rounded">/form/{f.slug}</code>
+                          <Button size="icon" variant="ghost" onClick={() => copyLink(f.slug)} title="کپی لینک">
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                          <a href={`/form/${f.slug}`} target="_blank" rel="noreferrer">
+                            <Button size="icon" variant="ghost" title="باز کردن"><ExternalLink className="w-3 h-3" /></Button>
+                          </a>
+                        </div>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
                     <td className="p-3"><Badge variant={f.is_active ? 'default' : 'secondary'}>{f.is_active ? 'فعال' : 'غیرفعال'}</Badge></td>
                     <td className="p-3">{f.require_login ? '✅' : '—'}</td>
                     <td className="p-3">{f.ai_prompt ? <Sparkles className="w-4 h-4 text-primary" /> : '—'}</td>
                     <td className="p-3 flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => setViewing(f)}><Eye className="w-4 h-4" /></Button>
+                      <Button size="sm" variant="outline" onClick={() => setViewing(f)}><Eye className="w-4 h-4 ml-1" /> پاسخ‌ها</Button>
                       <Button size="sm" variant="outline" onClick={() => openEdit(f)}><Edit className="w-4 h-4" /></Button>
                       <Button size="sm" variant="destructive" onClick={() => deleteForm(f.id)}><Trash2 className="w-4 h-4" /></Button>
                     </td>
@@ -167,7 +201,6 @@ const TelegramFormsManagement: React.FC = () => {
       </Card>
 
       {editor && <FormEditor editor={editor} setEditor={setEditor} onSave={saveForm} />}
-      {viewing && <SubmissionsViewer form={viewing} onClose={() => setViewing(null)} />}
     </div>
   );
 };
@@ -213,6 +246,16 @@ const FormEditor: React.FC<{
             <Input value={editor.form.title ?? ''} onChange={e => updateForm({ title: e.target.value })} />
           </div>
           <div>
+            <Label className="flex items-center gap-1"><LinkIcon className="w-3 h-3" /> آدرس وب (slug)</Label>
+            <Input
+              value={editor.form.slug ?? ''}
+              onChange={e => updateForm({ slug: e.target.value })}
+              placeholder="مثلاً: contact-us — خودکار از عنوان ساخته می‌شود"
+              dir="ltr"
+            />
+            <p className="text-xs text-muted-foreground mt-1">فرم در آدرس <code>/form/{editor.form.slug || 'auto'}</code> در دسترس خواهد بود.</p>
+          </div>
+          <div>
             <Label>توضیحات</Label>
             <Textarea value={editor.form.description ?? ''} onChange={e => updateForm({ description: e.target.value })} rows={2} />
           </div>
@@ -235,7 +278,6 @@ const FormEditor: React.FC<{
               rows={4}
               placeholder="مثال: پاسخ‌های زیر یک فرم نظرسنجی است. آنها را تحلیل کن و خلاصه‌ای ۳ جمله‌ای ارائه بده."
             />
-            <p className="text-xs text-muted-foreground mt-1">اگر پر شود، بعد از ثبت فرم پاسخ AI به‌صورت لحظه‌ای در تلگرام نمایش داده می‌شود.</p>
           </div>
 
           <div className="border-t pt-4">
@@ -305,18 +347,24 @@ const FormEditor: React.FC<{
   );
 };
 
-// ============ Submissions Viewer ============
-const SubmissionsViewer: React.FC<{ form: FormRow; onClose: () => void }> = ({ form, onClose }) => {
+// ============ Submissions Table (full panel) ============
+const SubmissionsTable: React.FC<{ form: FormRow; onBack: () => void }> = ({ form, onBack }) => {
   const { toast } = useToast();
   const [subs, setSubs] = useState<any[]>([]);
+  const [fields, setFields] = useState<{ id: string; label: string; order_index: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from('telegram_form_submissions')
-      .select('*, telegram_form_answers(*, telegram_form_fields(label, field_type, order_index))')
-      .eq('form_id', form.id).order('created_at', { ascending: false }).limit(200);
+    const [{ data: fs }, { data }] = await Promise.all([
+      supabase.from('telegram_form_fields').select('id, label, order_index').eq('form_id', form.id).order('order_index'),
+      supabase.from('telegram_form_submissions')
+        .select('*, telegram_form_answers(*)')
+        .eq('form_id', form.id).order('created_at', { ascending: false }).limit(500),
+    ]);
+    setFields((fs as any) ?? []);
     setSubs(data ?? []);
     setLoading(false);
   };
@@ -326,11 +374,9 @@ const SubmissionsViewer: React.FC<{ form: FormRow; onClose: () => void }> = ({ f
     if (!form.ai_prompt) { toast({ title: 'پرامپت AI تنظیم نشده', variant: 'destructive' }); return; }
     setAnalyzing(sub.id);
     try {
-      const { error } = await supabase.functions.invoke('telegram-form-analyze', {
-        body: { submission_id: sub.id },
-      });
+      const { error } = await supabase.functions.invoke('telegram-form-analyze', { body: { submission_id: sub.id } });
       if (error) throw error;
-      toast({ title: '✅ تحلیل به تلگرام ارسال شد' });
+      toast({ title: '✅ تحلیل ارسال شد' });
       setTimeout(load, 3000);
     } catch (e: any) {
       toast({ title: 'خطا', description: e.message, variant: 'destructive' });
@@ -339,70 +385,131 @@ const SubmissionsViewer: React.FC<{ form: FormRow; onClose: () => void }> = ({ f
     }
   };
 
+  const getAnswerValue = (sub: any, fieldId: string) => {
+    const a = (sub.telegram_form_answers ?? []).find((x: any) => x.field_id === fieldId);
+    if (!a) return '—';
+    if (a.file_url) return <a href={a.file_url} target="_blank" rel="noreferrer" className="text-primary underline">فایل</a>;
+    return a.value_text ?? '—';
+  };
+
   return (
-    <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>پاسخ‌های فرم: {form.title}</DialogTitle>
-        </DialogHeader>
-        {loading ? (
-          <div className="p-8 text-center">در حال بارگذاری...</div>
-        ) : subs.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">هیچ پاسخی ثبت نشده.</div>
-        ) : (
-          <div className="space-y-3">
-            {subs.map(s => {
-              const answers = [...(s.telegram_form_answers ?? [])].sort(
-                (a, b) => (a.telegram_form_fields?.order_index ?? 0) - (b.telegram_form_fields?.order_index ?? 0)
-              );
-              return (
-                <Card key={s.id}>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm">
-                        Chat ID: <code>{s.chat_id}</code> — {new Date(s.created_at).toLocaleString('fa-IR')}
-                      </CardTitle>
-                      <div className="flex gap-2 items-center">
-                        <Badge variant={s.status === 'completed' || s.status === 'analyzed' ? 'default' : 'secondary'}>{s.status}</Badge>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={onBack}><ArrowRight className="w-4 h-4 ml-1" /> بازگشت</Button>
+          <h2 className="text-2xl font-bold">پاسخ‌های فرم: {form.title}</h2>
+          <Badge variant="secondary">{subs.length}</Badge>
+        </div>
+        <Button variant="outline" size="sm" onClick={load}><RefreshCw className="w-4 h-4 ml-1" /> بازخوانی</Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-0 overflow-x-auto">
+          {loading ? (
+            <div className="p-8 text-center">در حال بارگذاری...</div>
+          ) : subs.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">هیچ پاسخی ثبت نشده.</div>
+          ) : (
+            <table className="w-full text-sm min-w-[800px]">
+              <thead className="bg-muted/40">
+                <tr>
+                  <th className="text-right p-3">زمان</th>
+                  <th className="text-right p-3">منبع</th>
+                  <th className="text-right p-3">نام</th>
+                  <th className="text-right p-3">موبایل</th>
+                  <th className="text-right p-3">کاربر</th>
+                  {fields.map(f => (
+                    <th key={f.id} className="text-right p-3 whitespace-nowrap">{f.label}</th>
+                  ))}
+                  <th className="text-right p-3">CRM / Lead</th>
+                  <th className="text-right p-3">وضعیت</th>
+                  <th className="text-right p-3">عملیات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {subs.map(s => (
+                  <React.Fragment key={s.id}>
+                    <tr className="border-t hover:bg-muted/20">
+                      <td className="p-3 whitespace-nowrap text-xs">
+                        {new Date(s.created_at).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })}
+                      </td>
+                      <td className="p-3">
+                        <Badge variant={s.source === 'web' ? 'default' : 'secondary'}>
+                          {s.source === 'web' ? 'وب' : 'تلگرام'}
+                        </Badge>
+                      </td>
+                      <td className="p-3">{s.full_name ?? '—'}</td>
+                      <td className="p-3 font-mono text-xs">{s.phone ?? '—'}</td>
+                      <td className="p-3 text-xs">
+                        {s.chat_user_id ? (
+                          <a href={`/enroll/admin?view=users&user=${s.chat_user_id}`} className="text-primary underline">
+                            #{s.chat_user_id}
+                          </a>
+                        ) : s.chat_id ? `TG:${s.chat_id}` : '—'}
+                      </td>
+                      {fields.map(f => (
+                        <td key={f.id} className="p-3 max-w-[200px] truncate" title={String(getAnswerValue(s, f.id))}>
+                          {getAnswerValue(s, f.id)}
+                        </td>
+                      ))}
+                      <td className="p-3 text-xs space-y-1">
+                        {s.crm_note_id && <div className="text-green-600">✓ CRM</div>}
+                        {s.lead_request_id && (
+                          <a href={`/enroll/admin?view=leads`} className="text-primary underline">Lead</a>
+                        )}
+                        {!s.crm_note_id && !s.lead_request_id && '—'}
+                      </td>
+                      <td className="p-3">
+                        <Badge variant={['completed', 'analyzed'].includes(s.status) ? 'default' : 'secondary'}>
+                          {s.status}
+                        </Badge>
+                      </td>
+                      <td className="p-3 flex gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => setExpanded(expanded === s.id ? null : s.id)}>
+                          {expanded === s.id ? 'بستن' : 'جزئیات'}
+                        </Button>
                         {form.ai_prompt && (
-                          <Button size="sm" variant="outline" disabled={analyzing === s.id} onClick={() => reanalyze(s)}>
+                          <Button size="sm" variant="ghost" disabled={analyzing === s.id} onClick={() => reanalyze(s)}>
                             <Sparkles className="w-3 h-3 ml-1" />
-                            {analyzing === s.id ? 'ارسال...' : 'تحلیل AI'}
+                            {analyzing === s.id ? '...' : 'AI'}
                           </Button>
                         )}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-1 text-sm">
-                    {answers.map((a: any) => (
-                      <div key={a.id} className="flex gap-2">
-                        <span className="font-medium text-muted-foreground">{a.telegram_form_fields?.label}:</span>
-                        {a.file_url ? (
-                          <a href={a.file_url} target="_blank" rel="noreferrer" className="text-primary underline">مشاهده فایل</a>
-                        ) : (
-                          <span>{a.value_text ?? '—'}</span>
-                        )}
-                      </div>
-                    ))}
-                    {s.ai_response && (
-                      <div className="mt-2 p-2 bg-muted rounded text-xs whitespace-pre-wrap">
-                        <div className="font-bold mb-1 flex items-center gap-1"><Sparkles className="w-3 h-3" /> پاسخ AI:</div>
-                        {s.ai_response}
-                      </div>
+                      </td>
+                    </tr>
+                    {expanded === s.id && (
+                      <tr className="bg-muted/10 border-t">
+                        <td colSpan={fields.length + 8} className="p-4">
+                          {s.ai_response && (
+                            <div className="mb-3 p-3 bg-background rounded border text-xs whitespace-pre-wrap">
+                              <div className="font-bold mb-1 flex items-center gap-1"><Sparkles className="w-3 h-3" /> پاسخ AI:</div>
+                              {s.ai_response}
+                            </div>
+                          )}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                            {(s.telegram_form_answers ?? []).map((a: any) => {
+                              const field = fields.find(f => f.id === a.field_id);
+                              return (
+                                <div key={a.id} className="p-2 bg-background rounded border">
+                                  <div className="font-medium text-muted-foreground">{field?.label ?? a.field_id}</div>
+                                  <div>{a.file_url
+                                    ? <a href={a.file_url} target="_blank" rel="noreferrer" className="text-primary underline">مشاهده فایل</a>
+                                    : (a.value_text ?? '—')}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-        <DialogFooter>
-          <Button variant="outline" onClick={load}><RefreshCw className="w-4 h-4 ml-1" /> بازخوانی</Button>
-          <Button onClick={onClose}>بستن</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
-export default TelegramFormsManagement;
+export default FormsManagement;
