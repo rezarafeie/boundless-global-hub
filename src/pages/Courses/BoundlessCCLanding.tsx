@@ -197,7 +197,7 @@ const BoundlessCCLanding: React.FC = () => {
                 ویدیو معرفی دوره را حتماً تماشا کنید
               </Badge>
               <h1 className="text-3xl md:text-5xl font-extrabold mb-4">
-                دوره جامع <span style={{ color: `hsl(${BRAND})` }}>بدون مرز</span>
+                دوره شروع <span style={{ color: `hsl(${BRAND})` }}>بدون مرز</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 در این ویدیو با جزئیات دوره و روش‌های ساخت بیزینس بین‌المللی و درآمد ارزی آشنا می‌شوید.
