@@ -243,19 +243,6 @@ const BoundlessCCLanding: React.FC = () => {
             </div>
 
             <Card className="overflow-hidden border-2" style={{ borderColor: `hsl(${BRAND} / 0.3)` }}>
-              <AparatPlayer videoHash="c47mjrd" />
-            </Card>
-
-            <div className="text-center mt-6 flex flex-col items-center gap-3">
-              <p className="text-sm text-muted-foreground">
-                ⏱️ مدت زمان: ۲۰ دقیقه | 🎯 این ویدیو می‌تواند نقطه عطف بیزینس جهانی شما باشد
-              </p>
-              <StickyCTA />
-            </div>
-          </div>
-        </section>
-
-            <Card className="overflow-hidden border-2" style={{ borderColor: `hsl(${BRAND} / 0.3)` }}>
               <ArvanPlayer configUrl={HERO_VIDEO} />
             </Card>
 
