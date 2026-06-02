@@ -1434,37 +1434,46 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
   else await sendMessage(chat_id, lines, { keyboard: kbd });
 }
 
+function normalizeIntlPhone(input: string): string {
+  let p = (input || '').replace(/[^\d+]/g, '');
+  if (p.startsWith('+')) return p;
+  if (p.startsWith('00')) return '+' + p.substring(2);
+  if (p.startsWith('0')) return '+98' + p.substring(1);
+  if (p.startsWith('98')) return '+' + p;
+  if (/^9\d{9}$/.test(p)) return '+98' + p;
+  return '+' + p;
+}
+
 async function registerWebinar(chat_id: number, message_id: number, prefix: string, user: BotUser) {
   const w = await findWebinarByPrefix(prefix);
   if (!w) { await editMessage(chat_id, message_id, '❌ وبینار یافت نشد.', [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
   if (!user.phone) { await editMessage(chat_id, message_id, '❌ شماره موبایل شما ثبت نشده. لطفاً مجدداً وارد شوید.', [[{ text: '🔐 ورود', callback_data: 'login:start' }]]); return; }
-  // Normalize phone to international format (matches site behavior)
-  let normPhone = (user.phone || '').replace(/[^\d+]/g, '');
-  if (!normPhone.startsWith('+')) {
-    if (normPhone.startsWith('00')) normPhone = '+' + normPhone.substring(2);
-    else if (normPhone.startsWith('0')) normPhone = '+98' + normPhone.substring(1);
-    else if (normPhone.startsWith('98')) normPhone = '+' + normPhone;
-    else if (/^9\d{9}$/.test(normPhone)) normPhone = '+98' + normPhone;
-    else normPhone = '+' + normPhone;
-  }
 
-  const { data: existing } = await supabase
-    .from('webinar_signups').select('id').eq('webinar_id', w.id).eq('mobile_number', normPhone).maybeSingle();
-  if (!existing) {
-    const { error } = await supabase.from('webinar_signups').insert({
-      webinar_id: w.id, mobile_number: normPhone,
-    });
-    if (error) { await editMessage(chat_id, message_id, `❌ خطا در ثبت‌نام: ${escapeHtml(error.message)}`, [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
-  }
+  const normPhone = normalizeIntlPhone(user.phone);
 
-  // Also save to unified webinar_participants table (used by the site's live webinar page)
+  // 1. webinar_participants (canonical — used by site live page)
   const { error: partErr } = await supabase
     .from('webinar_participants')
     .upsert(
       { webinar_id: w.id, phone: normPhone, display_name: user.name || null },
       { onConflict: 'webinar_id,phone' },
     );
-  if (partErr) console.error('webinar_participants upsert failed:', partErr);
+  if (partErr) {
+    console.error('webinar_participants upsert failed:', partErr);
+    await editMessage(chat_id, message_id, `❌ خطا در ثبت‌نام: ${escapeHtml(partErr.message)}`, [[{ text: '🏠', callback_data: 'menu:home' }]]);
+    return;
+  }
+
+  // 2. webinar_signups (legacy — used by admin signups view)
+  const { data: existing } = await supabase
+    .from('webinar_signups').select('id').eq('webinar_id', w.id).eq('mobile_number', normPhone).maybeSingle();
+  if (!existing) {
+    const { error: sigErr } = await supabase.from('webinar_signups').insert({
+      webinar_id: w.id, mobile_number: normPhone,
+    });
+    if (sigErr) console.error('webinar_signups insert failed:', sigErr);
+  }
+
   const kbd: InlineKeyboard = [];
   if (w.webinar_link) kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
   if (w.telegram_channel_link) kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
