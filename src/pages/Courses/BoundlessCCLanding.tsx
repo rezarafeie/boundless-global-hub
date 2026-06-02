@@ -180,7 +180,7 @@ const BoundlessCCLanding: React.FC = () => {
     <MainLayout>
       <head>
         <title>دوره بدون مرز | راه‌اندازی بیزینس آنلاین بین‌المللی و درآمد ارزی</title>
-        <meta name="description" content="دوره جامع بدون مرز: بیزینس بین‌المللی، درآمد ارزی پایدار، Upwork، Shopify، Stripe، AI و گارانتی بازگشت وجه." />
+        <meta name="description" content="دوره شروع بدون مرز: بیزینس بین‌المللی، درآمد ارزی پایدار، Upwork، Shopify، Stripe، AI و گارانتی بازگشت وجه." />
       </head>
 
       <div dir="rtl" className="min-h-screen bg-background text-foreground">
@@ -197,7 +197,7 @@ const BoundlessCCLanding: React.FC = () => {
                 ویدیو معرفی دوره را حتماً تماشا کنید
               </Badge>
               <h1 className="text-3xl md:text-5xl font-extrabold mb-4">
-                دوره جامع <span style={{ color: `hsl(${BRAND})` }}>بدون مرز</span>
+                دوره شروع <span style={{ color: `hsl(${BRAND})` }}>بدون مرز</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 در این ویدیو با جزئیات دوره و روش‌های ساخت بیزینس بین‌المللی و درآمد ارزی آشنا می‌شوید.
@@ -387,7 +387,7 @@ const BoundlessCCLanding: React.FC = () => {
               ))}
             </div>
             <p className="text-center text-lg mt-8">برای همه این چالش‌ها، یک راه‌حل تضمینی وجود دارد:</p>
-            <p className="text-center text-2xl font-bold mt-2" style={{ color: `hsl(${BRAND})` }}>دوره جامع بدون مرز</p>
+            <p className="text-center text-2xl font-bold mt-2" style={{ color: `hsl(${BRAND})` }}>دوره شروع بدون مرز</p>
           </div>
         </section>
 
