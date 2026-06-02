@@ -172,6 +172,34 @@ export default function InvoiceView() {
     setPaymentLoading(false);
   };
 
+  const handleZibalPayment = async () => {
+    if (!invoice) return;
+    setPaymentLoading(true);
+    try {
+      const remainingAmount = Number(invoice.total_amount) - Number(invoice.paid_amount);
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/invoice-zibal-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          invoice_id: invoice.id,
+          amount: remainingAmount,
+          description: `پرداخت فاکتور ${invoice.invoice_number}`,
+          callback_url: `${window.location.origin}/invoice/${invoice.id}/callback?gateway=zibal`,
+        }),
+      });
+      const data = await response.json();
+      if (data.payment_url) {
+        window.location.href = data.payment_url;
+      } else {
+        throw new Error(data.error || 'خطا در اتصال به درگاه پرداخت');
+      }
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      toast.error(error.message || 'خطا در پرداخت');
+    }
+    setPaymentLoading(false);
+  };
+
   const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !invoice) return;
