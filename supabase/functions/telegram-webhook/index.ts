@@ -1707,10 +1707,23 @@ async function handleUpdate(update: any) {
     await answerCallback(cq.id);
 
     // Handle login + form + webinar callbacks before user-resolution
-    if (data === 'login:start') { await startLogin(chat_id); return; }
+    if (data === 'login:start') { await startLogin(chat_id, message_id); return; }
     if (data === 'form:cancel') { await cancelForm(chat_id, message_id); return; }
+    if (data === 'menu:home') {
+      await clearSession(chat_id);
+      const u = await resolveUser(chat_id);
+      const kbd = await buildStartKeyboard(u);
+      const txt = u ? welcomeText(u) : '👋 منوی اصلی';
+      await editMessage(chat_id, message_id, txt, kbd);
+      return;
+    }
     if (data === 'ai:start') {
       const u = await resolveUser(chat_id);
+      if (!u) {
+        await editMessage(chat_id, message_id, '🔐 دستیار هوشمند فقط برای کاربران واردشده فعال است. ابتدا وارد شوید.',
+          [[{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }], [{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]]);
+        return;
+      }
       await startAiChat(chat_id, message_id, u);
       return;
     }
