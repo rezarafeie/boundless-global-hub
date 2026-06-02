@@ -130,6 +130,7 @@ export const useWebinarRealtime = (webinarId: string | undefined) => {
   // Fetch responses whenever interactions change
   useEffect(() => {
     const ids = interactions.map(i => i.id);
+    interactionIdsRef.current = ids;
     if (ids.length) fetchResponses(ids);
   }, [interactions, fetchResponses]);
 
