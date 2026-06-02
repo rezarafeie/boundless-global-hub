@@ -1489,24 +1489,29 @@ async function handleUpdate(update: any) {
     const session = await getSession(chat_id);
     if (text === '/cancel' || text === '/start') {
       await clearSession(chat_id);
+      const kbd = await buildStartKeyboard(false, null);
       await sendMessage(chat_id, [
         `👋 <b>به ربات آکادمی رفیعی خوش آمدید</b>`, ``,
-        `برای ورود به حساب کاربری خود، روی دکمه زیر بزنید.`, ``,
+        `از فرم‌های زیر استفاده کنید یا با شماره موبایل وارد شوید.`, ``,
         `Chat ID شما: <code>${chat_id}</code>`,
-      ].join('\n'), { keyboard: loginMenu() });
+      ].join('\n'), { keyboard: kbd });
       return;
     }
     if (session?.state === 'awaiting_phone' && text) { await handlePhoneInput(chat_id, text); return; }
     if (session?.state === 'awaiting_otp' && text) { await handleOtpInput(chat_id, text); return; }
-    await sendMessage(chat_id, 'برای ورود /start را بزنید.', { keyboard: loginMenu() });
+    if (session?.state === 'awaiting_form_field') { await handleFormMessage(chat_id, null, msg, session); return; }
+    const kbd = await buildStartKeyboard(false, null);
+    await sendMessage(chat_id, 'برای ورود /start را بزنید.', { keyboard: kbd });
     return;
   }
 
   if (text === '/start') {
     await clearSession(chat_id);
-    await sendMessage(chat_id, welcomeText(user), { keyboard: mainMenu(user.role) });
+    const kbd = await buildStartKeyboard(true, user.role);
+    await sendMessage(chat_id, welcomeText(user), { keyboard: kbd });
     return;
   }
+
   if (text === '/cancel') {
     await sendMessage(chat_id, '✅ لغو شد.', { keyboard: mainMenu(user.role) });
     return;
