@@ -477,6 +477,49 @@ const BoundlessCCLanding: React.FC = () => {
               ))}
             </div>
 
+            {/* This Week Surprise Gifts */}
+            <div className="mt-10">
+              <div className="text-center mb-6">
+                <Badge className="mb-3 bg-gradient-to-r from-amber-500 to-pink-500 text-white border-0 px-4 py-1.5">
+                  <Gift className="ml-1 h-4 w-4 inline" /> سورپرایز این هفته
+                </Badge>
+                <h3 className="text-2xl md:text-3xl font-extrabold">۳ هدیه ویژه برای ثبت‌نام‌های این هفته</h3>
+                <p className="text-sm text-muted-foreground mt-2">فقط برای دانشجویانی که این هفته در دوره ثبت‌نام کنند</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  {
+                    title: "اشتراک یک‌ماهه Rafiei Store",
+                    desc: "سیستم چندزبانه ساخت فروشگاه با AI و محصولات برنده، پشتیبانی Stripe و زرین‌پال، فیزیکی و دیجیتال — ارزش ۵$",
+                  },
+                  {
+                    title: "دوره «شروع ایران» (۲۰۰ دقیقه)",
+                    desc: "راه‌اندازی بیزینس آنلاین در ایران با باله، ترب، لندین و… کمپین فروش، تبلیغات، SMS مارکتینگ و فروش خدمات",
+                  },
+                  {
+                    title: "۱ گیگابایت Boundless Network (یک‌ماهه)",
+                    desc: "دسترسی پرسرعت و ایمن به شبکه بدون مرز برای کار با ابزارهای جهانی",
+                  },
+                ].map((g, i) => (
+                  <Card key={i} className="border-2 border-amber-300 dark:border-amber-700 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500" />
+                    <CardContent className="p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-pink-500 rounded-lg flex items-center justify-center">
+                          <Gift className="h-5 w-5 text-white" />
+                        </div>
+                        <Badge variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300 text-xs">
+                          هدیه {i + 1}
+                        </Badge>
+                      </div>
+                      <h4 className="font-bold mb-2 leading-snug">{g.title}</h4>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{g.desc}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
             <Card className="mt-8 text-center border-2" style={{ borderColor: `hsl(${BRAND})`, background: `hsl(${BRAND} / 0.05)` }}>
               <CardContent className="p-6">
                 <p className="text-muted-foreground mb-1">مجموع ارزش پکیج:</p>
