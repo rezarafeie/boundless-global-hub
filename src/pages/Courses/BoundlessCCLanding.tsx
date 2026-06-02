@@ -14,6 +14,7 @@ import {
   DollarSign, Heart, Hourglass, Ban, Globe, Timer, TrendingDown, Zap,
 } from "lucide-react";
 import EnhancedCountdownTimer from "@/components/EnhancedCountdownTimer";
+import { TetherlandService } from "@/lib/tetherlandService";
 
 const BRAND = "212 90% 45%";
 const ACCENT = "32 95% 50%";
@@ -140,18 +141,31 @@ const BoundlessCCLanding: React.FC = () => {
       try {
         const { data } = await supabase
           .from("courses")
-          .select("price, is_sale_enabled, sale_price, sale_expires_at")
+          .select("price, is_sale_enabled, sale_price, sale_expires_at, use_dollar_price, usd_price")
           .eq("slug", courseSlug)
           .maybeSingle();
         if (!data) return;
-        const price = Number(data.price) || 0;
-        const salePrice = data.sale_price ? Number(data.sale_price) : null;
         const notExpired =
           !data.sale_expires_at || new Date(data.sale_expires_at) > new Date();
+
+        let priceToman = Number(data.price) || 0;
+        let saleToman: number | null = data.sale_price ? Number(data.sale_price) : null;
+
+        if (data.use_dollar_price && data.usd_price) {
+          try {
+            priceToman = await TetherlandService.convertUSDToIRR(Number(data.usd_price));
+            if (saleToman !== null) {
+              saleToman = await TetherlandService.convertUSDToIRR(saleToman);
+            }
+          } catch (err) {
+            console.error("USD conversion failed", err);
+          }
+        }
+
         const discountOn =
-          !!data.is_sale_enabled && !!salePrice && salePrice < price && notExpired;
-        setOriginalPrice(price);
-        setCoursePrice(discountOn ? (salePrice as number) : price);
+          !!data.is_sale_enabled && !!saleToman && saleToman < priceToman && notExpired;
+        setOriginalPrice(priceToman);
+        setCoursePrice(discountOn ? (saleToman as number) : priceToman);
         setSaleEndsAt(discountOn ? data.sale_expires_at : null);
         setHasDiscount(discountOn);
       } catch (e) { console.error(e); }
@@ -237,54 +251,97 @@ const BoundlessCCLanding: React.FC = () => {
 
             {hasDiscount ? (
               <Card
-                className="relative overflow-hidden border-2 shadow-2xl"
-                style={{ borderColor: `hsl(${ACCENT})`, background: `linear-gradient(135deg, hsl(${ACCENT} / 0.08), hsl(${BRAND} / 0.06))` }}
+                className="relative overflow-hidden border shadow-xl rounded-2xl"
+                style={{
+                  borderColor: `hsl(${ACCENT} / 0.35)`,
+                  background: `linear-gradient(180deg, hsl(var(--background)) 0%, hsl(${ACCENT} / 0.04) 100%)`,
+                }}
               >
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 animate-pulse" />
-                <CardContent className="p-6 md:p-10 text-center">
-                  <div className="flex flex-wrap items-center justify-center gap-2 mb-5">
-                    <Badge className="text-white border-0 px-3 py-1.5 text-sm bg-red-600">
-                      <TrendingDown className="ml-1 h-4 w-4 inline" /> {fmt(percentOff)}٪ تخفیف
-                    </Badge>
-                    <Badge className="text-white border-0 px-3 py-1.5 text-sm" style={{ background: `hsl(${ACCENT})` }}>
-                      <Zap className="ml-1 h-4 w-4 inline" /> صرفه‌جویی {fmt(savings)} تومان
-                    </Badge>
-                    <Badge variant="outline" className="px-3 py-1.5 text-sm border-red-400 text-red-600 dark:text-red-400">
-                      <AlertTriangle className="ml-1 h-4 w-4 inline" /> فرصت محدود
-                    </Badge>
+                {/* Top ribbon */}
+                <div
+                  className="absolute top-0 inset-x-0 text-center text-[11px] md:text-xs font-bold tracking-[0.25em] text-white py-1.5 uppercase"
+                  style={{ background: `linear-gradient(90deg, hsl(${ACCENT}), hsl(0 80% 55%), hsl(${ACCENT}))` }}
+                >
+                  Limited Time Offer · پیشنهاد ویژه و محدود
+                </div>
+
+                {/* Decorative corners */}
+                <div className="pointer-events-none absolute top-8 left-4 right-4 h-px" style={{ background: `linear-gradient(90deg, transparent, hsl(${ACCENT} / 0.4), transparent)` }} />
+                <div className="pointer-events-none absolute bottom-4 left-4 right-4 h-px" style={{ background: `linear-gradient(90deg, transparent, hsl(${ACCENT} / 0.4), transparent)` }} />
+
+                <CardContent className="px-6 md:px-12 pt-14 pb-10 md:pt-16 md:pb-12 text-center">
+                  {/* Discount badges row */}
+                  <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+                    <span
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold text-white"
+                      style={{ background: `hsl(0 75% 50%)` }}
+                    >
+                      <TrendingDown className="h-3.5 w-3.5" />
+                      {fmt(percentOff)}٪ تخفیف ویژه
+                    </span>
+                    <span
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border"
+                      style={{ borderColor: `hsl(${ACCENT} / 0.5)`, color: `hsl(${ACCENT})` }}
+                    >
+                      <Zap className="h-3.5 w-3.5" />
+                      {fmt(savings)} تومان صرفه‌جویی
+                    </span>
                   </div>
 
-                  <div className="flex items-end justify-center gap-3 mb-2 flex-wrap">
-                    <span className="text-xl md:text-2xl line-through text-muted-foreground">{fmt(originalPrice)}</span>
-                    <span className="text-5xl md:text-7xl font-extrabold leading-none" style={{ color: `hsl(${BRAND})` }}>
+                  {/* Price hero */}
+                  <p className="text-xs md:text-sm uppercase tracking-[0.3em] text-muted-foreground mb-3">سرمایه‌گذاری امروز</p>
+                  <div className="flex items-baseline justify-center gap-3 mb-1 flex-wrap" dir="ltr">
+                    <span className="text-base md:text-lg line-through text-muted-foreground/80">{fmt(originalPrice)}</span>
+                    <span className="text-6xl md:text-8xl font-black leading-none tracking-tight" style={{ color: `hsl(${BRAND})` }}>
                       {fmt(coursePrice)}
                     </span>
-                    <span className="text-lg md:text-xl pb-2">تومان</span>
+                    <span className="text-base md:text-lg font-semibold text-foreground/80">تومان</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-6">
-                    پس از پایان کمپین، قیمت به <span className="font-bold text-foreground">{fmt(originalPrice)} تومان</span> برمی‌گردد
-                  </p>
 
+                  {/* Ornament divider */}
+                  <div className="flex items-center justify-center gap-3 my-6">
+                    <span className="h-px w-12 md:w-20" style={{ background: `hsl(${ACCENT} / 0.5)` }} />
+                    <span className="text-xs tracking-widest text-muted-foreground">⬥</span>
+                    <span className="h-px w-12 md:w-20" style={{ background: `hsl(${ACCENT} / 0.5)` }} />
+                  </div>
+
+                  {/* Countdown */}
                   {saleEndsAt && (
-                    <div className="mb-6 max-w-2xl mx-auto">
-                      <div className="flex items-center justify-center gap-2 mb-3 text-sm font-semibold" style={{ color: `hsl(${ACCENT})` }}>
+                    <div className="mb-7 max-w-xl mx-auto">
+                      <div className="flex items-center justify-center gap-2 mb-4 text-xs md:text-sm font-semibold uppercase tracking-[0.2em]" style={{ color: `hsl(${ACCENT})` }}>
                         <Timer className="h-4 w-4 animate-pulse" />
-                        تخفیف تا پایان زمان زیر معتبر است:
+                        پایان کمپین تا
                       </div>
                       <EnhancedCountdownTimer endDate={saleEndsAt} />
                     </div>
                   )}
 
+                  {/* Trust row */}
+                  <div className="grid grid-cols-3 gap-3 max-w-xl mx-auto mb-7 text-xs md:text-sm">
+                    <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-border/50 bg-background/40">
+                      <ShieldCheck className="h-5 w-5" style={{ color: `hsl(${BRAND})` }} />
+                      <span className="font-semibold">پرداخت امن</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-border/50 bg-background/40">
+                      <Heart className="h-5 w-5" style={{ color: `hsl(${BRAND})` }} />
+                      <span className="font-semibold">گارانتی بازگشت</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-border/50 bg-background/40">
+                      <InfinityIcon className="h-5 w-5" style={{ color: `hsl(${BRAND})` }} />
+                      <span className="font-semibold">دسترسی مادام‌العمر</span>
+                    </div>
+                  </div>
+
                   <StickyCTA />
 
-                  <p className="mt-4 text-xs text-muted-foreground">
-                    <ShieldCheck className="ml-1 h-3 w-3 inline" /> پرداخت امن از طریق زرین‌پال + گارانتی بازگشت وجه
+                  <p className="mt-5 text-xs text-muted-foreground">
+                    پس از پایان کمپین، قیمت به <span className="font-bold text-foreground">{fmt(originalPrice)} تومان</span> برمی‌گردد
                   </p>
                 </CardContent>
               </Card>
             ) : (
               <div className="text-center">
-                <div className="flex items-center justify-center gap-4 mb-4 flex-wrap">
+                <div className="flex items-baseline justify-center gap-3 mb-4 flex-wrap">
                   <span className="text-5xl md:text-6xl font-extrabold" style={{ color: `hsl(${BRAND})` }}>
                     {fmt(coursePrice)}
                   </span>
