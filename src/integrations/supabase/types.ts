@@ -207,6 +207,8 @@ export type Database = {
           quick_enroll_enabled: boolean
           updated_at: string
           use_full_leads_system: boolean | null
+          zarinpal_proxy_url: string | null
+          zarinpal_use_proxy: boolean
         }
         Insert: {
           id?: number
@@ -214,6 +216,8 @@ export type Database = {
           quick_enroll_enabled?: boolean
           updated_at?: string
           use_full_leads_system?: boolean | null
+          zarinpal_proxy_url?: string | null
+          zarinpal_use_proxy?: boolean
         }
         Update: {
           id?: number
@@ -221,6 +225,8 @@ export type Database = {
           quick_enroll_enabled?: boolean
           updated_at?: string
           use_full_leads_system?: boolean | null
+          zarinpal_proxy_url?: string | null
+          zarinpal_use_proxy?: boolean
         }
         Relationships: []
       }
