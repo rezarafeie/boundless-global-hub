@@ -44,6 +44,7 @@ const navItems: NavItem[] = [
   { id: 'emails', label: 'ایمیل‌ها', icon: Mail },
   { id: 'blackfriday', label: 'بلک فرایدی', icon: Tag },
   { id: 'import', label: 'ورود داده', icon: Upload },
+  { id: 'telegram', label: 'تلگرام', icon: MessageCircle },
   { id: 'info', label: 'اطلاعات سیستم', icon: Info },
 ];
 
