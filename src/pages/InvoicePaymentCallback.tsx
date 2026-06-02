@@ -21,6 +21,38 @@ export default function InvoicePaymentCallback() {
   const verifyPayment = async () => {
     const authority = searchParams.get('Authority');
     const zarinpalStatus = searchParams.get('Status');
+    const zibalTrackId = searchParams.get('trackId');
+    const zibalSuccess = searchParams.get('success');
+    const gateway = searchParams.get('gateway');
+    const isZibal = gateway === 'zibal' || !!zibalTrackId;
+
+    if (isZibal) {
+      if (zibalSuccess !== '1' || !zibalTrackId) {
+        setStatus('failed');
+        setMessage('پرداخت توسط کاربر لغو شد یا ناموفق بود');
+        return;
+      }
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/invoice-zibal-verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invoice_id: invoiceId, trackId: zibalTrackId }),
+        });
+        const data = await response.json();
+        if (data.success) {
+          setStatus('success');
+          setMessage('پرداخت با موفقیت انجام شد');
+        } else {
+          setStatus('failed');
+          setMessage(data.error || 'خطا در تایید پرداخت');
+        }
+      } catch (error: any) {
+        console.error('Zibal verify error:', error);
+        setStatus('failed');
+        setMessage('خطا در بررسی وضعیت پرداخت');
+      }
+      return;
+    }
 
     if (zarinpalStatus !== 'OK' || !authority) {
       setStatus('failed');
