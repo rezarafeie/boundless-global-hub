@@ -1522,6 +1522,11 @@ async function handleUpdate(update: any) {
   }
 
   const session = await getSession(chat_id);
+  if (session?.state === 'awaiting_form_field') {
+    await handleFormMessage(chat_id, user.id, msg, session);
+    return;
+  }
+
   if (session?.state === 'awaiting_note' && text) {
     const enrollment_id = session.context.enrollment_id;
     const { data: enr } = await supabase.from('enrollments').select('phone, course_id').eq('id', enrollment_id).maybeSingle();
