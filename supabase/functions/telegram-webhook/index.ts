@@ -983,8 +983,14 @@ async function handleUpdate(update: any) {
     const data: string = cq.data;
     await answerCallback(cq.id);
 
+    // Handle login callbacks before user-resolution
+    if (data === 'login:start') { await startLogin(chat_id); return; }
+
     const user = await resolveUser(chat_id);
-    if (!user) { await sendMessage(chat_id, '🚫 حساب شما لینک نشده.'); return; }
+    if (!user) {
+      await sendMessage(chat_id, '🚫 حساب شما لینک نشده. /start را بزنید.');
+      return;
+    }
 
     const [action, ...rest] = data.split(':');
 
