@@ -30,6 +30,7 @@ interface BotUser {
   name: string;
   role: Role;
   telegram_chat_id: number;
+  phone?: string | null;
 }
 interface Filters {
   course_id?: string;
@@ -42,13 +43,13 @@ interface Filters {
 async function resolveUser(chat_id: number): Promise<BotUser | null> {
   const { data } = await supabase
     .from('chat_users')
-    .select('id, name, role, is_messenger_admin, telegram_chat_id')
+    .select('id, name, role, is_messenger_admin, telegram_chat_id, phone')
     .eq('telegram_chat_id', chat_id)
     .maybeSingle();
   if (!data) return null;
   let role: Role = (data.role as Role) ?? 'student';
   if (data.is_messenger_admin) role = 'admin';
-  return { id: data.id, name: data.name, role, telegram_chat_id: chat_id };
+  return { id: data.id, name: data.name, role, telegram_chat_id: chat_id, phone: data.phone };
 }
 
 // ============ Session state ============
@@ -990,10 +991,102 @@ async function formsKeyboardRows(): Promise<InlineKeyboard> {
   return forms.map((f: any) => [{ text: `📝 ${f.title}`, callback_data: `form:start:${f.id.slice(0, 8)}` }]);
 }
 
+// ============ Webinars ============
+async function getActiveWebinars() {
+  const { data } = await supabase
+    .from('webinar_entries')
+    .select('id, title, slug, start_date, status')
+    .neq('status', 'ended')
+    .order('start_date', { ascending: true, nullsFirst: false })
+    .limit(10);
+  const now = Date.now();
+  return (data ?? []).filter((w: any) => !w.start_date || new Date(w.start_date).getTime() > now - 2 * 60 * 60 * 1000);
+}
+
+async function webinarsKeyboardRows(): Promise<InlineKeyboard> {
+  const webinars = await getActiveWebinars();
+  return webinars.map((w: any) => [{ text: `🎥 ${w.title}`, callback_data: `webinar:view:${w.id.slice(0, 8)}` }]);
+}
+
+async function findWebinarByPrefix(prefix: string) {
+  const { data } = await supabase.from('webinar_entries').select('*').neq('status', 'ended').limit(500);
+  return (data ?? []).find((w: any) => w.id.startsWith(prefix));
+}
+
+function formatWebinarDate(d: string | null): string {
+  if (!d) return 'به‌زودی';
+  try {
+    return new Intl.DateTimeFormat('fa-IR', {
+      timeZone: 'Asia/Tehran', dateStyle: 'full', timeStyle: 'short',
+    }).format(new Date(d));
+  } catch { return d; }
+}
+
+async function renderWebinar(chat_id: number, message_id: number | null, prefix: string, user: BotUser | null) {
+  const w = await findWebinarByPrefix(prefix);
+  if (!w) {
+    const msg = '❌ وبینار یافت نشد.';
+    if (message_id) await editMessage(chat_id, message_id, msg, [[{ text: '🏠', callback_data: 'menu:home' }]]);
+    else await sendMessage(chat_id, msg);
+    return;
+  }
+  let alreadyRegistered = false;
+  if (user?.phone) {
+    const { data: sig } = await supabase
+      .from('webinar_signups').select('id').eq('webinar_id', w.id).eq('mobile_number', user.phone).maybeSingle();
+    alreadyRegistered = !!sig;
+  }
+  const lines = [
+    `🎥 <b>${escapeHtml(w.title)}</b>`,
+    w.host_name ? `👤 مدرس: ${escapeHtml(w.host_name)}` : '',
+    `🗓 ${escapeHtml(formatWebinarDate(w.start_date))}`,
+    w.description ? `\n${escapeHtml(w.description)}` : '',
+    '',
+    alreadyRegistered ? '✅ شما قبلاً ثبت‌نام کرده‌اید.' : (user ? 'برای ثبت‌نام دکمه زیر را بزنید.' : '🔐 برای ثبت‌نام ابتدا وارد حساب شوید.'),
+  ].filter(Boolean).join('\n');
+  const kbd: InlineKeyboard = [];
+  if (user && !alreadyRegistered) {
+    kbd.push([{ text: '✅ ثبت‌نام در وبینار', callback_data: `webinar:reg:${prefix}` }]);
+  } else if (!user) {
+    kbd.push([{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }]);
+  }
+  if (w.webinar_link && (alreadyRegistered || (w.status === 'live'))) {
+    kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
+  }
+  if (w.telegram_channel_link) {
+    kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
+  }
+  kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
+  if (message_id) await editMessage(chat_id, message_id, lines, kbd);
+  else await sendMessage(chat_id, lines, { keyboard: kbd });
+}
+
+async function registerWebinar(chat_id: number, message_id: number, prefix: string, user: BotUser) {
+  const w = await findWebinarByPrefix(prefix);
+  if (!w) { await editMessage(chat_id, message_id, '❌ وبینار یافت نشد.', [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
+  if (!user.phone) { await editMessage(chat_id, message_id, '❌ شماره موبایل شما ثبت نشده. لطفاً مجدداً وارد شوید.', [[{ text: '🔐 ورود', callback_data: 'login:start' }]]); return; }
+  const { data: existing } = await supabase
+    .from('webinar_signups').select('id').eq('webinar_id', w.id).eq('mobile_number', user.phone).maybeSingle();
+  if (!existing) {
+    const { error } = await supabase.from('webinar_signups').insert({
+      webinar_id: w.id, mobile_number: user.phone,
+    });
+    if (error) { await editMessage(chat_id, message_id, `❌ خطا در ثبت‌نام: ${escapeHtml(error.message)}`, [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
+  }
+  const kbd: InlineKeyboard = [];
+  if (w.webinar_link) kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
+  if (w.telegram_channel_link) kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
+  kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
+  await editMessage(chat_id, message_id,
+    `✅ <b>ثبت‌نام شما در وبینار انجام شد</b>\n\n🎥 ${escapeHtml(w.title)}\n🗓 ${escapeHtml(formatWebinarDate(w.start_date))}`,
+    kbd,
+  );
+}
+
 async function buildStartKeyboard(authed: boolean, role: Role): Promise<InlineKeyboard> {
-  const formRows = await formsKeyboardRows();
+  const [formRows, webinarRows] = await Promise.all([formsKeyboardRows(), webinarsKeyboardRows()]);
   const base = authed ? mainMenu(role) : loginMenu();
-  return [...formRows, ...base];
+  return [...webinarRows, ...formRows, ...base];
 }
 
 async function findFormByPrefix(prefix: string) {
@@ -1328,11 +1421,26 @@ async function handleUpdate(update: any) {
     const data: string = cq.data;
     await answerCallback(cq.id);
 
-    // Handle login + form callbacks before user-resolution
+    // Handle login + form + webinar callbacks before user-resolution
     if (data === 'login:start') { await startLogin(chat_id); return; }
     if (data === 'form:cancel') { await cancelForm(chat_id, message_id); return; }
 
     const userEarly = await resolveUser(chat_id);
+    if (data.startsWith('webinar:view:')) {
+      const prefix = data.split(':')[2];
+      await renderWebinar(chat_id, message_id, prefix, userEarly);
+      return;
+    }
+    if (data.startsWith('webinar:reg:')) {
+      const prefix = data.split(':')[2];
+      if (!userEarly) {
+        await editMessage(chat_id, message_id, '🔐 برای ثبت‌نام ابتدا وارد حساب شوید.',
+          [[{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }], [{ text: '🏠', callback_data: 'menu:home' }]]);
+        return;
+      }
+      await registerWebinar(chat_id, message_id, prefix, userEarly);
+      return;
+    }
     if (data.startsWith('form:start:')) {
       const prefix = data.split(':')[2];
       await startForm(chat_id, message_id, prefix, userEarly);
