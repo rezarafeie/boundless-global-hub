@@ -1214,25 +1214,33 @@ async function buildUserContentFromMessage(msg: any): Promise<any> {
       parts.push({ type: 'input_audio', input_audio: { data: b64, format } });
     }
   }
-  // Document — if image mime treat as image, else attach as text note (small text files only)
+  // Document — image, PDF, text, or note
   if (msg.document?.file_id) {
     const mime = msg.document.mime_type ?? '';
+    const fname = msg.document.file_name ?? 'سند';
     if (mime.startsWith('image/')) {
       const f = await fileToDataUrl(msg.document.file_id);
       if (f) parts.push({ type: 'image_url', image_url: { url: f.dataUrl } });
-    } else if (mime.startsWith('text/') || mime.includes('json') || mime.includes('csv')) {
+    } else if (mime === 'application/pdf' || fname.toLowerCase().endsWith('.pdf')) {
+      // Gemini accepts PDFs as inline data via image_url on the Lovable gateway
+      const f = await fileToDataUrl(msg.document.file_id);
+      if (f) {
+        parts.push({ type: 'image_url', image_url: { url: f.dataUrl } });
+        parts.push({ type: 'text', text: `\n\n[فایل PDF پیوست شده: ${fname}]` });
+      }
+    } else if (mime.startsWith('text/') || mime.includes('json') || mime.includes('csv') || mime.includes('xml') || mime.includes('markdown')) {
       const f = await downloadFile(msg.document.file_id);
       if (f && f.bytes.length < 200_000) {
         const txt = new TextDecoder().decode(f.bytes);
-        parts.push({ type: 'text', text: `\n\n[محتوای فایل ${msg.document.file_name ?? ''}]\n${txt}` });
+        parts.push({ type: 'text', text: `\n\n[محتوای فایل ${fname}]\n${txt}` });
       } else {
-        parts.push({ type: 'text', text: `\n\n[کاربر فایلی به نام ${msg.document.file_name ?? 'سند'} با نوع ${mime} ارسال کرد که محتوای آن قابل پردازش متنی نیست.]` });
+        parts.push({ type: 'text', text: `\n\n[فایل ${fname} (${mime}) خیلی بزرگ است.]` });
       }
     } else {
-      parts.push({ type: 'text', text: `\n\n[کاربر فایلی به نام ${msg.document.file_name ?? 'سند'} با نوع ${mime} ارسال کرد. لطفاً توضیح بخواهید.]` });
+      parts.push({ type: 'text', text: `\n\n[کاربر فایلی به نام ${fname} با نوع ${mime} ارسال کرد. در حال حاضر این نوع فایل قابل پردازش نیست — لطفاً PDF، تصویر، صوت یا متن ارسال کنید.]` });
     }
   }
-  // Video — just mention
+  // Video
   if (msg.video?.file_id) {
     parts.push({ type: 'text', text: `\n\n[کاربر ویدیویی ارسال کرد. در حال حاضر پردازش ویدیو ممکن نیست.]` });
   }
