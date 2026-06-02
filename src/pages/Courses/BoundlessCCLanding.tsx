@@ -44,7 +44,7 @@ const ACCENT = "32 95% 50%";
 const transformations = [
   { name: "آرش م.", role: "فریلنسر، تورنتو", text: "از ایران مهاجرت کردم و نمی‌دونستم چطور درآمد دلاری بسازم. الان از Upwork ماهانه ۴ هزار دلار می‌گیرم.", badge: "درآمد دلاری" },
   { name: "نیلوفر ک.", role: "صاحب برند، دبی", text: "محصولم رو روی شاپیفای راه انداختم و الان به ۸ کشور ارسال دارم.", badge: "فروش بین‌المللی" },
-  { name: "رضا ش.", role: "کارآفرین، استانبول", text: "دوره بدون مرز کل ذهنیت من رو نسبت به کسب‌وکار جهانی عوض کرد.", badge: "تحول ذهنی" },
+  { name: "رضا ش.", role: "کارآفرین، استانبول", text: "دوره شروع بدون مرز کل ذهنیت من رو نسبت به کسب‌وکار جهانی عوض کرد.", badge: "تحول ذهنی" },
   { name: "مریم ت.", role: "دیجیتال نومد، بالی", text: "از یک کارمند معمولی به یک فریلنسر بین‌المللی با مشتری‌های ۵ کشور تبدیل شدم.", badge: "زندگی نومد" },
   { name: "سعید ن.", role: "صاحب آژانس، برلین", text: "آژانس مارکتینگ خودم رو با مشتری‌های اروپایی راه انداختم.", badge: "آژانس بین‌المللی" },
   { name: "لیلا ج.", role: "محصول دیجیتال، لندن", text: "محصول دیجیتالم رو روی Gumroad فروختم و درآمد پسیو ساختم.", badge: "درآمد پسیو" },
@@ -217,7 +217,7 @@ const BoundlessCCLanding: React.FC = () => {
   return (
     <MainLayout>
       <head>
-        <title>دوره بدون مرز | راه‌اندازی بیزینس آنلاین بین‌المللی و درآمد ارزی</title>
+        <title>دوره شروع بدون مرز | راه‌اندازی بیزینس آنلاین بین‌المللی و درآمد ارزی</title>
         <meta name="description" content="دوره شروع بدون مرز: بیزینس بین‌المللی، درآمد ارزی پایدار، Upwork، Shopify، Stripe، AI و گارانتی بازگشت وجه." />
       </head>
 
@@ -248,7 +248,7 @@ const BoundlessCCLanding: React.FC = () => {
 
             <div className="text-center mt-6 flex flex-col items-center gap-3">
               <p className="text-sm text-muted-foreground">
-                ⏱️ مدت زمان: ۲۰ دقیقه | 🎯 این ویدیو می‌تواند نقطه عطف بیزینس جهانی شما باشد
+                ⏱️ مدت زمان: ۵۴ دقیقه | 🎯 این ویدیو می‌تواند نقطه عطف بیزینس جهانی شما باشد
               </p>
               <StickyCTA />
             </div>
@@ -262,7 +262,7 @@ const BoundlessCCLanding: React.FC = () => {
               <Badge variant="outline" className="mb-4" style={{ borderColor: `hsl(${ACCENT})`, color: `hsl(${ACCENT})` }}>
                 <Flame className="ml-1 h-3 w-3" /> پیشنهاد ویژه
               </Badge>
-              <h2 className="text-3xl md:text-4xl font-bold mb-3">دوره بدون مرز — ۱۴۰۵</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-3">دوره شروع بدون مرز — ۱۴۰۵</h2>
               <p className="text-muted-foreground">سرمایه‌گذاری روی پایدارترین مدل کسب‌وکار جهانی</p>
             </div>
 
@@ -395,7 +395,7 @@ const BoundlessCCLanding: React.FC = () => {
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">دقیقاً چی دریافت می‌کنید؟</h2>
             <div className="grid md:grid-cols-2 gap-4">
               {[
-                "۴۰+ اپیزود ویدیویی عملی و قابل اجرا",
+                "۱۰+ اپیزود ویدیویی عملی و قابل اجرا",
                 "تیم مدرسان متخصص بازار جهانی",
                 "فایل‌ها و چک‌لیست‌های آماده (تمپلیت Upwork، Stripe، Shopify)",
                 "پرامپت‌های AI برای محتوا، فروش و اتوماسیون",
@@ -474,7 +474,7 @@ const BoundlessCCLanding: React.FC = () => {
               </Badge>
               <h2 className="text-3xl md:text-4xl font-extrabold mb-3">تجربه‌های واقعی دانشجویان</h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                ببینید دانشجویان دوره بدون مرز چه می‌گویند.
+                ببینید دانشجویان دوره شروع بدون مرز چه می‌گویند.
               </p>
             </div>
 
@@ -566,13 +566,13 @@ const BoundlessCCLanding: React.FC = () => {
         {/* COMPARISON */}
         <section className="py-16">
           <div className="container mx-auto px-4 max-w-4xl">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">چرا دوره بدون مرز متفاوت است؟</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">چرا دوره شروع بدون مرز متفاوت است؟</h2>
             <Card className="overflow-hidden">
               <table className="w-full text-sm md:text-base">
                 <thead style={{ background: `hsl(${BRAND} / 0.1)` }}>
                   <tr>
                     <th className="text-right p-4">ویژگی</th>
-                    <th className="text-center p-4" style={{ color: `hsl(${BRAND})` }}>دوره بدون مرز</th>
+                    <th className="text-center p-4" style={{ color: `hsl(${BRAND})` }}>دوره شروع بدون مرز</th>
                     <th className="text-center p-4 text-muted-foreground">دوره‌های دیگر</th>
                   </tr>
                 </thead>
@@ -729,7 +729,7 @@ const BoundlessCCLanding: React.FC = () => {
         {/* TECHNIQUES */}
         <section className="py-16">
           <div className="container mx-auto px-4 max-w-6xl">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">۱۲ مهارت کلیدی دوره بدون مرز</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">۱۲ مهارت کلیدی دوره شروع بدون مرز</h2>
             <p className="text-center text-muted-foreground mb-10">هر مهارت با مثال واقعی و قابل اجرا در بازار جهانی</p>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {techniques.map((t, i) => (
@@ -754,7 +754,7 @@ const BoundlessCCLanding: React.FC = () => {
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">جزئیات دوره</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { i: Clock, l: "مدت", v: "۴۰+ اپیزود" },
+                { i: Clock, l: "مدت", v: "۱۰+ اپیزود" },
                 { i: Layers, l: "فاز", v: "۵ فاز عملی" },
                 { i: Users, l: "مدرس", v: "تیم متخصص" },
                 { i: InfinityIcon, l: "دسترسی", v: "مادام‌العمر" },
