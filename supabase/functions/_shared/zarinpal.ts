@@ -52,5 +52,36 @@ export async function zarinpalFetch(path: string, init: RequestInit): Promise<Re
   const base = useProxy && proxyUrl ? proxyUrl : ZARINPAL_BASE;
   const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
   console.log(`[zarinpal] ${useProxy && proxyUrl ? "PROXY" : "DIRECT"} -> ${url}`);
-  return fetch(url, init);
+  const headers = new Headers(init.headers || {});
+  headers.set("Accept", "application/json");
+  headers.set("User-Agent", "RafieiAcademy-ZarinpalProxy/1.0");
+
+  const response = await fetch(url, { ...init, headers });
+  const contentType = response.headers.get("content-type") || "";
+
+  if (!contentType.toLowerCase().includes("application/json")) {
+    const bodyPreview = await response.clone().text().catch(() => "");
+    console.error("[zarinpal] Non-JSON response", {
+      url,
+      status: response.status,
+      contentType,
+      bodyPreview: bodyPreview.slice(0, 1000),
+    });
+
+    return new Response(
+      JSON.stringify({
+        data: null,
+        errors: {
+          code: "ZARINPAL_PROXY_NON_JSON",
+          message: "Proxy returned a non-JSON response instead of Zarinpal API JSON.",
+          status: response.status,
+          content_type: contentType,
+          preview: bodyPreview.slice(0, 500),
+        },
+      }),
+      { status: 502, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  return response;
 }
