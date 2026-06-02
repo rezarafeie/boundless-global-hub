@@ -388,7 +388,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
           <Label className="text-base font-medium text-foreground text-right">روش پرداخت</Label>
           <RadioGroup
             value={selectedMethod}
-            onValueChange={(value) => onPaymentMethodChange(value as 'zarinpal' | 'manual')}
+            onValueChange={(value) => onPaymentMethodChange(value as 'zarinpal' | 'zibal' | 'manual')}
             className="space-y-3"
           >
             {zarinpalEnabled && (
@@ -404,6 +404,21 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
                   <CreditCard className="h-5 w-5 text-primary" />
                 </Label>
                 <RadioGroupItem value="zarinpal" id="zarinpal" />
+              </div>
+            )}
+            {zibalEnabled && (
+              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
+                <Label
+                  htmlFor="zibal"
+                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
+                >
+                  <div className="text-right">
+                    <div className="font-medium text-foreground text-right">پرداخت آنلاین</div>
+                    <div className="text-sm text-muted-foreground text-right">از طریق درگاه زیبال</div>
+                  </div>
+                  <CreditCard className="h-5 w-5 text-primary" />
+                </Label>
+                <RadioGroupItem value="zibal" id="zibal" />
               </div>
             )}
             {manualEnabled && (
