@@ -32,6 +32,8 @@ interface FormRow {
   confirmation_type: string;
   confirmation_message: string | null;
   redirect_url: string | null;
+  confirmation_course_id: string | null;
+  confirmation_test_id: string | null;
   created_at: string;
 }
 
