@@ -423,6 +423,7 @@ const App = () => {
                     <Route path="/request" element={<LeadRequest />} />
 
                     {/* Public Form Route */}
+                    <Route path="/f/:slug" element={<FormView />} />
                     <Route path="/form/:slug" element={<FormView />} />
 
                     {/* 404 fallback */}
