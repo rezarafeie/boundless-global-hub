@@ -1399,15 +1399,16 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
   }
   let alreadyRegistered = false;
   if (user?.phone) {
-    const variants = Array.from(new Set([
-      user.phone,
-      user.phone.replace(/^\+/, ''),
-      user.phone.startsWith('+98') ? '0' + user.phone.slice(3) : user.phone,
-      user.phone.startsWith('98') ? '+' + user.phone : user.phone,
-    ]));
-    const { data: sig } = await supabase
-      .from('webinar_signups').select('id').eq('webinar_id', w.id).in('mobile_number', variants).maybeSingle();
-    alreadyRegistered = !!sig;
+    const normPhone = normalizeIntlPhone(user.phone);
+    const { data: part } = await supabase
+      .from('webinar_participants').select('id').eq('webinar_id', w.id).eq('phone', normPhone).maybeSingle();
+    alreadyRegistered = !!part;
+    if (!alreadyRegistered) {
+      const variants = Array.from(new Set([normPhone, user.phone, user.phone.replace(/^\+/, '')]));
+      const { data: sig } = await supabase
+        .from('webinar_signups').select('id').eq('webinar_id', w.id).in('mobile_number', variants).maybeSingle();
+      alreadyRegistered = !!sig;
+    }
   }
   const lines = [
     `🎥 <b>${escapeHtml(w.title)}</b>`,
