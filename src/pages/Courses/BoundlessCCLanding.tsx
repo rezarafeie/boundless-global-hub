@@ -14,6 +14,7 @@ import {
   DollarSign, Heart, Hourglass, Ban, Globe, Timer, TrendingDown, Zap,
 } from "lucide-react";
 import EnhancedCountdownTimer from "@/components/EnhancedCountdownTimer";
+import { TetherlandService } from "@/lib/tetherlandService";
 
 const BRAND = "212 90% 45%";
 const ACCENT = "32 95% 50%";
