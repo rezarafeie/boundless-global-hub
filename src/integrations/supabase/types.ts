@@ -4335,6 +4335,178 @@ export type Database = {
           },
         ]
       }
+      telegram_form_answers: {
+        Row: {
+          created_at: string
+          field_id: string
+          file_mime: string | null
+          file_url: string | null
+          id: string
+          submission_id: string
+          value_json: Json | null
+          value_text: string | null
+        }
+        Insert: {
+          created_at?: string
+          field_id: string
+          file_mime?: string | null
+          file_url?: string | null
+          id?: string
+          submission_id: string
+          value_json?: Json | null
+          value_text?: string | null
+        }
+        Update: {
+          created_at?: string
+          field_id?: string
+          file_mime?: string | null
+          file_url?: string | null
+          id?: string
+          submission_id?: string
+          value_json?: Json | null
+          value_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_form_answers_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "telegram_form_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "telegram_form_answers_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "telegram_form_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_form_fields: {
+        Row: {
+          created_at: string
+          field_key: string
+          field_type: string
+          form_id: string
+          help_text: string | null
+          id: string
+          label: string
+          options: Json | null
+          order_index: number
+          required: boolean
+        }
+        Insert: {
+          created_at?: string
+          field_key: string
+          field_type?: string
+          form_id: string
+          help_text?: string | null
+          id?: string
+          label: string
+          options?: Json | null
+          order_index?: number
+          required?: boolean
+        }
+        Update: {
+          created_at?: string
+          field_key?: string
+          field_type?: string
+          form_id?: string
+          help_text?: string | null
+          id?: string
+          label?: string
+          options?: Json | null
+          order_index?: number
+          required?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_form_fields_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "telegram_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_form_submissions: {
+        Row: {
+          ai_response: string | null
+          chat_id: number
+          chat_user_id: number | null
+          completed_at: string | null
+          created_at: string
+          form_id: string
+          id: string
+          status: string
+        }
+        Insert: {
+          ai_response?: string | null
+          chat_id: number
+          chat_user_id?: number | null
+          completed_at?: string | null
+          created_at?: string
+          form_id: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          ai_response?: string | null
+          chat_id?: number
+          chat_user_id?: number | null
+          completed_at?: string | null
+          created_at?: string
+          form_id?: string
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_form_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "telegram_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_forms: {
+        Row: {
+          ai_prompt: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          require_login: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ai_prompt?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          require_login?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ai_prompt?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          require_login?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       telegram_notification_queue: {
         Row: {
           attempts: number
