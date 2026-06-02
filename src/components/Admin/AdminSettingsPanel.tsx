@@ -54,13 +54,15 @@ const AdminSettingsPanel: React.FC = () => {
   const [zarinpalUseProxy, setZarinpalUseProxy] = useState(false);
   const [zarinpalProxyUrl, setZarinpalProxyUrl] = useState('');
   const [savingProxyUrl, setSavingProxyUrl] = useState(false);
+  const [zarinpalEnabled, setZarinpalEnabled] = useState(true);
+  const [manualPaymentEnabled, setManualPaymentEnabled] = useState(true);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   useEffect(() => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('admin_settings')
-        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url' as any)
+        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url, zarinpal_enabled, manual_payment_enabled' as any)
         .eq('id', 1)
         .single();
       
@@ -69,11 +71,35 @@ const AdminSettingsPanel: React.FC = () => {
         setQuickEnrollEnabled((data as any).quick_enroll_enabled || false);
         setZarinpalUseProxy((data as any).zarinpal_use_proxy || false);
         setZarinpalProxyUrl((data as any).zarinpal_proxy_url || '');
+        setZarinpalEnabled((data as any).zarinpal_enabled !== false);
+        setManualPaymentEnabled((data as any).manual_payment_enabled !== false);
       }
       setLoadingSettings(false);
     };
     fetchSettings();
   }, []);
+
+  const handleTogglePaymentMethod = async (
+    method: 'zarinpal' | 'manual',
+    checked: boolean
+  ) => {
+    const column = method === 'zarinpal' ? 'zarinpal_enabled' : 'manual_payment_enabled';
+    const setter = method === 'zarinpal' ? setZarinpalEnabled : setManualPaymentEnabled;
+    setter(checked);
+    const { error } = await supabase
+      .from('admin_settings')
+      .update({ [column]: checked, updated_at: new Date().toISOString() } as any)
+      .eq('id', 1);
+    if (error) {
+      toast({ title: 'خطا', description: 'خطا در ذخیره تنظیمات', variant: 'destructive' });
+      setter(!checked);
+    } else {
+      toast({
+        title: 'ذخیره شد',
+        description: `${method === 'zarinpal' ? 'پرداخت آنلاین (زرین‌پال)' : 'کارت به کارت'} ${checked ? 'فعال' : 'غیرفعال'} شد`,
+      });
+    }
+  };
 
   const handleToggleLeadsSystem = async (checked: boolean) => {
     setUseFullLeadsSystem(checked);
@@ -208,6 +234,61 @@ const AdminSettingsPanel: React.FC = () => {
               </CardContent>
             </Card>
             <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-primary" />
+                  روش‌های پرداخت
+                </CardTitle>
+                <CardDescription>
+                  فعال یا غیرفعال‌سازی روش‌های پرداخت در صفحه ثبت‌نام. اگر هر دو غیرفعال باشند، فقط ثبت‌نام رایگان قابل انجام است.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 pt-0 space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Label htmlFor="zarinpal-enabled" className="text-base font-medium">
+                      پرداخت آنلاین (زرین‌پال)
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {zarinpalEnabled
+                        ? 'کاربران می‌توانند از طریق درگاه زرین‌پال پرداخت کنند'
+                        : 'درگاه زرین‌پال در صفحه ثبت‌نام نمایش داده نمی‌شود'}
+                    </p>
+                  </div>
+                  <Switch
+                    id="zarinpal-enabled"
+                    checked={zarinpalEnabled}
+                    onCheckedChange={(c) => handleTogglePaymentMethod('zarinpal', c)}
+                    disabled={loadingSettings}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Label htmlFor="manual-enabled" className="text-base font-medium">
+                      کارت به کارت
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {manualPaymentEnabled
+                        ? 'کاربران می‌توانند با واریز کارت به کارت و آپلود رسید ثبت‌نام کنند'
+                        : 'گزینه کارت به کارت در صفحه ثبت‌نام نمایش داده نمی‌شود'}
+                    </p>
+                  </div>
+                  <Switch
+                    id="manual-enabled"
+                    checked={manualPaymentEnabled}
+                    onCheckedChange={(c) => handleTogglePaymentMethod('manual', c)}
+                    disabled={loadingSettings}
+                  />
+                </div>
+                {!zarinpalEnabled && !manualPaymentEnabled && (
+                  <div className="p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
+                    هشدار: هر دو روش پرداخت غیرفعال هستند. فقط دوره‌های رایگان قابل ثبت‌نام خواهند بود.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+
               <CardHeader>
                 <CardTitle className="text-base">پروکسی زرین‌پال</CardTitle>
                 <CardDescription>

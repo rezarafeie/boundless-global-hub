@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -65,6 +65,36 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   const [showWaitingModal, setShowWaitingModal] = useState(false);
   const [enrollmentId, setEnrollmentId] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [zarinpalEnabled, setZarinpalEnabled] = useState(true);
+  const [manualEnabled, setManualEnabled] = useState(true);
+  const [methodsLoaded, setMethodsLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('admin_settings')
+        .select('zarinpal_enabled, manual_payment_enabled' as any)
+        .eq('id', 1)
+        .single();
+      if (cancelled) return;
+      const z = (data as any)?.zarinpal_enabled !== false;
+      const m = (data as any)?.manual_payment_enabled !== false;
+      setZarinpalEnabled(z);
+      setManualEnabled(m);
+      setMethodsLoaded(true);
+      // Auto-switch if currently selected method is disabled
+      if (selectedMethod === 'zarinpal' && !z && m) {
+        onPaymentMethodChange('manual');
+      } else if (selectedMethod === 'manual' && !m && z) {
+        onPaymentMethodChange('zarinpal');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const validateForm = () => {
     const errors: string[] = [];
@@ -341,41 +371,52 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   return (
     <div className="space-y-6" dir="rtl">
       {/* Payment Method Selection */}
-      <div className="space-y-4">
-        <Label className="text-base font-medium text-foreground text-right">روش پرداخت</Label>
-        <RadioGroup
-          value={selectedMethod}
-          onValueChange={(value) => onPaymentMethodChange(value as 'zarinpal' | 'manual')}
-          className="space-y-3"
-        >
-          <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
-            <Label 
-              htmlFor="zarinpal" 
-              className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
-            >
-              <div className="text-right">
-                <div className="font-medium text-foreground text-right">پرداخت آنلاین</div>
-                <div className="text-sm text-muted-foreground text-right">از طریق درگاه زرین‌پال</div>
+      {methodsLoaded && !zarinpalEnabled && !manualEnabled ? (
+        <div className="p-4 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive text-right">
+          در حال حاضر هیچ روش پرداختی فعال نیست. لطفاً بعداً مراجعه کنید.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <Label className="text-base font-medium text-foreground text-right">روش پرداخت</Label>
+          <RadioGroup
+            value={selectedMethod}
+            onValueChange={(value) => onPaymentMethodChange(value as 'zarinpal' | 'manual')}
+            className="space-y-3"
+          >
+            {zarinpalEnabled && (
+              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
+                <Label
+                  htmlFor="zarinpal"
+                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
+                >
+                  <div className="text-right">
+                    <div className="font-medium text-foreground text-right">پرداخت آنلاین</div>
+                    <div className="text-sm text-muted-foreground text-right">از طریق درگاه زرین‌پال</div>
+                  </div>
+                  <CreditCard className="h-5 w-5 text-primary" />
+                </Label>
+                <RadioGroupItem value="zarinpal" id="zarinpal" />
               </div>
-              <CreditCard className="h-5 w-5 text-primary" />
-            </Label>
-            <RadioGroupItem value="zarinpal" id="zarinpal" />
-          </div>
-          <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
-            <Label 
-              htmlFor="manual" 
-              className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
-            >
-              <div className="text-right">
-                <div className="font-medium text-foreground text-right">کارت به کارت</div>
-                <div className="text-sm text-muted-foreground text-right">واریز به حساب و آپلود رسید</div>
+            )}
+            {manualEnabled && (
+              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
+                <Label
+                  htmlFor="manual"
+                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
+                >
+                  <div className="text-right">
+                    <div className="font-medium text-foreground text-right">کارت به کارت</div>
+                    <div className="text-sm text-muted-foreground text-right">واریز به حساب و آپلود رسید</div>
+                  </div>
+                  <FileText className="h-5 w-5 text-primary" />
+                </Label>
+                <RadioGroupItem value="manual" id="manual" />
               </div>
-              <FileText className="h-5 w-5 text-primary" />
-            </Label>
-            <RadioGroupItem value="manual" id="manual" />
-          </div>
-        </RadioGroup>
-      </div>
+            )}
+          </RadioGroup>
+        </div>
+      )}
+
 
       {/* Manual Payment Section */}
       {selectedMethod === 'manual' && (
