@@ -450,6 +450,53 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
         </div>
       </motion.section>
 
+      {/* Video Testimonials */}
+      <motion.section
+        className="py-16 bg-background"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={containerVariants}
+      >
+        <div className="container max-w-7xl mx-auto px-6">
+          <motion.div className="text-center mb-12" variants={itemVariants}>
+            <h2 className="text-3xl md:text-4xl font-black text-foreground mb-6">
+              🎤 تجربه‌های واقعی دانشجویان
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              صدها دانشجو مسیر بدون مرز را طی کرده‌اند. نظرات و تجربه‌هایشان را از زبان خودشان بشنوید.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              "vqts522",
+              "soudgij",
+              "doo2nh1",
+              "dfx47wa",
+              "uxz9y4e",
+              "hwd436a",
+              "axz3j27",
+              "czvw4g5",
+              "bhb47wq",
+              "eytmo57",
+              "qfr8eqb",
+              "shwn4qf",
+              "jjup796",
+              "qyui8z2",
+            ].map((hash, index) => (
+              <motion.div key={hash} variants={itemVariants}>
+                <Card className="overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-colors shadow-lg">
+                  <CardContent className="p-0">
+                    <AparatPlayer videoHash={hash} />
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
       {/* Course Features */}
       <motion.section 
         className="py-16 bg-background" 
