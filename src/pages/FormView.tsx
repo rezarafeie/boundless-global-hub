@@ -13,7 +13,9 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Loader2, CheckCircle2, LogIn, ArrowLeft, ArrowRight, Sparkles, Upload, Mic, Image as ImageIcon,
   FileText, Phone as PhoneIcon, Mail, Hash, Type, AlignLeft, List, Info, MessageSquare,
+  BookOpen, ClipboardCheck, ExternalLink,
 } from 'lucide-react';
+import { MarkdownLite } from '@/lib/markdownLite';
 
 type FieldType =
   | 'text' | 'long_text' | 'phone' | 'email' | 'number'
