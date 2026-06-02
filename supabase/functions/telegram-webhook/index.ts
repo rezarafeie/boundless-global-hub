@@ -1661,6 +1661,16 @@ async function handleUpdate(update: any) {
     // Handle login + form + webinar callbacks before user-resolution
     if (data === 'login:start') { await startLogin(chat_id); return; }
     if (data === 'form:cancel') { await cancelForm(chat_id, message_id); return; }
+    if (data === 'ai:start') {
+      const u = await resolveUser(chat_id);
+      await startAiChat(chat_id, message_id, u);
+      return;
+    }
+    if (data === 'ai:end') {
+      const u = await resolveUser(chat_id);
+      await endAiChat(chat_id, message_id, u);
+      return;
+    }
 
     const userEarly = await resolveUser(chat_id);
     if (data.startsWith('webinar:view:')) {
