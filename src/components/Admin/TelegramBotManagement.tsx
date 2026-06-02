@@ -38,6 +38,7 @@ export const TelegramBotManagement = () => {
     telegram_notify_lead_assigned: true,
     telegram_notify_consultation: true,
     telegram_notify_daily_summary: true,
+    telegram_ai_assistant_enabled: false,
   });
 
   const fetchUsers = async () => {

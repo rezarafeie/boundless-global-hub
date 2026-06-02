@@ -1,0 +1,1 @@
+ALTER TABLE public.admin_settings ADD COLUMN IF NOT EXISTS telegram_ai_assistant_enabled boolean NOT NULL DEFAULT false;
