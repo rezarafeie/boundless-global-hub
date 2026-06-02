@@ -808,7 +808,7 @@ async function handleOtpInput(chat_id: number, text: string) {
   await clearSession(chat_id);
   const user = await resolveUser(chat_id);
   if (user) {
-    await sendMessage(chat_id, `✅ <b>ورود موفق!</b>\n\n${welcomeText(user)}`, { keyboard: mainMenu(user.role) });
+    await sendMessage(chat_id, `✅ <b>ورود موفق!</b>\n\n${welcomeText(user)}`, { keyboard: await mainMenu(user) });
   }
 }
 
@@ -1040,7 +1040,7 @@ async function startAiChat(chat_id: number, message_id: number | null, user: Bot
 
 async function endAiChat(chat_id: number, message_id: number, user: BotUser | null) {
   await clearSession(chat_id);
-  const homeKbd = await buildStartKeyboard(!!user, user?.role ?? null);
+  const homeKbd = await buildStartKeyboard(user);
   await editMessage(chat_id, message_id, '✅ گفت‌وگو پایان یافت.', homeKbd);
 }
 
@@ -1630,7 +1630,7 @@ async function cancelForm(chat_id: number, message_id: number) {
   }
   await clearSession(chat_id);
   const user = await resolveUser(chat_id);
-  const kbd = await buildStartKeyboard(!!user, user?.role ?? null);
+  const kbd = await buildStartKeyboard(user);
   await editMessage(chat_id, message_id, '❌ فرم لغو شد.', kbd);
 }
 
@@ -1773,7 +1773,7 @@ async function handleUpdate(update: any) {
         const sub = rest[0];
         if (sub === 'home') {
           await clearSession(chat_id);
-          const homeKbd = await buildStartKeyboard(true, user.role);
+          const homeKbd = await buildStartKeyboard(user);
           await editMessage(chat_id, message_id, welcomeText(user), homeKbd);
         } else if (sub === 'my_leads') {
           await renderLeadsList(chat_id, message_id, user, 'my', 0);
@@ -1955,7 +1955,7 @@ async function handleUpdate(update: any) {
     const session = await getSession(chat_id);
     if (text === '/cancel' || text === '/start') {
       await clearSession(chat_id);
-      const kbd = await buildStartKeyboard(false, null);
+      const kbd = await buildStartKeyboard(null);
       await sendMessage(chat_id, [
         `👋 <b>به ربات آکادمی رفیعی خوش آمدید</b>`, ``,
         `از فرم‌های زیر استفاده کنید یا با شماره موبایل وارد شوید.`, ``,
@@ -1967,20 +1967,20 @@ async function handleUpdate(update: any) {
     if (session?.state === 'awaiting_otp' && text) { await handleOtpInput(chat_id, text); return; }
     if (session?.state === 'awaiting_form_field') { await handleFormMessage(chat_id, null, msg, session); return; }
     if (session?.state === 'ai_chat') { await handleAiChat(chat_id, null, msg, session); return; }
-    const kbd = await buildStartKeyboard(false, null);
+    const kbd = await buildStartKeyboard(null);
     await sendMessage(chat_id, 'برای ورود /start را بزنید.', { keyboard: kbd });
     return;
   }
 
   if (text === '/start') {
     await clearSession(chat_id);
-    const kbd = await buildStartKeyboard(true, user.role);
+    const kbd = await buildStartKeyboard(user);
     await sendMessage(chat_id, welcomeText(user), { keyboard: kbd });
     return;
   }
 
   if (text === '/cancel') {
-    await sendMessage(chat_id, '✅ لغو شد.', { keyboard: mainMenu(user.role) });
+    await sendMessage(chat_id, '✅ لغو شد.', { keyboard: await mainMenu(user) });
     return;
   }
   if (text === '/help') {
@@ -2035,7 +2035,7 @@ async function handleUpdate(update: any) {
     await clearSession(chat_id);
     if (error) await sendMessage(chat_id, `❌ خطا: ${error.message}`);
     else await sendMessage(chat_id, `✅ <b>${escapeHtml(u.name)}</b> به Chat ID <code>${linkChatId}</code> لینک شد.`,
-      { keyboard: mainMenu(user.role) });
+      { keyboard: await mainMenu(user) });
     return;
   }
 
@@ -2051,7 +2051,7 @@ async function handleUpdate(update: any) {
     }
     await clearSession(chat_id);
     await sendMessage(chat_id, `✅ ارسال شد. موفق: <b>${ok}</b> — ناموفق: <b>${fail}</b>`,
-      { keyboard: mainMenu(user.role) });
+      { keyboard: await mainMenu(user) });
     return;
   }
 
