@@ -624,18 +624,35 @@ export default function InvoiceView() {
               <CardTitle className="text-lg">پرداخت فاکتور</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button 
-                className="w-full h-14 text-lg" 
-                onClick={handleZarinpalPayment}
-                disabled={paymentLoading}
-              >
-                {paymentLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin ml-2" />
-                ) : (
-                  <CreditCard className="h-5 w-5 ml-2" />
-                )}
-                پرداخت آنلاین (زرین‌پال)
-              </Button>
+              {zarinpalEnabled && (
+                <Button 
+                  className="w-full h-14 text-lg" 
+                  onClick={handleZarinpalPayment}
+                  disabled={paymentLoading}
+                >
+                  {paymentLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin ml-2" />
+                  ) : (
+                    <CreditCard className="h-5 w-5 ml-2" />
+                  )}
+                  پرداخت آنلاین (زرین‌پال)
+                </Button>
+              )}
+              {zibalEnabled && (
+                <Button 
+                  className="w-full h-14 text-lg"
+                  variant={zarinpalEnabled ? 'outline' : 'default'}
+                  onClick={handleZibalPayment}
+                  disabled={paymentLoading}
+                >
+                  {paymentLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin ml-2" />
+                  ) : (
+                    <CreditCard className="h-5 w-5 ml-2" />
+                  )}
+                  پرداخت آنلاین (زیبال)
+                </Button>
+              )}
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
