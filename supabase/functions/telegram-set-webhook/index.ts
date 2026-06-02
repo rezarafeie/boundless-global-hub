@@ -11,11 +11,20 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   const BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
-  const SECRET = Deno.env.get('TELEGRAM_WEBHOOK_SECRET') ?? '';
+  const RAW_SECRET = Deno.env.get('TELEGRAM_WEBHOOK_SECRET') ?? '';
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
   if (!BOT_TOKEN) {
     return new Response(JSON.stringify({ error: 'TELEGRAM_BOT_TOKEN not configured' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
+
+  // Telegram only allows [A-Za-z0-9_-], 1-256 chars. Sanitize the secret.
+  let SECRET = RAW_SECRET.replace(/[^A-Za-z0-9_-]/g, '');
+  if (SECRET.length < 1) {
+    // Derive a safe deterministic secret from the bot token if none configured
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('webhook:' + BOT_TOKEN));
+    SECRET = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 64);
+  }
+  if (SECRET.length > 256) SECRET = SECRET.slice(0, 256);
 
   const webhookUrl = `${SUPABASE_URL}/functions/v1/telegram-webhook`;
 
