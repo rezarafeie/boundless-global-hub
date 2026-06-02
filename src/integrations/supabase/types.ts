@@ -215,6 +215,7 @@ export type Database = {
           zarinpal_enabled: boolean
           zarinpal_proxy_url: string | null
           zarinpal_use_proxy: boolean
+          zibal_enabled: boolean
         }
         Insert: {
           id?: number
@@ -230,6 +231,7 @@ export type Database = {
           zarinpal_enabled?: boolean
           zarinpal_proxy_url?: string | null
           zarinpal_use_proxy?: boolean
+          zibal_enabled?: boolean
         }
         Update: {
           id?: number
@@ -245,6 +247,7 @@ export type Database = {
           zarinpal_enabled?: boolean
           zarinpal_proxy_url?: string | null
           zarinpal_use_proxy?: boolean
+          zibal_enabled?: boolean
         }
         Relationships: []
       }
