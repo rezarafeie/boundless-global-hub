@@ -1256,7 +1256,69 @@ async function cancelForm(chat_id: number, message_id: number) {
   await editMessage(chat_id, message_id, '❌ فرم لغو شد.', kbd);
 }
 
+async function handleFormMessage(chat_id: number, user_id: number | null, msg: any, session: any) {
+  const { submission_id, form_id, field_index } = session.context;
+  const fields = await getFormFields(form_id);
+  const field = fields[field_index];
+  if (!field) { await clearSession(chat_id); return; }
+
+  const text: string = msg.text ?? '';
+  if (text === '/cancel') {
+    await supabase.from('telegram_form_submissions').update({ status: 'cancelled' }).eq('id', submission_id);
+    await clearSession(chat_id);
+    await sendMessage(chat_id, '❌ فرم لغو شد.');
+    return;
+  }
+  if (text === '/skip') {
+    if (field.required) { await sendMessage(chat_id, '⚠️ این فیلد الزامی است و قابل رد کردن نیست.'); return; }
+    await saveAnswerAndAdvance(chat_id, user_id, submission_id, form_id, field, field_index, { value_text: null });
+    return;
+  }
+
+  // Photo
+  if (field.field_type === 'image') {
+    const photos = msg.photo;
+    if (!photos?.length) { await sendMessage(chat_id, '⚠️ لطفاً یک عکس ارسال کنید.'); return; }
+    const best = photos[photos.length - 1];
+    const up = await uploadTelegramFile(submission_id, field.id, best.file_id, 'messenger-files', 'jpg');
+    if (!up) { await sendMessage(chat_id, '❌ خطا در آپلود عکس.'); return; }
+    await sendMessage(chat_id, '✅ عکس دریافت شد.');
+    await saveAnswerAndAdvance(chat_id, user_id, submission_id, form_id, field, field_index, { file_url: up.url, file_mime: up.mime });
+    return;
+  }
+  if (field.field_type === 'voice') {
+    const voice = msg.voice ?? msg.audio;
+    if (!voice?.file_id) { await sendMessage(chat_id, '⚠️ لطفاً یک پیام صوتی ارسال کنید.'); return; }
+    const up = await uploadTelegramFile(submission_id, field.id, voice.file_id, 'voice-messages', 'ogg');
+    if (!up) { await sendMessage(chat_id, '❌ خطا در آپلود صدا.'); return; }
+    await sendMessage(chat_id, '✅ پیام صوتی دریافت شد.');
+    await saveAnswerAndAdvance(chat_id, user_id, submission_id, form_id, field, field_index, { file_url: up.url, file_mime: up.mime });
+    return;
+  }
+  if (field.field_type === 'file') {
+    const doc = msg.document;
+    if (!doc?.file_id) { await sendMessage(chat_id, '⚠️ لطفاً یک فایل ارسال کنید.'); return; }
+    const ext = (doc.file_name?.split('.').pop() ?? 'bin').toLowerCase();
+    const up = await uploadTelegramFile(submission_id, field.id, doc.file_id, 'messenger-files', ext);
+    if (!up) { await sendMessage(chat_id, '❌ خطا در آپلود فایل.'); return; }
+    await sendMessage(chat_id, '✅ فایل دریافت شد.');
+    await saveAnswerAndAdvance(chat_id, user_id, submission_id, form_id, field, field_index, { file_url: up.url, file_mime: up.mime });
+    return;
+  }
+  if (field.field_type === 'dropdown') {
+    await sendMessage(chat_id, '👇 لطفاً از دکمه‌های گزینه‌ها انتخاب کنید.');
+    return;
+  }
+
+  // text-based
+  if (!text) { await sendMessage(chat_id, '⚠️ لطفاً یک پاسخ متنی ارسال کنید.'); return; }
+  const v = validateFieldValue(field, text);
+  if (!v.ok) { await sendMessage(chat_id, `⚠️ ${v.error}`); return; }
+  await saveAnswerAndAdvance(chat_id, user_id, submission_id, form_id, field, field_index, { value_text: v.value });
+}
+
 // ============ Update routing ============
+
 
 async function handleUpdate(update: any) {
   if (update.callback_query) {
