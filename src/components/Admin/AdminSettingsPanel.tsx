@@ -24,10 +24,11 @@ import {
   Upload,
   Info,
   CreditCard,
-  ShoppingCart
+  ShoppingCart,
+  MessageCircle
 } from 'lucide-react';
 
-type SettingsTab = 'system' | 'webhooks' | 'short-links' | 'discounts' | 'emails' | 'blackfriday' | 'import' | 'info';
+type SettingsTab = 'system' | 'webhooks' | 'short-links' | 'discounts' | 'emails' | 'blackfriday' | 'import' | 'telegram' | 'info';
 
 interface NavItem {
   id: SettingsTab;
@@ -43,6 +44,7 @@ const navItems: NavItem[] = [
   { id: 'emails', label: 'ایمیل‌ها', icon: Mail },
   { id: 'blackfriday', label: 'بلک فرایدی', icon: Tag },
   { id: 'import', label: 'ورود داده', icon: Upload },
+  { id: 'telegram', label: 'تلگرام', icon: MessageCircle },
   { id: 'info', label: 'اطلاعات سیستم', icon: Info },
 ];
 
@@ -338,7 +340,6 @@ const AdminSettingsPanel: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-            <TelegramBotManagement />
           </div>
         );
       case 'webhooks':
@@ -407,6 +408,20 @@ const AdminSettingsPanel: React.FC = () => {
             <Card>
               <CardContent className="p-6">
                 <BlackFridaySettings />
+              </CardContent>
+            </Card>
+          </div>
+        );
+      case 'telegram':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold">تلگرام</h2>
+              <p className="text-muted-foreground mt-1">مدیریت ربات تلگرام</p>
+            </div>
+            <Card>
+              <CardContent className="p-6">
+                <TelegramBotManagement />
               </CardContent>
             </Card>
           </div>
