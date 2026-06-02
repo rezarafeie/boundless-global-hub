@@ -45,6 +45,7 @@ export const useWebinarRealtime = (webinarId: string | undefined) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [reactionCounts, setReactionCounts] = useState<Record<string, number>>({});
   const [participantCount, setParticipantCount] = useState(0);
+  const interactionIdsRef = useRef<string[]>([]);
 
   const fetchInteractions = useCallback(async () => {
     if (!webinarId) return;
