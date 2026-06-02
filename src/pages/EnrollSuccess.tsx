@@ -667,6 +667,10 @@ const EnrollSuccess: React.FC = () => {
   const authority = searchParams.get('Authority') || searchParams.get('authority');
   const status = searchParams.get('Status') || searchParams.get('status');
   const enrollmentId = searchParams.get('enrollment');
+  // Zibal returns trackId, success, status, orderId as query params
+  const zibalTrackId = searchParams.get('trackId');
+  const gateway = searchParams.get('gateway');
+  const isZibal = gateway === 'zibal' || !!zibalTrackId;
 
   const [verifying, setVerifying] = useState(true);
   const [result, setResult] = useState<VerificationResult | null>(null);
