@@ -279,6 +279,24 @@ const AdminSettingsPanel: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-1">
+                    <Label htmlFor="zibal-enabled" className="text-base font-medium">
+                      پرداخت آنلاین (زیبال)
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {zibalEnabled
+                        ? 'کاربران می‌توانند از طریق درگاه زیبال پرداخت کنند'
+                        : 'درگاه زیبال در صفحه ثبت‌نام نمایش داده نمی‌شود'}
+                    </p>
+                  </div>
+                  <Switch
+                    id="zibal-enabled"
+                    checked={zibalEnabled}
+                    onCheckedChange={(c) => handleTogglePaymentMethod('zibal', c)}
+                    disabled={loadingSettings}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
                     <Label htmlFor="manual-enabled" className="text-base font-medium">
                       کارت به کارت
                     </Label>
@@ -295,9 +313,9 @@ const AdminSettingsPanel: React.FC = () => {
                     disabled={loadingSettings}
                   />
                 </div>
-                {!zarinpalEnabled && !manualPaymentEnabled && (
+                {!zarinpalEnabled && !zibalEnabled && !manualPaymentEnabled && (
                   <div className="p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
-                    هشدار: هر دو روش پرداخت غیرفعال هستند. فقط دوره‌های رایگان قابل ثبت‌نام خواهند بود.
+                    هشدار: همه روش‌های پرداخت غیرفعال هستند. فقط دوره‌های رایگان قابل ثبت‌نام خواهند بود.
                   </div>
                 )}
               </CardContent>
