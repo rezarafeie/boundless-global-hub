@@ -1918,6 +1918,7 @@ async function handleUpdate(update: any) {
     if (session?.state === 'awaiting_phone' && text) { await handlePhoneInput(chat_id, text); return; }
     if (session?.state === 'awaiting_otp' && text) { await handleOtpInput(chat_id, text); return; }
     if (session?.state === 'awaiting_form_field') { await handleFormMessage(chat_id, null, msg, session); return; }
+    if (session?.state === 'ai_chat') { await handleAiChat(chat_id, null, msg, session); return; }
     const kbd = await buildStartKeyboard(false, null);
     await sendMessage(chat_id, 'برای ورود /start را بزنید.', { keyboard: kbd });
     return;
