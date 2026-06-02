@@ -784,8 +784,14 @@ const EnrollSuccess: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log('EnrollSuccess params:', { authority, enrollmentId, status, courseSlug, testSlug, email, phone });
+    console.log('EnrollSuccess params:', { authority, enrollmentId, status, courseSlug, testSlug, email, phone, zibalTrackId, gateway });
     
+    // Zibal callback (has trackId or gateway=zibal)
+    if (isZibal && zibalTrackId && enrollmentId) {
+      verifyZibalPayment();
+      return;
+    }
+
     if (authority && enrollmentId) {
       // Check if this is a free course
       if (authority === 'FREE_COURSE') {
@@ -807,7 +813,46 @@ const EnrollSuccess: React.FC = () => {
         error: 'پارامترهای پرداخت نامعتبر هستند'
       });
     }
-  }, [authority, enrollmentId, status]);
+  }, [authority, enrollmentId, status, zibalTrackId]);
+
+  const verifyZibalPayment = async () => {
+    try {
+      setVerifying(true);
+      const isTestEnrollment = searchParams.get('test') !== null;
+      const response = await supabase.functions.invoke('zibal-verify', {
+        body: {
+          trackId: zibalTrackId,
+          enrollmentId,
+          enrollmentType: isTestEnrollment ? 'test' : 'course'
+        }
+      });
+      if (response.error) throw response.error;
+      const { data } = response;
+      setResult(data);
+      if (data.success) {
+        toast({
+          title: 'پرداخت موفق',
+          description: `ثبت‌نام شما با موفقیت انجام شد. کد رهگیری: ${data.refId}`,
+        });
+      } else {
+        toast({
+          title: 'خطا در تایید پرداخت',
+          description: data.error || 'پرداخت تایید نشد',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Zibal verification error:', error);
+      setResult({ success: false, error: 'خطا در تایید پرداخت' });
+      toast({
+        title: 'خطا',
+        description: 'خطا در تایید پرداخت. لطفا با پشتیبانی تماس بگیرید.',
+        variant: 'destructive',
+      });
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const handleFreeCourseSuccess = async () => {
     try {
