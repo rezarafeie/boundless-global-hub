@@ -58,7 +58,7 @@ async function getSession(chat_id: number) {
   return data;
 }
 
-async function setSession(chat_id: number, user_id: number, state: string | null, context: any = {}) {
+async function setSession(chat_id: number, user_id: number | null, state: string | null, context: any = {}) {
   const expires_at = new Date(Date.now() + 30 * 60 * 1000).toISOString();
   await supabase.from('telegram_bot_sessions').upsert({
     chat_id, user_id, state, context, expires_at, updated_at: new Date().toISOString(),
