@@ -28,7 +28,7 @@ import {
   MessageCircle
 } from 'lucide-react';
 
-type SettingsTab = 'system' | 'webhooks' | 'short-links' | 'discounts' | 'emails' | 'blackfriday' | 'import' | 'info';
+type SettingsTab = 'system' | 'webhooks' | 'short-links' | 'discounts' | 'emails' | 'blackfriday' | 'import' | 'telegram' | 'info';
 
 interface NavItem {
   id: SettingsTab;
