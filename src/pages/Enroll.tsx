@@ -525,7 +525,8 @@ const Enroll: React.FC = () => {
           console.log('💰 Using base price for payment:', basePrice);
         }
           
-        const response = await supabase.functions.invoke('zarinpal-request', {
+        const fnName = paymentMethod === 'zibal' ? 'zibal-request' : 'zarinpal-request';
+        const response = await supabase.functions.invoke(fnName, {
           body: {
             courseSlug: course.slug,
             firstName: formData.firstName,
@@ -542,7 +543,7 @@ const Enroll: React.FC = () => {
         const { data } = response;
         
         if (data.success) {
-          // Redirect to Zarinpal payment
+          // Redirect to payment gateway
           window.location.href = data.paymentUrl;
         } else {
           throw new Error(data.error || 'خطا در ایجاد درخواست پرداخت');
