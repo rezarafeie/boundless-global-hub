@@ -161,6 +161,24 @@ const BoundlessLanding = () => {
     { title: "ده‌ها ابزار و فایل کاربردی برای شروع بیزینس آنلاین", icon: Gift }
   ];
 
+  const weeklyGifts = [
+    {
+      title: "اشتراک یک‌ماهه Rafiei Store",
+      desc: "سیستم چندزبانه ساخت فروشگاه با هوش مصنوعی برای محصولات برنده (فارسی و انگلیسی) با پشتیبانی Stripe و زرین‌پال، محصولات فیزیکی و دیجیتال — ارزش ۵ دلار",
+      icon: Globe,
+    },
+    {
+      title: "دوره «شروع ایران» (۲۰۰ دقیقه)",
+      desc: "آموزش راه‌اندازی کسب‌وکار آنلاین در ایران با پلتفرم‌های بومی (باله، ترب، لندین و…)؛ کمپین فروش، تبلیغات، بازاریابی پیامکی، ساخت فروشگاه و فروش خدمات",
+      icon: GraduationCap,
+    },
+    {
+      title: "اشتراک یک‌ماهه ۱ گیگابایت Boundless Network",
+      desc: "دسترسی پرسرعت و ایمن به شبکه بدون مرز برای کار با ابزارهای جهانی",
+      icon: Zap,
+    },
+  ];
+
   const features = [
     { title: "تدریس توسط رضا رفیعی با زبان ساده و تجربه عملی", icon: User },
     { title: "همراه با تست شخصیت و تمرین‌های واقعی", icon: TestTube },
@@ -503,6 +521,53 @@ const BoundlessLanding = () => {
                           </div>
                           <span className="text-base font-medium text-foreground leading-relaxed">{gift.title}</span>
                         </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* This Week Surprise Gifts */}
+        <section className="py-20 bg-gradient-to-br from-amber-50 via-orange-50 to-pink-50 dark:from-amber-950/20 dark:via-orange-950/20 dark:to-pink-950/20">
+          <div className="container max-w-5xl mx-auto px-4">
+            <div className="text-center mb-10">
+              <Badge className="mb-4 bg-gradient-to-r from-amber-500 to-pink-500 text-white border-0 px-4 py-1.5 text-sm">
+                <Gift className="ml-1 h-4 w-4 inline" /> هدایای سورپرایز این هفته
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-extrabold mb-3">
+                ثبت‌نام این هفته = ۳ هدیه ویژه
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                فقط برای دانشجویانی که این هفته در دوره بدون مرز ثبت‌نام می‌کنند
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {weeklyGifts.map((g, index) => {
+                const IconComponent = g.icon;
+                return (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                  >
+                    <Card className="h-full border-2 border-amber-200 dark:border-amber-800 shadow-lg hover:shadow-2xl transition-all bg-white dark:bg-gray-900 relative overflow-hidden group">
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500" />
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-pink-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <IconComponent size={24} className="text-white" />
+                          </div>
+                          <Badge variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300">
+                            هدیه {index + 1}
+                          </Badge>
+                        </div>
+                        <h3 className="font-bold text-lg mb-2 leading-snug">{g.title}</h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{g.desc}</p>
                       </CardContent>
                     </Card>
                   </motion.div>
