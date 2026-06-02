@@ -83,7 +83,8 @@ async function clearSession(chat_id: number) {
 }
 
 // ============ Menus ============
-function mainMenu(role: Role): InlineKeyboard {
+async function mainMenu(user: BotUser | null): Promise<InlineKeyboard> {
+  const role = user?.role ?? null;
   if (role === 'admin') {
     return [
       [{ text: '📋 لیدهای من', callback_data: 'menu:my_leads' }],
@@ -107,13 +108,29 @@ function mainMenu(role: Role): InlineKeyboard {
       [{ text: '📊 عملکرد امروز', callback_data: 'menu:reports' }],
     ];
   }
-  // Default: student
-  return [
-    [{ text: '🎓 دوره‌های من', callback_data: 'student:my_courses' }],
-    [{ text: '🧪 آزمون‌های من', callback_data: 'student:my_tests' }],
-    [{ text: '🛒 ثبت‌نام در دوره جدید', callback_data: 'student:browse:0' }],
-    [{ text: '👤 پروفایل', callback_data: 'student:profile' }],
-  ];
+  // Default: student — hide my_courses / my_tests when empty
+  const rows: InlineKeyboard = [];
+  let courseCount = 0, testCount = 0;
+  if (user?.id) {
+    const { data: u } = await supabase.from('chat_users').select('phone').eq('id', user.id).maybeSingle();
+    const phone = u?.phone ?? user.phone ?? null;
+    if (phone) {
+      const variants = [phone, `0${phone}`, phone.replace(/^0/, '')];
+      const [{ count: cc }, { count: tc }] = await Promise.all([
+        supabase.from('enrollments').select('id', { count: 'exact', head: true })
+          .in('phone', variants).in('payment_status', ['success', 'completed']),
+        supabase.from('test_enrollments').select('id', { count: 'exact', head: true })
+          .in('phone', variants),
+      ]);
+      courseCount = cc ?? 0;
+      testCount = tc ?? 0;
+    }
+  }
+  if (courseCount > 0) rows.push([{ text: '🎓 دوره‌های من', callback_data: 'student:my_courses' }]);
+  if (testCount > 0) rows.push([{ text: '🧪 آزمون‌های من', callback_data: 'student:my_tests' }]);
+  rows.push([{ text: '🛒 ثبت‌نام در دوره جدید', callback_data: 'student:browse:0' }]);
+  rows.push([{ text: '👤 پروفایل', callback_data: 'student:profile' }]);
+  return rows;
 }
 
 function loginMenu(): InlineKeyboard {
@@ -724,24 +741,29 @@ async function findChatUserByPhone(local: string) {
   return data?.[0] ?? null;
 }
 
-async function startLogin(chat_id: number) {
+async function startLogin(chat_id: number, message_id?: number) {
   await setSession(chat_id, null, 'awaiting_phone', {});
-  await sendMessage(chat_id, [
+  const txt = [
     `🔐 <b>ورود به حساب</b>`, ``,
     `لطفاً شماره موبایل خود را ارسال کنید (مثال: <code>09120000000</code>)`, ``,
     `/cancel برای انصراف`,
-  ].join('\n'));
+  ].join('\n');
+  const kbd: InlineKeyboard = [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]];
+  if (message_id) await editMessage(chat_id, message_id, txt, kbd);
+  else await sendMessage(chat_id, txt, { keyboard: kbd });
 }
+
+const BACK_HOME_KBD: InlineKeyboard = [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]];
 
 async function handlePhoneInput(chat_id: number, text: string) {
   const norm = normalizePhoneIR(text);
   if (!norm) {
-    await sendMessage(chat_id, '❌ شماره معتبر نیست. لطفاً به فرمت <code>09120000000</code> ارسال کنید.');
+    await sendMessage(chat_id, '❌ شماره معتبر نیست. لطفاً به فرمت <code>09120000000</code> ارسال کنید.', { keyboard: BACK_HOME_KBD });
     return;
   }
   const user = await findChatUserByPhone(norm.local);
   if (!user) {
-    await sendMessage(chat_id, '❌ کاربری با این شماره در سایت یافت نشد. ابتدا در سایت ثبت‌نام کنید.');
+    await sendMessage(chat_id, '❌ کاربری با این شماره در سایت یافت نشد. ابتدا در سایت ثبت‌نام کنید.', { keyboard: BACK_HOME_KBD });
     return;
   }
   // Call send-otp
@@ -753,22 +775,22 @@ async function handlePhoneInput(chat_id: number, text: string) {
     });
     const json = await res.json();
     if (!res.ok) {
-      await sendMessage(chat_id, `❌ ارسال کد ناموفق: ${escapeHtml(json?.error ?? 'خطا')}`);
+      await sendMessage(chat_id, `❌ ارسال کد ناموفق: ${escapeHtml(json?.error ?? 'خطا')}`, { keyboard: BACK_HOME_KBD });
       return;
     }
   } catch (e: any) {
-    await sendMessage(chat_id, `❌ خطا در ارسال پیامک: ${escapeHtml(e?.message)}`);
+    await sendMessage(chat_id, `❌ خطا در ارسال پیامک: ${escapeHtml(e?.message)}`, { keyboard: BACK_HOME_KBD });
     return;
   }
   await setSession(chat_id, user.id, 'awaiting_otp', { phone_local: norm.local, phone_formatted: norm.formatted, chat_user_id: user.id });
-  await sendMessage(chat_id, `📨 کد ۴ رقمی برای <b>${escapeHtml(user.name)}</b> ارسال شد.\n\nلطفاً کد را ارسال کنید:`);
+  await sendMessage(chat_id, `📨 کد ۴ رقمی برای <b>${escapeHtml(user.name)}</b> ارسال شد.\n\nلطفاً کد را ارسال کنید:`, { keyboard: BACK_HOME_KBD });
 }
 
 async function handleOtpInput(chat_id: number, text: string) {
   const session = await getSession(chat_id);
-  if (!session?.context?.phone_local) { await sendMessage(chat_id, '❌ جلسه منقضی شده. /start را بزنید.'); return; }
+  if (!session?.context?.phone_local) { await sendMessage(chat_id, '❌ جلسه منقضی شده. /start را بزنید.', { keyboard: BACK_HOME_KBD }); return; }
   const code = text.trim().replace(/\D/g, '');
-  if (!/^\d{4}$/.test(code)) { await sendMessage(chat_id, '❌ کد باید ۴ رقم باشد.'); return; }
+  if (!/^\d{4}$/.test(code)) { await sendMessage(chat_id, '❌ کد باید ۴ رقم باشد.', { keyboard: BACK_HOME_KBD }); return; }
 
   const res = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/verify-otp`, {
     method: 'POST',
@@ -777,7 +799,7 @@ async function handleOtpInput(chat_id: number, text: string) {
   });
   const json = await res.json();
   if (!res.ok || !json.success) {
-    await sendMessage(chat_id, `❌ کد نامعتبر یا منقضی. دوباره تلاش کنید یا /cancel.`);
+    await sendMessage(chat_id, `❌ کد نامعتبر یا منقضی. دوباره تلاش کنید یا /cancel.`, { keyboard: BACK_HOME_KBD });
     return;
   }
 
@@ -786,12 +808,12 @@ async function handleOtpInput(chat_id: number, text: string) {
   const { error } = await supabase.from('chat_users')
     .update({ telegram_chat_id: chat_id, telegram_linked_at: new Date().toISOString() })
     .eq('id', session.context.chat_user_id);
-  if (error) { await sendMessage(chat_id, `❌ خطا در لینک حساب: ${error.message}`); return; }
+  if (error) { await sendMessage(chat_id, `❌ خطا در لینک حساب: ${error.message}`, { keyboard: BACK_HOME_KBD }); return; }
 
   await clearSession(chat_id);
   const user = await resolveUser(chat_id);
   if (user) {
-    await sendMessage(chat_id, `✅ <b>ورود موفق!</b>\n\n${welcomeText(user)}`, { keyboard: mainMenu(user.role) });
+    await sendMessage(chat_id, `✅ <b>ورود موفق!</b>\n\n${welcomeText(user)}`, { keyboard: await buildStartKeyboard(user) });
   }
 }
 
@@ -1001,7 +1023,8 @@ async function isAiAssistantEnabled(): Promise<boolean> {
   return Boolean((data as any)?.telegram_ai_assistant_enabled);
 }
 
-async function aiKeyboardRows(): Promise<InlineKeyboard> {
+async function aiKeyboardRows(authed: boolean): Promise<InlineKeyboard> {
+  if (!authed) return [];
   if (!(await isAiAssistantEnabled())) return [];
   return [[{ text: '🤖 دستیار هوشمند', callback_data: 'ai:start' }]];
 }
@@ -1022,7 +1045,7 @@ async function startAiChat(chat_id: number, message_id: number | null, user: Bot
 
 async function endAiChat(chat_id: number, message_id: number, user: BotUser | null) {
   await clearSession(chat_id);
-  const homeKbd = await buildStartKeyboard(!!user, user?.role ?? null);
+  const homeKbd = await buildStartKeyboard(user);
   await editMessage(chat_id, message_id, '✅ گفت‌وگو پایان یافت.', homeKbd);
 }
 
@@ -1345,9 +1368,14 @@ async function registerWebinar(chat_id: number, message_id: number, prefix: stri
   );
 }
 
-async function buildStartKeyboard(authed: boolean, role: Role): Promise<InlineKeyboard> {
-  const [formRows, webinarRows, aiRows] = await Promise.all([formsKeyboardRows(), webinarsKeyboardRows(), aiKeyboardRows()]);
-  const base = authed ? mainMenu(role) : loginMenu();
+async function buildStartKeyboard(user: BotUser | null): Promise<InlineKeyboard> {
+  const authed = !!user;
+  const [formRows, webinarRows, aiRows, base] = await Promise.all([
+    formsKeyboardRows(),
+    webinarsKeyboardRows(),
+    aiKeyboardRows(authed),
+    authed ? mainMenu(user) : Promise.resolve(loginMenu()),
+  ]);
   return [...aiRows, ...webinarRows, ...formRows, ...base];
 }
 
@@ -1607,7 +1635,7 @@ async function cancelForm(chat_id: number, message_id: number) {
   }
   await clearSession(chat_id);
   const user = await resolveUser(chat_id);
-  const kbd = await buildStartKeyboard(!!user, user?.role ?? null);
+  const kbd = await buildStartKeyboard(user);
   await editMessage(chat_id, message_id, '❌ فرم لغو شد.', kbd);
 }
 
@@ -1684,10 +1712,23 @@ async function handleUpdate(update: any) {
     await answerCallback(cq.id);
 
     // Handle login + form + webinar callbacks before user-resolution
-    if (data === 'login:start') { await startLogin(chat_id); return; }
+    if (data === 'login:start') { await startLogin(chat_id, message_id); return; }
     if (data === 'form:cancel') { await cancelForm(chat_id, message_id); return; }
+    if (data === 'menu:home') {
+      await clearSession(chat_id);
+      const u = await resolveUser(chat_id);
+      const kbd = await buildStartKeyboard(u);
+      const txt = u ? welcomeText(u) : '👋 منوی اصلی';
+      await editMessage(chat_id, message_id, txt, kbd);
+      return;
+    }
     if (data === 'ai:start') {
       const u = await resolveUser(chat_id);
+      if (!u) {
+        await editMessage(chat_id, message_id, '🔐 دستیار هوشمند فقط برای کاربران واردشده فعال است. ابتدا وارد شوید.',
+          [[{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }], [{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]]);
+        return;
+      }
       await startAiChat(chat_id, message_id, u);
       return;
     }
@@ -1750,7 +1791,7 @@ async function handleUpdate(update: any) {
         const sub = rest[0];
         if (sub === 'home') {
           await clearSession(chat_id);
-          const homeKbd = await buildStartKeyboard(true, user.role);
+          const homeKbd = await buildStartKeyboard(user);
           await editMessage(chat_id, message_id, welcomeText(user), homeKbd);
         } else if (sub === 'my_leads') {
           await renderLeadsList(chat_id, message_id, user, 'my', 0);
@@ -1932,7 +1973,7 @@ async function handleUpdate(update: any) {
     const session = await getSession(chat_id);
     if (text === '/cancel' || text === '/start') {
       await clearSession(chat_id);
-      const kbd = await buildStartKeyboard(false, null);
+      const kbd = await buildStartKeyboard(null);
       await sendMessage(chat_id, [
         `👋 <b>به ربات آکادمی رفیعی خوش آمدید</b>`, ``,
         `از فرم‌های زیر استفاده کنید یا با شماره موبایل وارد شوید.`, ``,
@@ -1944,20 +1985,20 @@ async function handleUpdate(update: any) {
     if (session?.state === 'awaiting_otp' && text) { await handleOtpInput(chat_id, text); return; }
     if (session?.state === 'awaiting_form_field') { await handleFormMessage(chat_id, null, msg, session); return; }
     if (session?.state === 'ai_chat') { await handleAiChat(chat_id, null, msg, session); return; }
-    const kbd = await buildStartKeyboard(false, null);
+    const kbd = await buildStartKeyboard(null);
     await sendMessage(chat_id, 'برای ورود /start را بزنید.', { keyboard: kbd });
     return;
   }
 
   if (text === '/start') {
     await clearSession(chat_id);
-    const kbd = await buildStartKeyboard(true, user.role);
+    const kbd = await buildStartKeyboard(user);
     await sendMessage(chat_id, welcomeText(user), { keyboard: kbd });
     return;
   }
 
   if (text === '/cancel') {
-    await sendMessage(chat_id, '✅ لغو شد.', { keyboard: mainMenu(user.role) });
+    await sendMessage(chat_id, '✅ لغو شد.', { keyboard: await mainMenu(user) });
     return;
   }
   if (text === '/help') {
@@ -2012,7 +2053,7 @@ async function handleUpdate(update: any) {
     await clearSession(chat_id);
     if (error) await sendMessage(chat_id, `❌ خطا: ${error.message}`);
     else await sendMessage(chat_id, `✅ <b>${escapeHtml(u.name)}</b> به Chat ID <code>${linkChatId}</code> لینک شد.`,
-      { keyboard: mainMenu(user.role) });
+      { keyboard: await mainMenu(user) });
     return;
   }
 
@@ -2028,7 +2069,7 @@ async function handleUpdate(update: any) {
     }
     await clearSession(chat_id);
     await sendMessage(chat_id, `✅ ارسال شد. موفق: <b>${ok}</b> — ناموفق: <b>${fail}</b>`,
-      { keyboard: mainMenu(user.role) });
+      { keyboard: await mainMenu(user) });
     return;
   }
 
