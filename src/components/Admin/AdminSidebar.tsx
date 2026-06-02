@@ -121,14 +121,7 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
                     "shadow-sm"
                   ] : "text-muted-foreground hover:text-foreground"
                 )}
-                onClick={() => {
-                  if (item.id === 'webinars') {
-                    // Navigate to webinar admin page
-                    window.location.href = '/enroll/admin/webinar';
-                  } else {
-                    onViewChange(item.id);
-                  }
-                }}
+                onClick={() => onViewChange(item.id)}
               >
                 <item.icon className={cn(
                   "h-4 w-4 flex-shrink-0 ml-2",
