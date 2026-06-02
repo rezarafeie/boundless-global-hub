@@ -762,11 +762,7 @@ async function handlePhoneInput(chat_id: number, text: string) {
     return;
   }
   const user = await findChatUserByPhone(norm.local);
-  if (!user) {
-    await sendMessage(chat_id, '❌ کاربری با این شماره در سایت یافت نشد. ابتدا در سایت ثبت‌نام کنید.', { keyboard: BACK_HOME_KBD });
-    return;
-  }
-  // Call send-otp
+  // Send OTP regardless (signup or login)
   try {
     const res = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-otp`, {
       method: 'POST',
@@ -782,8 +778,17 @@ async function handlePhoneInput(chat_id: number, text: string) {
     await sendMessage(chat_id, `❌ خطا در ارسال پیامک: ${escapeHtml(e?.message)}`, { keyboard: BACK_HOME_KBD });
     return;
   }
-  await setSession(chat_id, user.id, 'awaiting_otp', { phone_local: norm.local, phone_formatted: norm.formatted, chat_user_id: user.id });
-  await sendMessage(chat_id, `📨 کد ۴ رقمی برای <b>${escapeHtml(user.name)}</b> ارسال شد.\n\nلطفاً کد را ارسال کنید:`, { keyboard: BACK_HOME_KBD });
+
+  if (user) {
+    await setSession(chat_id, user.id, 'awaiting_otp', { phone_local: norm.local, phone_formatted: norm.formatted, chat_user_id: user.id });
+    await sendMessage(chat_id, `📨 کد ۴ رقمی برای <b>${escapeHtml(user.name)}</b> ارسال شد.\n\nلطفاً کد را ارسال کنید:`, { keyboard: BACK_HOME_KBD });
+  } else {
+    // New user — signup flow
+    await setSession(chat_id, null, 'awaiting_signup_otp', { phone_local: norm.local, phone_formatted: norm.formatted });
+    await sendMessage(chat_id,
+      `👤 <b>کاربری با این شماره یافت نشد — ساخت حساب جدید</b>\n\n📨 کد ۴ رقمی برای <code>${escapeHtml(norm.formatted)}</code> ارسال شد. لطفاً کد را ارسال کنید:`,
+      { keyboard: BACK_HOME_KBD });
+  }
 }
 
 async function handleOtpInput(chat_id: number, text: string) {
@@ -814,6 +819,108 @@ async function handleOtpInput(chat_id: number, text: string) {
   const user = await resolveUser(chat_id);
   if (user) {
     await sendMessage(chat_id, `✅ <b>ورود موفق!</b>\n\n${welcomeText(user)}`, { keyboard: await buildStartKeyboard(user) });
+  }
+}
+
+// ============ Signup flow (new user) ============
+async function handleSignupOtpInput(chat_id: number, text: string) {
+  const session = await getSession(chat_id);
+  if (!session?.context?.phone_local) { await sendMessage(chat_id, '❌ جلسه منقضی شده. /start را بزنید.', { keyboard: BACK_HOME_KBD }); return; }
+  const code = text.trim().replace(/\D/g, '');
+  if (!/^\d{4}$/.test(code)) { await sendMessage(chat_id, '❌ کد باید ۴ رقم باشد.', { keyboard: BACK_HOME_KBD }); return; }
+  const res = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/verify-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+    body: JSON.stringify({ phone: session.context.phone_local, otpCode: code }),
+  });
+  const json = await res.json();
+  if (!res.ok || !json.success) {
+    await sendMessage(chat_id, `❌ کد نامعتبر یا منقضی. دوباره تلاش کنید یا /cancel.`, { keyboard: BACK_HOME_KBD });
+    return;
+  }
+  await setSession(chat_id, null, 'awaiting_signup_first_name', { ...session.context });
+  await sendMessage(chat_id, `✅ کد تایید شد.\n\n👤 لطفاً <b>نام</b> خود را ارسال کنید:`, { keyboard: BACK_HOME_KBD });
+}
+
+async function handleSignupFirstName(chat_id: number, text: string) {
+  const session = await getSession(chat_id);
+  const name = (text ?? '').trim();
+  if (!name || name.length < 2 || name.length > 50) {
+    await sendMessage(chat_id, '❌ نام باید بین ۲ تا ۵۰ کاراکتر باشد.', { keyboard: BACK_HOME_KBD });
+    return;
+  }
+  await setSession(chat_id, null, 'awaiting_signup_last_name', { ...session?.context, first_name: name });
+  await sendMessage(chat_id, `👤 لطفاً <b>نام خانوادگی</b> خود را ارسال کنید:`, { keyboard: BACK_HOME_KBD });
+}
+
+async function handleSignupLastName(chat_id: number, text: string) {
+  const session = await getSession(chat_id);
+  const name = (text ?? '').trim();
+  if (!name || name.length < 2 || name.length > 50) {
+    await sendMessage(chat_id, '❌ نام خانوادگی باید بین ۲ تا ۵۰ کاراکتر باشد.', { keyboard: BACK_HOME_KBD });
+    return;
+  }
+  await setSession(chat_id, null, 'awaiting_signup_email', { ...session?.context, last_name: name });
+  await sendMessage(chat_id, `📧 لطفاً <b>ایمیل</b> خود را ارسال کنید:\n\n(برای رد کردن /skip ارسال کنید)`, { keyboard: BACK_HOME_KBD });
+}
+
+async function handleSignupEmail(chat_id: number, text: string) {
+  const session = await getSession(chat_id);
+  if (!session?.context?.phone_local) { await sendMessage(chat_id, '❌ جلسه منقضی شده.', { keyboard: BACK_HOME_KBD }); return; }
+  const raw = (text ?? '').trim();
+  let email: string | null = null;
+  if (raw !== '/skip') {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw) || raw.length > 255) {
+      await sendMessage(chat_id, '❌ ایمیل معتبر نیست. دوباره ارسال کنید یا /skip بزنید.', { keyboard: BACK_HOME_KBD });
+      return;
+    }
+    email = raw.toLowerCase();
+  }
+
+  const ctx = session.context;
+  const firstName = String(ctx.first_name ?? '').trim();
+  const lastName = String(ctx.last_name ?? '').trim();
+  const fullName = `${firstName} ${lastName}`.trim();
+  const phoneLocal = String(ctx.phone_local);
+
+  // Generate unique user_id
+  const { data: uidData, error: uidErr } = await supabase.rpc('generate_unique_user_id');
+  if (uidErr) { await sendMessage(chat_id, `❌ خطا: ${escapeHtml(uidErr.message)}`, { keyboard: BACK_HOME_KBD }); return; }
+
+  // Double-check no race
+  const existing = await findChatUserByPhone(phoneLocal);
+  let newUserId: number | null = existing?.id ?? null;
+
+  if (!existing) {
+    const { data: ins, error: insErr } = await supabase.from('chat_users').insert({
+      name: fullName || firstName,
+      phone: phoneLocal,
+      email,
+      first_name: firstName,
+      last_name: lastName,
+      full_name: fullName,
+      user_id: uidData,
+      country_code: '+98',
+      signup_source: 'telegram_bot',
+      is_approved: true,
+      role: 'user',
+      telegram_chat_id: chat_id,
+      telegram_linked_at: new Date().toISOString(),
+    }).select('id').single();
+    if (insErr) { await sendMessage(chat_id, `❌ خطا در ساخت حساب: ${escapeHtml(insErr.message)}`, { keyboard: BACK_HOME_KBD }); return; }
+    newUserId = ins.id;
+  } else {
+    // Existing — just link telegram
+    await supabase.from('chat_users').update({ telegram_chat_id: null }).eq('telegram_chat_id', chat_id);
+    await supabase.from('chat_users')
+      .update({ telegram_chat_id: chat_id, telegram_linked_at: new Date().toISOString() })
+      .eq('id', existing.id);
+  }
+
+  await clearSession(chat_id);
+  const user = await resolveUser(chat_id);
+  if (user) {
+    await sendMessage(chat_id, `🎉 <b>حساب شما با موفقیت ساخته شد!</b>\n\n${welcomeText(user)}`, { keyboard: await buildStartKeyboard(user) });
   }
 }
 
@@ -1292,15 +1399,16 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
   }
   let alreadyRegistered = false;
   if (user?.phone) {
-    const variants = Array.from(new Set([
-      user.phone,
-      user.phone.replace(/^\+/, ''),
-      user.phone.startsWith('+98') ? '0' + user.phone.slice(3) : user.phone,
-      user.phone.startsWith('98') ? '+' + user.phone : user.phone,
-    ]));
-    const { data: sig } = await supabase
-      .from('webinar_signups').select('id').eq('webinar_id', w.id).in('mobile_number', variants).maybeSingle();
-    alreadyRegistered = !!sig;
+    const normPhone = normalizeIntlPhone(user.phone);
+    const { data: part } = await supabase
+      .from('webinar_participants').select('id').eq('webinar_id', w.id).eq('phone', normPhone).maybeSingle();
+    alreadyRegistered = !!part;
+    if (!alreadyRegistered) {
+      const variants = Array.from(new Set([normPhone, user.phone, user.phone.replace(/^\+/, '')]));
+      const { data: sig } = await supabase
+        .from('webinar_signups').select('id').eq('webinar_id', w.id).in('mobile_number', variants).maybeSingle();
+      alreadyRegistered = !!sig;
+    }
   }
   const lines = [
     `🎥 <b>${escapeHtml(w.title)}</b>`,
@@ -1327,37 +1435,46 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
   else await sendMessage(chat_id, lines, { keyboard: kbd });
 }
 
+function normalizeIntlPhone(input: string): string {
+  let p = (input || '').replace(/[^\d+]/g, '');
+  if (p.startsWith('+')) return p;
+  if (p.startsWith('00')) return '+' + p.substring(2);
+  if (p.startsWith('0')) return '+98' + p.substring(1);
+  if (p.startsWith('98')) return '+' + p;
+  if (/^9\d{9}$/.test(p)) return '+98' + p;
+  return '+' + p;
+}
+
 async function registerWebinar(chat_id: number, message_id: number, prefix: string, user: BotUser) {
   const w = await findWebinarByPrefix(prefix);
   if (!w) { await editMessage(chat_id, message_id, '❌ وبینار یافت نشد.', [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
   if (!user.phone) { await editMessage(chat_id, message_id, '❌ شماره موبایل شما ثبت نشده. لطفاً مجدداً وارد شوید.', [[{ text: '🔐 ورود', callback_data: 'login:start' }]]); return; }
-  // Normalize phone to international format (matches site behavior)
-  let normPhone = (user.phone || '').replace(/[^\d+]/g, '');
-  if (!normPhone.startsWith('+')) {
-    if (normPhone.startsWith('00')) normPhone = '+' + normPhone.substring(2);
-    else if (normPhone.startsWith('0')) normPhone = '+98' + normPhone.substring(1);
-    else if (normPhone.startsWith('98')) normPhone = '+' + normPhone;
-    else if (/^9\d{9}$/.test(normPhone)) normPhone = '+98' + normPhone;
-    else normPhone = '+' + normPhone;
-  }
 
-  const { data: existing } = await supabase
-    .from('webinar_signups').select('id').eq('webinar_id', w.id).eq('mobile_number', normPhone).maybeSingle();
-  if (!existing) {
-    const { error } = await supabase.from('webinar_signups').insert({
-      webinar_id: w.id, mobile_number: normPhone,
-    });
-    if (error) { await editMessage(chat_id, message_id, `❌ خطا در ثبت‌نام: ${escapeHtml(error.message)}`, [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
-  }
+  const normPhone = normalizeIntlPhone(user.phone);
 
-  // Also save to unified webinar_participants table (used by the site's live webinar page)
+  // 1. webinar_participants (canonical — used by site live page)
   const { error: partErr } = await supabase
     .from('webinar_participants')
     .upsert(
       { webinar_id: w.id, phone: normPhone, display_name: user.name || null },
       { onConflict: 'webinar_id,phone' },
     );
-  if (partErr) console.error('webinar_participants upsert failed:', partErr);
+  if (partErr) {
+    console.error('webinar_participants upsert failed:', partErr);
+    await editMessage(chat_id, message_id, `❌ خطا در ثبت‌نام: ${escapeHtml(partErr.message)}`, [[{ text: '🏠', callback_data: 'menu:home' }]]);
+    return;
+  }
+
+  // 2. webinar_signups (legacy — used by admin signups view)
+  const { data: existing } = await supabase
+    .from('webinar_signups').select('id').eq('webinar_id', w.id).eq('mobile_number', normPhone).maybeSingle();
+  if (!existing) {
+    const { error: sigErr } = await supabase.from('webinar_signups').insert({
+      webinar_id: w.id, mobile_number: normPhone,
+    });
+    if (sigErr) console.error('webinar_signups insert failed:', sigErr);
+  }
+
   const kbd: InlineKeyboard = [];
   if (w.webinar_link) kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
   if (w.telegram_channel_link) kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
@@ -1983,6 +2100,10 @@ async function handleUpdate(update: any) {
     }
     if (session?.state === 'awaiting_phone' && text) { await handlePhoneInput(chat_id, text); return; }
     if (session?.state === 'awaiting_otp' && text) { await handleOtpInput(chat_id, text); return; }
+    if (session?.state === 'awaiting_signup_otp' && text) { await handleSignupOtpInput(chat_id, text); return; }
+    if (session?.state === 'awaiting_signup_first_name' && text) { await handleSignupFirstName(chat_id, text); return; }
+    if (session?.state === 'awaiting_signup_last_name' && text) { await handleSignupLastName(chat_id, text); return; }
+    if (session?.state === 'awaiting_signup_email' && text) { await handleSignupEmail(chat_id, text); return; }
     if (session?.state === 'awaiting_form_field') { await handleFormMessage(chat_id, null, msg, session); return; }
     if (session?.state === 'ai_chat') { await handleAiChat(chat_id, null, msg, session); return; }
     const kbd = await buildStartKeyboard(null);
