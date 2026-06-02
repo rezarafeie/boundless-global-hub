@@ -255,24 +255,15 @@ const BoundlessCCLanding: React.FC = () => {
           </div>
         </section>
 
-        {/* VIDEO TESTIMONIALS */}
-        <section className="py-16 md:py-20 bg-muted/30">
-          <div className="container mx-auto px-4 max-w-6xl">
-            <div className="text-center mb-10">
-              <Badge variant="outline" className="mb-4" style={{ borderColor: `hsl(${BRAND})`, color: `hsl(${BRAND})` }}>
-                تجربه‌های واقعی
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-extrabold mb-3">تجربه‌های واقعی دانشجویان</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                ببینید دانشجویان دوره بدون مرز چه می‌گویند.
+            <Card className="overflow-hidden border-2" style={{ borderColor: `hsl(${BRAND} / 0.3)` }}>
+              <ArvanPlayer configUrl={HERO_VIDEO} />
+            </Card>
+
+            <div className="text-center mt-6 flex flex-col items-center gap-3">
+              <p className="text-sm text-muted-foreground">
+                ⏱️ مدت زمان: ۲۰ دقیقه | 🎯 این ویدیو می‌تواند نقطه عطف بیزینس جهانی شما باشد
               </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {TESTIMONIAL_VIDEOS.map((hash) => (
-                <Card key={hash} className="overflow-hidden border-2" style={{ borderColor: `hsl(${BRAND} / 0.2)` }}>
-                  <AparatPlayer videoHash={hash} />
-                </Card>
-              ))}
+              <StickyCTA />
             </div>
           </div>
         </section>
