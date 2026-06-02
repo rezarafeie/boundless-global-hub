@@ -54,13 +54,15 @@ const AdminSettingsPanel: React.FC = () => {
   const [zarinpalUseProxy, setZarinpalUseProxy] = useState(false);
   const [zarinpalProxyUrl, setZarinpalProxyUrl] = useState('');
   const [savingProxyUrl, setSavingProxyUrl] = useState(false);
+  const [zarinpalEnabled, setZarinpalEnabled] = useState(true);
+  const [manualPaymentEnabled, setManualPaymentEnabled] = useState(true);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   useEffect(() => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('admin_settings')
-        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url' as any)
+        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url, zarinpal_enabled, manual_payment_enabled' as any)
         .eq('id', 1)
         .single();
       
@@ -69,11 +71,35 @@ const AdminSettingsPanel: React.FC = () => {
         setQuickEnrollEnabled((data as any).quick_enroll_enabled || false);
         setZarinpalUseProxy((data as any).zarinpal_use_proxy || false);
         setZarinpalProxyUrl((data as any).zarinpal_proxy_url || '');
+        setZarinpalEnabled((data as any).zarinpal_enabled !== false);
+        setManualPaymentEnabled((data as any).manual_payment_enabled !== false);
       }
       setLoadingSettings(false);
     };
     fetchSettings();
   }, []);
+
+  const handleTogglePaymentMethod = async (
+    method: 'zarinpal' | 'manual',
+    checked: boolean
+  ) => {
+    const column = method === 'zarinpal' ? 'zarinpal_enabled' : 'manual_payment_enabled';
+    const setter = method === 'zarinpal' ? setZarinpalEnabled : setManualPaymentEnabled;
+    setter(checked);
+    const { error } = await supabase
+      .from('admin_settings')
+      .update({ [column]: checked, updated_at: new Date().toISOString() } as any)
+      .eq('id', 1);
+    if (error) {
+      toast({ title: 'خطا', description: 'خطا در ذخیره تنظیمات', variant: 'destructive' });
+      setter(!checked);
+    } else {
+      toast({
+        title: 'ذخیره شد',
+        description: `${method === 'zarinpal' ? 'پرداخت آنلاین (زرین‌پال)' : 'کارت به کارت'} ${checked ? 'فعال' : 'غیرفعال'} شد`,
+      });
+    }
+  };
 
   const handleToggleLeadsSystem = async (checked: boolean) => {
     setUseFullLeadsSystem(checked);
