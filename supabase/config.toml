@@ -106,3 +106,6 @@ verify_jwt = false
 
 [functions.telegram-set-webhook]
 verify_jwt = false
+
+[functions.telegram-form-analyze]
+verify_jwt = false
