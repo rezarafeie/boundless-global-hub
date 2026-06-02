@@ -52,7 +52,11 @@ export async function zarinpalFetch(path: string, init: RequestInit): Promise<Re
   const base = useProxy && proxyUrl ? proxyUrl : ZARINPAL_BASE;
   const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
   console.log(`[zarinpal] ${useProxy && proxyUrl ? "PROXY" : "DIRECT"} -> ${url}`);
-  const response = await fetch(url, init);
+  const headers = new Headers(init.headers || {});
+  headers.set("Accept", "application/json");
+  headers.set("User-Agent", "RafieiAcademy-ZarinpalProxy/1.0");
+
+  const response = await fetch(url, { ...init, headers });
   const contentType = response.headers.get("content-type") || "";
 
   if (!contentType.toLowerCase().includes("application/json")) {
