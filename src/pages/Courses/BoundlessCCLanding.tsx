@@ -519,7 +519,9 @@ const BoundlessCCLanding: React.FC = () => {
               <Gift className="ml-1 h-3 w-3 inline" /> هدایای ویژه
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-2">بونس‌های ویژه دوره</h2>
-            <p className="text-center text-muted-foreground mb-10">قیمت اصلی پکیج: <span className="line-through">{fmt(originalPrice)} تومان</span></p>
+            {hasDiscount && (
+              <p className="text-center text-muted-foreground mb-10">قیمت اصلی پکیج: <span className="line-through">{fmt(originalPrice)} تومان</span></p>
+            )}
 
             <div className="space-y-4">
               {[
