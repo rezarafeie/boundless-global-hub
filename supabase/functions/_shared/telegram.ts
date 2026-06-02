@@ -93,6 +93,60 @@ export function escapeHtml(s: string | null | undefined): string {
     .replace(/>/g, '&gt;');
 }
 
+// Convert common Markdown (as produced by LLMs) into Telegram-safe HTML.
+// Telegram HTML supports: <b>, <i>, <u>, <s>, <code>, <pre>, <a href="">.
+// No headings/lists — we approximate them with bold + bullets.
+export function mdToTelegramHtml(input: string): string {
+  if (!input) return '';
+  let s = input.replace(/\r\n/g, '\n');
+
+  // Protect fenced code blocks
+  const codeBlocks: string[] = [];
+  s = s.replace(/```(\w+)?\n?([\s\S]*?)```/g, (_m, _lang, body) => {
+    const idx = codeBlocks.push(`<pre>${escapeHtml(String(body).replace(/\n$/, ''))}</pre>`) - 1;
+    return `\u0000CB${idx}\u0000`;
+  });
+
+  // Protect inline code
+  const inlineCodes: string[] = [];
+  s = s.replace(/`([^`\n]+)`/g, (_m, body) => {
+    const idx = inlineCodes.push(`<code>${escapeHtml(String(body))}</code>`) - 1;
+    return `\u0000IC${idx}\u0000`;
+  });
+
+  // Escape remaining text
+  s = escapeHtml(s);
+
+  // Headings → bold
+  s = s.replace(/^(#{1,6})\s+(.+)$/gm, (_m, _h, t) => `<b>${String(t).trim()}</b>`);
+
+  // Bold
+  s = s.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+  s = s.replace(/__([^_\n]+)__/g, '<b>$1</b>');
+
+  // Italic
+  s = s.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s.,!?:;)]|$)/g, '$1<i>$2</i>');
+  s = s.replace(/(^|[\s(])_([^_\n]+)_(?=[\s.,!?:;)]|$)/g, '$1<i>$2</i>');
+
+  // Strikethrough
+  s = s.replace(/~~([^~\n]+)~~/g, '<s>$1</s>');
+
+  // Links
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2">$1</a>');
+
+  // Bullet lists
+  s = s.replace(/^[\s]*[-*+]\s+/gm, '• ');
+
+  // Restore code placeholders
+  s = s.replace(/\u0000IC(\d+)\u0000/g, (_m, i) => inlineCodes[Number(i)] ?? '');
+  s = s.replace(/\u0000CB(\d+)\u0000/g, (_m, i) => codeBlocks[Number(i)] ?? '');
+
+  // Collapse excessive blank lines
+  s = s.replace(/\n{3,}/g, '\n\n');
+
+  return s.trim();
+}
+
 // Format date in Tehran timezone (Persian style)
 export function formatTehran(d: Date | string | null): string {
   if (!d) return '-';
