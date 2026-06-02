@@ -25,7 +25,8 @@ import {
   Calculator,
   Kanban,
   Receipt,
-  Video
+  Video,
+  FileText
 } from 'lucide-react';
 
 interface AdminSidebarProps {
