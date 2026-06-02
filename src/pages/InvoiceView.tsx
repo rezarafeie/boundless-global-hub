@@ -73,6 +73,9 @@ export default function InvoiceView() {
   const [uploading, setUploading] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [gatewaysLoaded, setGatewaysLoaded] = useState(false);
+  const [zarinpalEnabled, setZarinpalEnabled] = useState(true);
+  const [zibalEnabled, setZibalEnabled] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,6 +83,19 @@ export default function InvoiceView() {
       fetchInvoice();
     }
   }, [invoiceId]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('admin_settings')
+        .select('zarinpal_enabled, zibal_enabled' as any)
+        .eq('id', 1)
+        .single();
+      setZarinpalEnabled((data as any)?.zarinpal_enabled !== false);
+      setZibalEnabled((data as any)?.zibal_enabled === true);
+      setGatewaysLoaded(true);
+    })();
+  }, []);
 
   const fetchInvoice = async () => {
     try {
@@ -144,6 +160,34 @@ export default function InvoiceView() {
 
       const data = await response.json();
       
+      if (data.payment_url) {
+        window.location.href = data.payment_url;
+      } else {
+        throw new Error(data.error || 'خطا در اتصال به درگاه پرداخت');
+      }
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      toast.error(error.message || 'خطا در پرداخت');
+    }
+    setPaymentLoading(false);
+  };
+
+  const handleZibalPayment = async () => {
+    if (!invoice) return;
+    setPaymentLoading(true);
+    try {
+      const remainingAmount = Number(invoice.total_amount) - Number(invoice.paid_amount);
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/invoice-zibal-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          invoice_id: invoice.id,
+          amount: remainingAmount,
+          description: `پرداخت فاکتور ${invoice.invoice_number}`,
+          callback_url: `${window.location.origin}/invoice/${invoice.id}/callback?gateway=zibal`,
+        }),
+      });
+      const data = await response.json();
       if (data.payment_url) {
         window.location.href = data.payment_url;
       } else {
@@ -580,18 +624,35 @@ export default function InvoiceView() {
               <CardTitle className="text-lg">پرداخت فاکتور</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button 
-                className="w-full h-14 text-lg" 
-                onClick={handleZarinpalPayment}
-                disabled={paymentLoading}
-              >
-                {paymentLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin ml-2" />
-                ) : (
-                  <CreditCard className="h-5 w-5 ml-2" />
-                )}
-                پرداخت آنلاین (زرین‌پال)
-              </Button>
+              {zarinpalEnabled && (
+                <Button 
+                  className="w-full h-14 text-lg" 
+                  onClick={handleZarinpalPayment}
+                  disabled={paymentLoading}
+                >
+                  {paymentLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin ml-2" />
+                  ) : (
+                    <CreditCard className="h-5 w-5 ml-2" />
+                  )}
+                  پرداخت آنلاین (زرین‌پال)
+                </Button>
+              )}
+              {zibalEnabled && (
+                <Button 
+                  className="w-full h-14 text-lg"
+                  variant={zarinpalEnabled ? 'outline' : 'default'}
+                  onClick={handleZibalPayment}
+                  disabled={paymentLoading}
+                >
+                  {paymentLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin ml-2" />
+                  ) : (
+                    <CreditCard className="h-5 w-5 ml-2" />
+                  )}
+                  پرداخت آنلاین (زیبال)
+                </Button>
+              )}
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">

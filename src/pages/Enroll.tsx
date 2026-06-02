@@ -66,7 +66,7 @@ const Enroll: React.FC = () => {
   const [test, setTest] = useState<Test | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'zarinpal' | 'manual'>('zarinpal');
+  const [paymentMethod, setPaymentMethod] = useState<'zarinpal' | 'zibal' | 'manual'>('zarinpal');
   const [finalRialPrice, setFinalRialPrice] = useState<number | null>(null);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [loadingExchangeRate, setLoadingExchangeRate] = useState(false);
@@ -418,8 +418,9 @@ const Enroll: React.FC = () => {
           const successUrl = `/enroll/success?test=${test.slug}&phone=${formData.phone}&enrollment=${testResult.id}&status=OK&Authority=FREE_TEST`;
           window.location.href = successUrl;
         } else {
-          // For paid tests, proceed with Zarinpal payment
-          const response = await supabase.functions.invoke('zarinpal-request', {
+          // For paid tests, proceed with online payment via selected gateway
+          const fnName = paymentMethod === 'zibal' ? 'zibal-request' : 'zarinpal-request';
+          const response = await supabase.functions.invoke(fnName, {
             body: {
               testSlug: test.slug,
               firstName: formData.firstName,
@@ -437,7 +438,7 @@ const Enroll: React.FC = () => {
           const { data } = response;
           
           if (data.success) {
-            // Redirect to Zarinpal payment
+            // Redirect to payment gateway
             window.location.href = data.paymentUrl;
           } else {
             throw new Error(data.error || 'خطا در ایجاد درخواست پرداخت');
@@ -524,7 +525,8 @@ const Enroll: React.FC = () => {
           console.log('💰 Using base price for payment:', basePrice);
         }
           
-        const response = await supabase.functions.invoke('zarinpal-request', {
+        const fnName = paymentMethod === 'zibal' ? 'zibal-request' : 'zarinpal-request';
+        const response = await supabase.functions.invoke(fnName, {
           body: {
             courseSlug: course.slug,
             firstName: formData.firstName,
@@ -541,7 +543,7 @@ const Enroll: React.FC = () => {
         const { data } = response;
         
         if (data.success) {
-          // Redirect to Zarinpal payment
+          // Redirect to payment gateway
           window.location.href = data.paymentUrl;
         } else {
           throw new Error(data.error || 'خطا در ایجاد درخواست پرداخت');

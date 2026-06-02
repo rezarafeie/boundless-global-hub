@@ -57,6 +57,7 @@ const AdminSettingsPanel: React.FC = () => {
   const [zarinpalProxyUrl, setZarinpalProxyUrl] = useState('');
   const [savingProxyUrl, setSavingProxyUrl] = useState(false);
   const [zarinpalEnabled, setZarinpalEnabled] = useState(true);
+  const [zibalEnabled, setZibalEnabled] = useState(false);
   const [manualPaymentEnabled, setManualPaymentEnabled] = useState(true);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
@@ -64,7 +65,7 @@ const AdminSettingsPanel: React.FC = () => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('admin_settings')
-        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url, zarinpal_enabled, manual_payment_enabled' as any)
+        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url, zarinpal_enabled, zibal_enabled, manual_payment_enabled' as any)
         .eq('id', 1)
         .single();
       
@@ -74,6 +75,7 @@ const AdminSettingsPanel: React.FC = () => {
         setZarinpalUseProxy((data as any).zarinpal_use_proxy || false);
         setZarinpalProxyUrl((data as any).zarinpal_proxy_url || '');
         setZarinpalEnabled((data as any).zarinpal_enabled !== false);
+        setZibalEnabled((data as any).zibal_enabled === true);
         setManualPaymentEnabled((data as any).manual_payment_enabled !== false);
       }
       setLoadingSettings(false);
@@ -82,11 +84,17 @@ const AdminSettingsPanel: React.FC = () => {
   }, []);
 
   const handleTogglePaymentMethod = async (
-    method: 'zarinpal' | 'manual',
+    method: 'zarinpal' | 'zibal' | 'manual',
     checked: boolean
   ) => {
-    const column = method === 'zarinpal' ? 'zarinpal_enabled' : 'manual_payment_enabled';
-    const setter = method === 'zarinpal' ? setZarinpalEnabled : setManualPaymentEnabled;
+    const column =
+      method === 'zarinpal' ? 'zarinpal_enabled'
+      : method === 'zibal' ? 'zibal_enabled'
+      : 'manual_payment_enabled';
+    const setter =
+      method === 'zarinpal' ? setZarinpalEnabled
+      : method === 'zibal' ? setZibalEnabled
+      : setManualPaymentEnabled;
     setter(checked);
     const { error } = await supabase
       .from('admin_settings')
@@ -96,9 +104,14 @@ const AdminSettingsPanel: React.FC = () => {
       toast({ title: 'خطا', description: 'خطا در ذخیره تنظیمات', variant: 'destructive' });
       setter(!checked);
     } else {
+      const labels: Record<string, string> = {
+        zarinpal: 'پرداخت آنلاین (زرین‌پال)',
+        zibal: 'پرداخت آنلاین (زیبال)',
+        manual: 'کارت به کارت',
+      };
       toast({
         title: 'ذخیره شد',
-        description: `${method === 'zarinpal' ? 'پرداخت آنلاین (زرین‌پال)' : 'کارت به کارت'} ${checked ? 'فعال' : 'غیرفعال'} شد`,
+        description: `${labels[method]} ${checked ? 'فعال' : 'غیرفعال'} شد`,
       });
     }
   };
@@ -266,6 +279,24 @@ const AdminSettingsPanel: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-1">
+                    <Label htmlFor="zibal-enabled" className="text-base font-medium">
+                      پرداخت آنلاین (زیبال)
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {zibalEnabled
+                        ? 'کاربران می‌توانند از طریق درگاه زیبال پرداخت کنند'
+                        : 'درگاه زیبال در صفحه ثبت‌نام نمایش داده نمی‌شود'}
+                    </p>
+                  </div>
+                  <Switch
+                    id="zibal-enabled"
+                    checked={zibalEnabled}
+                    onCheckedChange={(c) => handleTogglePaymentMethod('zibal', c)}
+                    disabled={loadingSettings}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
                     <Label htmlFor="manual-enabled" className="text-base font-medium">
                       کارت به کارت
                     </Label>
@@ -282,9 +313,9 @@ const AdminSettingsPanel: React.FC = () => {
                     disabled={loadingSettings}
                   />
                 </div>
-                {!zarinpalEnabled && !manualPaymentEnabled && (
+                {!zarinpalEnabled && !zibalEnabled && !manualPaymentEnabled && (
                   <div className="p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
-                    هشدار: هر دو روش پرداخت غیرفعال هستند. فقط دوره‌های رایگان قابل ثبت‌نام خواهند بود.
+                    هشدار: همه روش‌های پرداخت غیرفعال هستند. فقط دوره‌های رایگان قابل ثبت‌نام خواهند بود.
                   </div>
                 )}
               </CardContent>
