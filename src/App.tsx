@@ -296,7 +296,7 @@ const App = () => {
                     <Route path="/courses/metaverse" element={<MetaverseLanding />} />
                     <Route path="/courses/instagram" element={<InstagramLanding />} />
                     <Route path="/courses/instagram-essentials" element={<InstagramEssentialsLanding />} />
-                    <Route path="/courses/boundless" element={<BoundlessLanding />} />
+                    <Route path="/courses/boundless" element={<BoundlessCCLanding />} />
                     <Route path="/courses/free-course" element={
                       <FreeCourseLanding 
                         title="Free Course"
@@ -332,8 +332,8 @@ const App = () => {
                     <Route path="/iran" element={<IranLanding />} />
                    <Route path="/iran/cc" element={<IranCCLanding />} />
                    <Route path="/courses/iran/cc" element={<IranCCLanding />} />
-                   <Route path="/boundless/cc" element={<BoundlessCCLanding />} />
-                   <Route path="/courses/boundless/cc" element={<BoundlessCCLanding />} />
+                   <Route path="/boundless/cc" element={<BoundlessLanding />} />
+                   <Route path="/courses/boundless/cc" element={<BoundlessLanding />} />
                     <Route path="/ir-class" element={<IRClassLanding />} />
                     <Route path="/courses/ir-class" element={<IRClassLanding />} />
 
