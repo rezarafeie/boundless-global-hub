@@ -19,7 +19,7 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
 );
 
-const WEBHOOK_SECRET = Deno.env.get('TELEGRAM_WEBHOOK_SECRET') ?? '';
+const WEBHOOK_SECRET = (Deno.env.get('TELEGRAM_WEBHOOK_SECRET') ?? '').replace(/[^A-Za-z0-9_-]/g, '');
 
 // ============ User resolution ============
 type Role = 'admin' | 'sales_manager' | 'sales_agent' | 'student' | null;
