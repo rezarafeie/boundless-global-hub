@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Edit, Eye, GripVertical, Sparkles, RefreshCw, ArrowRight, ExternalLink, Copy, Link as LinkIcon } from 'lucide-react';
@@ -134,6 +134,11 @@ const FormsManagement: React.FC = () => {
     toast({ title: 'لینک کپی شد', description: url });
   };
 
+  // Full-page editor (replaces popup)
+  if (editor) {
+    return <FormEditor editor={editor} setEditor={setEditor} onSave={saveForm} onCancel={() => setEditor(null)} />;
+  }
+
   // Submissions view (full panel, replaces popup)
   if (viewing) {
     return <SubmissionsTable form={viewing} onBack={() => setViewing(null)} />;
@@ -199,8 +204,6 @@ const FormsManagement: React.FC = () => {
           )}
         </CardContent>
       </Card>
-
-      {editor && <FormEditor editor={editor} setEditor={setEditor} onSave={saveForm} />}
     </div>
   );
 };
