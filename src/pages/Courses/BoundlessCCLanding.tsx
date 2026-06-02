@@ -226,25 +226,73 @@ const BoundlessCCLanding: React.FC = () => {
 
         {/* PRICING */}
         <section className="py-16 md:py-20">
-          <div className="container mx-auto px-4 max-w-4xl text-center">
-            <Badge variant="outline" className="mb-4" style={{ borderColor: `hsl(${ACCENT})`, color: `hsl(${ACCENT})` }}>
-              <Flame className="ml-1 h-3 w-3" /> پیشنهاد ویژه
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">دوره بدون مرز — ۱۴۰۵</h2>
-            <p className="text-muted-foreground mb-6">سرمایه‌گذاری روی پایدارترین مدل کسب‌وکار جهانی</p>
-
-            <div className="flex items-center justify-center gap-4 mb-3 flex-wrap">
-              <span className="text-2xl line-through text-muted-foreground">{fmt(originalPrice)}</span>
-              <span className="text-5xl md:text-6xl font-extrabold" style={{ color: `hsl(${BRAND})` }}>
-                {fmt(coursePrice)}
-              </span>
-              <span className="text-xl">تومان</span>
+          <div className="container mx-auto px-4 max-w-4xl">
+            <div className="text-center mb-6">
+              <Badge variant="outline" className="mb-4" style={{ borderColor: `hsl(${ACCENT})`, color: `hsl(${ACCENT})` }}>
+                <Flame className="ml-1 h-3 w-3" /> پیشنهاد ویژه
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-bold mb-3">دوره بدون مرز — ۱۴۰۵</h2>
+              <p className="text-muted-foreground">سرمایه‌گذاری روی پایدارترین مدل کسب‌وکار جهانی</p>
             </div>
-            <Badge className="text-white border-0" style={{ background: `hsl(${ACCENT})` }}>
-              تخفیف محدود — فقط امروز
-            </Badge>
 
-            <div className="mt-8"><StickyCTA /></div>
+            {hasDiscount ? (
+              <Card
+                className="relative overflow-hidden border-2 shadow-2xl"
+                style={{ borderColor: `hsl(${ACCENT})`, background: `linear-gradient(135deg, hsl(${ACCENT} / 0.08), hsl(${BRAND} / 0.06))` }}
+              >
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 animate-pulse" />
+                <CardContent className="p-6 md:p-10 text-center">
+                  <div className="flex flex-wrap items-center justify-center gap-2 mb-5">
+                    <Badge className="text-white border-0 px-3 py-1.5 text-sm bg-red-600">
+                      <TrendingDown className="ml-1 h-4 w-4 inline" /> {fmt(percentOff)}٪ تخفیف
+                    </Badge>
+                    <Badge className="text-white border-0 px-3 py-1.5 text-sm" style={{ background: `hsl(${ACCENT})` }}>
+                      <Zap className="ml-1 h-4 w-4 inline" /> صرفه‌جویی {fmt(savings)} تومان
+                    </Badge>
+                    <Badge variant="outline" className="px-3 py-1.5 text-sm border-red-400 text-red-600 dark:text-red-400">
+                      <AlertTriangle className="ml-1 h-4 w-4 inline" /> فرصت محدود
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-end justify-center gap-3 mb-2 flex-wrap">
+                    <span className="text-xl md:text-2xl line-through text-muted-foreground">{fmt(originalPrice)}</span>
+                    <span className="text-5xl md:text-7xl font-extrabold leading-none" style={{ color: `hsl(${BRAND})` }}>
+                      {fmt(coursePrice)}
+                    </span>
+                    <span className="text-lg md:text-xl pb-2">تومان</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    پس از پایان کمپین، قیمت به <span className="font-bold text-foreground">{fmt(originalPrice)} تومان</span> برمی‌گردد
+                  </p>
+
+                  {saleEndsAt && (
+                    <div className="mb-6 max-w-2xl mx-auto">
+                      <div className="flex items-center justify-center gap-2 mb-3 text-sm font-semibold" style={{ color: `hsl(${ACCENT})` }}>
+                        <Timer className="h-4 w-4 animate-pulse" />
+                        تخفیف تا پایان زمان زیر معتبر است:
+                      </div>
+                      <EnhancedCountdownTimer endDate={saleEndsAt} />
+                    </div>
+                  )}
+
+                  <StickyCTA />
+
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    <ShieldCheck className="ml-1 h-3 w-3 inline" /> پرداخت امن از طریق زرین‌پال + گارانتی بازگشت وجه
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-4 mb-4 flex-wrap">
+                  <span className="text-5xl md:text-6xl font-extrabold" style={{ color: `hsl(${BRAND})` }}>
+                    {fmt(coursePrice)}
+                  </span>
+                  <span className="text-xl">تومان</span>
+                </div>
+                <div className="mt-8"><StickyCTA /></div>
+              </div>
+            )}
           </div>
         </section>
 
