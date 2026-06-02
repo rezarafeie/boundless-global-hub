@@ -296,7 +296,7 @@ const App = () => {
                     <Route path="/courses/metaverse" element={<MetaverseLanding />} />
                     <Route path="/courses/instagram" element={<InstagramLanding />} />
                     <Route path="/courses/instagram-essentials" element={<InstagramEssentialsLanding />} />
-                    <Route path="/courses/boundless" element={<BoundlessLanding />} />
+                    <Route path="/courses/boundless" element={<BoundlessCCLanding />} />
                     <Route path="/courses/free-course" element={
                       <FreeCourseLanding 
                         title="Free Course"
