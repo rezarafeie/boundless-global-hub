@@ -105,7 +105,17 @@ function mainMenu(role: Role): InlineKeyboard {
       [{ text: '📊 عملکرد امروز', callback_data: 'menu:reports' }],
     ];
   }
-  return [];
+  // Default: student
+  return [
+    [{ text: '🎓 دوره‌های من', callback_data: 'student:my_courses' }],
+    [{ text: '🧪 آزمون‌های من', callback_data: 'student:my_tests' }],
+    [{ text: '🛒 ثبت‌نام در دوره جدید', callback_data: 'student:browse:0' }],
+    [{ text: '👤 پروفایل', callback_data: 'student:profile' }],
+  ];
+}
+
+function loginMenu(): InlineKeyboard {
+  return [[{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }]];
 }
 
 function welcomeText(user: BotUser): string {
