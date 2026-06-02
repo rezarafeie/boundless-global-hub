@@ -590,9 +590,14 @@ const BoundlessCCLanding: React.FC = () => {
 
             <Card className="mt-8 text-center border-2" style={{ borderColor: `hsl(${BRAND})`, background: `hsl(${BRAND} / 0.05)` }}>
               <CardContent className="p-6">
-                <p className="text-muted-foreground mb-1">مجموع ارزش پکیج:</p>
-                <p className="text-2xl font-bold line-through text-muted-foreground">{fmt(originalPrice)} تومان</p>
-                <p className="mt-2 text-muted-foreground">قیمت ویژه شما:</p>
+                {hasDiscount && (
+                  <>
+                    <p className="text-muted-foreground mb-1">مجموع ارزش پکیج:</p>
+                    <p className="text-2xl font-bold line-through text-muted-foreground">{fmt(originalPrice)} تومان</p>
+                    <p className="mt-2 text-muted-foreground">قیمت ویژه شما:</p>
+                  </>
+                )}
+                {!hasDiscount && <p className="text-muted-foreground mb-1">قیمت دوره:</p>}
                 <p className="text-4xl md:text-5xl font-extrabold mt-1" style={{ color: `hsl(${BRAND})` }}>{fmt(coursePrice)} تومان</p>
               </CardContent>
             </Card>
