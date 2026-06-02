@@ -116,6 +116,8 @@ const FormsManagement: React.FC = () => {
       confirmation_type: f.confirmation_type ?? 'message',
       confirmation_message: f.confirmation_message ?? null,
       redirect_url: f.redirect_url?.trim() || null,
+      confirmation_course_id: f.confirmation_type === 'course' ? (f.confirmation_course_id || null) : null,
+      confirmation_test_id: f.confirmation_type === 'test' ? (f.confirmation_test_id || null) : null,
     };
     let formId = f.id;
     if (formId) {
