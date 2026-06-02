@@ -1370,7 +1370,8 @@ async function handleUpdate(update: any) {
         const sub = rest[0];
         if (sub === 'home') {
           await clearSession(chat_id);
-          await editMessage(chat_id, message_id, welcomeText(user), mainMenu(user.role));
+          const homeKbd = await buildStartKeyboard(true, user.role);
+          await editMessage(chat_id, message_id, welcomeText(user), homeKbd);
         } else if (sub === 'my_leads') {
           await renderLeadsList(chat_id, message_id, user, 'my', 0);
         } else if (sub === 'all_leads') {
