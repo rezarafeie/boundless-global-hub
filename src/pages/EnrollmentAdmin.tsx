@@ -98,7 +98,7 @@ const EnrollmentAdmin: React.FC = () => {
   const navigate = useNavigate();
   const [checkingRole, setCheckingRole] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'sales' | 'leads' | 'request-leads' | 'users' | 'analytics' | 'settings' | 'crm' | 'recruitment' | 'internships' | 'tests' | 'webinars' | 'daily-reports' | 'accounting' | 'pipeline' | 'pipeline-builder' | 'agent-financials' | 'consultations' | 'telegram-forms'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'sales' | 'leads' | 'request-leads' | 'users' | 'analytics' | 'settings' | 'crm' | 'recruitment' | 'internships' | 'tests' | 'webinars' | 'daily-reports' | 'accounting' | 'pipeline' | 'pipeline-builder' | 'agent-financials' | 'consultations' | 'telegram-forms' | 'forms'>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
