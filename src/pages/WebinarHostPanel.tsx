@@ -519,6 +519,16 @@ const WebinarHostPanel: React.FC = () => {
                                 <Square className="h-3 w-3 ml-1" />پایان
                               </Button>
                             )}
+                            {interaction.status === 'ended' && (
+                              <>
+                                <Button size="sm" onClick={() => pushLive(interaction.id)}>
+                                  <Play className="h-3 w-3 ml-1" />فعال‌سازی مجدد
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => deleteInteraction(interaction.id)}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </div>
                       </CardContent>
