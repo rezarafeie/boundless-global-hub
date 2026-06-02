@@ -205,6 +205,9 @@ export type Database = {
           id: number
           manual_approval_enabled: boolean
           quick_enroll_enabled: boolean
+          telegram_notify_consultation: boolean
+          telegram_notify_daily_summary: boolean
+          telegram_notify_lead_assigned: boolean
           updated_at: string
           use_full_leads_system: boolean | null
           zarinpal_proxy_url: string | null
@@ -214,6 +217,9 @@ export type Database = {
           id?: number
           manual_approval_enabled?: boolean
           quick_enroll_enabled?: boolean
+          telegram_notify_consultation?: boolean
+          telegram_notify_daily_summary?: boolean
+          telegram_notify_lead_assigned?: boolean
           updated_at?: string
           use_full_leads_system?: boolean | null
           zarinpal_proxy_url?: string | null
@@ -223,6 +229,9 @@ export type Database = {
           id?: number
           manual_approval_enabled?: boolean
           quick_enroll_enabled?: boolean
+          telegram_notify_consultation?: boolean
+          telegram_notify_daily_summary?: boolean
+          telegram_notify_lead_assigned?: boolean
           updated_at?: string
           use_full_leads_system?: boolean | null
           zarinpal_proxy_url?: string | null
@@ -786,6 +795,9 @@ export type Database = {
           specialized_program:
             | Database["public"]["Enums"]["specialized_program_type"]
             | null
+          telegram_chat_id: number | null
+          telegram_linked_at: string | null
+          telegram_username: string | null
           updated_at: string | null
           user_id: string | null
           username: string | null
@@ -825,6 +837,9 @@ export type Database = {
           specialized_program?:
             | Database["public"]["Enums"]["specialized_program_type"]
             | null
+          telegram_chat_id?: number | null
+          telegram_linked_at?: string | null
+          telegram_username?: string | null
           updated_at?: string | null
           user_id?: string | null
           username?: string | null
@@ -864,6 +879,9 @@ export type Database = {
           specialized_program?:
             | Database["public"]["Enums"]["specialized_program_type"]
             | null
+          telegram_chat_id?: number | null
+          telegram_linked_at?: string | null
+          telegram_username?: string | null
           updated_at?: string | null
           user_id?: string | null
           username?: string | null
@@ -4279,6 +4297,77 @@ export type Database = {
           is_active?: boolean | null
           is_boundless_only?: boolean | null
           name?: string
+        }
+        Relationships: []
+      }
+      telegram_bot_sessions: {
+        Row: {
+          chat_id: number
+          context: Json
+          expires_at: string
+          state: string | null
+          updated_at: string
+          user_id: number | null
+        }
+        Insert: {
+          chat_id: number
+          context?: Json
+          expires_at?: string
+          state?: string | null
+          updated_at?: string
+          user_id?: number | null
+        }
+        Update: {
+          chat_id?: number
+          context?: Json
+          expires_at?: string
+          state?: string | null
+          updated_at?: string
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_bot_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_notification_queue: {
+        Row: {
+          attempts: number
+          chat_id: number
+          created_at: string
+          id: string
+          last_error: string | null
+          notification_type: string | null
+          payload: Json
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          chat_id: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          notification_type?: string | null
+          payload: Json
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          chat_id?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          notification_type?: string | null
+          payload?: Json
+          sent_at?: string | null
+          status?: string
         }
         Relationships: []
       }
