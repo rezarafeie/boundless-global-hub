@@ -56,7 +56,7 @@ export const TelegramBotManagement = () => {
   const fetchSettings = async () => {
     const { data } = await supabase
       .from('admin_settings')
-      .select('telegram_notify_lead_assigned, telegram_notify_consultation, telegram_notify_daily_summary' as any)
+      .select('telegram_notify_lead_assigned, telegram_notify_consultation, telegram_notify_daily_summary, telegram_ai_assistant_enabled' as any)
       .eq('id', 1)
       .maybeSingle();
     if (data) setNotifySettings(data as any);
