@@ -340,7 +340,6 @@ const AdminSettingsPanel: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-            <TelegramBotManagement />
           </div>
         );
       case 'webhooks':
