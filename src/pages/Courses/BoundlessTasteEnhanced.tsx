@@ -13,6 +13,7 @@ import QuickEnrollPopover from "@/components/Course/QuickEnrollPopover";
 import { useBlackFridayContext } from '@/contexts/BlackFridayContext';
 import CourseDiscountBanner from '@/components/BlackFriday/CourseDiscountBanner';
 import { supabase } from '@/integrations/supabase/client';
+import AparatPlayer from "@/components/AparatPlayer";
 
 interface BoundlessTasteEnhancedProps {
   title: string;
