@@ -1363,9 +1363,14 @@ async function registerWebinar(chat_id: number, message_id: number, prefix: stri
   );
 }
 
-async function buildStartKeyboard(authed: boolean, role: Role): Promise<InlineKeyboard> {
-  const [formRows, webinarRows, aiRows] = await Promise.all([formsKeyboardRows(), webinarsKeyboardRows(), aiKeyboardRows()]);
-  const base = authed ? mainMenu(role) : loginMenu();
+async function buildStartKeyboard(user: BotUser | null): Promise<InlineKeyboard> {
+  const authed = !!user;
+  const [formRows, webinarRows, aiRows, base] = await Promise.all([
+    formsKeyboardRows(),
+    webinarsKeyboardRows(),
+    aiKeyboardRows(authed),
+    authed ? mainMenu(user) : Promise.resolve(loginMenu()),
+  ]);
   return [...aiRows, ...webinarRows, ...formRows, ...base];
 }
 
