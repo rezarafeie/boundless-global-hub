@@ -155,6 +155,7 @@ export const TelegramBotManagement = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           {[
+            { key: 'telegram_ai_assistant_enabled', label: '🤖 فعال‌سازی دستیار هوشمند AI در منوی ربات' },
             { key: 'telegram_notify_lead_assigned', label: 'اعلان تخصیص لید جدید به کارشناس' },
             { key: 'telegram_notify_consultation', label: 'اعلان رزرو مشاوره جدید' },
             { key: 'telegram_notify_daily_summary', label: 'خلاصه روزانه عملکرد' },
