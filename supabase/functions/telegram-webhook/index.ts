@@ -1169,14 +1169,27 @@ async function handleUpdate(update: any) {
     await sendMessage(chat_id, `🆔 Chat ID شما: <code>${chat_id}</code>`);
     return;
   }
+  if (text === '/cancel') {
+    await clearSession(chat_id);
+  }
 
   const user = await resolveUser(chat_id);
+
+  // Unlinked user flow
   if (!user) {
-    await sendMessage(chat_id, [
-      `🚫 <b>حساب شما لینک نشده است.</b>`, ``,
-      `Chat ID شما: <code>${chat_id}</code>`, ``,
-      `این عدد را به مدیر سیستم بدهید.`,
-    ].join('\n'));
+    const session = await getSession(chat_id);
+    if (text === '/cancel' || text === '/start') {
+      await clearSession(chat_id);
+      await sendMessage(chat_id, [
+        `👋 <b>به ربات آکادمی رفیعی خوش آمدید</b>`, ``,
+        `برای ورود به حساب کاربری خود، روی دکمه زیر بزنید.`, ``,
+        `Chat ID شما: <code>${chat_id}</code>`,
+      ].join('\n'), { keyboard: loginMenu() });
+      return;
+    }
+    if (session?.state === 'awaiting_phone' && text) { await handlePhoneInput(chat_id, text); return; }
+    if (session?.state === 'awaiting_otp' && text) { await handleOtpInput(chat_id, text); return; }
+    await sendMessage(chat_id, 'برای ورود /start را بزنید.', { keyboard: loginMenu() });
     return;
   }
 
@@ -1186,7 +1199,6 @@ async function handleUpdate(update: any) {
     return;
   }
   if (text === '/cancel') {
-    await clearSession(chat_id);
     await sendMessage(chat_id, '✅ لغو شد.', { keyboard: mainMenu(user.role) });
     return;
   }
