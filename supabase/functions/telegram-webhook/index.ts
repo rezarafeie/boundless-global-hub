@@ -1018,7 +1018,8 @@ async function isAiAssistantEnabled(): Promise<boolean> {
   return Boolean((data as any)?.telegram_ai_assistant_enabled);
 }
 
-async function aiKeyboardRows(): Promise<InlineKeyboard> {
+async function aiKeyboardRows(authed: boolean): Promise<InlineKeyboard> {
+  if (!authed) return [];
   if (!(await isAiAssistantEnabled())) return [];
   return [[{ text: '🤖 دستیار هوشمند', callback_data: 'ai:start' }]];
 }
