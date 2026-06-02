@@ -2090,6 +2090,10 @@ async function handleUpdate(update: any) {
     }
     if (session?.state === 'awaiting_phone' && text) { await handlePhoneInput(chat_id, text); return; }
     if (session?.state === 'awaiting_otp' && text) { await handleOtpInput(chat_id, text); return; }
+    if (session?.state === 'awaiting_signup_otp' && text) { await handleSignupOtpInput(chat_id, text); return; }
+    if (session?.state === 'awaiting_signup_first_name' && text) { await handleSignupFirstName(chat_id, text); return; }
+    if (session?.state === 'awaiting_signup_last_name' && text) { await handleSignupLastName(chat_id, text); return; }
+    if (session?.state === 'awaiting_signup_email' && text) { await handleSignupEmail(chat_id, text); return; }
     if (session?.state === 'awaiting_form_field') { await handleFormMessage(chat_id, null, msg, session); return; }
     if (session?.state === 'ai_chat') { await handleAiChat(chat_id, null, msg, session); return; }
     const kbd = await buildStartKeyboard(null);
