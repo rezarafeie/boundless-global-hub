@@ -129,22 +129,39 @@ const faqs = [
 /* ───────── COMPONENT ───────── */
 
 const BoundlessCCLanding: React.FC = () => {
-  const [coursePrice, setCoursePrice] = useState<number>(28700000);
-  const [originalPrice] = useState<number>(55000000);
+  const [coursePrice, setCoursePrice] = useState<number>(0);
+  const [originalPrice, setOriginalPrice] = useState<number>(0);
+  const [saleEndsAt, setSaleEndsAt] = useState<string | null>(null);
+  const [hasDiscount, setHasDiscount] = useState<boolean>(false);
   const courseSlug = "boundless";
 
   useEffect(() => {
     (async () => {
       try {
         const { data } = await supabase
-          .from("courses").select("id, price").eq("slug", courseSlug).maybeSingle();
-        if (data?.price) setCoursePrice(Number(data.price));
+          .from("courses")
+          .select("price, is_sale_enabled, sale_price, sale_expires_at")
+          .eq("slug", courseSlug)
+          .maybeSingle();
+        if (!data) return;
+        const price = Number(data.price) || 0;
+        const salePrice = data.sale_price ? Number(data.sale_price) : null;
+        const notExpired =
+          !data.sale_expires_at || new Date(data.sale_expires_at) > new Date();
+        const discountOn =
+          !!data.is_sale_enabled && !!salePrice && salePrice < price && notExpired;
+        setOriginalPrice(price);
+        setCoursePrice(discountOn ? (salePrice as number) : price);
+        setSaleEndsAt(discountOn ? data.sale_expires_at : null);
+        setHasDiscount(discountOn);
       } catch (e) { console.error(e); }
     })();
   }, []);
 
   const goEnroll = () => { window.location.href = "/enroll/?course=boundless"; };
   const fmt = (n: number) => new Intl.NumberFormat("fa-IR").format(n);
+  const savings = Math.max(originalPrice - coursePrice, 0);
+  const percentOff = originalPrice > 0 ? Math.round((savings / originalPrice) * 100) : 0;
 
   const StickyCTA = () => (
     <QuickEnrollPopover courseSlug="boundless" fallbackHref="/enroll/?course=boundless">
