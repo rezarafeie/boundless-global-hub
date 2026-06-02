@@ -11,8 +11,9 @@ import {
   PlayCircle, Flame, ShieldCheck, Clock, Users, CheckCircle2, Check, X,
   Sparkles, MessageCircle, ArrowLeft, Layers,
   Infinity as InfinityIcon, Gift, AlertTriangle,
-  DollarSign, Heart, Hourglass, Ban, Globe,
+  DollarSign, Heart, Hourglass, Ban, Globe, Timer, TrendingDown, Zap,
 } from "lucide-react";
+import EnhancedCountdownTimer from "@/components/EnhancedCountdownTimer";
 
 const BRAND = "212 90% 45%";
 const ACCENT = "32 95% 50%";
@@ -128,22 +129,39 @@ const faqs = [
 /* ───────── COMPONENT ───────── */
 
 const BoundlessCCLanding: React.FC = () => {
-  const [coursePrice, setCoursePrice] = useState<number>(28700000);
-  const [originalPrice] = useState<number>(55000000);
+  const [coursePrice, setCoursePrice] = useState<number>(0);
+  const [originalPrice, setOriginalPrice] = useState<number>(0);
+  const [saleEndsAt, setSaleEndsAt] = useState<string | null>(null);
+  const [hasDiscount, setHasDiscount] = useState<boolean>(false);
   const courseSlug = "boundless";
 
   useEffect(() => {
     (async () => {
       try {
         const { data } = await supabase
-          .from("courses").select("id, price").eq("slug", courseSlug).maybeSingle();
-        if (data?.price) setCoursePrice(Number(data.price));
+          .from("courses")
+          .select("price, is_sale_enabled, sale_price, sale_expires_at")
+          .eq("slug", courseSlug)
+          .maybeSingle();
+        if (!data) return;
+        const price = Number(data.price) || 0;
+        const salePrice = data.sale_price ? Number(data.sale_price) : null;
+        const notExpired =
+          !data.sale_expires_at || new Date(data.sale_expires_at) > new Date();
+        const discountOn =
+          !!data.is_sale_enabled && !!salePrice && salePrice < price && notExpired;
+        setOriginalPrice(price);
+        setCoursePrice(discountOn ? (salePrice as number) : price);
+        setSaleEndsAt(discountOn ? data.sale_expires_at : null);
+        setHasDiscount(discountOn);
       } catch (e) { console.error(e); }
     })();
   }, []);
 
   const goEnroll = () => { window.location.href = "/enroll/?course=boundless"; };
   const fmt = (n: number) => new Intl.NumberFormat("fa-IR").format(n);
+  const savings = Math.max(originalPrice - coursePrice, 0);
+  const percentOff = originalPrice > 0 ? Math.round((savings / originalPrice) * 100) : 0;
 
   const StickyCTA = () => (
     <QuickEnrollPopover courseSlug="boundless" fallbackHref="/enroll/?course=boundless">
@@ -208,25 +226,73 @@ const BoundlessCCLanding: React.FC = () => {
 
         {/* PRICING */}
         <section className="py-16 md:py-20">
-          <div className="container mx-auto px-4 max-w-4xl text-center">
-            <Badge variant="outline" className="mb-4" style={{ borderColor: `hsl(${ACCENT})`, color: `hsl(${ACCENT})` }}>
-              <Flame className="ml-1 h-3 w-3" /> پیشنهاد ویژه
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">دوره بدون مرز — ۱۴۰۵</h2>
-            <p className="text-muted-foreground mb-6">سرمایه‌گذاری روی پایدارترین مدل کسب‌وکار جهانی</p>
-
-            <div className="flex items-center justify-center gap-4 mb-3 flex-wrap">
-              <span className="text-2xl line-through text-muted-foreground">{fmt(originalPrice)}</span>
-              <span className="text-5xl md:text-6xl font-extrabold" style={{ color: `hsl(${BRAND})` }}>
-                {fmt(coursePrice)}
-              </span>
-              <span className="text-xl">تومان</span>
+          <div className="container mx-auto px-4 max-w-4xl">
+            <div className="text-center mb-6">
+              <Badge variant="outline" className="mb-4" style={{ borderColor: `hsl(${ACCENT})`, color: `hsl(${ACCENT})` }}>
+                <Flame className="ml-1 h-3 w-3" /> پیشنهاد ویژه
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-bold mb-3">دوره بدون مرز — ۱۴۰۵</h2>
+              <p className="text-muted-foreground">سرمایه‌گذاری روی پایدارترین مدل کسب‌وکار جهانی</p>
             </div>
-            <Badge className="text-white border-0" style={{ background: `hsl(${ACCENT})` }}>
-              تخفیف محدود — فقط امروز
-            </Badge>
 
-            <div className="mt-8"><StickyCTA /></div>
+            {hasDiscount ? (
+              <Card
+                className="relative overflow-hidden border-2 shadow-2xl"
+                style={{ borderColor: `hsl(${ACCENT})`, background: `linear-gradient(135deg, hsl(${ACCENT} / 0.08), hsl(${BRAND} / 0.06))` }}
+              >
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 animate-pulse" />
+                <CardContent className="p-6 md:p-10 text-center">
+                  <div className="flex flex-wrap items-center justify-center gap-2 mb-5">
+                    <Badge className="text-white border-0 px-3 py-1.5 text-sm bg-red-600">
+                      <TrendingDown className="ml-1 h-4 w-4 inline" /> {fmt(percentOff)}٪ تخفیف
+                    </Badge>
+                    <Badge className="text-white border-0 px-3 py-1.5 text-sm" style={{ background: `hsl(${ACCENT})` }}>
+                      <Zap className="ml-1 h-4 w-4 inline" /> صرفه‌جویی {fmt(savings)} تومان
+                    </Badge>
+                    <Badge variant="outline" className="px-3 py-1.5 text-sm border-red-400 text-red-600 dark:text-red-400">
+                      <AlertTriangle className="ml-1 h-4 w-4 inline" /> فرصت محدود
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-end justify-center gap-3 mb-2 flex-wrap">
+                    <span className="text-xl md:text-2xl line-through text-muted-foreground">{fmt(originalPrice)}</span>
+                    <span className="text-5xl md:text-7xl font-extrabold leading-none" style={{ color: `hsl(${BRAND})` }}>
+                      {fmt(coursePrice)}
+                    </span>
+                    <span className="text-lg md:text-xl pb-2">تومان</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    پس از پایان کمپین، قیمت به <span className="font-bold text-foreground">{fmt(originalPrice)} تومان</span> برمی‌گردد
+                  </p>
+
+                  {saleEndsAt && (
+                    <div className="mb-6 max-w-2xl mx-auto">
+                      <div className="flex items-center justify-center gap-2 mb-3 text-sm font-semibold" style={{ color: `hsl(${ACCENT})` }}>
+                        <Timer className="h-4 w-4 animate-pulse" />
+                        تخفیف تا پایان زمان زیر معتبر است:
+                      </div>
+                      <EnhancedCountdownTimer endDate={saleEndsAt} />
+                    </div>
+                  )}
+
+                  <StickyCTA />
+
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    <ShieldCheck className="ml-1 h-3 w-3 inline" /> پرداخت امن از طریق زرین‌پال + گارانتی بازگشت وجه
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-4 mb-4 flex-wrap">
+                  <span className="text-5xl md:text-6xl font-extrabold" style={{ color: `hsl(${BRAND})` }}>
+                    {fmt(coursePrice)}
+                  </span>
+                  <span className="text-xl">تومان</span>
+                </div>
+                <div className="mt-8"><StickyCTA /></div>
+              </div>
+            )}
           </div>
         </section>
 
@@ -453,7 +519,9 @@ const BoundlessCCLanding: React.FC = () => {
               <Gift className="ml-1 h-3 w-3 inline" /> هدایای ویژه
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-2">بونس‌های ویژه دوره</h2>
-            <p className="text-center text-muted-foreground mb-10">قیمت اصلی پکیج: <span className="line-through">{fmt(originalPrice)} تومان</span></p>
+            {hasDiscount && (
+              <p className="text-center text-muted-foreground mb-10">قیمت اصلی پکیج: <span className="line-through">{fmt(originalPrice)} تومان</span></p>
+            )}
 
             <div className="space-y-4">
               {[
@@ -522,9 +590,14 @@ const BoundlessCCLanding: React.FC = () => {
 
             <Card className="mt-8 text-center border-2" style={{ borderColor: `hsl(${BRAND})`, background: `hsl(${BRAND} / 0.05)` }}>
               <CardContent className="p-6">
-                <p className="text-muted-foreground mb-1">مجموع ارزش پکیج:</p>
-                <p className="text-2xl font-bold line-through text-muted-foreground">{fmt(originalPrice)} تومان</p>
-                <p className="mt-2 text-muted-foreground">قیمت ویژه شما:</p>
+                {hasDiscount && (
+                  <>
+                    <p className="text-muted-foreground mb-1">مجموع ارزش پکیج:</p>
+                    <p className="text-2xl font-bold line-through text-muted-foreground">{fmt(originalPrice)} تومان</p>
+                    <p className="mt-2 text-muted-foreground">قیمت ویژه شما:</p>
+                  </>
+                )}
+                {!hasDiscount && <p className="text-muted-foreground mb-1">قیمت دوره:</p>}
                 <p className="text-4xl md:text-5xl font-extrabold mt-1" style={{ color: `hsl(${BRAND})` }}>{fmt(coursePrice)} تومان</p>
               </CardContent>
             </Card>
@@ -631,13 +704,28 @@ const BoundlessCCLanding: React.FC = () => {
               راه دوم: امروز تصمیم بگیرید و بیزینس بین‌المللی خودتان را بسازید.
             </p>
 
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white mb-6">
-              <CardContent className="p-6">
-                <p className="opacity-90">قیمت دوره بعدی به</p>
-                <p className="text-3xl font-bold mt-1">{fmt(originalPrice)} تومان</p>
-                <p className="opacity-90 mt-1">افزایش پیدا می‌کند.</p>
-              </CardContent>
-            </Card>
+            {hasDiscount ? (
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white mb-6">
+                <CardContent className="p-6">
+                  <p className="opacity-90">قیمت اصلی دوره</p>
+                  <p className="text-3xl font-bold mt-1 line-through opacity-80">{fmt(originalPrice)} تومان</p>
+                  <p className="opacity-90 mt-2">قیمت ویژه این کمپین</p>
+                  <p className="text-4xl font-extrabold mt-1">{fmt(coursePrice)} تومان</p>
+                  {saleEndsAt && (
+                    <div className="mt-4">
+                      <EnhancedCountdownTimer endDate={saleEndsAt} />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white mb-6">
+                <CardContent className="p-6">
+                  <p className="opacity-90">قیمت دوره</p>
+                  <p className="text-3xl font-bold mt-1">{fmt(coursePrice)} تومان</p>
+                </CardContent>
+              </Card>
+            )}
 
             <QuickEnrollPopover courseSlug="boundless" fallbackHref="/enroll/?course=boundless">
               <Button size="lg" className="bg-white text-black hover:bg-white/90 font-bold text-lg px-8 py-6 rounded-xl shadow-2xl">
