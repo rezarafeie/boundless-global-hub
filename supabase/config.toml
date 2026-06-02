@@ -109,3 +109,6 @@ verify_jwt = false
 
 [functions.telegram-form-analyze]
 verify_jwt = false
+
+[functions.submit-web-form]
+verify_jwt = false
