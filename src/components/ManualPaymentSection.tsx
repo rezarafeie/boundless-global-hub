@@ -65,6 +65,36 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   const [showWaitingModal, setShowWaitingModal] = useState(false);
   const [enrollmentId, setEnrollmentId] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [zarinpalEnabled, setZarinpalEnabled] = useState(true);
+  const [manualEnabled, setManualEnabled] = useState(true);
+  const [methodsLoaded, setMethodsLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('admin_settings')
+        .select('zarinpal_enabled, manual_payment_enabled' as any)
+        .eq('id', 1)
+        .single();
+      if (cancelled) return;
+      const z = (data as any)?.zarinpal_enabled !== false;
+      const m = (data as any)?.manual_payment_enabled !== false;
+      setZarinpalEnabled(z);
+      setManualEnabled(m);
+      setMethodsLoaded(true);
+      // Auto-switch if currently selected method is disabled
+      if (selectedMethod === 'zarinpal' && !z && m) {
+        onPaymentMethodChange('manual');
+      } else if (selectedMethod === 'manual' && !m && z) {
+        onPaymentMethodChange('zarinpal');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const validateForm = () => {
     const errors: string[] = [];
