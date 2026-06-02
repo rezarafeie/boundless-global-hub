@@ -180,7 +180,7 @@ const BoundlessCCLanding: React.FC = () => {
     <MainLayout>
       <head>
         <title>دوره بدون مرز | راه‌اندازی بیزینس آنلاین بین‌المللی و درآمد ارزی</title>
-        <meta name="description" content="دوره جامع بدون مرز: بیزینس بین‌المللی، درآمد ارزی پایدار، Upwork، Shopify، Stripe، AI و گارانتی بازگشت وجه." />
+        <meta name="description" content="دوره شروع بدون مرز: بیزینس بین‌المللی، درآمد ارزی پایدار، Upwork، Shopify، Stripe، AI و گارانتی بازگشت وجه." />
       </head>
 
       <div dir="rtl" className="min-h-screen bg-background text-foreground">
