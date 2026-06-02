@@ -415,11 +415,25 @@ const FormEditor: React.FC<{
                   <SelectContent>
                     <SelectItem value="message">نمایش پیام تشکر</SelectItem>
                     <SelectItem value="redirect">انتقال به URL</SelectItem>
+                    <SelectItem value="course">معرفی دوره</SelectItem>
+                    <SelectItem value="test">معرفی آزمون</SelectItem>
                   </SelectContent>
                 </Select>
                 {editor.form.confirmation_type === 'redirect' ? (
                   <Input value={editor.form.redirect_url ?? ''} onChange={e => updateForm({ redirect_url: e.target.value })}
                     placeholder="https://..." dir="ltr" />
+                ) : editor.form.confirmation_type === 'course' ? (
+                  <CourseTestPicker
+                    kind="course"
+                    value={editor.form.confirmation_course_id ?? null}
+                    onChange={v => updateForm({ confirmation_course_id: v })}
+                  />
+                ) : editor.form.confirmation_type === 'test' ? (
+                  <CourseTestPicker
+                    kind="test"
+                    value={editor.form.confirmation_test_id ?? null}
+                    onChange={v => updateForm({ confirmation_test_id: v })}
+                  />
                 ) : (
                   <Textarea value={editor.form.confirmation_message ?? ''} onChange={e => updateForm({ confirmation_message: e.target.value })}
                     rows={3} placeholder="مثال: ممنون از پاسخ‌تان! به زودی با شما تماس می‌گیریم." />
