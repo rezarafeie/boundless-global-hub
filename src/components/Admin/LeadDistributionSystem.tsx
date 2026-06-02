@@ -928,6 +928,9 @@ const LeadDistributionSystem: React.FC = () => {
           } else {
             successCount++;
             console.log('✅ Successfully assigned lead:', enrollmentId);
+            supabase.functions.invoke('telegram-notify', {
+              body: { type: 'lead_assigned', agent_user_id: agentUserId, enrollment_id: enrollmentId }
+            }).catch(e => console.warn('telegram-notify failed:', e));
           }
         } catch (err) {
           console.error('❌ Exception assigning lead:', err);
