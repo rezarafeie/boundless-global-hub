@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
 
     const { data: form, error: formErr } = await supabase
       .from('telegram_forms')
-      .select('id, title, is_active, require_login, webhook_url, confirmation_type, confirmation_message, redirect_url, ai_enabled, ai_prompt')
+      .select('id, title, is_active, require_login, webhook_url, confirmation_type, confirmation_message, redirect_url, confirmation_course_id, confirmation_test_id, ai_enabled, ai_prompt')
       .eq('id', body.form_id)
       .single();
     if (formErr || !form) {
