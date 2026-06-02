@@ -1321,9 +1321,9 @@ async function registerWebinar(chat_id: number, message_id: number, prefix: stri
 }
 
 async function buildStartKeyboard(authed: boolean, role: Role): Promise<InlineKeyboard> {
-  const [formRows, webinarRows] = await Promise.all([formsKeyboardRows(), webinarsKeyboardRows()]);
+  const [formRows, webinarRows, aiRows] = await Promise.all([formsKeyboardRows(), webinarsKeyboardRows(), aiKeyboardRows()]);
   const base = authed ? mainMenu(role) : loginMenu();
-  return [...webinarRows, ...formRows, ...base];
+  return [...aiRows, ...webinarRows, ...formRows, ...base];
 }
 
 async function findFormByPrefix(prefix: string) {
