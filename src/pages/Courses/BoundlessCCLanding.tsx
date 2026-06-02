@@ -152,13 +152,17 @@ const BoundlessCCLanding: React.FC = () => {
         let saleToman: number | null = data.sale_price ? Number(data.sale_price) : null;
 
         if (data.use_dollar_price && data.usd_price) {
+          // Try live Tetherland rate; fall back to ratio from stored toman price.
+          let rate = 0;
           try {
-            priceToman = await TetherlandService.convertUSDToIRR(Number(data.usd_price));
-            if (saleToman !== null) {
-              saleToman = await TetherlandService.convertUSDToIRR(saleToman);
-            }
+            rate = await TetherlandService.getUSDTToIRRRate();
           } catch (err) {
-            console.error("USD conversion failed", err);
+            console.error("Tetherland rate fetch failed, using stored price ratio", err);
+          }
+          if (!rate && priceToman > 0) rate = priceToman / Number(data.usd_price);
+          if (rate > 0) {
+            priceToman = Math.round(Number(data.usd_price) * rate);
+            if (saleToman !== null) saleToman = Math.round(saleToman * rate);
           }
         }
 
@@ -250,95 +254,114 @@ const BoundlessCCLanding: React.FC = () => {
             </div>
 
             {hasDiscount ? (
-              <Card
-                className="relative overflow-hidden border shadow-xl rounded-2xl"
-                style={{
-                  borderColor: `hsl(${ACCENT} / 0.35)`,
-                  background: `linear-gradient(180deg, hsl(var(--background)) 0%, hsl(${ACCENT} / 0.04) 100%)`,
-                }}
-              >
-                {/* Top ribbon */}
+              <div className="relative max-w-2xl mx-auto">
+                {/* Outer frame — classic double border */}
                 <div
-                  className="absolute top-0 inset-x-0 text-center text-[11px] md:text-xs font-bold tracking-[0.25em] text-white py-1.5 uppercase"
-                  style={{ background: `linear-gradient(90deg, hsl(${ACCENT}), hsl(0 80% 55%), hsl(${ACCENT}))` }}
+                  className="relative rounded-[28px] p-[1.5px] shadow-2xl"
+                  style={{
+                    background: `linear-gradient(135deg, hsl(${ACCENT}), hsl(${BRAND} / 0.6), hsl(${ACCENT}))`,
+                  }}
                 >
-                  Limited Time Offer · پیشنهاد ویژه و محدود
-                </div>
-
-                {/* Decorative corners */}
-                <div className="pointer-events-none absolute top-8 left-4 right-4 h-px" style={{ background: `linear-gradient(90deg, transparent, hsl(${ACCENT} / 0.4), transparent)` }} />
-                <div className="pointer-events-none absolute bottom-4 left-4 right-4 h-px" style={{ background: `linear-gradient(90deg, transparent, hsl(${ACCENT} / 0.4), transparent)` }} />
-
-                <CardContent className="px-6 md:px-12 pt-14 pb-10 md:pt-16 md:pb-12 text-center">
-                  {/* Discount badges row */}
-                  <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
-                    <span
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold text-white"
-                      style={{ background: `hsl(0 75% 50%)` }}
+                  <div
+                    className="relative rounded-[26px] overflow-hidden"
+                    style={{
+                      background:
+                        "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--background) / 0.85) 100%)",
+                    }}
+                  >
+                    {/* Top eyebrow */}
+                    <div
+                      className="text-center text-[10px] md:text-xs font-bold tracking-[0.35em] uppercase py-2.5 text-white"
+                      style={{
+                        background: `linear-gradient(90deg, hsl(${ACCENT}), hsl(20 90% 50%), hsl(${ACCENT}))`,
+                      }}
                     >
-                      <TrendingDown className="h-3.5 w-3.5" />
-                      {fmt(percentOff)}٪ تخفیف ویژه
-                    </span>
-                    <span
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border"
-                      style={{ borderColor: `hsl(${ACCENT} / 0.5)`, color: `hsl(${ACCENT})` }}
-                    >
-                      <Zap className="h-3.5 w-3.5" />
-                      {fmt(savings)} تومان صرفه‌جویی
-                    </span>
-                  </div>
+                      Exclusive · Limited Edition · پیشنهاد ویژه
+                    </div>
 
-                  {/* Price hero */}
-                  <p className="text-xs md:text-sm uppercase tracking-[0.3em] text-muted-foreground mb-3">سرمایه‌گذاری امروز</p>
-                  <div className="flex items-baseline justify-center gap-3 mb-1 flex-wrap" dir="ltr">
-                    <span className="text-base md:text-lg line-through text-muted-foreground/80">{fmt(originalPrice)}</span>
-                    <span className="text-6xl md:text-8xl font-black leading-none tracking-tight" style={{ color: `hsl(${BRAND})` }}>
-                      {fmt(coursePrice)}
-                    </span>
-                    <span className="text-base md:text-lg font-semibold text-foreground/80">تومان</span>
-                  </div>
+                    {/* Perforated side notches (ticket look) */}
+                    <div className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-background border" style={{ borderColor: `hsl(${ACCENT} / 0.4)` }} />
+                    <div className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-background border" style={{ borderColor: `hsl(${ACCENT} / 0.4)` }} />
 
-                  {/* Ornament divider */}
-                  <div className="flex items-center justify-center gap-3 my-6">
-                    <span className="h-px w-12 md:w-20" style={{ background: `hsl(${ACCENT} / 0.5)` }} />
-                    <span className="text-xs tracking-widest text-muted-foreground">⬥</span>
-                    <span className="h-px w-12 md:w-20" style={{ background: `hsl(${ACCENT} / 0.5)` }} />
-                  </div>
-
-                  {/* Countdown */}
-                  {saleEndsAt && (
-                    <div className="mb-7 max-w-xl mx-auto">
-                      <div className="flex items-center justify-center gap-2 mb-4 text-xs md:text-sm font-semibold uppercase tracking-[0.2em]" style={{ color: `hsl(${ACCENT})` }}>
-                        <Timer className="h-4 w-4 animate-pulse" />
-                        پایان کمپین تا
+                    <div className="px-5 sm:px-8 md:px-12 pt-8 md:pt-10 pb-8 md:pb-10 text-center">
+                      {/* Giant percent badge */}
+                      <div className="relative inline-flex items-center justify-center mb-5">
+                        <div
+                          className="absolute inset-0 blur-2xl opacity-40 rounded-full"
+                          style={{ background: `hsl(${ACCENT})` }}
+                        />
+                        <div
+                          className="relative flex items-baseline gap-1.5 px-6 py-3 rounded-2xl border-2"
+                          style={{
+                            borderColor: `hsl(${ACCENT})`,
+                            background: `hsl(${ACCENT} / 0.08)`,
+                          }}
+                        >
+                          <span className="text-5xl md:text-6xl font-black leading-none" style={{ color: `hsl(${ACCENT})`, fontFamily: 'Georgia, serif' }}>
+                            {fmt(percentOff)}
+                          </span>
+                          <span className="text-2xl md:text-3xl font-bold" style={{ color: `hsl(${ACCENT})` }}>٪</span>
+                          <span className="text-sm md:text-base font-semibold tracking-[0.2em] uppercase mr-2 text-foreground/70">تخفیف</span>
+                        </div>
                       </div>
-                      <EnhancedCountdownTimer endDate={saleEndsAt} />
-                    </div>
-                  )}
 
-                  {/* Trust row */}
-                  <div className="grid grid-cols-3 gap-3 max-w-xl mx-auto mb-7 text-xs md:text-sm">
-                    <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-border/50 bg-background/40">
-                      <ShieldCheck className="h-5 w-5" style={{ color: `hsl(${BRAND})` }} />
-                      <span className="font-semibold">پرداخت امن</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-border/50 bg-background/40">
-                      <Heart className="h-5 w-5" style={{ color: `hsl(${BRAND})` }} />
-                      <span className="font-semibold">گارانتی بازگشت</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-border/50 bg-background/40">
-                      <InfinityIcon className="h-5 w-5" style={{ color: `hsl(${BRAND})` }} />
-                      <span className="font-semibold">دسترسی مادام‌العمر</span>
+                      <p className="text-sm md:text-base text-muted-foreground mb-1">سرمایه‌گذاری امروز شما</p>
+
+                      {/* Price block */}
+                      <div className="flex items-baseline justify-center gap-2 mb-1" dir="ltr">
+                        <span
+                          className="text-5xl sm:text-6xl md:text-7xl font-black leading-none tracking-tight"
+                          style={{ color: `hsl(${BRAND})`, fontFeatureSettings: '"tnum"' }}
+                        >
+                          {fmt(coursePrice)}
+                        </span>
+                        <span className="text-base md:text-lg font-bold text-foreground/80">تومان</span>
+                      </div>
+
+                      <div className="inline-flex items-center gap-2 mt-2 mb-6 text-sm text-muted-foreground">
+                        <span className="line-through">{fmt(originalPrice)} تومان</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold text-white" style={{ background: `hsl(0 70% 50%)` }}>
+                          <TrendingDown className="h-3 w-3" /> {fmt(savings)} صرفه‌جویی
+                        </span>
+                      </div>
+
+                      {/* Ornament */}
+                      <div className="flex items-center justify-center gap-3 mb-6">
+                        <span className="h-px w-16 md:w-24" style={{ background: `linear-gradient(90deg, transparent, hsl(${ACCENT} / 0.6))` }} />
+                        <span className="text-[10px] tracking-[0.4em] text-muted-foreground uppercase">پایان کمپین</span>
+                        <span className="h-px w-16 md:w-24" style={{ background: `linear-gradient(90deg, hsl(${ACCENT} / 0.6), transparent)` }} />
+                      </div>
+
+                      {/* Countdown */}
+                      {saleEndsAt && (
+                        <div className="mb-7 max-w-md mx-auto">
+                          <EnhancedCountdownTimer endDate={saleEndsAt} />
+                          <div className="flex items-center justify-center gap-1.5 mt-3 text-xs font-semibold" style={{ color: `hsl(${ACCENT})` }}>
+                            <Timer className="h-3.5 w-3.5 animate-pulse" />
+                            <span>پس از این زمان، قیمت به حالت عادی بازمی‌گردد</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* CTA */}
+                      <StickyCTA />
+
+                      {/* Trust pills — minimal */}
+                      <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mt-6 text-xs text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5">
+                          <ShieldCheck className="h-3.5 w-3.5" style={{ color: `hsl(${BRAND})` }} /> پرداخت امن
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <Heart className="h-3.5 w-3.5" style={{ color: `hsl(${BRAND})` }} /> گارانتی بازگشت وجه
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <InfinityIcon className="h-3.5 w-3.5" style={{ color: `hsl(${BRAND})` }} /> دسترسی مادام‌العمر
+                        </span>
+                      </div>
                     </div>
                   </div>
-
-                  <StickyCTA />
-
-                  <p className="mt-5 text-xs text-muted-foreground">
-                    پس از پایان کمپین، قیمت به <span className="font-bold text-foreground">{fmt(originalPrice)} تومان</span> برمی‌گردد
-                  </p>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ) : (
               <div className="text-center">
                 <div className="flex items-baseline justify-center gap-3 mb-4 flex-wrap">
