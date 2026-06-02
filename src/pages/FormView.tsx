@@ -63,7 +63,8 @@ const FormView: React.FC = () => {
   const [files, setFiles] = useState<Record<string, { url: string; mime: string; name: string } | null>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState<null | { message?: string }>(null);
+  const [stage, setStage] = useState<'form' | 'ai' | 'confirm'>('form');
+  const [confirmData, setConfirmData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [aiStream, setAiStream] = useState<string>('');
