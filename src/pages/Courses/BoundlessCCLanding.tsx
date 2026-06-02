@@ -697,13 +697,28 @@ const BoundlessCCLanding: React.FC = () => {
               راه دوم: امروز تصمیم بگیرید و بیزینس بین‌المللی خودتان را بسازید.
             </p>
 
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white mb-6">
-              <CardContent className="p-6">
-                <p className="opacity-90">قیمت دوره بعدی به</p>
-                <p className="text-3xl font-bold mt-1">{fmt(originalPrice)} تومان</p>
-                <p className="opacity-90 mt-1">افزایش پیدا می‌کند.</p>
-              </CardContent>
-            </Card>
+            {hasDiscount ? (
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white mb-6">
+                <CardContent className="p-6">
+                  <p className="opacity-90">قیمت اصلی دوره</p>
+                  <p className="text-3xl font-bold mt-1 line-through opacity-80">{fmt(originalPrice)} تومان</p>
+                  <p className="opacity-90 mt-2">قیمت ویژه این کمپین</p>
+                  <p className="text-4xl font-extrabold mt-1">{fmt(coursePrice)} تومان</p>
+                  {saleEndsAt && (
+                    <div className="mt-4">
+                      <EnhancedCountdownTimer endDate={saleEndsAt} />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white mb-6">
+                <CardContent className="p-6">
+                  <p className="opacity-90">قیمت دوره</p>
+                  <p className="text-3xl font-bold mt-1">{fmt(coursePrice)} تومان</p>
+                </CardContent>
+              </Card>
+            )}
 
             <QuickEnrollPopover courseSlug="boundless" fallbackHref="/enroll/?course=boundless">
               <Button size="lg" className="bg-white text-black hover:bg-white/90 font-bold text-lg px-8 py-6 rounded-xl shadow-2xl">
