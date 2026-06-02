@@ -8,6 +8,8 @@ import EmailSettings from '@/components/Admin/EmailSettings';
 import BlackFridaySettings from '@/components/Admin/BlackFridaySettings';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -48,19 +50,24 @@ const AdminSettingsPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('system');
   const [useFullLeadsSystem, setUseFullLeadsSystem] = useState(false);
   const [quickEnrollEnabled, setQuickEnrollEnabled] = useState(false);
+  const [zarinpalUseProxy, setZarinpalUseProxy] = useState(false);
+  const [zarinpalProxyUrl, setZarinpalProxyUrl] = useState('');
+  const [savingProxyUrl, setSavingProxyUrl] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   useEffect(() => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('admin_settings')
-        .select('use_full_leads_system, quick_enroll_enabled' as any)
+        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url' as any)
         .eq('id', 1)
         .single();
       
       if (data && !error) {
         setUseFullLeadsSystem((data as any).use_full_leads_system || false);
         setQuickEnrollEnabled((data as any).quick_enroll_enabled || false);
+        setZarinpalUseProxy((data as any).zarinpal_use_proxy || false);
+        setZarinpalProxyUrl((data as any).zarinpal_proxy_url || '');
       }
       setLoadingSettings(false);
     };
@@ -104,6 +111,39 @@ const AdminSettingsPanel: React.FC = () => {
         title: "ذخیره شد",
         description: checked ? "ثبت‌نام سریع فعال شد" : "ثبت‌نام سریع غیرفعال شد"
       });
+    }
+  };
+
+  const handleToggleZarinpalProxy = async (checked: boolean) => {
+    setZarinpalUseProxy(checked);
+    const { error } = await supabase
+      .from('admin_settings')
+      .update({ zarinpal_use_proxy: checked, updated_at: new Date().toISOString() } as any)
+      .eq('id', 1);
+
+    if (error) {
+      toast({ title: "خطا", description: "خطا در ذخیره تنظیمات", variant: "destructive" });
+      setZarinpalUseProxy(!checked);
+    } else {
+      toast({
+        title: "ذخیره شد",
+        description: checked ? "پروکسی زرین‌پال فعال شد" : "پروکسی زرین‌پال غیرفعال شد"
+      });
+    }
+  };
+
+  const handleSaveProxyUrl = async () => {
+    setSavingProxyUrl(true);
+    const { error } = await supabase
+      .from('admin_settings')
+      .update({ zarinpal_proxy_url: zarinpalProxyUrl.trim() || null, updated_at: new Date().toISOString() } as any)
+      .eq('id', 1);
+    setSavingProxyUrl(false);
+
+    if (error) {
+      toast({ title: "خطا", description: "خطا در ذخیره آدرس پروکسی", variant: "destructive" });
+    } else {
+      toast({ title: "ذخیره شد", description: "آدرس پروکسی زرین‌پال ذخیره شد" });
     }
   };
 
