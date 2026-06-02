@@ -418,8 +418,9 @@ const Enroll: React.FC = () => {
           const successUrl = `/enroll/success?test=${test.slug}&phone=${formData.phone}&enrollment=${testResult.id}&status=OK&Authority=FREE_TEST`;
           window.location.href = successUrl;
         } else {
-          // For paid tests, proceed with Zarinpal payment
-          const response = await supabase.functions.invoke('zarinpal-request', {
+          // For paid tests, proceed with online payment via selected gateway
+          const fnName = paymentMethod === 'zibal' ? 'zibal-request' : 'zarinpal-request';
+          const response = await supabase.functions.invoke(fnName, {
             body: {
               testSlug: test.slug,
               firstName: formData.firstName,
@@ -437,7 +438,7 @@ const Enroll: React.FC = () => {
           const { data } = response;
           
           if (data.success) {
-            // Redirect to Zarinpal payment
+            // Redirect to payment gateway
             window.location.href = data.paymentUrl;
           } else {
             throw new Error(data.error || 'خطا در ایجاد درخواست پرداخت');
