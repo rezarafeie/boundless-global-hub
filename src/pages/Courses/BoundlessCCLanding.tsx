@@ -465,6 +465,35 @@ const BoundlessCCLanding: React.FC = () => {
           </div>
         </section>
 
+        {/* VIDEO TESTIMONIALS */}
+        <section className="py-16 md:py-20 bg-muted/30">
+          <div className="container mx-auto px-4 max-w-6xl">
+            <div className="text-center mb-10">
+              <Badge variant="outline" className="mb-4" style={{ borderColor: `hsl(${BRAND})`, color: `hsl(${BRAND})` }}>
+                تجربه‌های واقعی
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-extrabold mb-3">تجربه‌های واقعی دانشجویان</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                ببینید دانشجویان دوره بدون مرز چه می‌گویند.
+              </p>
+            </div>
+
+            {/* Featured big frame */}
+            <Card className="overflow-hidden border-2 mb-8 max-w-4xl mx-auto" style={{ borderColor: `hsl(${BRAND} / 0.4)` }}>
+              <ArvanPlayer configUrl={FEATURED_TESTIMONIAL} />
+            </Card>
+
+            {/* Other testimonials grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {TESTIMONIAL_VIDEOS.map((url) => (
+                <Card key={url} className="overflow-hidden border-2" style={{ borderColor: `hsl(${BRAND} / 0.2)` }}>
+                  <ArvanPlayer configUrl={url} />
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* SCENARIOS */}
         <section className="py-16 bg-muted/30">
           <div className="container mx-auto px-4 max-w-4xl">
