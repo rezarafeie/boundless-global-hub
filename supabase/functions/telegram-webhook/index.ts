@@ -1483,6 +1483,16 @@ async function registerWebinar(chat_id: number, message_id: number, prefix: stri
     if (sigErr) console.error('webinar_signups insert failed:', sigErr);
   }
 
+  // 3. webinar_registrations (used by admin registrations count/view)
+  const { data: existingReg } = await supabase
+    .from('webinar_registrations').select('id').eq('webinar_id', w.id).eq('mobile_number', normPhone).maybeSingle();
+  if (!existingReg) {
+    const { error: regErr } = await supabase.from('webinar_registrations').insert({
+      webinar_id: w.id, mobile_number: normPhone,
+    });
+    if (regErr) console.error('webinar_registrations insert failed:', regErr);
+  }
+
   const kbd: InlineKeyboard = [];
   if (w.webinar_link) kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
   if (w.telegram_channel_link) kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
