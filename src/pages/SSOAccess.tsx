@@ -117,10 +117,15 @@ const SSOAccess: React.FC = () => {
       setStatus('success');
       setMessage('ورود موفقیت‌آمیز! در حال انتقال به دوره...');
 
-      // Redirect to course access page after a short delay
+      // Redirect: honor explicit ?redirect= param (e.g. direct lesson link from Telegram bot)
+      const redirectParam = searchParams.get('redirect');
       setTimeout(() => {
-        navigate(`/access?course=${tokenData.course_slug}`);
-      }, 2000);
+        if (redirectParam && redirectParam.startsWith('/')) {
+          navigate(redirectParam);
+        } else {
+          navigate(`/access?course=${tokenData.course_slug}`);
+        }
+      }, 1200);
 
       toast({
         title: "ورود موفق",

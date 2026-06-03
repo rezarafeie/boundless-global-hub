@@ -978,11 +978,14 @@ async function studentCourseDetail(chat_id: number, message_id: number, user: Bo
   if (!course) { await editMessage(chat_id, message_id, '❌ دوره یافت نشد.', [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
 
   // Verify user owns this course
-  const { data: u } = await supabase.from('chat_users').select('phone').eq('id', user.id).maybeSingle();
+  const { data: u } = await supabase.from('chat_users').select('phone, email').eq('id', user.id).maybeSingle();
   const variants = [u?.phone, `0${u?.phone}`].filter(Boolean) as string[];
-  const { data: owns } = await supabase.from('enrollments').select('id')
+  const { data: owns } = await supabase.from('enrollments').select('id, email')
     .in('phone', variants).eq('course_id', course.id).in('payment_status', ['success', 'completed']).limit(1);
   if (!owns?.length) { await editMessage(chat_id, message_id, '🚫 شما در این دوره ثبت‌نام نکرده‌اید.', [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
+
+  const userEmail = u?.email || (owns[0] as any).email;
+  const enrollmentId = owns[0].id;
 
   const { data: lessons } = await supabase.from('course_lessons')
     .select('id, title, lesson_number, order_index').eq('course_id', course.id)
@@ -995,11 +998,29 @@ async function studentCourseDetail(chat_id: number, message_id: number, user: Bo
     lessons?.length ? `<b>درس‌ها (${lessons.length}):</b>` : '📭 درسی ثبت نشده.',
   ].filter(Boolean).join('\n');
 
-  const keyboard: InlineKeyboard = (lessons ?? []).map((l: any) => [{
-    text: `▶️ ${l.lesson_number ? `${l.lesson_number}. ` : ''}${l.title}`,
-    url: `${ACADEMY_BASE}/app/course/${course.slug}/lesson/${l.lesson_number ?? l.order_index ?? 1}`,
-  }]);
-  keyboard.push([{ text: '🌐 صفحه دوره', url: course.redirect_url || `${ACADEMY_BASE}/course/${course.slug}` }]);
+  // Generate one SSO token per link so the user lands directly logged in
+  const buildSsoUrl = async (redirectPath: string): Promise<string> => {
+    if (!userEmail) return `${ACADEMY_BASE}${redirectPath}`;
+    const token = `sso_${crypto.randomUUID().replace(/-/g, '')}_${Date.now()}`;
+    const { error } = await supabase.from('sso_tokens').insert({
+      user_email: userEmail,
+      course_slug: course.slug,
+      token,
+      type: 'academy',
+      enrollment_id: enrollmentId,
+    });
+    if (error) return `${ACADEMY_BASE}${redirectPath}`;
+    return `${ACADEMY_BASE}/sso-access?token=${token}&redirect=${encodeURIComponent(redirectPath)}`;
+  };
+
+  const keyboard: InlineKeyboard = [];
+  for (const l of (lessons ?? []) as any[]) {
+    const lessonPath = `/app/course/${course.slug}/lesson/${l.lesson_number ?? l.order_index ?? 1}`;
+    const url = await buildSsoUrl(lessonPath);
+    keyboard.push([{ text: `▶️ ${l.lesson_number ? `${l.lesson_number}. ` : ''}${l.title}`, url }]);
+  }
+  const coursePageUrl = course.redirect_url || await buildSsoUrl(`/course/${course.slug}`);
+  keyboard.push([{ text: '🌐 صفحه دوره', url: coursePageUrl }]);
   keyboard.push([{ text: '⬅️ بازگشت', callback_data: 'student:my_courses' }, { text: '🏠', callback_data: 'menu:home' }]);
   await editMessage(chat_id, message_id, text, keyboard);
 }
