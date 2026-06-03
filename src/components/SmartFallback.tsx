@@ -9,7 +9,7 @@ const SmartFallback = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const iframeSrc = `https://auth.rafiei.co${location.pathname}`;
+  const iframeSrc = `https://rafeie.com${location.pathname}`;
 
   console.log(`404 Fallback: Loading iframe for path: ${location.pathname}`);
   console.log(`Iframe source: ${iframeSrc}`);
