@@ -5,8 +5,11 @@
 const ZIBAL_BASE = "https://gateway.zibal.ir";
 
 export function getZibalMerchant(): string {
-  // Falls back to the public test merchant `zibal` if no secret is set.
-  return Deno.env.get("ZIBAL_MERCHANT") || "zibal";
+  const merchant = Deno.env.get("ZIBAL_MERCHANT");
+  if (!merchant || merchant === "zibal") {
+    throw new Error("ZIBAL_MERCHANT secret is not configured for live payments");
+  }
+  return merchant;
 }
 
 export async function zibalFetch(path: string, init: RequestInit): Promise<Response> {
