@@ -47,8 +47,8 @@ const EnhancedIframe: React.FC<EnhancedIframeProps> = ({
     }, 800);
   };
 
-  // Update domain from rafeie.com to auth.rafiei.co
-  const updatedSrc = src.replace('rafeie.com', 'auth.rafiei.co');
+  // Update domain from auth.rafiei.co to rafeie.com
+  const updatedSrc = src.replace('auth.rafiei.co', 'rafeie.com');
 
   return (
     <div className="relative w-full h-full">

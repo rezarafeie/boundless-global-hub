@@ -104,8 +104,8 @@ const IframeModal: React.FC<IframeModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Update domain from rafeie.com to auth.rafiei.co
-  const updatedUrl = url.replace('rafeie.com', 'auth.rafiei.co');
+  // Update domain from auth.rafiei.co to rafeie.com
+  const updatedUrl = url.replace('auth.rafiei.co', 'rafeie.com');
 
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col bg-background">
