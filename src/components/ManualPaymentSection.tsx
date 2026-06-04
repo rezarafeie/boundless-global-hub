@@ -67,6 +67,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [zarinpalEnabled, setZarinpalEnabled] = useState(true);
   const [zibalEnabled, setZibalEnabled] = useState(false);
+  const [rafieipayEnabled, setRafieipayEnabled] = useState(false);
   const [manualEnabled, setManualEnabled] = useState(true);
   const [methodsLoaded, setMethodsLoaded] = useState(false);
 
@@ -75,27 +76,26 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
     (async () => {
       const { data } = await supabase
         .from('admin_settings')
-        .select('zarinpal_enabled, zibal_enabled, manual_payment_enabled' as any)
+        .select('zarinpal_enabled, zibal_enabled, manual_payment_enabled, rafieipay_enabled' as any)
         .eq('id', 1)
         .single();
       if (cancelled) return;
       const z = (data as any)?.zarinpal_enabled !== false;
       const zb = (data as any)?.zibal_enabled === true;
+      const rp = (data as any)?.rafieipay_enabled === true;
       const m = (data as any)?.manual_payment_enabled !== false;
       setZarinpalEnabled(z);
       setZibalEnabled(zb);
+      setRafieipayEnabled(rp);
       setManualEnabled(m);
       setMethodsLoaded(true);
       // Auto-switch if currently selected method is disabled
-      if (selectedMethod === 'zarinpal' && !z) {
-        if (zb) onPaymentMethodChange('zibal');
-        else if (m) onPaymentMethodChange('manual');
-      } else if (selectedMethod === 'zibal' && !zb) {
-        if (z) onPaymentMethodChange('zarinpal');
-        else if (m) onPaymentMethodChange('manual');
-      } else if (selectedMethod === 'manual' && !m) {
+      const enabled = { zarinpal: z, zibal: zb, rafieipay: rp, manual: m } as const;
+      if (!enabled[selectedMethod]) {
         if (z) onPaymentMethodChange('zarinpal');
         else if (zb) onPaymentMethodChange('zibal');
+        else if (rp) onPaymentMethodChange('rafieipay');
+        else if (m) onPaymentMethodChange('manual');
       }
     })();
     return () => {
