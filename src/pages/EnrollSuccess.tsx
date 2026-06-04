@@ -671,6 +671,9 @@ const EnrollSuccess: React.FC = () => {
   const zibalTrackId = searchParams.get('trackId');
   const gateway = searchParams.get('gateway');
   const isZibal = gateway === 'zibal' || !!zibalTrackId;
+  const isRafieipay = gateway === 'rafieipay';
+  const rafieipayOrderId = searchParams.get('order_id');
+  const rafieipayReference = searchParams.get('ref_id') || searchParams.get('reference') || searchParams.get('transaction_id');
 
   const [verifying, setVerifying] = useState(true);
   const [result, setResult] = useState<VerificationResult | null>(null);
