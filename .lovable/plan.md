@@ -1,117 +1,36 @@
-## Telegram Bot for Sales & CRM System
+## Add "Rafiei Pay" as a new payment gateway
 
-A full-featured Telegram bot mirroring website roles (admin, sales manager, sales agent) for lead management, CRM updates, assignments, reports, and proactive notifications.
+Adds Rafiei Pay (pay.rafiei.co) alongside Zarinpal and Zibal, toggleable from `/enroll/admin` settings.
 
----
+### 1. Database (migration)
+- `admin_settings`: add `rafieipay_enabled boolean default false`.
 
-### Phase 1: Foundation
+### 2. Secret
+- Add `RAFIEIPAY_SECRET` (the API Secret `d90b5…9740`) via the secrets tool. The API Key is non-secret and will live in the edge function as a constant (or `RAFIEIPAY_API_KEY` secret if preferred).
 
-**Database changes**
-- Add `telegram_chat_id` (bigint, unique) and `telegram_username` (text) columns to `chat_users`
-- Create `telegram_bot_sessions` table to track per-user conversation state (waiting for note input, selecting status, etc.)
-- Create `telegram_notification_queue` table for outbound messages with retry
+### 3. Edge functions (new)
+- `supabase/functions/_shared/rafieipay.ts` — HMAC-SHA256 signer (`X-API-Key`, `X-Timestamp`, `X-Signature` over `${ts}.${rawBody}`), `POST` helper to `https://pay.rafiei.co${path}`.
+- `supabase/functions/rafieipay-request/index.ts` — mirrors `zibal-request`: creates enrollment / test_enrollment with `payment_method='rafieipay'`, calls `/functions/v1/payments-request` with `amount_toman`, `order_id` = enrollment id, `description`, `callback_url` (success page with `gateway=rafieipay`), `customer`. Stores returned reference (e.g., `r.order_id` / token) in the existing `zarinpal_authority` column for tracking. Returns `paymentUrl` from `r.payment_url`.
+- `supabase/functions/rafieipay-verify/index.ts` — called from success page. Verifies via Rafiei Pay verify endpoint (`/functions/v1/payments-verify` with `order_id` / token), updates enrollment `payment_status` to `completed` + ref id on success; mirrors existing `zibal-verify`.
+- `supabase/functions/invoice-rafieipay-payment/index.ts` and `invoice-rafieipay-verify/index.ts` — parallel to `invoice-zibal-*` for invoice flow (only if user wants invoices supported too — see Open question).
+- `config.toml`: register new functions with `verify_jwt = false` like the Zibal ones.
 
-**Admin UI**
-- New "Telegram Bot" section in Admin Settings panel:
-  - Bot status indicator (webhook registered, last update received)
-  - User → Telegram ID linker: searchable list of admins/sales managers/agents with input to set `telegram_chat_id`
-  - Toggle proactive notifications on/off per type
+### 4. Frontend
+- `src/components/Admin/AdminSettingsPanel.tsx`: add Rafiei Pay toggle bound to `rafieipay_enabled`; extend the gateway selector update logic to a 3-way switch.
+- `src/pages/Enroll.tsx`:
+  - Extend `paymentMethod` type to include `'rafieipay'`.
+  - Show Rafiei Pay option when `rafieipay_enabled`.
+  - In submit handler choose function name: `rafieipay` → `rafieipay-request`.
+- Success page: handle `gateway=rafieipay` → call `rafieipay-verify`.
+- `InvoiceView.tsx` + `ManualPaymentSection.tsx`: read `rafieipay_enabled` and render the option (only if invoice support included).
 
-**Secrets needed**
-- `TELEGRAM_BOT_TOKEN` (from @BotFather)
-- `TELEGRAM_WEBHOOK_SECRET` (auto-generated random string for security)
+### Technical details
+- Signing exactly as documented: HMAC-SHA256 of `` `${ts}.${rawBody}` `` with `RAFIEIPAY_SECRET`, hex-encoded, sent in `X-Signature`. Timestamp in seconds.
+- Amount sent as **Toman** (per Rafiei Pay docs `amount_toman`), unlike Zibal where we multiply by 10.
+- Callback URL: `https://academy.rafiei.co/enroll/success?course=…&enrollment=…&gateway=rafieipay`.
+- Rafiei Pay will POST/GET back to callback with its own params; verify call confirms final status before marking enrollment complete.
 
----
-
-### Phase 2: Bot core (edge functions)
-
-**`telegram-webhook`** — receives all updates from Telegram
-- Validates `X-Telegram-Bot-Api-Secret-Token` header
-- Looks up user by `telegram_chat_id` → role
-- If unknown user: replies "You are not authorized. Ask admin to link your account."
-- Routes commands and callback queries to handlers based on role
-
-**`telegram-send`** — internal helper for sending messages / processing notification queue
-
-**`telegram-notify`** — triggered by other parts of the app (lead assigned, consultation booked) to enqueue messages
-
----
-
-### Phase 3: Role-based commands & menus
-
-**All authenticated users**
-- `/start` — shows role-specific main menu (inline keyboard)
-- `/help` — command list
-- `/me` — shows linked account info
-
-**Sales Agent menu**
-- My Leads → paginated list (10 per page) with inline buttons
-- Filter by CRM status (inline keyboard with all custom statuses)
-- Search by name/phone (next message = query)
-- Tap lead → detail card: name, phone, course, current status, last note
-  - Buttons: Change Status, Add Note, Call (tel: link), View on website
-- Change Status → inline keyboard of statuses → updates DB + triggers webhook
-- Add Note → bot enters "awaiting note" state → next text message saved as note
-
-**Sales Manager menu**
-- All agent's menu features, plus:
-- Unassigned Leads → list with "Assign" button → pick agent from inline keyboard
-- Bulk Transfer → pick source agent → pick target agent → confirms
-- Agent Performance → quick stats per agent (leads, conversions today/week)
-
-**Admin menu**
-- All manager features, plus:
-- Full reports: today/week/month totals, top performers, conversion rate
-- Pending consultations count
-- System health: pending payments, new signups
-
----
-
-### Phase 4: Proactive notifications
-
-Triggered from existing code (no extra UI):
-- **Lead assigned** → message to agent with lead summary + "View" button (hook into existing `assign_lead_to_agent` flow via DB trigger calling `telegram-notify`)
-- **New consultation booking** → message to all admins + sales managers
-- **Daily summary** at 22:00 Tehran time via pg_cron → each agent gets their day's stats
-
----
-
-### Technical Details
-
-**Authentication & data isolation**
-- Every handler re-checks role from DB on each update (no trust in cached state)
-- Sales agents queries scoped to `sales_agent_id = current_user_id` (reuses existing RPCs like `get_user_courses_for_sales_agent`)
-- All edge functions: `verify_jwt = false` (Telegram doesn't send Supabase JWT) — security via `TELEGRAM_WEBHOOK_SECRET` header check
-
-**Conversation state**
-- `telegram_bot_sessions` stores `{ chat_id, state, context_json, expires_at }` — e.g., `state: 'awaiting_note', context: { lead_id }`
-- Cleared on `/cancel` or after 10 min
-
-**Inline keyboards & callbacks**
-- Use callback_data format: `action:param1:param2` (e.g., `lead:view:123`, `status:set:lead123:newstatus`)
-- Stay under 64-byte Telegram limit; for long lists store payload in session
-
-**Webhook registration**
-- After deploy, I'll register the webhook by calling Telegram's `setWebhook` API from a one-off script
-- Webhook URL: `https://ihhetvwuhqohbfgkqoxw.supabase.co/functions/v1/telegram-webhook`
-
-**Persian language**
-- All bot messages in Persian (Farsi), matching the rest of the system
-- Dates in Tehran timezone, Jalali calendar
-
----
-
-### Out of scope (can add later)
-- Sending media (lead docs, voice notes)
-- Group chats (bot is 1:1 with each user)
-- Full pipeline/Kanban view in bot
-- Direct user-to-lead messaging through bot
-
----
-
-### What I need from you to start
-1. Approve this plan
-2. Create a bot via @BotFather and get the token (I'll request it as a secret after approval)
-3. Your own Telegram numeric chat ID for initial admin linking (send `/start` to @userinfobot to get it)
-
-Ready to start with the DB migration + admin linker UI as soon as you approve.
+### Open questions
+1. Do you want Rafiei Pay also available for **invoice** payments (InvoiceView), or only for enroll/checkout?
+2. What is the exact **verify endpoint path & request body** on Rafiei Pay (`/functions/v1/payments-verify`?), and which field returns the final `ref_id` / status? The doc you pasted only shows request. I'll mirror Zibal's pattern but need the verify shape — or I can call `payments-verify` with `{ order_id }` and treat `status === 'paid'` (or similar) as success; please confirm.
+3. Confirm the callback query params Rafiei Pay appends (e.g., `order_id`, `status`, `ref_id`) so the success page knows what to forward to the verify function.
