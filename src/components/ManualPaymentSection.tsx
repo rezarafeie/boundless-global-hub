@@ -38,8 +38,8 @@ interface ManualPaymentSectionProps {
   course?: Course;
   test?: Test;
   formData: FormData;
-  onPaymentMethodChange: (method: 'zarinpal' | 'zibal' | 'manual') => void;
-  selectedMethod: 'zarinpal' | 'zibal' | 'manual';
+  onPaymentMethodChange: (method: 'zarinpal' | 'zibal' | 'rafieipay' | 'manual') => void;
+  selectedMethod: 'zarinpal' | 'zibal' | 'rafieipay' | 'manual';
   finalRialPrice?: number | null;
   discountedPrice?: number | null;
   salePrice?: number | null;
