@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { WebhookManagement } from '@/components/Admin/WebhookManagement';
+import RafieipayDebugPanel from '@/components/Admin/RafieipayDebugPanel';
 import ShortLinksManager from '@/components/admin/ShortLinksManager';
 import DiscountManagement from '@/components/Admin/DiscountManagement';
 import { DataImportSection } from '@/components/admin/DataImportSection';
@@ -318,6 +319,7 @@ const AdminSettingsPanel: React.FC = () => {
                     disabled={loadingSettings}
                   />
                 </div>
+                {rafieipayEnabled && <RafieipayDebugPanel />}
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-1">
                     <Label htmlFor="manual-enabled" className="text-base font-medium">

@@ -82,7 +82,8 @@ serve(async (req) => {
       customer: { phone, email },
     };
 
-    const r = await rafieipayFetch('/functions/v1/payments-request', payload);
+    const result = await rafieipayFetch('/functions/v1/payments-request', payload, { enrollmentId: enrollment.id });
+    const r = result.body || {};
 
     const paymentUrl = r?.payment_url || r?.paymentUrl;
     const reference = r?.order_id || r?.token || r?.transaction_id || r?.reference;
@@ -104,7 +105,8 @@ serve(async (req) => {
 
     console.error('Rafiei Pay request failed:', r);
     return new Response(JSON.stringify({
-      error: 'Payment request failed',
+      error: r?.error?.message || 'Payment request failed',
+      errorCode: result.errorCode || r?.error?.code,
       details: r,
     }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
