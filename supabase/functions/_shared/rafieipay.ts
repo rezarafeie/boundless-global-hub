@@ -1,7 +1,7 @@
 // Helper for Rafiei Pay (pay.rafiei.co) HMAC-signed API calls.
 // All amounts sent in Toman (amount_toman).
 
-const RAFIEIPAY_BASE = "https://pay.rafiei.co";
+const RAFIEIPAY_BASE = "https://buicdtvcecydwzornodw.supabase.co";
 export const RAFIEIPAY_API_KEY = "rp_live_a745ffab1cb6aa856f06b6eb52fbcddb08dd64e88761edd3";
 
 export function getRafieipaySecret(): string {
