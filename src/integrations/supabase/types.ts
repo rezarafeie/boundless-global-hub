@@ -3596,6 +3596,48 @@ export type Database = {
         }
         Relationships: []
       }
+      rafieipay_debug_logs: {
+        Row: {
+          created_at: string
+          endpoint: string
+          enrollment_id: string | null
+          error_code: string | null
+          error_message: string | null
+          id: string
+          request_headers: Json | null
+          request_payload: Json | null
+          response_body: Json | null
+          response_status: number | null
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          enrollment_id?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          request_headers?: Json | null
+          request_payload?: Json | null
+          response_body?: Json | null
+          response_status?: number | null
+          success?: boolean
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          enrollment_id?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          request_headers?: Json | null
+          request_payload?: Json | null
+          response_body?: Json | null
+          response_status?: number | null
+          success?: boolean
+        }
+        Relationships: []
+      }
       report_ai_analysis: {
         Row: {
           accuracy_score: number | null
