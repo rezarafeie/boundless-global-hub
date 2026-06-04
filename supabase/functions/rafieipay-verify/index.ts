@@ -48,7 +48,8 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const r = await rafieipayFetch('/functions/v1/payments-verify', verifyBody);
+    const result = await rafieipayFetch('/functions/v1/payments-verify', verifyBody, { enrollmentId });
+    const r = result.body || {};
 
     // Success = success===true AND transaction.status === 'verified'. already_verified is also success.
     const tx = r?.transaction || {};
