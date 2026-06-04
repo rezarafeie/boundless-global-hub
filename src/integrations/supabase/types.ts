@@ -206,6 +206,7 @@ export type Database = {
           manual_approval_enabled: boolean
           manual_payment_enabled: boolean
           quick_enroll_enabled: boolean
+          rafieipay_enabled: boolean
           telegram_ai_assistant_enabled: boolean
           telegram_notify_consultation: boolean
           telegram_notify_daily_summary: boolean
@@ -222,6 +223,7 @@ export type Database = {
           manual_approval_enabled?: boolean
           manual_payment_enabled?: boolean
           quick_enroll_enabled?: boolean
+          rafieipay_enabled?: boolean
           telegram_ai_assistant_enabled?: boolean
           telegram_notify_consultation?: boolean
           telegram_notify_daily_summary?: boolean
@@ -238,6 +240,7 @@ export type Database = {
           manual_approval_enabled?: boolean
           manual_payment_enabled?: boolean
           quick_enroll_enabled?: boolean
+          rafieipay_enabled?: boolean
           telegram_ai_assistant_enabled?: boolean
           telegram_notify_consultation?: boolean
           telegram_notify_daily_summary?: boolean

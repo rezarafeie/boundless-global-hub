@@ -1,0 +1,1 @@
+ALTER TABLE public.admin_settings ADD COLUMN IF NOT EXISTS rafieipay_enabled boolean NOT NULL DEFAULT false;
