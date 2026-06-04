@@ -58,6 +58,7 @@ const AdminSettingsPanel: React.FC = () => {
   const [savingProxyUrl, setSavingProxyUrl] = useState(false);
   const [zarinpalEnabled, setZarinpalEnabled] = useState(true);
   const [zibalEnabled, setZibalEnabled] = useState(false);
+  const [rafieipayEnabled, setRafieipayEnabled] = useState(false);
   const [manualPaymentEnabled, setManualPaymentEnabled] = useState(true);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
