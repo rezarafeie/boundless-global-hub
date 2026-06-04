@@ -525,7 +525,7 @@ const Enroll: React.FC = () => {
           console.log('💰 Using base price for payment:', basePrice);
         }
           
-        const fnName = paymentMethod === 'zibal' ? 'zibal-request' : 'zarinpal-request';
+        const fnName = paymentMethod === 'zibal' ? 'zibal-request' : paymentMethod === 'rafieipay' ? 'rafieipay-request' : 'zarinpal-request';
         const response = await supabase.functions.invoke(fnName, {
           body: {
             courseSlug: course.slug,
