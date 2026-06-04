@@ -118,3 +118,9 @@ verify_jwt = false
 
 [functions.ai-form-analyze-stream]
 verify_jwt = false
+
+[functions.rafieipay-request]
+verify_jwt = false
+
+[functions.rafieipay-verify]
+verify_jwt = false

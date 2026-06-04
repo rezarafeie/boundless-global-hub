@@ -66,7 +66,7 @@ const Enroll: React.FC = () => {
   const [test, setTest] = useState<Test | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'zarinpal' | 'zibal' | 'manual'>('zarinpal');
+  const [paymentMethod, setPaymentMethod] = useState<'zarinpal' | 'zibal' | 'rafieipay' | 'manual'>('zarinpal');
   const [finalRialPrice, setFinalRialPrice] = useState<number | null>(null);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [loadingExchangeRate, setLoadingExchangeRate] = useState(false);
@@ -419,7 +419,7 @@ const Enroll: React.FC = () => {
           window.location.href = successUrl;
         } else {
           // For paid tests, proceed with online payment via selected gateway
-          const fnName = paymentMethod === 'zibal' ? 'zibal-request' : 'zarinpal-request';
+          const fnName = paymentMethod === 'zibal' ? 'zibal-request' : paymentMethod === 'rafieipay' ? 'rafieipay-request' : 'zarinpal-request';
           const response = await supabase.functions.invoke(fnName, {
             body: {
               testSlug: test.slug,
@@ -525,7 +525,7 @@ const Enroll: React.FC = () => {
           console.log('💰 Using base price for payment:', basePrice);
         }
           
-        const fnName = paymentMethod === 'zibal' ? 'zibal-request' : 'zarinpal-request';
+        const fnName = paymentMethod === 'zibal' ? 'zibal-request' : paymentMethod === 'rafieipay' ? 'rafieipay-request' : 'zarinpal-request';
         const response = await supabase.functions.invoke(fnName, {
           body: {
             courseSlug: course.slug,
@@ -1068,7 +1068,7 @@ const Enroll: React.FC = () => {
                    )}
 
                     {/* Submit Button - For online gateways (Zarinpal/Zibal) and paid tests/courses */}
-                    {(paymentMethod === 'zarinpal' || paymentMethod === 'zibal') && (test || course) && !isFree && (
+                    {(paymentMethod === 'zarinpal' || paymentMethod === 'zibal' || paymentMethod === 'rafieipay') && (test || course) && !isFree && (
                      <Button
                        type="submit"
                        className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white h-14 text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"

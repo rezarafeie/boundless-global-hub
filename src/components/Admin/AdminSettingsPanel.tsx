@@ -58,6 +58,7 @@ const AdminSettingsPanel: React.FC = () => {
   const [savingProxyUrl, setSavingProxyUrl] = useState(false);
   const [zarinpalEnabled, setZarinpalEnabled] = useState(true);
   const [zibalEnabled, setZibalEnabled] = useState(false);
+  const [rafieipayEnabled, setRafieipayEnabled] = useState(false);
   const [manualPaymentEnabled, setManualPaymentEnabled] = useState(true);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
@@ -65,7 +66,7 @@ const AdminSettingsPanel: React.FC = () => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('admin_settings')
-        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url, zarinpal_enabled, zibal_enabled, manual_payment_enabled' as any)
+        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url, zarinpal_enabled, zibal_enabled, manual_payment_enabled, rafieipay_enabled' as any)
         .eq('id', 1)
         .single();
       
@@ -76,6 +77,7 @@ const AdminSettingsPanel: React.FC = () => {
         setZarinpalProxyUrl((data as any).zarinpal_proxy_url || '');
         setZarinpalEnabled((data as any).zarinpal_enabled !== false);
         setZibalEnabled((data as any).zibal_enabled === true);
+        setRafieipayEnabled((data as any).rafieipay_enabled === true);
         setManualPaymentEnabled((data as any).manual_payment_enabled !== false);
       }
       setLoadingSettings(false);
@@ -84,16 +86,18 @@ const AdminSettingsPanel: React.FC = () => {
   }, []);
 
   const handleTogglePaymentMethod = async (
-    method: 'zarinpal' | 'zibal' | 'manual',
+    method: 'zarinpal' | 'zibal' | 'rafieipay' | 'manual',
     checked: boolean
   ) => {
     const column =
       method === 'zarinpal' ? 'zarinpal_enabled'
       : method === 'zibal' ? 'zibal_enabled'
+      : method === 'rafieipay' ? 'rafieipay_enabled'
       : 'manual_payment_enabled';
     const setter =
       method === 'zarinpal' ? setZarinpalEnabled
       : method === 'zibal' ? setZibalEnabled
+      : method === 'rafieipay' ? setRafieipayEnabled
       : setManualPaymentEnabled;
     setter(checked);
     const { error } = await supabase
@@ -107,6 +111,7 @@ const AdminSettingsPanel: React.FC = () => {
       const labels: Record<string, string> = {
         zarinpal: 'پرداخت آنلاین (زرین‌پال)',
         zibal: 'پرداخت آنلاین (زیبال)',
+        rafieipay: 'پرداخت آنلاین (رفیعی پی)',
         manual: 'کارت به کارت',
       };
       toast({
@@ -297,6 +302,24 @@ const AdminSettingsPanel: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-1">
+                    <Label htmlFor="rafieipay-enabled" className="text-base font-medium">
+                      پرداخت آنلاین (رفیعی پی)
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {rafieipayEnabled
+                        ? 'کاربران می‌توانند از طریق درگاه رفیعی پی (pay.rafiei.co) پرداخت کنند'
+                        : 'درگاه رفیعی پی در صفحه ثبت‌نام نمایش داده نمی‌شود'}
+                    </p>
+                  </div>
+                  <Switch
+                    id="rafieipay-enabled"
+                    checked={rafieipayEnabled}
+                    onCheckedChange={(c) => handleTogglePaymentMethod('rafieipay', c)}
+                    disabled={loadingSettings}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
                     <Label htmlFor="manual-enabled" className="text-base font-medium">
                       کارت به کارت
                     </Label>
@@ -313,7 +336,7 @@ const AdminSettingsPanel: React.FC = () => {
                     disabled={loadingSettings}
                   />
                 </div>
-                {!zarinpalEnabled && !zibalEnabled && !manualPaymentEnabled && (
+                {!zarinpalEnabled && !zibalEnabled && !rafieipayEnabled && !manualPaymentEnabled && (
                   <div className="p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
                     هشدار: همه روش‌های پرداخت غیرفعال هستند. فقط دوره‌های رایگان قابل ثبت‌نام خواهند بود.
                   </div>

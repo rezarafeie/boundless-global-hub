@@ -671,6 +671,9 @@ const EnrollSuccess: React.FC = () => {
   const zibalTrackId = searchParams.get('trackId');
   const gateway = searchParams.get('gateway');
   const isZibal = gateway === 'zibal' || !!zibalTrackId;
+  const isRafieipay = gateway === 'rafieipay';
+  const rafieipayOrderId = searchParams.get('order_id');
+  const rafieipayReference = searchParams.get('ref_id') || searchParams.get('reference') || searchParams.get('transaction_id');
 
   const [verifying, setVerifying] = useState(true);
   const [result, setResult] = useState<VerificationResult | null>(null);
@@ -792,6 +795,12 @@ const EnrollSuccess: React.FC = () => {
       return;
     }
 
+    // Rafiei Pay callback (gateway=rafieipay)
+    if (isRafieipay && enrollmentId) {
+      verifyRafieipayPayment();
+      return;
+    }
+
     if (authority && enrollmentId) {
       // Check if this is a free course
       if (authority === 'FREE_COURSE') {
@@ -843,6 +852,46 @@ const EnrollSuccess: React.FC = () => {
       }
     } catch (error) {
       console.error('Zibal verification error:', error);
+      setResult({ success: false, error: 'خطا در تایید پرداخت' });
+      toast({
+        title: 'خطا',
+        description: 'خطا در تایید پرداخت. لطفا با پشتیبانی تماس بگیرید.',
+        variant: 'destructive',
+      });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const verifyRafieipayPayment = async () => {
+    try {
+      setVerifying(true);
+      const isTestEnrollment = searchParams.get('test') !== null;
+      const response = await supabase.functions.invoke('rafieipay-verify', {
+        body: {
+          enrollmentId,
+          enrollmentType: isTestEnrollment ? 'test' : 'course',
+          orderId: rafieipayOrderId || enrollmentId,
+          reference: rafieipayReference,
+        }
+      });
+      if (response.error) throw response.error;
+      const { data } = response;
+      setResult(data);
+      if (data.success) {
+        toast({
+          title: 'پرداخت موفق',
+          description: `ثبت‌نام شما با موفقیت انجام شد. کد رهگیری: ${data.refId}`,
+        });
+      } else {
+        toast({
+          title: 'خطا در تایید پرداخت',
+          description: data.error || 'پرداخت تایید نشد',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Rafiei Pay verification error:', error);
       setResult({ success: false, error: 'خطا در تایید پرداخت' });
       toast({
         title: 'خطا',
