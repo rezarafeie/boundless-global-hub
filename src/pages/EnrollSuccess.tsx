@@ -672,8 +672,8 @@ const EnrollSuccess: React.FC = () => {
   const gateway = searchParams.get('gateway');
   const isZibal = gateway === 'zibal' || !!zibalTrackId;
   const isRafieipay = gateway === 'rafieipay';
-  const rafieipayOrderId = searchParams.get('order_id');
-  const rafieipayReference = searchParams.get('ref_id') || searchParams.get('reference') || searchParams.get('transaction_id');
+  const rafieipayTrackId = searchParams.get('track_id');
+  const rafieipayTransactionId = searchParams.get('transaction_id');
 
   const [verifying, setVerifying] = useState(true);
   const [result, setResult] = useState<VerificationResult | null>(null);
@@ -871,8 +871,8 @@ const EnrollSuccess: React.FC = () => {
         body: {
           enrollmentId,
           enrollmentType: isTestEnrollment ? 'test' : 'course',
-          orderId: rafieipayOrderId || enrollmentId,
-          reference: rafieipayReference,
+          trackId: rafieipayTrackId,
+          transactionId: rafieipayTransactionId,
         }
       });
       if (response.error) throw response.error;
