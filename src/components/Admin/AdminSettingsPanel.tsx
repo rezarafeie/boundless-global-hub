@@ -319,6 +319,7 @@ const AdminSettingsPanel: React.FC = () => {
                     disabled={loadingSettings}
                   />
                 </div>
+                {rafieipayEnabled && <RafieipayDebugPanel />}
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-1">
                     <Label htmlFor="manual-enabled" className="text-base font-medium">
