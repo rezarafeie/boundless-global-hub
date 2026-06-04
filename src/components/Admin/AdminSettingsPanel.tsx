@@ -86,16 +86,18 @@ const AdminSettingsPanel: React.FC = () => {
   }, []);
 
   const handleTogglePaymentMethod = async (
-    method: 'zarinpal' | 'zibal' | 'manual',
+    method: 'zarinpal' | 'zibal' | 'rafieipay' | 'manual',
     checked: boolean
   ) => {
     const column =
       method === 'zarinpal' ? 'zarinpal_enabled'
       : method === 'zibal' ? 'zibal_enabled'
+      : method === 'rafieipay' ? 'rafieipay_enabled'
       : 'manual_payment_enabled';
     const setter =
       method === 'zarinpal' ? setZarinpalEnabled
       : method === 'zibal' ? setZibalEnabled
+      : method === 'rafieipay' ? setRafieipayEnabled
       : setManualPaymentEnabled;
     setter(checked);
     const { error } = await supabase
@@ -109,6 +111,7 @@ const AdminSettingsPanel: React.FC = () => {
       const labels: Record<string, string> = {
         zarinpal: 'پرداخت آنلاین (زرین‌پال)',
         zibal: 'پرداخت آنلاین (زیبال)',
+        rafieipay: 'پرداخت آنلاین (رفیعی پی)',
         manual: 'کارت به کارت',
       };
       toast({
