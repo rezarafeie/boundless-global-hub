@@ -302,6 +302,24 @@ const AdminSettingsPanel: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-1">
+                    <Label htmlFor="rafieipay-enabled" className="text-base font-medium">
+                      پرداخت آنلاین (رفیعی پی)
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {rafieipayEnabled
+                        ? 'کاربران می‌توانند از طریق درگاه رفیعی پی (pay.rafiei.co) پرداخت کنند'
+                        : 'درگاه رفیعی پی در صفحه ثبت‌نام نمایش داده نمی‌شود'}
+                    </p>
+                  </div>
+                  <Switch
+                    id="rafieipay-enabled"
+                    checked={rafieipayEnabled}
+                    onCheckedChange={(c) => handleTogglePaymentMethod('rafieipay', c)}
+                    disabled={loadingSettings}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
                     <Label htmlFor="manual-enabled" className="text-base font-medium">
                       کارت به کارت
                     </Label>
@@ -318,7 +336,7 @@ const AdminSettingsPanel: React.FC = () => {
                     disabled={loadingSettings}
                   />
                 </div>
-                {!zarinpalEnabled && !zibalEnabled && !manualPaymentEnabled && (
+                {!zarinpalEnabled && !zibalEnabled && !rafieipayEnabled && !manualPaymentEnabled && (
                   <div className="p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
                     هشدار: همه روش‌های پرداخت غیرفعال هستند. فقط دوره‌های رایگان قابل ثبت‌نام خواهند بود.
                   </div>
