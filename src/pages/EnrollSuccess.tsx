@@ -863,6 +863,46 @@ const EnrollSuccess: React.FC = () => {
     }
   };
 
+  const verifyRafieipayPayment = async () => {
+    try {
+      setVerifying(true);
+      const isTestEnrollment = searchParams.get('test') !== null;
+      const response = await supabase.functions.invoke('rafieipay-verify', {
+        body: {
+          enrollmentId,
+          enrollmentType: isTestEnrollment ? 'test' : 'course',
+          orderId: rafieipayOrderId || enrollmentId,
+          reference: rafieipayReference,
+        }
+      });
+      if (response.error) throw response.error;
+      const { data } = response;
+      setResult(data);
+      if (data.success) {
+        toast({
+          title: 'پرداخت موفق',
+          description: `ثبت‌نام شما با موفقیت انجام شد. کد رهگیری: ${data.refId}`,
+        });
+      } else {
+        toast({
+          title: 'خطا در تایید پرداخت',
+          description: data.error || 'پرداخت تایید نشد',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Rafiei Pay verification error:', error);
+      setResult({ success: false, error: 'خطا در تایید پرداخت' });
+      toast({
+        title: 'خطا',
+        description: 'خطا در تایید پرداخت. لطفا با پشتیبانی تماس بگیرید.',
+        variant: 'destructive',
+      });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   const handleFreeCourseSuccess = async () => {
     try {
       setVerifying(true);
