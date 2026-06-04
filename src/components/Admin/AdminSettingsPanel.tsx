@@ -66,7 +66,7 @@ const AdminSettingsPanel: React.FC = () => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('admin_settings')
-        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url, zarinpal_enabled, zibal_enabled, manual_payment_enabled' as any)
+        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url, zarinpal_enabled, zibal_enabled, manual_payment_enabled, rafieipay_enabled' as any)
         .eq('id', 1)
         .single();
       
@@ -77,6 +77,7 @@ const AdminSettingsPanel: React.FC = () => {
         setZarinpalProxyUrl((data as any).zarinpal_proxy_url || '');
         setZarinpalEnabled((data as any).zarinpal_enabled !== false);
         setZibalEnabled((data as any).zibal_enabled === true);
+        setRafieipayEnabled((data as any).rafieipay_enabled === true);
         setManualPaymentEnabled((data as any).manual_payment_enabled !== false);
       }
       setLoadingSettings(false);
