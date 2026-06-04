@@ -66,7 +66,7 @@ const Enroll: React.FC = () => {
   const [test, setTest] = useState<Test | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'zarinpal' | 'zibal' | 'manual'>('zarinpal');
+  const [paymentMethod, setPaymentMethod] = useState<'zarinpal' | 'zibal' | 'rafieipay' | 'manual'>('zarinpal');
   const [finalRialPrice, setFinalRialPrice] = useState<number | null>(null);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [loadingExchangeRate, setLoadingExchangeRate] = useState(false);
