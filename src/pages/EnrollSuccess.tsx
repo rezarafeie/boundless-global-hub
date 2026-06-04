@@ -795,6 +795,12 @@ const EnrollSuccess: React.FC = () => {
       return;
     }
 
+    // Rafiei Pay callback (gateway=rafieipay)
+    if (isRafieipay && enrollmentId) {
+      verifyRafieipayPayment();
+      return;
+    }
+
     if (authority && enrollmentId) {
       // Check if this is a free course
       if (authority === 'FREE_COURSE') {
