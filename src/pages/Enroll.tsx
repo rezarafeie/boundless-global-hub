@@ -419,7 +419,7 @@ const Enroll: React.FC = () => {
           window.location.href = successUrl;
         } else {
           // For paid tests, proceed with online payment via selected gateway
-          const fnName = paymentMethod === 'zibal' ? 'zibal-request' : 'zarinpal-request';
+          const fnName = paymentMethod === 'zibal' ? 'zibal-request' : paymentMethod === 'rafieipay' ? 'rafieipay-request' : 'zarinpal-request';
           const response = await supabase.functions.invoke(fnName, {
             body: {
               testSlug: test.slug,
