@@ -1068,7 +1068,7 @@ const Enroll: React.FC = () => {
                    )}
 
                     {/* Submit Button - For online gateways (Zarinpal/Zibal) and paid tests/courses */}
-                    {(paymentMethod === 'zarinpal' || paymentMethod === 'zibal') && (test || course) && !isFree && (
+                    {(paymentMethod === 'zarinpal' || paymentMethod === 'zibal' || paymentMethod === 'rafieipay') && (test || course) && !isFree && (
                      <Button
                        type="submit"
                        className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white h-14 text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
