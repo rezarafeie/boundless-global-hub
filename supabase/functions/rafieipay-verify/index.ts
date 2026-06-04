@@ -13,8 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    const { enrollmentId, enrollmentType, orderId, reference } = await req.json();
-    console.log('🔍 Rafiei Pay verify called with:', { enrollmentId, enrollmentType, orderId, reference });
+    const { enrollmentId, enrollmentType, trackId, transactionId } = await req.json();
+    console.log('🔍 Rafiei Pay verify:', { enrollmentId, enrollmentType, trackId, transactionId });
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -39,24 +39,26 @@ serve(async (req) => {
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const verifyBody: Record<string, any> = {
-      order_id: String(orderId || enrollment.id),
-    };
-    if (reference) verifyBody.reference = String(reference);
+    // Per Rafiei Pay docs: body must be { track_id } OR { transaction_id }. NOT order_id/reference.
+    const verifyBody: Record<string, any> = {};
+    if (trackId) verifyBody.track_id = String(trackId);
+    else if (transactionId) verifyBody.transaction_id = String(transactionId);
+    else {
+      return new Response(JSON.stringify({ error: 'Missing track_id or transaction_id' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     const r = await rafieipayFetch('/functions/v1/payments-verify', verifyBody);
 
-    const isPaid =
-      r?.success === true ||
-      r?.status === 'paid' ||
-      r?.status === 'success' ||
-      r?.paid === true;
-    const refId = r?.ref_id || r?.refId || r?.reference || r?.transaction_id || reference || String(orderId || enrollment.id);
+    // Success = success===true AND transaction.status === 'verified'. already_verified is also success.
+    const tx = r?.transaction || {};
+    const isPaid = r?.success === true && (tx.status === 'verified' || r?.already_verified === true);
+    const refId = tx.ref_id || r?.ref_id || '';
 
     if (isPaid) {
       const tableName = enrollmentType === 'test' ? 'test_enrollments' : 'enrollments';
       const { error: updateError } = await supabase.from(tableName)
-        .update({ payment_status: 'completed', zarinpal_ref_id: String(refId) })
+        .update({ payment_status: 'completed', zarinpal_ref_id: String(refId || tx.id || '') })
         .eq('id', enrollmentId);
       if (updateError) throw new Error(`Database update failed: ${updateError.message}`);
 
@@ -96,6 +98,7 @@ serve(async (req) => {
         refId,
         course: enrollmentType === 'test' ? enrollment.tests : enrollment.courses,
         enrollment,
+        transaction: tx,
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -104,7 +107,7 @@ serve(async (req) => {
     await supabase.from(tableName).update({ payment_status: 'failed' }).eq('id', enrollmentId);
 
     return new Response(JSON.stringify({
-      error: 'Payment verification failed',
+      error: r?.error?.message || 'Payment verification failed',
       details: r,
     }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
