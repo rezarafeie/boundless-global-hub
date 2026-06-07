@@ -1363,8 +1363,7 @@ async function streamAiToTelegram(chat_id: number, messages: AiMsg[]): Promise<s
   await tryEdit(true);
   if (messageId && full) {
     try {
-      await editMessage(chat_id, messageId, mdToTelegramHtml(full).slice(0, 4000),
-        [[{ text: '⏹ پایان گفت‌وگو', callback_data: 'ai:end' }]]);
+      await editMessage(chat_id, messageId, mdToTelegramHtml(full).slice(0, 4000));
     } catch { /* ignore */ }
   } else if (!full) {
     await sendMessage(chat_id, '❌ پاسخی دریافت نشد.');
