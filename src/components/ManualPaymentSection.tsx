@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { CreditCard, FileText, Upload, Loader2, Clock, CheckCircle, AlertCircle, DollarSign } from 'lucide-react';
+import { CreditCard, FileText, Upload, Loader2, Clock, CheckCircle, AlertCircle, DollarSign, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
