@@ -225,7 +225,7 @@ async function enqueueAndSend(type: string, data: any) {
   if (!msg) return { skipped: true };
 
   for (const chat_id of msg.chat_ids) {
-    const payload = { text: msg.text, keyboard: msg.keyboard };
+    const payload = { text: msg.text, keyboard: msg.keyboard, photo_url: msg.photo_url };
     const { data: row } = await supabase
       .from('telegram_notification_queue')
       .insert({ chat_id, payload, notification_type: type, status: 'pending' })
@@ -233,14 +233,21 @@ async function enqueueAndSend(type: string, data: any) {
       .single();
 
     try {
-      const res = await sendMessage(chat_id, msg.text, { keyboard: msg.keyboard });
-      if (res?.ok) {
+      const res = msg.photo_url
+        ? await sendPhoto(chat_id, msg.photo_url, { caption: msg.text, keyboard: msg.keyboard })
+        : await sendMessage(chat_id, msg.text, { keyboard: msg.keyboard });
+      // Fallback to plain message if photo failed (e.g. invalid URL)
+      let finalRes: any = res;
+      if (!res?.ok && msg.photo_url) {
+        finalRes = await sendMessage(chat_id, msg.text, { keyboard: msg.keyboard });
+      }
+      if (finalRes?.ok) {
         await supabase.from('telegram_notification_queue').update({
           status: 'sent', sent_at: new Date().toISOString(), attempts: 1,
         }).eq('id', row?.id);
       } else {
         await supabase.from('telegram_notification_queue').update({
-          status: 'failed', attempts: 1, last_error: JSON.stringify(res),
+          status: 'failed', attempts: 1, last_error: JSON.stringify(finalRes),
         }).eq('id', row?.id);
       }
     } catch (e) {
