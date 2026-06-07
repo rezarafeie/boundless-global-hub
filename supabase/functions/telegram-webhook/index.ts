@@ -8,6 +8,7 @@ import {
   formatTehran,
   downloadFile,
   mdToTelegramHtml,
+  tgCall,
   type InlineKeyboard,
 } from '../_shared/telegram.ts';
 
