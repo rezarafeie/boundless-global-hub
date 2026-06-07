@@ -1372,6 +1372,12 @@ async function streamAiToTelegram(chat_id: number, messages: AiMsg[]): Promise<s
 }
 
 async function handleAiChat(chat_id: number, user: BotUser | null, msg: any, session: any) {
+  const userText: string = msg.caption ?? msg.text ?? '';
+  // Reply keyboard button interception
+  if (userText === KBD_END_CHAT || userText === KBD_HOME) {
+    await endAiChat(chat_id, null, user);
+    return;
+  }
   // Build user content
   const userContent = await buildUserContentFromMessage(msg);
 
