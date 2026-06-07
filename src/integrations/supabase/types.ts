@@ -212,6 +212,10 @@ export type Database = {
           telegram_notify_daily_summary: boolean
           telegram_notify_lead_assigned: boolean
           telegram_notify_manual_payment: boolean
+          telegram_sales_ai_enabled: boolean
+          telegram_sales_ai_model: string
+          telegram_sales_ai_prompt: string | null
+          telegram_sales_default_course_id: string | null
           updated_at: string
           use_full_leads_system: boolean | null
           zarinpal_enabled: boolean
@@ -230,6 +234,10 @@ export type Database = {
           telegram_notify_daily_summary?: boolean
           telegram_notify_lead_assigned?: boolean
           telegram_notify_manual_payment?: boolean
+          telegram_sales_ai_enabled?: boolean
+          telegram_sales_ai_model?: string
+          telegram_sales_ai_prompt?: string | null
+          telegram_sales_default_course_id?: string | null
           updated_at?: string
           use_full_leads_system?: boolean | null
           zarinpal_enabled?: boolean
@@ -248,6 +256,10 @@ export type Database = {
           telegram_notify_daily_summary?: boolean
           telegram_notify_lead_assigned?: boolean
           telegram_notify_manual_payment?: boolean
+          telegram_sales_ai_enabled?: boolean
+          telegram_sales_ai_model?: string
+          telegram_sales_ai_prompt?: string | null
+          telegram_sales_default_course_id?: string | null
           updated_at?: string
           use_full_leads_system?: boolean | null
           zarinpal_enabled?: boolean
