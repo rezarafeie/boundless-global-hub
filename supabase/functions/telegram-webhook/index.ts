@@ -2503,6 +2503,7 @@ async function handleUpdate(update: any) {
     if (session?.state === 'awaiting_signup_email' && text) { await handleSignupEmail(chat_id, text); return; }
     if (session?.state === 'awaiting_form_field') { await handleFormMessage(chat_id, null, msg, session); return; }
     if (session?.state === 'ai_chat') { await handleAiChat(chat_id, null, msg, session); return; }
+    if (session?.state === 'sales_chat') { await handleSalesChat(chat_id, msg, session); return; }
     const kbd = await buildStartKeyboard(null);
     await sendMessage(chat_id, 'برای ورود /start را بزنید.', { keyboard: kbd });
     return;
