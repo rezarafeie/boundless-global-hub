@@ -2534,6 +2534,10 @@ async function handleUpdate(update: any) {
     await handleAiChat(chat_id, user, msg, session);
     return;
   }
+  if (session?.state === 'sales_chat') {
+    await handleSalesChat(chat_id, msg, session);
+    return;
+  }
 
   if (session?.state === 'awaiting_note' && text) {
     const enrollment_id = session.context.enrollment_id;
