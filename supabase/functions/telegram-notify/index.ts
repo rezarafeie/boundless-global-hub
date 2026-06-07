@@ -18,14 +18,22 @@ const supabase = createClient(
 async function getSettings() {
   const { data } = await supabase
     .from('admin_settings')
-    .select('telegram_notify_lead_assigned, telegram_notify_consultation, telegram_notify_daily_summary')
+    .select('telegram_notify_lead_assigned, telegram_notify_consultation, telegram_notify_daily_summary, telegram_notify_manual_payment')
     .eq('id', 1)
     .maybeSingle();
   return data ?? {
     telegram_notify_lead_assigned: true,
     telegram_notify_consultation: true,
     telegram_notify_daily_summary: true,
+    telegram_notify_manual_payment: true,
   };
+}
+
+interface BuiltMessage {
+  chat_ids: number[];
+  text: string;
+  keyboard?: any[][];
+  photo_url?: string;
 }
 
 // Build the message for a given notification type
