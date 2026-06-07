@@ -1326,7 +1326,7 @@ async function streamAiToTelegram(chat_id: number, messages: AiMsg[]): Promise<s
   const tryEdit = async (force = false) => {
     if (!messageId) return;
     const now = Date.now();
-    if (!force && (now - lastEditAt < 1300 || full === lastEditedText)) return;
+    if (!force && (now - lastEditAt < 600 || full === lastEditedText)) return;
     lastEditAt = now;
     lastEditedText = full;
     const display = (full || '⏳ ...').slice(0, 3900);
