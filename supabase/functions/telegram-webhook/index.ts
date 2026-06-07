@@ -1501,12 +1501,10 @@ async function notifySalesTeamAboutLead(lead_id: string, summary: string) {
   }
 }
 
-async function startSalesChat(chat_id: number, message_id: number | null, telegram_user: any) {
+async function startSalesChat(chat_id: number, _message_id: number | null, telegram_user: any) {
   const settings = await getSalesSettings();
   if (!settings.enabled) {
-    const txt = '⚠️ مشاور هوشمند فروش در حال حاضر غیرفعال است. لطفاً بعداً مراجعه کنید.';
-    if (message_id) await editMessage(chat_id, message_id, txt, [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]]);
-    else await sendMessage(chat_id, txt);
+    await sendMessage(chat_id, '⚠️ مشاور هوشمند فروش در حال حاضر غیرفعال است. لطفاً بعداً مراجعه کنید.', { removeKeyboard: true });
     return;
   }
   const lead_id = await getOrCreateSalesLead(chat_id, telegram_user);
@@ -1518,31 +1516,26 @@ async function startSalesChat(chat_id: number, message_id: number | null, telegr
     ``,
     `لطفاً در یک یا دو جمله بگید چه هدفی دارید یا دنبال چه چیزی هستید؟`,
   ].join('\n');
-  const kbd: InlineKeyboard = [
-    [{ text: '💳 دریافت لینک پرداخت', callback_data: 'sales:pay' }],
-    [{ text: '📞 ارجاع به مشاور انسانی', callback_data: 'sales:handoff' }],
-    [{ text: '⏹ پایان گفت‌وگو', callback_data: 'sales:end' }],
-  ];
-  if (message_id) await editMessage(chat_id, message_id, txt, kbd);
-  else await sendMessage(chat_id, txt, { keyboard: kbd });
+  await sendMessage(chat_id, txt, { replyKeyboard: SALES_REPLY_KBD_BASE });
 }
 
-async function endSalesChat(chat_id: number, message_id: number) {
+async function endSalesChat(chat_id: number, _message_id: number | null) {
   const s = await getSession(chat_id);
   const leadId = s?.context?.lead_id;
   if (leadId) await updateSalesLead(leadId, { status: 'closed' });
   await clearSession(chat_id);
+  await sendMessage(chat_id, '✅ گفت‌وگو پایان یافت. ممنون از وقتی که گذاشتید 🙏', { removeKeyboard: true });
   const u = await resolveUser(chat_id);
   const homeKbd = await buildStartKeyboard(u);
-  await editMessage(chat_id, message_id, '✅ گفت‌وگو پایان یافت. ممنون از وقتی که گذاشتید 🙏', homeKbd);
+  await sendMessage(chat_id, u ? welcomeText(u) : '👋 منوی اصلی', { keyboard: homeKbd });
 }
 
-async function showSalesPaymentOptions(chat_id: number, message_id: number) {
+async function showSalesPaymentOptions(chat_id: number, _message_id: number | null) {
   const { data: courses } = await supabase
     .from('courses').select('id, title, slug, price')
     .eq('is_active', true).order('created_at', { ascending: false }).limit(15);
   if (!courses?.length) {
-    await editMessage(chat_id, message_id, '❌ دوره‌ای فعال نیست.', [[{ text: '⬅️ بازگشت', callback_data: 'sales:back' }]]);
+    await sendMessage(chat_id, '❌ دوره‌ای فعال نیست.');
     return;
   }
   const baseUrl = 'https://academy.rafiei.co/enroll';
@@ -1550,15 +1543,16 @@ async function showSalesPaymentOptions(chat_id: number, message_id: number) {
     text: `💳 ${c.title}${c.price ? ` — ${Number(c.price).toLocaleString('fa-IR')} ت` : ''}`,
     url: `${baseUrl}?course=${encodeURIComponent(c.slug)}&source=telegram_sales`,
   }]);
-  kbd.push([{ text: '⬅️ ادامه گفت‌وگو', callback_data: 'sales:back' }]);
-  await editMessage(chat_id, message_id, '💳 <b>دوره یا خدمت موردنظر برای پرداخت را انتخاب کنید:</b>', kbd);
+  await sendMessage(chat_id,
+    '💳 <b>دوره موردنظر را برای دریافت لینک پرداخت انتخاب کنید:</b>\n\nروی هر دوره بزنید تا به صفحه پرداخت هدایت شوید.',
+    { keyboard: kbd });
 }
 
-async function handoffSalesToHuman(chat_id: number, message_id: number) {
+async function handoffSalesToHuman(chat_id: number, _message_id: number | null) {
   const s = await getSession(chat_id);
   const leadId = s?.context?.lead_id;
   if (!leadId) {
-    await editMessage(chat_id, message_id, '❌ نشست فعال یافت نشد.', [[{ text: '🏠', callback_data: 'menu:home' }]]);
+    await sendMessage(chat_id, '❌ نشست فعال یافت نشد. لطفاً /start را بزنید.', { removeKeyboard: true });
     return;
   }
   const history = Array.isArray(s?.context?.messages) ? s.context.messages : [];
@@ -1566,20 +1560,40 @@ async function handoffSalesToHuman(chat_id: number, message_id: number) {
     `${m.role === 'user' ? '👤 کاربر' : '🤖 مشاور'}: ${typeof m.content === 'string' ? m.content : '[رسانه]'}`).join('\n');
   await updateSalesLead(leadId, { status: 'handoff_requested' });
   await notifySalesTeamAboutLead(leadId, summary || 'بدون گفت‌وگو');
-  await editMessage(chat_id, message_id,
-    '✅ درخواست شما به تیم فروش ارسال شد. به‌زودی یک کارشناس انسانی با شما تماس می‌گیرد.',
-    [[{ text: '⬅️ ادامه گفت‌وگو', callback_data: 'sales:back' }], [{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]]);
+  await sendMessage(chat_id,
+    '✅ درخواست شما به تیم فروش ارسال شد. به‌زودی یک کارشناس انسانی با شما تماس می‌گیرد.\n\nاگر سوال دیگری دارید همینجا بنویسید.');
 }
+
+// Detect when user is explicitly asking for payment info or agreed to buy
+function userWantsPayment(text: string): boolean {
+  if (!text) return false;
+  const t = text.toLowerCase().replace(/\s+/g, ' ');
+  const patterns = [
+    'پرداخت', 'لینک پرداخت', 'لینک خرید', 'بخرم', 'خرید کنم', 'خرید میکنم',
+    'ثبت نام', 'ثبت‌نام', 'موافقم', 'قبول', 'باشه میخرم', 'می‌خرم', 'میخرم',
+    'چطور بخرم', 'چجوری ثبت نام', 'هزینه چقدر', 'قیمت', 'تومن', 'تومان',
+    'pay', 'buy', 'enroll', 'checkout',
+  ];
+  return patterns.some(p => t.includes(p));
+}
+
+const SALES_PAY_MARKER = '[SHOW_PAY]';
 
 async function handleSalesChat(chat_id: number, msg: any, session: any) {
   const settings = await getSalesSettings();
   if (!settings.enabled) {
-    await sendMessage(chat_id, '⚠️ مشاور هوشمند فروش غیرفعال شد.');
+    await sendMessage(chat_id, '⚠️ مشاور هوشمند فروش غیرفعال شد.', { removeKeyboard: true });
     await clearSession(chat_id);
     return;
   }
   const leadId: string | null = session?.context?.lead_id ?? null;
   const userText: string = msg.caption ?? msg.text ?? '';
+
+  // Reply keyboard button interception
+  if (userText === KBD_END_CHAT) { await endSalesChat(chat_id, null); return; }
+  if (userText === KBD_HOME) { await endSalesChat(chat_id, null); return; }
+  if (userText === KBD_SALES_HUMAN) { await handoffSalesToHuman(chat_id, null); return; }
+  if (userText === KBD_SALES_PAY) { await showSalesPaymentOptions(chat_id, null); return; }
 
   // Detect phone in user message
   if (leadId && userText) {
@@ -1591,8 +1605,23 @@ async function handleSalesChat(chat_id: number, msg: any, session: any) {
     }
   }
 
+  const userAskedPay = userWantsPayment(userText);
   const courseList = await getActiveSalesCoursesText();
-  const systemPrompt = `${settings.prompt || ''}\n\n📚 <فهرست دوره‌های فعال آکادمی>\n${courseList}\n</فهرست>\n\nاگر کاربر شماره موبایل یا نام خود را داد، در پاسخ تأیید کن. وقتی کاربر آماده خرید است، یادآور شو که با دکمه «💳 دریافت لینک پرداخت» در پایین پیام، لینک پرداخت دوره را دریافت کند.`;
+  const basePrompt = settings.prompt || `شما «مشاور فروش هوشمند آکادمی رفیعی» هستید. با لحن گرم، فارسی روان و حرفه‌ای پاسخ دهید. از تکنیک‌های فروش مشاوره‌ای استفاده کنید: ابتدا نیاز و هدف کاربر را بفهمید، سپس دوره مناسب را پیشنهاد دهید و مزایا را شفاف توضیح دهید. هرگز فشار نیاورید.`;
+  const systemPrompt = [
+    basePrompt,
+    ``,
+    `📚 فهرست دوره‌های فعال آکادمی:`,
+    courseList,
+    ``,
+    `قوانین مهم پاسخگویی:`,
+    `1) از فرمت تلگرام استفاده کنید: **متن مهم** برای بولد، ایموجی مناسب در ابتدای پاراگراف‌های کلیدی، و خط تیره (-) برای فهرست‌ها. از عناوین #/## یا کد بلاک استفاده نکنید.`,
+    `2) پاسخ‌ها کوتاه و خوانا باشد (حداکثر ۳-۴ پاراگراف کوتاه).`,
+    `3) **هرگز** خودتان لینک پرداخت یا قیمت‌گذاری اضافه نزنید مگر اینکه کاربر صریحاً درخواست خرید/پرداخت/قیمت کند یا با خرید موافقت کند.`,
+    `4) فقط زمانی که کاربر صریحاً آماده خرید است یا درخواست پرداخت/قیمت/ثبت‌نام کرد، در انتهای پیام (در یک خط جدا) دقیقاً این علامت را بنویسید: ${SALES_PAY_MARKER}`,
+    `   با این علامت سیستم دکمه‌های پرداخت را به کاربر نمایش می‌دهد. در غیر این صورت **این علامت را به هیچ عنوان ننویسید**.`,
+    `5) اگر کاربر شماره موبایل یا نام داد، تشکر کنید و ادامه دهید.`,
+  ].join('\n');
 
   const userContent = await buildUserContentFromMessage(msg);
   const history: AiMsg[] = Array.isArray(session?.context?.messages) ? session.context.messages : [];
@@ -1602,20 +1631,26 @@ async function handleSalesChat(chat_id: number, msg: any, session: any) {
     { role: 'user', content: userContent },
   ];
 
-  const reply = await streamSalesAiToTelegram(chat_id, messages, settings.model);
+  // Use the same fast model as the smart assistant for speed
+  const rawReply = await streamSalesAiToTelegram(chat_id, messages, 'google/gemini-2.5-flash');
+  const showPay = userAskedPay || rawReply.includes(SALES_PAY_MARKER);
+  const cleanReply = rawReply.replace(SALES_PAY_MARKER, '').trim();
+
+  if (showPay) {
+    await showSalesPaymentOptions(chat_id, null);
+  }
 
   const userTextOnly = Array.isArray(userContent)
     ? userContent.filter((p: any) => p.type === 'text').map((p: any) => p.text).join(' ').slice(0, 2000) || '[رسانه]'
     : String(userContent);
   const newHistory = [...history, { role: 'user' as const, content: userTextOnly }];
-  if (reply) newHistory.push({ role: 'assistant' as const, content: reply.slice(0, 2000) });
+  if (cleanReply) newHistory.push({ role: 'assistant' as const, content: cleanReply.slice(0, 2000) });
   const trimmed = newHistory.slice(-16);
   await setSession(chat_id, null, 'sales_chat', { lead_id: leadId, messages: trimmed });
 
   if (leadId) {
-    await updateSalesLead(leadId, { status: 'in_progress' },
-      { role: 'user', content: userTextOnly });
-    if (reply) await updateSalesLead(leadId, {}, { role: 'assistant', content: reply.slice(0, 800) });
+    await updateSalesLead(leadId, { status: 'in_progress' }, { role: 'user', content: userTextOnly });
+    if (cleanReply) await updateSalesLead(leadId, {}, { role: 'assistant', content: cleanReply.slice(0, 800) });
   }
 }
 
@@ -1637,17 +1672,14 @@ async function streamSalesAiToTelegram(chat_id: number, messages: AiMsg[], model
   const messageId: number | null = (placeholder as any)?.result?.message_id ?? null;
   let full = '', lastEdit = '', lastAt = 0;
   const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
-  const kbd: InlineKeyboard = [
-    [{ text: '💳 دریافت لینک پرداخت', callback_data: 'sales:pay' }],
-    [{ text: '📞 ارجاع به مشاور انسانی', callback_data: 'sales:handoff' }],
-    [{ text: '⏹ پایان گفت‌وگو', callback_data: 'sales:end' }],
-  ];
+  const displayText = () => mdToTelegramHtml((full.replace(SALES_PAY_MARKER, '') || '⏳ ...').slice(0, 3900));
   const tryEdit = async (force = false) => {
     if (!messageId) return;
     const now = Date.now();
-    if (!force && (now - lastAt < 1300 || full === lastEdit)) return;
+    // Faster updates: ~600ms throttle instead of 1300ms
+    if (!force && (now - lastAt < 600 || full === lastEdit)) return;
     lastAt = now; lastEdit = full;
-    try { await editMessage(chat_id, messageId, mdToTelegramHtml((full || '⏳ ...').slice(0, 3900))); } catch { /* ignore */ }
+    try { await editMessage(chat_id, messageId, displayText()); } catch { /* ignore */ }
   };
   try {
     while (true) {
@@ -1670,9 +1702,9 @@ async function streamSalesAiToTelegram(chat_id: number, messages: AiMsg[], model
   } catch (e) { console.error('sales stream error', e); }
   await tryEdit(true);
   if (messageId && full) {
-    try { await editMessage(chat_id, messageId, mdToTelegramHtml(full).slice(0, 4000), kbd); } catch { /* ignore */ }
+    try { await editMessage(chat_id, messageId, mdToTelegramHtml(full.replace(SALES_PAY_MARKER, '')).slice(0, 4000)); } catch { /* ignore */ }
   } else if (!full) {
-    await sendMessage(chat_id, '❌ پاسخی دریافت نشد.', { keyboard: kbd });
+    await sendMessage(chat_id, '❌ پاسخی دریافت نشد.');
   }
   return full;
 }
