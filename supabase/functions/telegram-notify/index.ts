@@ -3,7 +3,7 @@
 //  - POST with { type, ...data }  -> enqueue and immediately send
 //  - GET (cron)                   -> process pending queue (retry failures)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { sendMessage, escapeHtml, formatTehran } from '../_shared/telegram.ts';
+import { sendMessage, sendPhoto, escapeHtml, formatTehran } from '../_shared/telegram.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,18 +18,26 @@ const supabase = createClient(
 async function getSettings() {
   const { data } = await supabase
     .from('admin_settings')
-    .select('telegram_notify_lead_assigned, telegram_notify_consultation, telegram_notify_daily_summary')
+    .select('telegram_notify_lead_assigned, telegram_notify_consultation, telegram_notify_daily_summary, telegram_notify_manual_payment')
     .eq('id', 1)
     .maybeSingle();
   return data ?? {
     telegram_notify_lead_assigned: true,
     telegram_notify_consultation: true,
     telegram_notify_daily_summary: true,
+    telegram_notify_manual_payment: true,
   };
 }
 
+interface BuiltMessage {
+  chat_ids: number[];
+  text: string;
+  keyboard?: any[][];
+  photo_url?: string;
+}
+
 // Build the message for a given notification type
-async function buildMessage(type: string, data: any): Promise<{ chat_ids: number[]; text: string; keyboard?: any[][] } | null> {
+async function buildMessage(type: string, data: any): Promise<BuiltMessage | null> {
   const settings = await getSettings();
 
   if (type === 'lead_assigned') {
@@ -144,6 +152,71 @@ async function buildMessage(type: string, data: any): Promise<{ chat_ids: number
     return { chat_ids: [Number(agent.telegram_chat_id)], text };
   }
 
+  if (type === 'manual_payment_pending') {
+    if (settings.telegram_notify_manual_payment === false) return null;
+    const { enrollment_id } = data;
+    const { data: enr } = await supabase
+      .from('enrollments')
+      .select('id, full_name, phone, email, payment_amount, receipt_url, created_at, courses(title)')
+      .eq('id', enrollment_id)
+      .maybeSingle();
+    if (!enr) return null;
+
+    // Recipients: admins + sales managers with linked telegram
+    const { data: staff } = await supabase
+      .from('chat_users')
+      .select('id, telegram_chat_id, role, is_messenger_admin')
+      .not('telegram_chat_id', 'is', null)
+      .or('is_messenger_admin.eq.true,role.eq.admin,role.eq.sales_manager');
+
+    const ids = new Set<number>((staff ?? []).map((s: any) => Number(s.telegram_chat_id)).filter(Boolean));
+
+    // Also include assigned sales agent for this enrollment, if any
+    const { data: assignment } = await supabase
+      .from('lead_assignments')
+      .select('sales_agent_id')
+      .eq('enrollment_id', enrollment_id)
+      .maybeSingle();
+    if (assignment?.sales_agent_id) {
+      const { data: sa } = await supabase
+        .from('sales_agents')
+        .select('user_id')
+        .eq('id', assignment.sales_agent_id)
+        .maybeSingle();
+      if (sa?.user_id) {
+        const { data: agentUser } = await supabase
+          .from('chat_users')
+          .select('telegram_chat_id')
+          .eq('id', sa.user_id)
+          .maybeSingle();
+        if (agentUser?.telegram_chat_id) ids.add(Number(agentUser.telegram_chat_id));
+      }
+    }
+
+    if (!ids.size) return null;
+
+    const text = [
+      `💳 <b>پرداخت کارت به کارت جدید — در انتظار تایید</b>`,
+      ``,
+      `👤 ${escapeHtml(enr.full_name)}`,
+      `📞 ${escapeHtml(enr.phone)}`,
+      enr.email ? `✉️ ${escapeHtml(enr.email)}` : '',
+      `📚 ${escapeHtml((enr as any).courses?.title ?? '-')}`,
+      `💰 ${enr.payment_amount?.toLocaleString('fa-IR') ?? '-'} تومان`,
+      `🕐 ${formatTehran(enr.created_at)}`,
+    ].filter(Boolean).join('\n');
+
+    return {
+      chat_ids: Array.from(ids),
+      text,
+      photo_url: enr.receipt_url || undefined,
+      keyboard: [[
+        { text: '✅ تایید', callback_data: `manual:approve:${enrollment_id}` },
+        { text: '❌ رد', callback_data: `manual:reject:${enrollment_id}` },
+      ]],
+    };
+  }
+
   return null;
 }
 
@@ -152,7 +225,7 @@ async function enqueueAndSend(type: string, data: any) {
   if (!msg) return { skipped: true };
 
   for (const chat_id of msg.chat_ids) {
-    const payload = { text: msg.text, keyboard: msg.keyboard };
+    const payload = { text: msg.text, keyboard: msg.keyboard, photo_url: msg.photo_url };
     const { data: row } = await supabase
       .from('telegram_notification_queue')
       .insert({ chat_id, payload, notification_type: type, status: 'pending' })
@@ -160,14 +233,21 @@ async function enqueueAndSend(type: string, data: any) {
       .single();
 
     try {
-      const res = await sendMessage(chat_id, msg.text, { keyboard: msg.keyboard });
-      if (res?.ok) {
+      const res = msg.photo_url
+        ? await sendPhoto(chat_id, msg.photo_url, { caption: msg.text, keyboard: msg.keyboard })
+        : await sendMessage(chat_id, msg.text, { keyboard: msg.keyboard });
+      // Fallback to plain message if photo failed (e.g. invalid URL)
+      let finalRes: any = res;
+      if (!res?.ok && msg.photo_url) {
+        finalRes = await sendMessage(chat_id, msg.text, { keyboard: msg.keyboard });
+      }
+      if (finalRes?.ok) {
         await supabase.from('telegram_notification_queue').update({
           status: 'sent', sent_at: new Date().toISOString(), attempts: 1,
         }).eq('id', row?.id);
       } else {
         await supabase.from('telegram_notification_queue').update({
-          status: 'failed', attempts: 1, last_error: JSON.stringify(res),
+          status: 'failed', attempts: 1, last_error: JSON.stringify(finalRes),
         }).eq('id', row?.id);
       }
     } catch (e) {

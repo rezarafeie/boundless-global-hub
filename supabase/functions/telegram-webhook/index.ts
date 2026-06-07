@@ -8,6 +8,7 @@ import {
   formatTehran,
   downloadFile,
   mdToTelegramHtml,
+  tgCall,
   type InlineKeyboard,
 } from '../_shared/telegram.ts';
 
@@ -1968,6 +1969,60 @@ async function handleUpdate(update: any) {
         const page = parseInt(rest[1] ?? '0');
         if (scope === 'all' && user.role === 'sales_agent') return;
         await renderLeadsList(chat_id, message_id, user, scope, page);
+        return;
+      }
+
+      if (action === 'manual') {
+        if (!['admin', 'sales_manager', 'sales_agent'].includes(user.role ?? '')) {
+          await answerCallback(cq.id, '🚫 دسترسی ندارید');
+          return;
+        }
+        const sub = rest[0]; // 'approve' | 'reject'
+        const enrollment_id = rest[1];
+        if (sub !== 'approve' && sub !== 'reject') return;
+
+        try {
+          const res = await fetch(
+            `${Deno.env.get('SUPABASE_URL')}/functions/v1/approve-manual-payment`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                enrollmentId: enrollment_id,
+                action: sub,
+                adminNotes: `از طریق تلگرام توسط ${user.name}`,
+              }),
+            },
+          );
+          const out = await res.json().catch(() => ({}));
+          const ok = res.ok && out?.success !== false;
+          const verdict = sub === 'approve'
+            ? `✅ <b>تایید شد</b> توسط ${escapeHtml(user.name)}`
+            : `❌ <b>رد شد</b> توسط ${escapeHtml(user.name)}`;
+
+          if (cq.message?.caption) {
+            // Photo message → edit caption
+            await tgCall('editMessageCaption', {
+              chat_id, message_id,
+              caption: `${cq.message.caption}\n\n${verdict}`,
+              parse_mode: 'HTML',
+              reply_markup: { inline_keyboard: [[{ text: '👁 مشاهده لید', callback_data: `lead:view:${enrollment_id}` }]] },
+            });
+          } else {
+            await editMessage(
+              chat_id, message_id,
+              `${cq.message?.text ?? ''}\n\n${verdict}`,
+              [[{ text: '👁 مشاهده لید', callback_data: `lead:view:${enrollment_id}` }]],
+            );
+          }
+          await answerCallback(cq.id, ok ? (sub === 'approve' ? 'تایید شد' : 'رد شد') : 'خطا در ثبت');
+        } catch (e: any) {
+          console.error('manual action error', e);
+          await answerCallback(cq.id, 'خطا');
+        }
         return;
       }
 

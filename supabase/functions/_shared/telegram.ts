@@ -45,6 +45,26 @@ export function sendMessage(
   return tgCall('sendMessage', payload);
 }
 
+export function sendPhoto(
+  chat_id: number | string,
+  photo: string,
+  opts: {
+    caption?: string;
+    keyboard?: InlineKeyboard;
+    parse_mode?: 'HTML' | 'MarkdownV2';
+  } = {},
+) {
+  const payload: Record<string, unknown> = {
+    chat_id,
+    photo,
+    parse_mode: opts.parse_mode ?? 'HTML',
+  };
+  if (opts.caption) payload.caption = opts.caption;
+  if (opts.keyboard) {
+    payload.reply_markup = { inline_keyboard: opts.keyboard };
+  }
+  return tgCall('sendPhoto', payload);
+
 export function editMessage(
   chat_id: number | string,
   message_id: number,
