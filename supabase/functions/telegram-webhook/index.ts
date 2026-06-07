@@ -2182,6 +2182,21 @@ async function handleUpdate(update: any) {
       await endAiChat(chat_id, message_id, u);
       return;
     }
+    if (data === 'sales:start') {
+      await startSalesChat(chat_id, message_id, cq.from);
+      return;
+    }
+    if (data === 'sales:end') { await endSalesChat(chat_id, message_id); return; }
+    if (data === 'sales:pay') { await showSalesPaymentOptions(chat_id, message_id); return; }
+    if (data === 'sales:handoff') { await handoffSalesToHuman(chat_id, message_id); return; }
+    if (data === 'sales:back') {
+      await editMessage(chat_id, message_id, '✅ ادامه گفت‌وگو — هر سوالی دارید بپرسید.', [
+        [{ text: '💳 دریافت لینک پرداخت', callback_data: 'sales:pay' }],
+        [{ text: '📞 ارجاع به مشاور انسانی', callback_data: 'sales:handoff' }],
+        [{ text: '⏹ پایان گفت‌وگو', callback_data: 'sales:end' }],
+      ]);
+      return;
+    }
 
     const userEarly = await resolveUser(chat_id);
     if (data.startsWith('webinar:view:')) {
