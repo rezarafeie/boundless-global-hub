@@ -37,7 +37,7 @@ interface BuiltMessage {
 }
 
 // Build the message for a given notification type
-async function buildMessage(type: string, data: any): Promise<{ chat_ids: number[]; text: string; keyboard?: any[][] } | null> {
+async function buildMessage(type: string, data: any): Promise<BuiltMessage | null> {
   const settings = await getSettings();
 
   if (type === 'lead_assigned') {
