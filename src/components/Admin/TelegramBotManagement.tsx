@@ -217,6 +217,79 @@ export const TelegramBotManagement = () => {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <ShoppingCart className="w-4 h-4" /> 🛒 مشاور هوشمند فروش
+          </CardTitle>
+          <CardDescription>
+            دکمه «مشاور دوره‌های آکادمی» در /start ربات نمایش داده می‌شود. هوش مصنوعی با تکنیک‌های فروش به کاربر مشاوره می‌دهد، شماره می‌گیرد، لید را در «مدیریت لیدها» ثبت و در صورت آماده بودن، لینک پرداخت می‌فرستد و به کارشناس انسانی ارجاع می‌دهد.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm">فعال‌سازی مشاور هوشمند فروش در ربات</Label>
+            <Switch
+              checked={salesSettings.telegram_sales_ai_enabled}
+              onCheckedChange={(v) => setSalesSettings(s => ({ ...s, telegram_sales_ai_enabled: v }))}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-sm">مدل هوش مصنوعی</Label>
+            <Select
+              value={salesSettings.telegram_sales_ai_model}
+              onValueChange={(v) => setSalesSettings(s => ({ ...s, telegram_sales_ai_model: v }))}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="google/gemini-2.5-flash">Gemini 2.5 Flash (سریع و ارزان)</SelectItem>
+                <SelectItem value="google/gemini-2.5-pro">Gemini 2.5 Pro (دقیق‌تر)</SelectItem>
+                <SelectItem value="google/gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (ارزان‌ترین)</SelectItem>
+                <SelectItem value="openai/gpt-5-mini">GPT-5 Mini</SelectItem>
+                <SelectItem value="openai/gpt-5">GPT-5 (قوی‌ترین)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-sm">دوره پیشنهادی پیش‌فرض (اختیاری)</Label>
+            <Select
+              value={salesSettings.telegram_sales_default_course_id ?? 'none'}
+              onValueChange={(v) => setSalesSettings(s => ({ ...s, telegram_sales_default_course_id: v === 'none' ? null : v }))}
+            >
+              <SelectTrigger><SelectValue placeholder="بدون پیش‌فرض" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">بدون پیش‌فرض</SelectItem>
+                {courses.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-sm">پرامپت سیستم (هویت، لحن، تکنیک‌های فروش)</Label>
+            <Textarea
+              dir="rtl"
+              rows={14}
+              className="text-sm font-mono"
+              value={salesSettings.telegram_sales_ai_prompt}
+              onChange={(e) => setSalesSettings(s => ({ ...s, telegram_sales_ai_prompt: e.target.value }))}
+              placeholder="شما مشاور هوشمند فروش آکادمی هستید..."
+            />
+            <p className="text-xs text-muted-foreground">
+              فهرست دوره‌های فعال به‌صورت خودکار در انتهای پرامپت به مدل اضافه می‌شود.
+            </p>
+          </div>
+
+          <Button onClick={saveSalesSettings} disabled={savingSales} size="sm" className="w-full sm:w-auto">
+            <Save className="w-4 h-4 ml-2" />
+            {savingSales ? 'در حال ذخیره...' : 'ذخیره تنظیمات مشاور فروش'}
+          </Button>
+        </CardContent>
+      </Card>
+
+
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base">لینک کردن کاربران</CardTitle>
           <CardDescription>هر کاربر باید Chat ID تلگرام خود را از طریق دستور /myid در ربات دریافت و به شما بدهد.</CardDescription>
         </CardHeader>
