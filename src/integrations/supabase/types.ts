@@ -211,6 +211,7 @@ export type Database = {
           telegram_notify_consultation: boolean
           telegram_notify_daily_summary: boolean
           telegram_notify_lead_assigned: boolean
+          telegram_notify_manual_payment: boolean
           updated_at: string
           use_full_leads_system: boolean | null
           zarinpal_enabled: boolean
@@ -228,6 +229,7 @@ export type Database = {
           telegram_notify_consultation?: boolean
           telegram_notify_daily_summary?: boolean
           telegram_notify_lead_assigned?: boolean
+          telegram_notify_manual_payment?: boolean
           updated_at?: string
           use_full_leads_system?: boolean | null
           zarinpal_enabled?: boolean
@@ -245,6 +247,7 @@ export type Database = {
           telegram_notify_consultation?: boolean
           telegram_notify_daily_summary?: boolean
           telegram_notify_lead_assigned?: boolean
+          telegram_notify_manual_payment?: boolean
           updated_at?: string
           use_full_leads_system?: boolean | null
           zarinpal_enabled?: boolean
