@@ -226,16 +226,17 @@ const Enroll: React.FC = () => {
 
   // Check user's IP location for VPN warning
   useEffect(() => {
+    const isGatewayWithVPNIssue = paymentMethod === 'zarinpal' || paymentMethod === 'rafieipay';
     const checkIPLocation = async () => {
       try {
         const isIranian = await IPDetectionService.isIranianIP();
         setIsIranianIP(isIranian);
-        setShowVPNWarning(!isIranian && paymentMethod === 'zarinpal');
+        setShowVPNWarning(!isIranian && isGatewayWithVPNIssue);
       } catch (error) {
         console.error('Failed to detect IP location:', error);
         // Default to showing warning for safety
         setIsIranianIP(false);
-        setShowVPNWarning(paymentMethod === 'zarinpal');
+        setShowVPNWarning(isGatewayWithVPNIssue);
       }
     };
 
