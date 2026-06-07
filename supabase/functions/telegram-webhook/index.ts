@@ -1806,15 +1806,22 @@ async function registerWebinar(chat_id: number, message_id: number, prefix: stri
   );
 }
 
+async function salesAdvisorRows(): Promise<InlineKeyboard> {
+  const s = await getSalesSettings();
+  if (!s.enabled) return [];
+  return [[{ text: '🛒 مشاور دوره‌های آکادمی', callback_data: 'sales:start' }]];
+}
+
 async function buildStartKeyboard(user: BotUser | null): Promise<InlineKeyboard> {
   const authed = !!user;
-  const [formRows, webinarRows, aiRows, base] = await Promise.all([
+  const [salesRows, formRows, webinarRows, aiRows, base] = await Promise.all([
+    salesAdvisorRows(),
     formsKeyboardRows(),
     webinarsKeyboardRows(),
     aiKeyboardRows(authed),
     authed ? mainMenu(user) : Promise.resolve(loginMenu()),
   ]);
-  return [...aiRows, ...webinarRows, ...formRows, ...base];
+  return [...salesRows, ...aiRows, ...webinarRows, ...formRows, ...base];
 }
 
 async function findFormByPrefix(prefix: string) {
