@@ -459,6 +459,21 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
       {/* Manual Payment Section */}
       {selectedMethod === 'manual' && (
         <div className="space-y-6 animate-fade-in">
+          {/* Fast approval trust notice */}
+          <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex-shrink-0">
+                <Zap className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-semibold text-emerald-800 dark:text-emerald-200">تایید سریع کارت به کارت</h4>
+                <p className="text-sm text-emerald-700 dark:text-emerald-300 leading-relaxed">
+                  پرداخت‌های کارت به کارت ظرف چند دقیقه توسط تیم پشتیبانی بررسی و تایید می‌شوند و دسترسی شما به دوره فعال می‌شود.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <Card className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
             <CardHeader>
               <CardTitle className="text-amber-800 dark:text-amber-200 text-lg space-y-2">
