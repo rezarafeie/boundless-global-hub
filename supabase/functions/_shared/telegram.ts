@@ -64,6 +64,9 @@ export function sendPhoto(
     payload.reply_markup = { inline_keyboard: opts.keyboard };
   }
   return tgCall('sendPhoto', payload);
+}
+
+
 
 export function editMessage(
   chat_id: number | string,
