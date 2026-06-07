@@ -320,6 +320,8 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         // Handle course enrollment
         console.log('🔧 Attempting edge function call...');
         
+        let createdEnrollmentId: string | null = null;
+
         // Try edge function first
         const { data: edgeResult, error: edgeError } = await supabase.functions
           .invoke('create-enrollment', {
@@ -342,19 +344,26 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
           }
 
           console.log('✅ Enrollment created via direct insert:', directResult);
-          
-          // Redirect to pending page with enrollment ID
-          window.location.href = `/enroll/pending?orderId=${directResult.id}`;
-          return;
+          createdEnrollmentId = directResult?.id ?? null;
         } else {
           console.log('✅ Enrollment created via edge function:', edgeResult.enrollment);
-          
-          // Redirect to pending page with enrollment ID
-          const enrollmentId = edgeResult.enrollment?.id;
-          if (enrollmentId) {
-            window.location.href = `/enroll/pending?orderId=${enrollmentId}`;
-            return;
+          createdEnrollmentId = edgeResult.enrollment?.id ?? null;
+        }
+
+        // Fire-and-forget Telegram notification to admins / sales staff
+        if (createdEnrollmentId) {
+          try {
+            supabase.functions.invoke('telegram-notify', {
+              body: { type: 'manual_payment_pending', enrollment_id: createdEnrollmentId },
+            }).then(({ error }) => {
+              if (error) console.warn('telegram-notify error:', error);
+            });
+          } catch (e) {
+            console.warn('telegram-notify invoke failed (non-blocking):', e);
           }
+
+          window.location.href = `/enroll/pending?orderId=${createdEnrollmentId}`;
+          return;
         }
       }
       

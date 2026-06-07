@@ -1,0 +1,1 @@
+ALTER TABLE public.admin_settings ADD COLUMN IF NOT EXISTS telegram_notify_manual_payment boolean NOT NULL DEFAULT true;
