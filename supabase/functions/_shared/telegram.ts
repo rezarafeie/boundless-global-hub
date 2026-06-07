@@ -24,11 +24,15 @@ export async function tgCall(method: string, payload: Record<string, unknown>) {
   return data;
 }
 
+export type ReplyKeyboardLayout = (string | { text: string })[][];
+
 export function sendMessage(
   chat_id: number | string,
   text: string,
   opts: {
     keyboard?: InlineKeyboard;
+    replyKeyboard?: ReplyKeyboardLayout;
+    removeKeyboard?: boolean;
     parse_mode?: 'HTML' | 'MarkdownV2';
     disable_web_page_preview?: boolean;
   } = {},
@@ -41,6 +45,14 @@ export function sendMessage(
   };
   if (opts.keyboard) {
     payload.reply_markup = { inline_keyboard: opts.keyboard };
+  } else if (opts.replyKeyboard) {
+    payload.reply_markup = {
+      keyboard: opts.replyKeyboard.map(row => row.map(b => (typeof b === 'string' ? { text: b } : b))),
+      resize_keyboard: true,
+      is_persistent: true,
+    };
+  } else if (opts.removeKeyboard) {
+    payload.reply_markup = { remove_keyboard: true };
   }
   return tgCall('sendMessage', payload);
 }
