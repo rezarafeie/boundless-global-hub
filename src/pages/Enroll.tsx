@@ -226,16 +226,17 @@ const Enroll: React.FC = () => {
 
   // Check user's IP location for VPN warning
   useEffect(() => {
+    const isGatewayWithVPNIssue = paymentMethod === 'zarinpal' || paymentMethod === 'rafieipay';
     const checkIPLocation = async () => {
       try {
         const isIranian = await IPDetectionService.isIranianIP();
         setIsIranianIP(isIranian);
-        setShowVPNWarning(!isIranian && paymentMethod === 'zarinpal');
+        setShowVPNWarning(!isIranian && isGatewayWithVPNIssue);
       } catch (error) {
         console.error('Failed to detect IP location:', error);
         // Default to showing warning for safety
         setIsIranianIP(false);
-        setShowVPNWarning(paymentMethod === 'zarinpal');
+        setShowVPNWarning(isGatewayWithVPNIssue);
       }
     };
 
@@ -1050,7 +1051,7 @@ const Enroll: React.FC = () => {
                      )}
 
                    {/* VPN Warning for non-Iranian IPs */}
-                   {showVPNWarning && paymentMethod === 'zarinpal' && isIranianIP === false && (
+                   {showVPNWarning && (paymentMethod === 'zarinpal' || paymentMethod === 'rafieipay') && isIranianIP === false && (
                      <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
                        <div className="flex items-start gap-3">
                          <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
@@ -1060,7 +1061,9 @@ const Enroll: React.FC = () => {
                              <h4 className="font-medium text-orange-800 dark:text-orange-200">توجه به کاربران VPN</h4>
                            </div>
                            <p className="text-sm text-orange-700 dark:text-orange-300 leading-relaxed">
-                             درگاه شاپرک (زرین‌پال) با VPN کار نمی‌کند. لطفا قبل از پرداخت، VPN خود را خاموش کنید.
+                             {paymentMethod === 'rafieipay'
+                               ? 'درگاه رفیعی‌پی با VPN کار نمی‌کند. لطفا قبل از پرداخت، VPN خود را خاموش کنید.'
+                               : 'درگاه شاپرک (زرین‌پال) با VPN کار نمی‌کند. لطفا قبل از پرداخت، VPN خود را خاموش کنید.'}
                            </p>
                          </div>
                        </div>
