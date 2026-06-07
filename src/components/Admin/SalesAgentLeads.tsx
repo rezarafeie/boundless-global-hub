@@ -26,8 +26,11 @@ import {
   Key,
   Activity,
   DollarSign,
-  X
+  X,
+  Download,
+  Upload
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns-jalali';
@@ -497,6 +500,128 @@ const SalesAgentLeads: React.FC = () => {
     return phone.startsWith('0') ? phone : `0${phone}`;
   };
 
+  // Import state
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [importing, setImporting] = React.useState(false);
+
+  const handleExport = (fmt: 'csv' | 'xlsx') => {
+    if (leads.length === 0) {
+      toast({ title: 'خطا', description: 'لیدی برای خروجی وجود ندارد', variant: 'destructive' });
+      return;
+    }
+    const rows = leads.map(l => ({
+      enrollment_id: l.id,
+      full_name: l.full_name,
+      phone: formatPhone(l.phone),
+      email: l.email,
+      course_title: l.course_title,
+      course_id: l.course_id,
+      payment_amount: l.payment_amount,
+      payment_status: l.payment_status,
+      assigned_at: l.assigned_at,
+      chat_user_id: l.chat_user_id ?? '',
+      crm_status: l.latest_crm_status ?? '',
+      crm_note: '',
+      crm_type: '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Leads');
+    const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    const filename = `leads_${ts}.${fmt}`;
+    if (fmt === 'csv') {
+      const csv = XLSX.utils.sheet_to_csv(ws);
+      // Add BOM for Excel UTF-8 (Persian) support
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      XLSX.writeFile(wb, filename);
+    }
+    toast({ title: 'موفق', description: `${rows.length} لید با موفقیت دانلود شد` });
+  };
+
+  const handleImportFile = async (file: File) => {
+    if (!user?.messengerData?.id) return;
+    setImporting(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: '' });
+
+      if (rows.length === 0) {
+        toast({ title: 'خطا', description: 'فایل خالی است', variant: 'destructive' });
+        return;
+      }
+
+      // Build lookup by enrollment_id and phone -> chat_user_id
+      const byEnrollment = new Map<string, Lead>();
+      const byPhone = new Map<string, Lead>();
+      allLeads.forEach(l => {
+        if (l.id) byEnrollment.set(String(l.id), l);
+        if (l.phone) {
+          const p = l.phone.replace(/\D/g, '').replace(/^98/, '').replace(/^0/, '');
+          if (p) byPhone.set(p, l);
+        }
+      });
+
+      const creatorName = user?.messengerData?.name || 'کارشناس';
+      let imported = 0;
+      let skipped = 0;
+      const errors: string[] = [];
+
+      for (const row of rows) {
+        const enrId = String(row.enrollment_id || '').trim();
+        const phoneRaw = String(row.phone || '').replace(/\D/g, '').replace(/^98/, '').replace(/^0/, '');
+        const status = String(row.crm_status || '').trim();
+        const noteText = String(row.crm_note || '').trim();
+        const type = String(row.crm_type || 'note').trim() || 'note';
+
+        if (!status && !noteText) { skipped++; continue; }
+
+        const lead = (enrId && byEnrollment.get(enrId)) || (phoneRaw && byPhone.get(phoneRaw));
+        if (!lead || !lead.chat_user_id) {
+          errors.push(`${row.full_name || phoneRaw || enrId}: لید یافت نشد`);
+          continue;
+        }
+
+        const { error } = await supabase.from('crm_notes').insert({
+          user_id: lead.chat_user_id,
+          content: noteText || `بروزرسانی وضعیت: ${status}`,
+          type,
+          status: status || 'در انتظار پرداخت',
+          created_by: creatorName,
+        });
+
+        if (error) {
+          errors.push(`${lead.full_name}: ${error.message}`);
+        } else {
+          imported++;
+        }
+      }
+
+      toast({
+        title: 'پایان ایمپورت',
+        description: `${imported} رکورد ثبت شد${skipped ? ` • ${skipped} ردیف خالی رد شد` : ''}${errors.length ? ` • ${errors.length} خطا` : ''}`,
+        variant: errors.length ? 'destructive' : 'default',
+      });
+
+      if (errors.length) console.error('Import errors:', errors);
+
+      fetchLeads();
+    } catch (e: any) {
+      console.error('Import error:', e);
+      toast({ title: 'خطا', description: 'خطا در خواندن فایل', variant: 'destructive' });
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const getCRMStatusIcon = (status: string) => {
     switch (status) {
       case 'has_calls': return <span title="تماس گرفته شده">📞</span>;
@@ -646,6 +771,26 @@ const SalesAgentLeads: React.FC = () => {
             <Button onClick={fetchLeads} disabled={loading} variant="outline" size="icon" title="بروزرسانی">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             </Button>
+            <Button onClick={() => handleExport('xlsx')} disabled={loading || leads.length === 0} variant="outline" size="sm" title="دانلود Excel">
+              <Download className="h-4 w-4 ml-1" /> Excel
+            </Button>
+            <Button onClick={() => handleExport('csv')} disabled={loading || leads.length === 0} variant="outline" size="sm" title="دانلود CSV">
+              <Download className="h-4 w-4 ml-1" /> CSV
+            </Button>
+            <Button onClick={() => fileInputRef.current?.click()} disabled={importing} variant="outline" size="sm" title="ایمپورت تغییرات">
+              {importing ? <Loader2 className="h-4 w-4 animate-spin ml-1" /> : <Upload className="h-4 w-4 ml-1" />}
+              ایمپورت
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleImportFile(f);
+              }}
+            />
           </div>
         </CardContent>
       </Card>
