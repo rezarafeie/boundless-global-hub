@@ -42,6 +42,14 @@ export const TelegramBotManagement = () => {
     telegram_notify_daily_summary: true,
     telegram_ai_assistant_enabled: false,
   });
+  const [salesSettings, setSalesSettings] = useState({
+    telegram_sales_ai_enabled: false,
+    telegram_sales_ai_prompt: '',
+    telegram_sales_ai_model: 'google/gemini-2.5-flash',
+    telegram_sales_default_course_id: null as string | null,
+  });
+  const [savingSales, setSavingSales] = useState(false);
+  const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -58,13 +66,47 @@ export const TelegramBotManagement = () => {
   const fetchSettings = async () => {
     const { data } = await supabase
       .from('admin_settings')
-      .select('telegram_notify_lead_assigned, telegram_notify_consultation, telegram_notify_daily_summary, telegram_ai_assistant_enabled' as any)
+      .select('telegram_notify_lead_assigned, telegram_notify_consultation, telegram_notify_daily_summary, telegram_ai_assistant_enabled, telegram_sales_ai_enabled, telegram_sales_ai_prompt, telegram_sales_ai_model, telegram_sales_default_course_id' as any)
       .eq('id', 1)
       .maybeSingle();
-    if (data) setNotifySettings(data as any);
+    if (data) {
+      const d = data as any;
+      setNotifySettings({
+        telegram_notify_lead_assigned: d.telegram_notify_lead_assigned ?? true,
+        telegram_notify_consultation: d.telegram_notify_consultation ?? true,
+        telegram_notify_daily_summary: d.telegram_notify_daily_summary ?? true,
+        telegram_ai_assistant_enabled: d.telegram_ai_assistant_enabled ?? false,
+      });
+      setSalesSettings({
+        telegram_sales_ai_enabled: d.telegram_sales_ai_enabled ?? false,
+        telegram_sales_ai_prompt: d.telegram_sales_ai_prompt ?? '',
+        telegram_sales_ai_model: d.telegram_sales_ai_model ?? 'google/gemini-2.5-flash',
+        telegram_sales_default_course_id: d.telegram_sales_default_course_id ?? null,
+      });
+    }
   };
 
-  useEffect(() => { fetchUsers(); fetchSettings(); }, []);
+  const fetchCourses = async () => {
+    const { data } = await supabase.from('courses').select('id, title').eq('is_active', true).order('title');
+    setCourses((data ?? []) as any);
+  };
+
+  useEffect(() => { fetchUsers(); fetchSettings(); fetchCourses(); }, []);
+
+  const saveSalesSettings = async () => {
+    setSavingSales(true);
+    const { error } = await supabase.from('admin_settings').update({
+      telegram_sales_ai_enabled: salesSettings.telegram_sales_ai_enabled,
+      telegram_sales_ai_prompt: salesSettings.telegram_sales_ai_prompt,
+      telegram_sales_ai_model: salesSettings.telegram_sales_ai_model,
+      telegram_sales_default_course_id: salesSettings.telegram_sales_default_course_id,
+      updated_at: new Date().toISOString(),
+    } as any).eq('id', 1);
+    setSavingSales(false);
+    if (error) toast({ title: 'خطا', description: error.message, variant: 'destructive' });
+    else toast({ title: '✅ تنظیمات مشاور فروش ذخیره شد' });
+  };
+
 
   const linkUser = async (userId: number) => {
     const val = chatIdInputs[userId]?.trim();
