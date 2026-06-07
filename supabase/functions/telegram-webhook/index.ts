@@ -1388,6 +1388,287 @@ async function handleAiChat(chat_id: number, user: BotUser | null, msg: any, ses
   await setSession(chat_id, user?.id ?? null, 'ai_chat', { messages: trimmed });
 }
 
+// ============ 🛒 AI Sales Advisor ============
+async function getSalesSettings() {
+  const { data } = await supabase
+    .from('admin_settings')
+    .select('telegram_sales_ai_enabled, telegram_sales_ai_prompt, telegram_sales_ai_model, telegram_sales_default_course_id')
+    .eq('id', 1).maybeSingle();
+  return {
+    enabled: Boolean((data as any)?.telegram_sales_ai_enabled),
+    prompt: (data as any)?.telegram_sales_ai_prompt as string | null,
+    model: (data as any)?.telegram_sales_ai_model || 'google/gemini-2.5-flash',
+    defaultCourseId: (data as any)?.telegram_sales_default_course_id as string | null,
+  };
+}
+
+async function getActiveSalesCoursesText(): Promise<string> {
+  const { data } = await supabase
+    .from('courses')
+    .select('title, slug, price, description')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(30);
+  if (!data?.length) return '(فهرست دوره موجود نیست)';
+  return data.map((c: any) => {
+    const price = c.price ? `${Number(c.price).toLocaleString('fa-IR')} تومان` : 'رایگان';
+    return `• ${c.title} (slug: ${c.slug}) — ${price}${c.description ? `\n  ${String(c.description).slice(0, 120)}` : ''}`;
+  }).join('\n');
+}
+
+function extractPhoneFromText(t: string): string | null {
+  const m = t.replace(/[٠-٩۰-۹]/g, (d) => String('٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹'.indexOf(d) % 10))
+    .match(/(?:\+?98|0)?9\d{9}/);
+  return m ? m[0] : null;
+}
+
+async function getOrCreateSalesLead(chat_id: number, telegram_user: any): Promise<string | null> {
+  // Look up existing lead_request keyed by telegram chat
+  const tgKey = `telegram:${chat_id}`;
+  const { data: existing } = await supabase
+    .from('lead_requests')
+    .select('id, answers')
+    .eq('phone', tgKey)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existing) return existing.id;
+
+  const name = [telegram_user?.first_name, telegram_user?.last_name].filter(Boolean).join(' ').trim()
+    || telegram_user?.username || `Telegram ${chat_id}`;
+  const { data: created, error } = await supabase
+    .from('lead_requests')
+    .insert({
+      phone: tgKey,
+      name,
+      status: 'new',
+      answers: {
+        source: 'telegram_sales_ai',
+        telegram_chat_id: chat_id,
+        telegram_username: telegram_user?.username ?? null,
+        history: [],
+      },
+    })
+    .select('id').maybeSingle();
+  if (error) { console.error('sales lead create failed', error); return null; }
+  return created?.id ?? null;
+}
+
+async function updateSalesLead(lead_id: string, patch: Record<string, any>, appendHistory?: { role: string; content: string }) {
+  if (appendHistory) {
+    const { data: cur } = await supabase.from('lead_requests').select('answers').eq('id', lead_id).maybeSingle();
+    const answers = (cur?.answers ?? {}) as any;
+    const history = Array.isArray(answers.history) ? answers.history : [];
+    history.push({ ...appendHistory, at: new Date().toISOString() });
+    patch.answers = { ...answers, ...(patch.answers ?? {}), history: history.slice(-40) };
+  }
+  await supabase.from('lead_requests').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', lead_id);
+}
+
+async function notifySalesTeamAboutLead(lead_id: string, summary: string) {
+  const { data: lead } = await supabase.from('lead_requests')
+    .select('id, name, phone, answers').eq('id', lead_id).maybeSingle();
+  if (!lead) return;
+  const { data: staff } = await supabase
+    .from('chat_users')
+    .select('telegram_chat_id, name, role, is_messenger_admin')
+    .not('telegram_chat_id', 'is', null)
+    .or('is_messenger_admin.eq.true,role.eq.admin,role.eq.sales_manager,role.eq.sales_agent')
+    .limit(50);
+  const tg = (lead.answers as any)?.telegram_chat_id;
+  const username = (lead.answers as any)?.telegram_username;
+  const text = [
+    `🛒 <b>لید جدید از مشاور هوشمند تلگرام</b>`,
+    ``,
+    `👤 نام: ${escapeHtml(lead.name ?? '-')}`,
+    username ? `🆔 @${escapeHtml(username)}` : '',
+    tg ? `💬 Chat ID: <code>${tg}</code>` : '',
+    ``,
+    `<b>خلاصه گفت‌وگو:</b>`,
+    escapeHtml(summary).slice(0, 1500),
+  ].filter(Boolean).join('\n');
+  const kbd: InlineKeyboard = tg ? [[{ text: '💬 شروع گفت‌وگو در تلگرام', url: `tg://user?id=${tg}` }]] : [];
+  for (const s of (staff ?? [])) {
+    try { await sendMessage(s.telegram_chat_id as number, text, { keyboard: kbd }); } catch { /* ignore */ }
+  }
+}
+
+async function startSalesChat(chat_id: number, message_id: number | null, telegram_user: any) {
+  const settings = await getSalesSettings();
+  if (!settings.enabled) {
+    const txt = '⚠️ مشاور هوشمند فروش در حال حاضر غیرفعال است. لطفاً بعداً مراجعه کنید.';
+    if (message_id) await editMessage(chat_id, message_id, txt, [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]]);
+    else await sendMessage(chat_id, txt);
+    return;
+  }
+  const lead_id = await getOrCreateSalesLead(chat_id, telegram_user);
+  await setSession(chat_id, null, 'sales_chat', { lead_id, messages: [] });
+  const txt = [
+    `🛒 <b>مشاور دوره‌های آکادمی رفیعی</b>`,
+    ``,
+    `سلام 👋 من اینجام تا بهترین دوره یا خدمت رو متناسب با هدف و شرایط شما پیشنهاد بدم.`,
+    ``,
+    `لطفاً در یک یا دو جمله بگید چه هدفی دارید یا دنبال چه چیزی هستید؟`,
+  ].join('\n');
+  const kbd: InlineKeyboard = [
+    [{ text: '💳 دریافت لینک پرداخت', callback_data: 'sales:pay' }],
+    [{ text: '📞 ارجاع به مشاور انسانی', callback_data: 'sales:handoff' }],
+    [{ text: '⏹ پایان گفت‌وگو', callback_data: 'sales:end' }],
+  ];
+  if (message_id) await editMessage(chat_id, message_id, txt, kbd);
+  else await sendMessage(chat_id, txt, { keyboard: kbd });
+}
+
+async function endSalesChat(chat_id: number, message_id: number) {
+  const s = await getSession(chat_id);
+  const leadId = s?.context?.lead_id;
+  if (leadId) await updateSalesLead(leadId, { status: 'closed' });
+  await clearSession(chat_id);
+  const u = await resolveUser(chat_id);
+  const homeKbd = await buildStartKeyboard(u);
+  await editMessage(chat_id, message_id, '✅ گفت‌وگو پایان یافت. ممنون از وقتی که گذاشتید 🙏', homeKbd);
+}
+
+async function showSalesPaymentOptions(chat_id: number, message_id: number) {
+  const { data: courses } = await supabase
+    .from('courses').select('id, title, slug, price')
+    .eq('is_active', true).order('created_at', { ascending: false }).limit(15);
+  if (!courses?.length) {
+    await editMessage(chat_id, message_id, '❌ دوره‌ای فعال نیست.', [[{ text: '⬅️ بازگشت', callback_data: 'sales:back' }]]);
+    return;
+  }
+  const baseUrl = 'https://academy.rafiei.co/enroll';
+  const kbd: InlineKeyboard = courses.map((c: any) => [{
+    text: `💳 ${c.title}${c.price ? ` — ${Number(c.price).toLocaleString('fa-IR')} ت` : ''}`,
+    url: `${baseUrl}?course=${encodeURIComponent(c.slug)}&source=telegram_sales`,
+  }]);
+  kbd.push([{ text: '⬅️ ادامه گفت‌وگو', callback_data: 'sales:back' }]);
+  await editMessage(chat_id, message_id, '💳 <b>دوره یا خدمت موردنظر برای پرداخت را انتخاب کنید:</b>', kbd);
+}
+
+async function handoffSalesToHuman(chat_id: number, message_id: number) {
+  const s = await getSession(chat_id);
+  const leadId = s?.context?.lead_id;
+  if (!leadId) {
+    await editMessage(chat_id, message_id, '❌ نشست فعال یافت نشد.', [[{ text: '🏠', callback_data: 'menu:home' }]]);
+    return;
+  }
+  const history = Array.isArray(s?.context?.messages) ? s.context.messages : [];
+  const summary = history.slice(-10).map((m: any) =>
+    `${m.role === 'user' ? '👤 کاربر' : '🤖 مشاور'}: ${typeof m.content === 'string' ? m.content : '[رسانه]'}`).join('\n');
+  await updateSalesLead(leadId, { status: 'handoff_requested' });
+  await notifySalesTeamAboutLead(leadId, summary || 'بدون گفت‌وگو');
+  await editMessage(chat_id, message_id,
+    '✅ درخواست شما به تیم فروش ارسال شد. به‌زودی یک کارشناس انسانی با شما تماس می‌گیرد.',
+    [[{ text: '⬅️ ادامه گفت‌وگو', callback_data: 'sales:back' }], [{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]]);
+}
+
+async function handleSalesChat(chat_id: number, msg: any, session: any) {
+  const settings = await getSalesSettings();
+  if (!settings.enabled) {
+    await sendMessage(chat_id, '⚠️ مشاور هوشمند فروش غیرفعال شد.');
+    await clearSession(chat_id);
+    return;
+  }
+  const leadId: string | null = session?.context?.lead_id ?? null;
+  const userText: string = msg.caption ?? msg.text ?? '';
+
+  // Detect phone in user message
+  if (leadId && userText) {
+    const phone = extractPhoneFromText(userText);
+    if (phone) {
+      let normalized = phone.replace(/^\+?98/, '').replace(/^0/, '');
+      normalized = '0' + normalized;
+      await updateSalesLead(leadId, { phone: normalized });
+    }
+  }
+
+  const courseList = await getActiveSalesCoursesText();
+  const systemPrompt = `${settings.prompt || ''}\n\n📚 <فهرست دوره‌های فعال آکادمی>\n${courseList}\n</فهرست>\n\nاگر کاربر شماره موبایل یا نام خود را داد، در پاسخ تأیید کن. وقتی کاربر آماده خرید است، یادآور شو که با دکمه «💳 دریافت لینک پرداخت» در پایین پیام، لینک پرداخت دوره را دریافت کند.`;
+
+  const userContent = await buildUserContentFromMessage(msg);
+  const history: AiMsg[] = Array.isArray(session?.context?.messages) ? session.context.messages : [];
+  const messages: AiMsg[] = [
+    { role: 'system', content: systemPrompt },
+    ...history,
+    { role: 'user', content: userContent },
+  ];
+
+  const reply = await streamSalesAiToTelegram(chat_id, messages, settings.model);
+
+  const userTextOnly = Array.isArray(userContent)
+    ? userContent.filter((p: any) => p.type === 'text').map((p: any) => p.text).join(' ').slice(0, 2000) || '[رسانه]'
+    : String(userContent);
+  const newHistory = [...history, { role: 'user' as const, content: userTextOnly }];
+  if (reply) newHistory.push({ role: 'assistant' as const, content: reply.slice(0, 2000) });
+  const trimmed = newHistory.slice(-16);
+  await setSession(chat_id, null, 'sales_chat', { lead_id: leadId, messages: trimmed });
+
+  if (leadId) {
+    await updateSalesLead(leadId, { status: 'in_progress' },
+      { role: 'user', content: userTextOnly });
+    if (reply) await updateSalesLead(leadId, {}, { role: 'assistant', content: reply.slice(0, 800) });
+  }
+}
+
+async function streamSalesAiToTelegram(chat_id: number, messages: AiMsg[], model: string): Promise<string> {
+  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  if (!apiKey) { await sendMessage(chat_id, '❌ LOVABLE_API_KEY تنظیم نشده.'); return ''; }
+  await tgSendChatAction(chat_id, 'typing');
+  const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Lovable-API-Key': apiKey, 'X-Lovable-AIG-SDK': 'vercel-ai-sdk', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, stream: true, messages }),
+  });
+  if (!res.ok || !res.body) {
+    if (res.status === 429) { await sendMessage(chat_id, '⚠️ محدودیت درخواست. کمی بعد دوباره تلاش کنید.'); return ''; }
+    if (res.status === 402) { await sendMessage(chat_id, '⚠️ اعتبار سرویس هوش مصنوعی تمام شده.'); return ''; }
+    await sendMessage(chat_id, '❌ خطا در ارتباط با هوش مصنوعی.'); return '';
+  }
+  const placeholder = await sendMessage(chat_id, '⏳ ...');
+  const messageId: number | null = (placeholder as any)?.result?.message_id ?? null;
+  let full = '', lastEdit = '', lastAt = 0;
+  const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
+  const kbd: InlineKeyboard = [
+    [{ text: '💳 دریافت لینک پرداخت', callback_data: 'sales:pay' }],
+    [{ text: '📞 ارجاع به مشاور انسانی', callback_data: 'sales:handoff' }],
+    [{ text: '⏹ پایان گفت‌وگو', callback_data: 'sales:end' }],
+  ];
+  const tryEdit = async (force = false) => {
+    if (!messageId) return;
+    const now = Date.now();
+    if (!force && (now - lastAt < 1300 || full === lastEdit)) return;
+    lastAt = now; lastEdit = full;
+    try { await editMessage(chat_id, messageId, mdToTelegramHtml((full || '⏳ ...').slice(0, 3900))); } catch { /* ignore */ }
+  };
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, idx).trim(); buf = buf.slice(idx + 1);
+        if (!line.startsWith('data:')) continue;
+        const data = line.slice(5).trim();
+        if (data === '[DONE]') break;
+        try {
+          const j = JSON.parse(data);
+          const delta = j.choices?.[0]?.delta?.content;
+          if (typeof delta === 'string') { full += delta; await tryEdit(false); }
+        } catch { /* ignore */ }
+      }
+    }
+  } catch (e) { console.error('sales stream error', e); }
+  await tryEdit(true);
+  if (messageId && full) {
+    try { await editMessage(chat_id, messageId, mdToTelegramHtml(full).slice(0, 4000), kbd); } catch { /* ignore */ }
+  } else if (!full) {
+    await sendMessage(chat_id, '❌ پاسخی دریافت نشد.', { keyboard: kbd });
+  }
+  return full;
+}
+
 // ============ Webinars ============
 async function getActiveWebinars() {
   const { data } = await supabase
