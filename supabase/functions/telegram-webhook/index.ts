@@ -1159,27 +1159,36 @@ async function aiKeyboardRows(authed: boolean): Promise<InlineKeyboard> {
   return [[{ text: '🤖 دستیار هوشمند', callback_data: 'ai:start' }]];
 }
 
-async function startAiChat(chat_id: number, message_id: number | null, user: BotUser | null) {
+// Reply keyboard labels (persistent bottom buttons)
+const KBD_END_CHAT = '⏹ پایان گفت‌وگو';
+const KBD_HOME = '🏠 منوی اصلی';
+const KBD_SALES_PAY = '💳 لینک پرداخت دوره';
+const KBD_SALES_HUMAN = '📞 مشاور انسانی';
+
+const AI_REPLY_KBD = [[KBD_END_CHAT], [KBD_HOME]];
+const SALES_REPLY_KBD_BASE = [[KBD_SALES_HUMAN], [KBD_END_CHAT, KBD_HOME]];
+const SALES_REPLY_KBD_WITH_PAY = [[KBD_SALES_PAY], [KBD_SALES_HUMAN], [KBD_END_CHAT, KBD_HOME]];
+
+async function startAiChat(chat_id: number, _message_id: number | null, user: BotUser | null) {
   await setSession(chat_id, user?.id ?? null, 'ai_chat', { messages: [] });
   const txt = [
     `🤖 <b>دستیار هوشمند آکادمی رفیعی</b>`,
     ``,
     `هر سوالی دارید بپرسید — می‌توانید متن، عکس، فایل صوتی یا سند ارسال کنید.`,
     ``,
-    `برای خروج از گفت‌وگو روی دکمه زیر بزنید یا /cancel ارسال کنید.`,
+    `برای خروج از گفت‌وگو روی دکمه «${KBD_END_CHAT}» در پایین صفحه بزنید.`,
   ].join('\n');
-  const kbd: InlineKeyboard = [[{ text: '⏹ پایان گفت‌وگو', callback_data: 'ai:end' }], [{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]];
-  if (message_id) await editMessage(chat_id, message_id, txt, kbd);
-  else await sendMessage(chat_id, txt, { keyboard: kbd });
+  await sendMessage(chat_id, txt, { replyKeyboard: AI_REPLY_KBD });
 }
 
-async function endAiChat(chat_id: number, message_id: number, user: BotUser | null) {
+async function endAiChat(chat_id: number, _message_id: number | null, user: BotUser | null) {
   await clearSession(chat_id);
+  await sendMessage(chat_id, '✅ گفت‌وگو پایان یافت.', { removeKeyboard: true });
   const homeKbd = await buildStartKeyboard(user);
-  await editMessage(chat_id, message_id, '✅ گفت‌وگو پایان یافت.', homeKbd);
+  await sendMessage(chat_id, user ? welcomeText(user) : '👋 منوی اصلی', { keyboard: homeKbd });
 }
 
-const AI_SYSTEM_PROMPT = `شما دستیار هوشمند فارسی‌زبان آکادمی رفیعی هستید. به سوالات کاربران به صورت دقیق، دوستانه و کاربردی پاسخ دهید. اگر کاربر عکس، فایل صوتی یا سند ارسال کرد، محتوای آن را تحلیل و توضیح دهید. پاسخ‌ها را به فارسی و در صورت لزوم با استفاده از قالب‌بندی ساده ارائه کنید.`;
+const AI_SYSTEM_PROMPT = `شما دستیار هوشمند فارسی‌زبان آکادمی رفیعی هستید. به سوالات کاربران به صورت دقیق، دوستانه و کاربردی پاسخ دهید. اگر کاربر عکس، فایل صوتی یا سند ارسال کرد، محتوای آن را تحلیل و توضیح دهید. پاسخ‌ها را به فارسی، با لحن گرم و در صورت لزوم با استفاده از ایموجی و بولد (**متن مهم**) ارائه کنید. از فهرست‌بندی با خط تیره (-) برای موارد چندتایی استفاده کنید.`;
 
 async function tgSendChatAction(chat_id: number, action: string) {
   try {
