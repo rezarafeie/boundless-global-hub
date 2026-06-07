@@ -771,6 +771,26 @@ const SalesAgentLeads: React.FC = () => {
             <Button onClick={fetchLeads} disabled={loading} variant="outline" size="icon" title="بروزرسانی">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             </Button>
+            <Button onClick={() => handleExport('xlsx')} disabled={loading || leads.length === 0} variant="outline" size="sm" title="دانلود Excel">
+              <Download className="h-4 w-4 ml-1" /> Excel
+            </Button>
+            <Button onClick={() => handleExport('csv')} disabled={loading || leads.length === 0} variant="outline" size="sm" title="دانلود CSV">
+              <Download className="h-4 w-4 ml-1" /> CSV
+            </Button>
+            <Button onClick={() => fileInputRef.current?.click()} disabled={importing} variant="outline" size="sm" title="ایمپورت تغییرات">
+              {importing ? <Loader2 className="h-4 w-4 animate-spin ml-1" /> : <Upload className="h-4 w-4 ml-1" />}
+              ایمپورت
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleImportFile(f);
+              }}
+            />
           </div>
         </CardContent>
       </Card>
