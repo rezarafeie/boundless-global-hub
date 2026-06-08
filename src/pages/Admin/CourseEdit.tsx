@@ -689,7 +689,7 @@ const CourseEdit: React.FC = () => {
                       <Label htmlFor="telegram_activation_required">فعال‌سازی کانال تلگرام اجباری</Label>
                     </div>
                     
-                    {/* Smart Activation Section */}
+                     {/* Smart Activation Section */}
                      <div className="flex items-center space-x-2">
                        <Switch
                          id="smart_activation_enabled"
@@ -697,6 +697,15 @@ const CourseEdit: React.FC = () => {
                          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, smart_activation_enabled: checked }))}
                        />
                        <Label htmlFor="smart_activation_enabled">فعال‌سازی هوشمند</Label>
+                     </div>
+
+                     <div className="flex items-center space-x-2">
+                       <Switch
+                         id="rafiei_bot_followup_enabled"
+                         checked={formData.rafiei_bot_followup_enabled}
+                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_followup_enabled: checked }))}
+                       />
+                       <Label htmlFor="rafiei_bot_followup_enabled">کوچ شخصی تلگرام (پیگیری خودکار)</Label>
                      </div>
                      
                      <div className="flex items-center space-x-2">
