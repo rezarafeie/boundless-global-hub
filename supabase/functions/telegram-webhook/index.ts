@@ -999,8 +999,6 @@ async function tryLinkEnrollment(chat_id: number, enrollment_id: string, user: B
     [{ text: '📚 شروع دوره (Mini App)', web_app: { url: ssoUrl } }],
     [{ text: '🌐 باز کردن در مرورگر', url: ssoUrl }],
   ];
-  if ((course as any).support_link) kbd.push([{ text: '🎧 فعال‌سازی پشتیبانی', url: (course as any).support_link }]);
-  if ((course as any).telegram_channel_link) kbd.push([{ text: '📢 کانال دوره', url: (course as any).telegram_channel_link }]);
   kbd.push([{ text: '⏰ تنظیم زمان یادآوری روزانه', callback_data: `enroll:settime:${enrollment_id}` }]);
   kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
 
@@ -1012,6 +1010,25 @@ async function tryLinkEnrollment(chat_id: number, enrollment_id: string, user: B
     `👇 برای شروع، یک گزینه را انتخاب کنید:`,
   ].join('\n'), { keyboard: kbd });
 
+  // If the course has telegram support / channel links, prompt the user to join
+  // them right here in Telegram so they don't have to return to the academy.
+  const supportUrl = (course as any).support_link as string | null;
+  const channelUrl = (course as any).telegram_channel_link as string | null;
+  if (supportUrl || channelUrl) {
+    const joinKbd: InlineKeyboard = [];
+    if (supportUrl) joinKbd.push([{ text: '🎧 ورود به پشتیبانی تلگرام', url: supportUrl }]);
+    if (channelUrl) joinKbd.push([{ text: '📢 عضویت در کانال دوره', url: channelUrl }]);
+    joinKbd.push([{ text: '🎓 بازگشت به آکادمی', web_app: { url: ssoUrl } }]);
+    joinKbd.push([{ text: '🌐 بازگشت در مرورگر', url: ssoUrl }]);
+    await sendMessage(chat_id, [
+      `📌 <b>تکمیل دسترسی به دوره</b>`,
+      ``,
+      `برای استفاده‌ی کامل از دوره، لطفاً ${supportUrl ? 'به <b>پشتیبانی تلگرام</b>' : ''}${supportUrl && channelUrl ? ' و ' : ''}${channelUrl ? '<b>کانال دوره</b>' : ''} بپیوندید.`,
+      ``,
+      `✅ پس از عضویت، با همین دکمه‌ی پایین می‌توانید مستقیم به آکادمی برگردید — نیازی به خروج از تلگرام نیست.`,
+    ].join('\n'), { keyboard: joinKbd });
+  }
+
   await sendMessage(chat_id,
     [
       `⏰ <b>چه ساعتی از روز برای یادآوری مناسب است؟</b>`,
@@ -1022,6 +1039,7 @@ async function tryLinkEnrollment(chat_id: number, enrollment_id: string, user: B
     ].join('\n'));
   await setSession(chat_id, user.id, 'awaiting_followup_time', { enrollment_id });
 }
+
 
 async function handleFollowupTimeInput(chat_id: number, text: string, user: BotUser) {
   const session = await getSession(chat_id);
