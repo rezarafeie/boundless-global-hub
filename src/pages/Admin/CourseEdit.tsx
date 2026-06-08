@@ -45,6 +45,7 @@ interface Course {
    smart_activation_enabled?: boolean;
    smart_activation_telegram_link?: string | null;
    rafiei_bot_followup_enabled?: boolean;
+   rafiei_bot_activation_required?: boolean;
    use_enrollments_as_leads?: boolean;
    lead_start_date?: string | null;
   created_at: string;
@@ -92,6 +93,7 @@ const CourseEdit: React.FC = () => {
     smart_activation_telegram_link: '',
     telegram_only_access: false,
     rafiei_bot_followup_enabled: false,
+    rafiei_bot_activation_required: false,
     use_enrollments_as_leads: false,
     lead_start_date: ''
   });
@@ -160,6 +162,7 @@ const CourseEdit: React.FC = () => {
           smart_activation_telegram_link: data.smart_activation_telegram_link || '',
            telegram_only_access: data.telegram_only_access || false,
            rafiei_bot_followup_enabled: data.rafiei_bot_followup_enabled || false,
+           rafiei_bot_activation_required: (data as any).rafiei_bot_activation_required || false,
         use_enrollments_as_leads: data.use_enrollments_as_leads || false,
         lead_start_date: data.lead_start_date ? new Date(data.lead_start_date).toISOString().slice(0, 16) : ''
       });
@@ -256,6 +259,7 @@ const CourseEdit: React.FC = () => {
         smart_activation_telegram_link: formData.smart_activation_enabled ? formData.smart_activation_telegram_link.trim() : null,
         telegram_only_access: formData.telegram_only_access,
         rafiei_bot_followup_enabled: formData.rafiei_bot_followup_enabled,
+        rafiei_bot_activation_required: formData.rafiei_bot_activation_required,
         use_enrollments_as_leads: formData.use_enrollments_as_leads,
         lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null
       };
@@ -699,13 +703,25 @@ const CourseEdit: React.FC = () => {
                        <Label htmlFor="smart_activation_enabled">فعال‌سازی هوشمند</Label>
                      </div>
 
-                     <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2">
                        <Switch
                          id="rafiei_bot_followup_enabled"
                          checked={formData.rafiei_bot_followup_enabled}
-                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_followup_enabled: checked }))}
+                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_followup_enabled: checked, rafiei_bot_activation_required: checked ? prev.rafiei_bot_activation_required : false }))}
                        />
                        <Label htmlFor="rafiei_bot_followup_enabled">کوچ شخصی تلگرام (پیگیری خودکار)</Label>
+                     </div>
+
+                     <div className="flex items-center space-x-2 pr-6">
+                       <Switch
+                         id="rafiei_bot_activation_required"
+                         checked={!!formData.rafiei_bot_activation_required}
+                         disabled={!formData.rafiei_bot_followup_enabled}
+                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_activation_required: checked }))}
+                       />
+                       <Label htmlFor="rafiei_bot_activation_required" className={!formData.rafiei_bot_followup_enabled ? 'text-muted-foreground' : ''}>
+                         فعال‌سازی کوچ تلگرام اجباری (ویزارد بعد از خرید)
+                       </Label>
                      </div>
                      
                      <div className="flex items-center space-x-2">

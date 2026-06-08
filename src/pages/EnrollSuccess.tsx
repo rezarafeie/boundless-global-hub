@@ -16,6 +16,8 @@ import { esanjService } from '@/lib/esanjService';
 import { toast } from 'sonner';
 import MainLayout from '@/components/Layout/MainLayout';
 import StartCourseSection from '@/components/StartCourseSection';
+import { TelegramCoachWizard } from '@/components/TelegramCoachWizard';
+import { Bot } from 'lucide-react';
 
 interface VerificationResult {
   success: boolean;
@@ -679,6 +681,45 @@ const EnrollSuccess: React.FC = () => {
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [authenticating, setAuthenticating] = useState(false);
   const [smartActivated, setSmartActivated] = useState(false);
+  const [coachOpen, setCoachOpen] = useState(false);
+  const [coachFlags, setCoachFlags] = useState<{ enabled: boolean; required: boolean; supportLink?: string | null } | null>(null);
+
+  // Pull telegram coach flags from the course once we have a successful enrollment.
+  // Some success paths (Zarinpal verify) don't include these columns in result.course,
+  // so we fetch them defensively to drive the wizard launcher.
+  useEffect(() => {
+    const courseId = result?.enrollment?.course_id ?? result?.course?.id;
+    if (!result?.success || !courseId) {
+      setCoachFlags(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('courses')
+        .select('rafiei_bot_followup_enabled, rafiei_bot_activation_required, support_link' as any)
+        .eq('id', courseId)
+        .maybeSingle();
+      if (cancelled) return;
+      const enabled = !!(data as any)?.rafiei_bot_followup_enabled;
+      const required = !!(data as any)?.rafiei_bot_activation_required;
+      setCoachFlags({ enabled, required, supportLink: (data as any)?.support_link });
+      // Auto-open if required and not yet linked
+      if (enabled && required && result.enrollment?.id) {
+        const { data: e } = await supabase
+          .from('enrollments')
+          .select('telegram_chat_id' as any)
+          .eq('id', result.enrollment.id)
+          .maybeSingle();
+        if (!cancelled && !(e as any)?.telegram_chat_id) {
+          setCoachOpen(true);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [result?.success, result?.enrollment?.id, result?.enrollment?.course_id, result?.course?.id]);
 
   // Auto-authenticate user after successful enrollment
   useEffect(() => {
@@ -927,7 +968,9 @@ const EnrollSuccess: React.FC = () => {
             telegram_activation_required,
             smart_activation_enabled,
             smart_activation_telegram_link,
-            telegram_only_access
+            telegram_only_access,
+            rafiei_bot_followup_enabled,
+            rafiei_bot_activation_required
           )
         `)
         .eq('id', enrollmentId)
@@ -989,7 +1032,9 @@ const EnrollSuccess: React.FC = () => {
             telegram_activation_required,
             smart_activation_enabled,
             smart_activation_telegram_link,
-            telegram_only_access
+            telegram_only_access,
+            rafiei_bot_followup_enabled,
+            rafiei_bot_activation_required
           )
         `)
         .eq('id', enrollmentId)
@@ -1175,6 +1220,42 @@ const EnrollSuccess: React.FC = () => {
               </CardHeader>
               
               <CardContent className="space-y-6">
+                {/* Telegram Coach Wizard launcher */}
+                {coachFlags?.enabled && result.enrollment?.id && (
+                  <button
+                    type="button"
+                    onClick={() => setCoachOpen(true)}
+                    className="group relative w-full overflow-hidden rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-5 text-right shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/30 transition-all"
+                  >
+                    <div className="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full bg-cyan-500/20 blur-2xl" />
+                    <div className="pointer-events-none absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-indigo-500/20 blur-2xl" />
+                    <div className="relative flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center shadow-md shadow-indigo-500/30 group-hover:scale-105 transition-transform">
+                        <Bot className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0 text-slate-100">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-base truncate">
+                            راه‌اندازی کوچ شخصی تلگرام
+                          </p>
+                          {coachFlags.required && (
+                            <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px]">
+                              اجباری
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1 truncate">
+                          اتصال به ربات + فعال‌سازی پشتیبانی در یک ویزارد سریع
+                        </p>
+                      </div>
+                      <div className="h-9 px-3 rounded-lg bg-white text-slate-900 text-xs font-semibold flex items-center gap-1 group-hover:bg-slate-100 transition-colors">
+                        شروع
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </div>
+                    </div>
+                  </button>
+                )}
+
                 {/* Activation Requirements (if activated) */}
                 {result.course && ((result.course.support_activation_required && !result.course.smart_activation_enabled) || result.course.smart_activation_enabled || result.course.telegram_activation_required) && (
                   <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
@@ -1551,6 +1632,19 @@ const EnrollSuccess: React.FC = () => {
           )}
         </div>
       </div>
+
+      {coachFlags?.enabled && result?.enrollment?.id && (result?.enrollment?.course_id || result?.course?.id) && (
+        <TelegramCoachWizard
+          open={coachOpen}
+          onClose={() => setCoachOpen(false)}
+          enrollmentId={result.enrollment.id}
+          courseId={result.enrollment.course_id ?? result.course?.id}
+          courseTitle={result.course?.title}
+          supportLink={coachFlags.supportLink}
+          required={coachFlags.required}
+          finishPath="/app/my-courses"
+        />
+      )}
     </MainLayout>
   );
 };

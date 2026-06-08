@@ -45,7 +45,8 @@ const CourseCreate: React.FC = () => {
     smart_activation_telegram_link: '',
     use_enrollments_as_leads: false,
     lead_start_date: '',
-    rafiei_bot_followup_enabled: false
+    rafiei_bot_followup_enabled: false,
+    rafiei_bot_activation_required: false
   });
 
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
@@ -132,6 +133,7 @@ const CourseCreate: React.FC = () => {
         smart_activation_enabled: formData.smart_activation_enabled,
         smart_activation_telegram_link: formData.smart_activation_enabled ? formData.smart_activation_telegram_link.trim() : null,
         rafiei_bot_followup_enabled: formData.rafiei_bot_followup_enabled,
+        rafiei_bot_activation_required: formData.rafiei_bot_activation_required,
         use_enrollments_as_leads: formData.use_enrollments_as_leads,
         lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null
       };
@@ -479,9 +481,21 @@ const CourseCreate: React.FC = () => {
                       <Switch
                         id="rafiei_bot_followup_enabled"
                         checked={formData.rafiei_bot_followup_enabled}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_followup_enabled: checked }))}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_followup_enabled: checked, rafiei_bot_activation_required: checked ? prev.rafiei_bot_activation_required : false }))}
                       />
                       <Label htmlFor="rafiei_bot_followup_enabled">کوچ شخصی تلگرام (پیگیری خودکار)</Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2 pr-6">
+                      <Switch
+                        id="rafiei_bot_activation_required"
+                        checked={!!formData.rafiei_bot_activation_required}
+                        disabled={!formData.rafiei_bot_followup_enabled}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_activation_required: checked }))}
+                      />
+                      <Label htmlFor="rafiei_bot_activation_required" className={!formData.rafiei_bot_followup_enabled ? 'text-muted-foreground' : ''}>
+                        فعال‌سازی کوچ تلگرام اجباری (ویزارد بعد از خرید)
+                      </Label>
                     </div>
                     
                     {formData.smart_activation_enabled && (

@@ -1393,6 +1393,7 @@ export type Database = {
           pre_launch_ends_at: string | null
           pre_launch_price: number | null
           price: number
+          rafiei_bot_activation_required: boolean
           rafiei_bot_followup_enabled: boolean
           redirect_url: string | null
           sale_expires_at: string | null
@@ -1432,6 +1433,7 @@ export type Database = {
           pre_launch_ends_at?: string | null
           pre_launch_price?: number | null
           price?: number
+          rafiei_bot_activation_required?: boolean
           rafiei_bot_followup_enabled?: boolean
           redirect_url?: string | null
           sale_expires_at?: string | null
@@ -1471,6 +1473,7 @@ export type Database = {
           pre_launch_ends_at?: string | null
           pre_launch_price?: number | null
           price?: number
+          rafiei_bot_activation_required?: boolean
           rafiei_bot_followup_enabled?: boolean
           redirect_url?: string | null
           sale_expires_at?: string | null
