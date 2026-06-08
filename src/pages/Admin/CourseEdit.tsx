@@ -730,7 +730,31 @@ const CourseEdit: React.FC = () => {
                        <Label htmlFor="rafiei_bot_activation_required" className={!formData.rafiei_bot_followup_enabled ? 'text-muted-foreground' : ''}>
                          فعال‌سازی کوچ تلگرام اجباری (ویزارد بعد از خرید)
                        </Label>
-                     </div>
+                      </div>
+
+                     {formData.rafiei_bot_followup_enabled && (
+                       <div className="pr-6 space-y-2 border-r-2 border-muted pr-4 mt-2">
+                         <p className="text-sm font-medium text-muted-foreground">انواع پیام‌های شخصی‌سازی شده کوچ</p>
+                         {([
+                           ['lesson_complete', '🎯 تبریک پس از اتمام هر درس'],
+                           ['course_complete', '🏆 تبریک پایان دوره'],
+                           ['inactivity', '⏰ یادآوری در صورت غیبت (۳/۷/۱۴ روز)'],
+                           ['coaching', '💬 سوالات کوچینگ دوره‌ای'],
+                         ] as const).map(([key, label]) => (
+                           <div key={key} className="flex items-center space-x-2">
+                             <Switch
+                               id={`bot_cfg_${key}`}
+                               checked={formData.rafiei_bot_followup_config?.[key] !== false}
+                               onCheckedChange={(checked) => setFormData(prev => ({
+                                 ...prev,
+                                 rafiei_bot_followup_config: { ...prev.rafiei_bot_followup_config, [key]: checked },
+                               }))}
+                             />
+                             <Label htmlFor={`bot_cfg_${key}`}>{label}</Label>
+                           </div>
+                         ))}
+                       </div>
+                     )}
                      
                      <div className="flex items-center space-x-2">
                        <Switch
