@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     }
 
     // Get the current domain from the request
-    const origin = req.headers.get('origin') || 'https://f1b84616-3d17-49e3-9831-9bf37bdf8198.lovableproject.com'
+    const origin = req.headers.get('origin') || 'https://academy.rafiei.co'
     console.log('Using origin for SSO URLs:', origin)
 
     const tokens: { type: string; token: string; url: string }[] = []
