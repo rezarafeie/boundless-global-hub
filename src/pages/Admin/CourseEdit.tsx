@@ -255,6 +255,7 @@ const CourseEdit: React.FC = () => {
         smart_activation_enabled: formData.smart_activation_enabled,
         smart_activation_telegram_link: formData.smart_activation_enabled ? formData.smart_activation_telegram_link.trim() : null,
         telegram_only_access: formData.telegram_only_access,
+        rafiei_bot_followup_enabled: formData.rafiei_bot_followup_enabled,
         use_enrollments_as_leads: formData.use_enrollments_as_leads,
         lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null
       };
