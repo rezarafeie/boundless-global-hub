@@ -123,7 +123,9 @@ const SSOAccess: React.FC = () => {
         if (redirectParam && redirectParam.startsWith('/')) {
           navigate(redirectParam);
         } else {
-          navigate(`/access?course=${tokenData.course_slug}`);
+          // Default to the in-app (/app) UI so Telegram Mini App users stay
+          // inside the app shell instead of landing on the main marketing site.
+          navigate(`/app/course/${tokenData.course_slug}`);
         }
       }, 1200);
 

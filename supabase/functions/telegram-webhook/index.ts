@@ -1158,8 +1158,9 @@ async function studentCourseDetail(chat_id: number, message_id: number, user: Bo
     const url = await buildSsoUrl(lessonPath);
     keyboard.push([{ text: `▶️ ${l.lesson_number ? `${l.lesson_number}. ` : ''}${l.title}`, url }]);
   }
-  const coursePageUrl = course.redirect_url || await buildSsoUrl(`/course/${course.slug}`);
-  keyboard.push([{ text: '🌐 صفحه دوره', url: coursePageUrl }]);
+  // Always send the user to the in-app (/app) course page so the Mini App stays in the app UI
+  const coursePageUrl = await buildSsoUrl(`/app/course/${course.slug}`);
+  keyboard.push([{ text: '📱 صفحه دوره (Mini App)', url: coursePageUrl }]);
   keyboard.push([{ text: '⬅️ بازگشت', callback_data: 'student:my_courses' }, { text: '🏠', callback_data: 'menu:home' }]);
   await editMessage(chat_id, message_id, text, keyboard);
 }
