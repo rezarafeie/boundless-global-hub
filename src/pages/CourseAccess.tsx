@@ -32,6 +32,7 @@ import CourseActionLinks from '@/components/CourseActionLinks';
 import { useLessonTracker } from '@/hooks/useLessonTracker';
 import { useLessonNumber } from '@/hooks/useLessonNumber';
 import { useAuthTracking } from '@/hooks/useAuthTracking';
+import { TelegramEnrollmentActivation } from '@/components/TelegramEnrollmentActivation';
 
 interface Course {
   id: string;
@@ -1028,11 +1029,12 @@ const CourseAccess: React.FC = () => {
                 <BookOpen className="h-6 w-6 text-primary" />
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-4">
-                  <div>
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex-1 min-w-0">
                     <h1 className="text-2xl font-bold">{course.title}</h1>
                     <p className="text-muted-foreground">{course.description}</p>
                   </div>
+                  <TelegramEnrollmentActivation courseId={course.id} badgeWhenLinked />
                 </div>
               </div>
             </div>
@@ -1425,6 +1427,7 @@ const CourseAccess: React.FC = () => {
                     بازگشت
                   </Button>
                   <h2 className="font-medium text-lg truncate flex-1">{selectedLesson.title}</h2>
+                  <TelegramEnrollmentActivation courseId={course.id} badgeWhenLinked className="shrink-0" />
                 </div>
                 <div className="p-4">
                   {renderLessonContent(selectedLesson)}

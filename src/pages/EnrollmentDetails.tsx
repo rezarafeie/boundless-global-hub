@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/Layout/MainLayout';
 import StartCourseSection from '@/components/StartCourseSection';
+import { TelegramEnrollmentActivation } from '@/components/TelegramEnrollmentActivation';
 
 interface SSOToken {
   type: string;
@@ -356,6 +357,16 @@ const EnrollmentDetails: React.FC = () => {
             <p className="text-muted-foreground">اطلاعات کامل ثبت‌نام شما در دوره</p>
           </div>
         </div>
+
+        {enrollment.course_id && (
+          <div className="mb-4">
+            <TelegramEnrollmentActivation
+              courseId={enrollment.course_id}
+              enrollmentId={enrollment.id}
+              badgeWhenLinked
+            />
+          </div>
+        )}
 
         <div className="space-y-6">
           {/* Status Card */}
