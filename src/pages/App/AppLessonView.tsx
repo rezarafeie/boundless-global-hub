@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TelegramEnrollmentActivation } from "@/components/TelegramEnrollmentActivation";
+import { useIsIranianIP } from "@/hooks/useIsIranianIP";
 
 interface LessonData {
   id: string;
@@ -45,6 +46,7 @@ const AppLessonView = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const { getLessonByNumber } = useLessonNumber();
+  const isIranianIP = useIsIranianIP();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -302,7 +304,7 @@ const AppLessonView = () => {
         </div>
 
         {/* VPN warning for video lessons */}
-        {lesson.vpnWarningEnabled && (lesson.video_url || (lesson.content && lesson.content.includes('<iframe'))) && (
+        {lesson.vpnWarningEnabled && isIranianIP === false && (lesson.video_url || (lesson.content && lesson.content.includes('<iframe'))) && (
           <div className="px-4">
             <Alert className="border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800">
               <WifiOff className="h-4 w-4 text-amber-600 dark:text-amber-400" />
