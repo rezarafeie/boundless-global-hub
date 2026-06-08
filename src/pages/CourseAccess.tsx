@@ -49,6 +49,7 @@ interface Course {
   gifts_link?: string | null;
   support_activation_required?: boolean;
   telegram_activation_required?: boolean;
+  vpn_warning_enabled?: boolean;
 }
 
 interface TitleGroup {
