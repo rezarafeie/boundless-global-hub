@@ -173,7 +173,8 @@ const CourseEdit: React.FC = () => {
                  coaching: (data as any).rafiei_bot_followup_config.coaching !== false }
              : { lesson_complete: true, course_complete: true, inactivity: true, coaching: true },
         use_enrollments_as_leads: data.use_enrollments_as_leads || false,
-        lead_start_date: data.lead_start_date ? new Date(data.lead_start_date).toISOString().slice(0, 16) : ''
+        lead_start_date: data.lead_start_date ? new Date(data.lead_start_date).toISOString().slice(0, 16) : '',
+        vpn_warning_enabled: (data as any).vpn_warning_enabled || false
       });
 
       // If editing a dollar-priced course, fetch the exchange rate
