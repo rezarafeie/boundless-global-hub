@@ -45,7 +45,8 @@ const CourseCreate: React.FC = () => {
     smart_activation_telegram_link: '',
     use_enrollments_as_leads: false,
     lead_start_date: '',
-    rafiei_bot_followup_enabled: false
+    rafiei_bot_followup_enabled: false,
+    rafiei_bot_activation_required: false
   });
 
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
