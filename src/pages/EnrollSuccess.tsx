@@ -681,6 +681,45 @@ const EnrollSuccess: React.FC = () => {
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [authenticating, setAuthenticating] = useState(false);
   const [smartActivated, setSmartActivated] = useState(false);
+  const [coachOpen, setCoachOpen] = useState(false);
+  const [coachFlags, setCoachFlags] = useState<{ enabled: boolean; required: boolean; supportLink?: string | null } | null>(null);
+
+  // Pull telegram coach flags from the course once we have a successful enrollment.
+  // Some success paths (Zarinpal verify) don't include these columns in result.course,
+  // so we fetch them defensively to drive the wizard launcher.
+  useEffect(() => {
+    const courseId = result?.enrollment?.course_id ?? result?.course?.id;
+    if (!result?.success || !courseId) {
+      setCoachFlags(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('courses')
+        .select('rafiei_bot_followup_enabled, rafiei_bot_activation_required, support_link' as any)
+        .eq('id', courseId)
+        .maybeSingle();
+      if (cancelled) return;
+      const enabled = !!(data as any)?.rafiei_bot_followup_enabled;
+      const required = !!(data as any)?.rafiei_bot_activation_required;
+      setCoachFlags({ enabled, required, supportLink: (data as any)?.support_link });
+      // Auto-open if required and not yet linked
+      if (enabled && required && result.enrollment?.id) {
+        const { data: e } = await supabase
+          .from('enrollments')
+          .select('telegram_chat_id' as any)
+          .eq('id', result.enrollment.id)
+          .maybeSingle();
+        if (!cancelled && !(e as any)?.telegram_chat_id) {
+          setCoachOpen(true);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [result?.success, result?.enrollment?.id, result?.enrollment?.course_id, result?.course?.id]);
 
   // Auto-authenticate user after successful enrollment
   useEffect(() => {
