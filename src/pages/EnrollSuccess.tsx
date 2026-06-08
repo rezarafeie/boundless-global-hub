@@ -1632,6 +1632,19 @@ const EnrollSuccess: React.FC = () => {
           )}
         </div>
       </div>
+
+      {coachFlags?.enabled && result?.enrollment?.id && (result?.enrollment?.course_id || result?.course?.id) && (
+        <TelegramCoachWizard
+          open={coachOpen}
+          onClose={() => setCoachOpen(false)}
+          enrollmentId={result.enrollment.id}
+          courseId={result.enrollment.course_id ?? result.course?.id}
+          courseTitle={result.course?.title}
+          supportLink={coachFlags.supportLink}
+          required={coachFlags.required}
+          finishPath="/app/my-courses"
+        />
+      )}
     </MainLayout>
   );
 };
