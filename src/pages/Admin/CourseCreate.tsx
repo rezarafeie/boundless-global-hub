@@ -47,7 +47,8 @@ const CourseCreate: React.FC = () => {
     lead_start_date: '',
     rafiei_bot_followup_enabled: false,
     rafiei_bot_activation_required: false,
-    rafiei_bot_followup_config: { lesson_complete: true, course_complete: true, inactivity: true, coaching: true }
+    rafiei_bot_followup_config: { lesson_complete: true, course_complete: true, inactivity: true, coaching: true },
+    vpn_warning_enabled: false
   });
 
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
