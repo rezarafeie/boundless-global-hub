@@ -2647,6 +2647,45 @@ async function handleUpdate(update: any) {
   const chat_id = msg.chat.id;
   const text: string = msg.text ?? '';
 
+  // Personalized coach: refresh activity + capture coaching answers (best-effort)
+  try {
+    await supabase.from('enrollments')
+      .update({ last_activity_at: new Date().toISOString(), inactivity_stage: 0 })
+      .eq('telegram_chat_id', chat_id);
+    if (text && text.trim()) {
+      const { data: enrs } = await supabase.from('enrollments')
+        .select('id').eq('telegram_chat_id', chat_id);
+      const ids = (enrs ?? []).map((e: any) => e.id);
+      if (ids.length) {
+        const cutoff = new Date(Date.now() - 48 * 3600 * 1000).toISOString();
+        const { data: events } = await supabase.from('enrollment_followup_events')
+          .select('id, enrollment_id, payload, user_replied_at, event_type, sent_at')
+          .in('enrollment_id', ids)
+          .eq('event_type', 'coaching_checkin')
+          .is('user_replied_at', null)
+          .gte('sent_at', cutoff)
+          .order('sent_at', { ascending: false })
+          .limit(1);
+        const ev = events?.[0];
+        if (ev) {
+          await supabase.from('enrollment_followup_events').update({
+            user_replied_at: new Date().toISOString(),
+            reply_text: text.slice(0, 2000),
+            payload: { ...(ev.payload ?? {}), answer: text.slice(0, 2000) },
+          }).eq('id', ev.id);
+          // Surface to CRM as a note
+          try {
+            await supabase.from('crm_notes').insert({
+              enrollment_id: ev.enrollment_id,
+              content: `پاسخ کوچینگ تلگرام:\nسوال: ${ev?.payload?.question ?? ''}\nپاسخ: ${text.slice(0, 2000)}`,
+              type: 'coaching_reply',
+            });
+          } catch (e) { console.warn('crm_notes insert skipped', e); }
+        }
+      }
+    }
+  } catch (e) { console.warn('activity tracking skipped', e); }
+
   if (text === '/myid') {
     await sendMessage(chat_id, `🆔 Chat ID شما: <code>${chat_id}</code>`);
     return;
