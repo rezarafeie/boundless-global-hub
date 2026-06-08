@@ -45,6 +45,7 @@ interface Course {
    smart_activation_enabled?: boolean;
    smart_activation_telegram_link?: string | null;
    rafiei_bot_followup_enabled?: boolean;
+   rafiei_bot_activation_required?: boolean;
    use_enrollments_as_leads?: boolean;
    lead_start_date?: string | null;
   created_at: string;
