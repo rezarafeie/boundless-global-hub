@@ -200,20 +200,6 @@ const Footer = () => {
             >
               <img src={enamadAsset.url} alt="eNamad" className="h-16 w-auto" />
             </a>
-            <div className="flex items-center space-x-8 rtl:space-x-reverse">
-              <Link 
-                to="/terms" 
-                className="text-gray-400 hover:text-white text-base transition-colors hover:underline"
-              >
-                {translations.termsOfService}
-              </Link>
-              <Link 
-                to="/privacy" 
-                className="text-gray-400 hover:text-white text-base transition-colors hover:underline"
-              >
-                {translations.privacyPolicy}
-              </Link>
-            </div>
           </div>
         </div>
       </div>
