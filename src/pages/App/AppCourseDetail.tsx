@@ -321,6 +321,10 @@ const AppCourseDetail = () => {
                   </div>
                   <Progress value={course.progress} />
                 </div>
+
+                <div className="flex justify-end pt-1">
+                  <TelegramEnrollmentActivation courseId={course.id} />
+                </div>
               </div>
             </CardContent>
           </Card>
