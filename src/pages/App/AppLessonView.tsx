@@ -283,10 +283,11 @@ const AppLessonView = () => {
     <AppLayout title={lesson.title} rightAction={rightAction}>
       <div className="space-y-4">
         {/* Course Context */}
-        <div className="px-4 pt-2">
+        <div className="px-4 pt-2 flex items-center justify-between gap-2 flex-wrap">
           <Badge variant="outline" className="text-xs">
             {lesson.courseTitle}
           </Badge>
+          <TelegramEnrollmentActivation courseId={lesson.course_id} badgeWhenLinked />
         </div>
 
         {/* Video Player - only show if there's video content */}
