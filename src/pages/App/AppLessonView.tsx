@@ -20,6 +20,7 @@ import {
   Volume2,
   BookOpen
 } from "lucide-react";
+import { TelegramEnrollmentActivation } from "@/components/TelegramEnrollmentActivation";
 
 interface LessonData {
   id: string;
