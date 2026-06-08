@@ -499,6 +499,30 @@ const CourseCreate: React.FC = () => {
                         فعال‌سازی کوچ تلگرام اجباری (ویزارد بعد از خرید)
                       </Label>
                     </div>
+
+                    {formData.rafiei_bot_followup_enabled && (
+                      <div className="pr-6 space-y-2 border-r-2 border-muted pr-4 mt-2">
+                        <p className="text-sm font-medium text-muted-foreground">انواع پیام‌های شخصی‌سازی شده کوچ</p>
+                        {([
+                          ['lesson_complete', '🎯 تبریک پس از اتمام هر درس'],
+                          ['course_complete', '🏆 تبریک پایان دوره'],
+                          ['inactivity', '⏰ یادآوری در صورت غیبت (۳/۷/۱۴ روز)'],
+                          ['coaching', '💬 سوالات کوچینگ دوره‌ای'],
+                        ] as const).map(([key, label]) => (
+                          <div key={key} className="flex items-center space-x-2">
+                            <Switch
+                              id={`bot_cfg_${key}`}
+                              checked={formData.rafiei_bot_followup_config?.[key] !== false}
+                              onCheckedChange={(checked) => setFormData(prev => ({
+                                ...prev,
+                                rafiei_bot_followup_config: { ...prev.rafiei_bot_followup_config, [key]: checked },
+                              }))}
+                            />
+                            <Label htmlFor={`bot_cfg_${key}`}>{label}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     
                     {formData.smart_activation_enabled && (
                       <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800 mt-3">
