@@ -35,6 +35,10 @@ interface LessonData {
   lesson_number: number;
   courseTitle?: string;
   courseSlug?: string;
+  vpnWarningEnabled?: boolean;
+  nextLessonNumber?: number;
+  prevLessonNumber?: number;
+}
   nextLessonNumber?: number;
   prevLessonNumber?: number;
 }
