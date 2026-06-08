@@ -2618,6 +2618,19 @@ async function handleUpdate(update: any) {
         if (sub === 'profile') { await studentProfile(chat_id, message_id, user); return; }
         if (sub === 'logout') { await studentLogout(chat_id, message_id, user); return; }
       }
+
+      if (action === 'enroll' && rest[0] === 'settime') {
+        const enrollment_id = rest[1];
+        await setSession(chat_id, user.id, 'awaiting_followup_time', { enrollment_id });
+        await editMessage(chat_id, message_id,
+          [
+            `⏰ <b>تنظیم زمان یادآوری روزانه</b>`,
+            `یک عدد بین ۰ تا ۲۳ ارسال کنید (ساعت تهران).`,
+            `برای حذف یادآوری: /skip`,
+          ].join('\n'),
+          [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]]);
+        return;
+      }
     } catch (e: any) {
       console.error('callback error:', e, 'data:', data);
       try {
@@ -2716,6 +2729,11 @@ async function handleUpdate(update: any) {
   }
   if (session?.state === 'sales_chat') {
     await handleSalesChat(chat_id, msg, session);
+    return;
+  }
+
+  if (session?.state === 'awaiting_followup_time' && text) {
+    await handleFollowupTimeInput(chat_id, text, user);
     return;
   }
 
