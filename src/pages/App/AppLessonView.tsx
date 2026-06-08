@@ -167,10 +167,18 @@ const AppLessonView = () => {
         ? adjacentLessons?.[currentIndex - 1]?.lesson_number 
         : undefined;
 
+      // Fetch course-level VPN warning flag
+      const { data: courseExtra } = await supabase
+        .from('courses')
+        .select('vpn_warning_enabled')
+        .eq('id', foundLesson.course_id)
+        .maybeSingle();
+
       setLesson({
         ...foundLesson,
         courseTitle: foundCourse.title,
         courseSlug: foundCourse.slug,
+        vpnWarningEnabled: (courseExtra as any)?.vpn_warning_enabled || false,
         nextLessonNumber,
         prevLessonNumber
       });
