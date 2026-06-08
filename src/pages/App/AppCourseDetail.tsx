@@ -20,6 +20,7 @@ import {
   Share,
   User
 } from "lucide-react";
+import { TelegramEnrollmentActivation } from "@/components/TelegramEnrollmentActivation";
 
 interface CourseData {
   id: string;
@@ -319,6 +320,10 @@ const AppCourseDetail = () => {
                     <span className="font-medium">{course.progress}%</span>
                   </div>
                   <Progress value={course.progress} />
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <TelegramEnrollmentActivation courseId={course.id} />
                 </div>
               </div>
             </CardContent>
