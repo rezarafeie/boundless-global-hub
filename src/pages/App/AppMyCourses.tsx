@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import AppLayout from "@/components/Layout/AppLayout";
+import { TelegramEnrollmentActivation } from "@/components/TelegramEnrollmentActivation";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -230,7 +231,7 @@ const AppMyCourses = () => {
                 </div>
 
                 {/* Action Bar */}
-                <div className="px-4 py-3 bg-muted/20 border-t border-border/50">
+                <div className="px-4 py-3 bg-muted/20 border-t border-border/50 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">
                       تاریخ ثبت‌نام: {course.enrollmentDate}
@@ -253,6 +254,11 @@ const AppMyCourses = () => {
                       )}
                     </Button>
                   </div>
+                  <TelegramEnrollmentActivation
+                    enrollmentId={course.id}
+                    courseId={course.course_id}
+                    className="w-full"
+                  />
                 </div>
               </CardContent>
             </Card>
