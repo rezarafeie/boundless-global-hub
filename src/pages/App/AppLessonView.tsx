@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TelegramEnrollmentActivation } from "@/components/TelegramEnrollmentActivation";
+import { useIsIranianIP } from "@/hooks/useIsIranianIP";
 
 interface LessonData {
   id: string;

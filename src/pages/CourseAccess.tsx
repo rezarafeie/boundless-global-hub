@@ -35,6 +35,7 @@ import { useLessonTracker } from '@/hooks/useLessonTracker';
 import { useLessonNumber } from '@/hooks/useLessonNumber';
 import { useAuthTracking } from '@/hooks/useAuthTracking';
 import { TelegramEnrollmentActivation } from '@/components/TelegramEnrollmentActivation';
+import { useIsIranianIP } from '@/hooks/useIsIranianIP';
 
 interface Course {
   id: string;
