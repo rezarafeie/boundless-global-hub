@@ -1,0 +1,2 @@
+ALTER TABLE public.courses ADD COLUMN IF NOT EXISTS rafiei_bot_activation_required boolean NOT NULL DEFAULT false;
+COMMENT ON COLUMN public.courses.rafiei_bot_activation_required IS 'When true, completing the Telegram bot activation wizard is required after enrollment (only effective when rafiei_bot_followup_enabled is also true).';
