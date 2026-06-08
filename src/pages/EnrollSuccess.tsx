@@ -16,6 +16,8 @@ import { esanjService } from '@/lib/esanjService';
 import { toast } from 'sonner';
 import MainLayout from '@/components/Layout/MainLayout';
 import StartCourseSection from '@/components/StartCourseSection';
+import { TelegramCoachWizard } from '@/components/TelegramCoachWizard';
+import { Bot } from 'lucide-react';
 
 interface VerificationResult {
   success: boolean;
