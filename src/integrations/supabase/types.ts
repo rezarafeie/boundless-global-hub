@@ -1414,6 +1414,7 @@ export type Database = {
           use_dollar_price: boolean
           use_enrollments_as_leads: boolean
           use_landing_page_merge: boolean
+          vpn_warning_enabled: boolean
           woocommerce_create_access: boolean | null
           woocommerce_product_id: number | null
         }
@@ -1455,6 +1456,7 @@ export type Database = {
           use_dollar_price?: boolean
           use_enrollments_as_leads?: boolean
           use_landing_page_merge?: boolean
+          vpn_warning_enabled?: boolean
           woocommerce_create_access?: boolean | null
           woocommerce_product_id?: number | null
         }
@@ -1496,6 +1498,7 @@ export type Database = {
           use_dollar_price?: boolean
           use_enrollments_as_leads?: boolean
           use_landing_page_merge?: boolean
+          vpn_warning_enabled?: boolean
           woocommerce_create_access?: boolean | null
           woocommerce_product_id?: number | null
         }

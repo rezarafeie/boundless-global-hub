@@ -47,7 +47,8 @@ const CourseCreate: React.FC = () => {
     lead_start_date: '',
     rafiei_bot_followup_enabled: false,
     rafiei_bot_activation_required: false,
-    rafiei_bot_followup_config: { lesson_complete: true, course_complete: true, inactivity: true, coaching: true }
+    rafiei_bot_followup_config: { lesson_complete: true, course_complete: true, inactivity: true, coaching: true },
+    vpn_warning_enabled: false
   });
 
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
@@ -137,7 +138,8 @@ const CourseCreate: React.FC = () => {
         rafiei_bot_activation_required: formData.rafiei_bot_activation_required,
         rafiei_bot_followup_config: formData.rafiei_bot_followup_config,
         use_enrollments_as_leads: formData.use_enrollments_as_leads,
-        lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null
+        lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null,
+        vpn_warning_enabled: formData.vpn_warning_enabled
       };
 
       const { error } = await supabase
@@ -468,6 +470,16 @@ const CourseCreate: React.FC = () => {
                       />
                       <Label htmlFor="telegram_activation_required">فعال‌سازی کانال تلگرام اجباری</Label>
                     </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="vpn_warning_enabled"
+                        checked={formData.vpn_warning_enabled}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, vpn_warning_enabled: checked }))}
+                      />
+                      <Label htmlFor="vpn_warning_enabled">نمایش هشدار خاموش کردن VPN در پخش ویدیو</Label>
+                    </div>
+                    
                     
                     {/* Smart Activation Section */}
                     <div className="flex items-center space-x-2">

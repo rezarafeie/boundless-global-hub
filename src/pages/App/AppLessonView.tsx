@@ -18,8 +18,10 @@ import {
   FileText,
   Download,
   Volume2,
-  BookOpen
+  BookOpen,
+  WifiOff
 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TelegramEnrollmentActivation } from "@/components/TelegramEnrollmentActivation";
 
 interface LessonData {
@@ -33,6 +35,7 @@ interface LessonData {
   lesson_number: number;
   courseTitle?: string;
   courseSlug?: string;
+  vpnWarningEnabled?: boolean;
   nextLessonNumber?: number;
   prevLessonNumber?: number;
 }
@@ -164,10 +167,18 @@ const AppLessonView = () => {
         ? adjacentLessons?.[currentIndex - 1]?.lesson_number 
         : undefined;
 
+      // Fetch course-level VPN warning flag
+      const { data: courseExtra } = await supabase
+        .from('courses')
+        .select('vpn_warning_enabled')
+        .eq('id', foundLesson.course_id)
+        .maybeSingle();
+
       setLesson({
         ...foundLesson,
         courseTitle: foundCourse.title,
         courseSlug: foundCourse.slug,
+        vpnWarningEnabled: (courseExtra as any)?.vpn_warning_enabled || false,
         nextLessonNumber,
         prevLessonNumber
       });
@@ -289,6 +300,19 @@ const AppLessonView = () => {
           </Badge>
           <TelegramEnrollmentActivation courseId={lesson.course_id} badgeWhenLinked />
         </div>
+
+        {/* VPN warning for video lessons */}
+        {lesson.vpnWarningEnabled && (lesson.video_url || (lesson.content && lesson.content.includes('<iframe'))) && (
+          <div className="px-4">
+            <Alert className="border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800">
+              <WifiOff className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <AlertTitle className="text-amber-800 dark:text-amber-300">برای پخش ویدیو، VPN خود را خاموش کنید</AlertTitle>
+              <AlertDescription className="text-amber-700 dark:text-amber-400">
+                در صورت روشن بودن VPN ممکن است ویدیو بارگذاری نشود یا کیفیت پخش کاهش پیدا کند.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
 
         {/* Video Player - only show if there's video content */}
         {(lesson.video_url || (lesson.content && lesson.content.includes('<iframe'))) && (

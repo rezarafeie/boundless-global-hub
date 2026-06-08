@@ -46,8 +46,9 @@ interface Course {
    smart_activation_telegram_link?: string | null;
    rafiei_bot_followup_enabled?: boolean;
    rafiei_bot_activation_required?: boolean;
-   use_enrollments_as_leads?: boolean;
-   lead_start_date?: string | null;
+    use_enrollments_as_leads?: boolean;
+    lead_start_date?: string | null;
+    vpn_warning_enabled?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -96,7 +97,8 @@ const CourseEdit: React.FC = () => {
     rafiei_bot_activation_required: false,
     rafiei_bot_followup_config: { lesson_complete: true, course_complete: true, inactivity: true, coaching: true } as { lesson_complete: boolean; course_complete: boolean; inactivity: boolean; coaching: boolean },
     use_enrollments_as_leads: false,
-    lead_start_date: ''
+    lead_start_date: '',
+    vpn_warning_enabled: false
   });
 
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
@@ -171,7 +173,8 @@ const CourseEdit: React.FC = () => {
                  coaching: (data as any).rafiei_bot_followup_config.coaching !== false }
              : { lesson_complete: true, course_complete: true, inactivity: true, coaching: true },
         use_enrollments_as_leads: data.use_enrollments_as_leads || false,
-        lead_start_date: data.lead_start_date ? new Date(data.lead_start_date).toISOString().slice(0, 16) : ''
+        lead_start_date: data.lead_start_date ? new Date(data.lead_start_date).toISOString().slice(0, 16) : '',
+        vpn_warning_enabled: (data as any).vpn_warning_enabled || false
       });
 
       // If editing a dollar-priced course, fetch the exchange rate
@@ -269,7 +272,8 @@ const CourseEdit: React.FC = () => {
         rafiei_bot_activation_required: formData.rafiei_bot_activation_required,
         rafiei_bot_followup_config: formData.rafiei_bot_followup_config,
         use_enrollments_as_leads: formData.use_enrollments_as_leads,
-        lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null
+        lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null,
+        vpn_warning_enabled: formData.vpn_warning_enabled
       };
 
       const { error } = await supabase
@@ -700,6 +704,16 @@ const CourseEdit: React.FC = () => {
                       />
                       <Label htmlFor="telegram_activation_required">فعال‌سازی کانال تلگرام اجباری</Label>
                     </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="vpn_warning_enabled"
+                        checked={formData.vpn_warning_enabled}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, vpn_warning_enabled: checked }))}
+                      />
+                      <Label htmlFor="vpn_warning_enabled">نمایش هشدار خاموش کردن VPN در پخش ویدیو درس‌ها</Label>
+                    </div>
+                    
                     
                      {/* Smart Activation Section */}
                      <div className="flex items-center space-x-2">
