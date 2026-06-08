@@ -703,13 +703,25 @@ const CourseEdit: React.FC = () => {
                        <Label htmlFor="smart_activation_enabled">فعال‌سازی هوشمند</Label>
                      </div>
 
-                     <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2">
                        <Switch
                          id="rafiei_bot_followup_enabled"
                          checked={formData.rafiei_bot_followup_enabled}
-                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_followup_enabled: checked }))}
+                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_followup_enabled: checked, rafiei_bot_activation_required: checked ? prev.rafiei_bot_activation_required : false }))}
                        />
                        <Label htmlFor="rafiei_bot_followup_enabled">کوچ شخصی تلگرام (پیگیری خودکار)</Label>
+                     </div>
+
+                     <div className="flex items-center space-x-2 pr-6">
+                       <Switch
+                         id="rafiei_bot_activation_required"
+                         checked={!!formData.rafiei_bot_activation_required}
+                         disabled={!formData.rafiei_bot_followup_enabled}
+                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_activation_required: checked }))}
+                       />
+                       <Label htmlFor="rafiei_bot_activation_required" className={!formData.rafiei_bot_followup_enabled ? 'text-muted-foreground' : ''}>
+                         فعال‌سازی کوچ تلگرام اجباری (ویزارد بعد از خرید)
+                       </Label>
                      </div>
                      
                      <div className="flex items-center space-x-2">
