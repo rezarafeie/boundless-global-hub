@@ -183,17 +183,6 @@ const Support = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>آیا امکان استرداد وجه وجود دارد؟</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  بله، تا ۷۲ ساعت پس از خرید امکان استرداد وجه با شرایط خاص وجود دارد.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
                 <CardTitle>چگونه به دوره‌های خریداری شده دسترسی پیدا کنم؟</CardTitle>
               </CardHeader>
               <CardContent>
