@@ -214,7 +214,7 @@ const CourseAccess: React.FC = () => {
       // Fetch all courses that match the slugs and have free access
       const { data: coursesData, error: coursesError } = await supabase
         .from('courses')
-        .select('id, title, description, slug, price, enable_course_access, is_free_access, support_link, telegram_channel_link, gifts_link, support_activation_required, telegram_activation_required')
+        .select('id, title, description, slug, price, enable_course_access, is_free_access, support_link, telegram_channel_link, gifts_link, support_activation_required, telegram_activation_required, vpn_warning_enabled')
         .in('slug', multipleCourses)
         .eq('is_active', true)
         .eq('is_free_access', true)
