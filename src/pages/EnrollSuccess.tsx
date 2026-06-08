@@ -929,7 +929,9 @@ const EnrollSuccess: React.FC = () => {
             telegram_activation_required,
             smart_activation_enabled,
             smart_activation_telegram_link,
-            telegram_only_access
+            telegram_only_access,
+            rafiei_bot_followup_enabled,
+            rafiei_bot_activation_required
           )
         `)
         .eq('id', enrollmentId)
