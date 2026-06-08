@@ -19,13 +19,15 @@ import {
   Clock,
   PlayCircle,
   List,
-  ExternalLinkIcon
+  ExternalLinkIcon,
+  WifiOff
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/Layout/MainLayout';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
 import CourseNotifications from '@/components/Course/CourseNotifications';
 import CourseActionLinks from '@/components/CourseActionLinks';
@@ -47,6 +49,7 @@ interface Course {
   gifts_link?: string | null;
   support_activation_required?: boolean;
   telegram_activation_required?: boolean;
+  vpn_warning_enabled?: boolean;
 }
 
 interface TitleGroup {
@@ -211,7 +214,7 @@ const CourseAccess: React.FC = () => {
       // Fetch all courses that match the slugs and have free access
       const { data: coursesData, error: coursesError } = await supabase
         .from('courses')
-        .select('id, title, description, slug, price, enable_course_access, is_free_access, support_link, telegram_channel_link, gifts_link, support_activation_required, telegram_activation_required')
+        .select('id, title, description, slug, price, enable_course_access, is_free_access, support_link, telegram_channel_link, gifts_link, support_activation_required, telegram_activation_required, vpn_warning_enabled')
         .in('slug', multipleCourses)
         .eq('is_active', true)
         .eq('is_free_access', true)
@@ -410,7 +413,7 @@ const CourseAccess: React.FC = () => {
       // Fetch course information
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
-        .select('id, title, description, slug, price, enable_course_access, is_free_access, support_link, telegram_channel_link, gifts_link, support_activation_required, telegram_activation_required')
+        .select('id, title, description, slug, price, enable_course_access, is_free_access, support_link, telegram_channel_link, gifts_link, support_activation_required, telegram_activation_required, vpn_warning_enabled')
         .eq('slug', courseSlug)
         .eq('is_active', true)
         .single();
@@ -798,6 +801,17 @@ const CourseAccess: React.FC = () => {
           </div>
           <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">{lesson.title}</h1>
         </div>
+
+        {/* VPN Warning */}
+        {course?.vpn_warning_enabled && (lesson.video_url || (lesson.content && lesson.content.includes('<iframe'))) && (
+          <Alert className="border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800">
+            <WifiOff className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertTitle className="text-amber-800 dark:text-amber-300">برای پخش ویدیو، VPN خود را خاموش کنید</AlertTitle>
+            <AlertDescription className="text-amber-700 dark:text-amber-400">
+              در صورت روشن بودن VPN ممکن است ویدیو بارگذاری نشود یا کیفیت پخش کاهش پیدا کند.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Video Section */}
         {lesson.video_url && (
