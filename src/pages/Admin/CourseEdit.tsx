@@ -46,8 +46,9 @@ interface Course {
    smart_activation_telegram_link?: string | null;
    rafiei_bot_followup_enabled?: boolean;
    rafiei_bot_activation_required?: boolean;
-   use_enrollments_as_leads?: boolean;
-   lead_start_date?: string | null;
+    use_enrollments_as_leads?: boolean;
+    lead_start_date?: string | null;
+    vpn_warning_enabled?: boolean;
   created_at: string;
   updated_at: string;
 }
