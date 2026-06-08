@@ -413,7 +413,7 @@ const CourseAccess: React.FC = () => {
       // Fetch course information
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
-        .select('id, title, description, slug, price, enable_course_access, is_free_access, support_link, telegram_channel_link, gifts_link, support_activation_required, telegram_activation_required')
+        .select('id, title, description, slug, price, enable_course_access, is_free_access, support_link, telegram_channel_link, gifts_link, support_activation_required, telegram_activation_required, vpn_warning_enabled')
         .eq('slug', courseSlug)
         .eq('is_active', true)
         .single();
