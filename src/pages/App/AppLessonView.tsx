@@ -39,9 +39,6 @@ interface LessonData {
   nextLessonNumber?: number;
   prevLessonNumber?: number;
 }
-  nextLessonNumber?: number;
-  prevLessonNumber?: number;
-}
 
 const AppLessonView = () => {
   const { courseSlug: paramCourseSlug, lessonNumber } = useParams();
