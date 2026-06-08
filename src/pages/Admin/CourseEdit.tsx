@@ -42,10 +42,11 @@ interface Course {
   gifts_link?: string | null;
   support_activation_required?: boolean;
   telegram_activation_required?: boolean;
-  smart_activation_enabled?: boolean;
-  smart_activation_telegram_link?: string | null;
-  use_enrollments_as_leads?: boolean;
-  lead_start_date?: string | null;
+   smart_activation_enabled?: boolean;
+   smart_activation_telegram_link?: string | null;
+   rafiei_bot_followup_enabled?: boolean;
+   use_enrollments_as_leads?: boolean;
+   lead_start_date?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -90,6 +91,7 @@ const CourseEdit: React.FC = () => {
     smart_activation_enabled: false,
     smart_activation_telegram_link: '',
     telegram_only_access: false,
+    rafiei_bot_followup_enabled: false,
     use_enrollments_as_leads: false,
     lead_start_date: ''
   });
@@ -156,7 +158,8 @@ const CourseEdit: React.FC = () => {
           telegram_activation_required: data.telegram_activation_required || false,
           smart_activation_enabled: data.smart_activation_enabled || false,
           smart_activation_telegram_link: data.smart_activation_telegram_link || '',
-          telegram_only_access: data.telegram_only_access || false,
+           telegram_only_access: data.telegram_only_access || false,
+           rafiei_bot_followup_enabled: data.rafiei_bot_followup_enabled || false,
         use_enrollments_as_leads: data.use_enrollments_as_leads || false,
         lead_start_date: data.lead_start_date ? new Date(data.lead_start_date).toISOString().slice(0, 16) : ''
       });
@@ -252,6 +255,7 @@ const CourseEdit: React.FC = () => {
         smart_activation_enabled: formData.smart_activation_enabled,
         smart_activation_telegram_link: formData.smart_activation_enabled ? formData.smart_activation_telegram_link.trim() : null,
         telegram_only_access: formData.telegram_only_access,
+        rafiei_bot_followup_enabled: formData.rafiei_bot_followup_enabled,
         use_enrollments_as_leads: formData.use_enrollments_as_leads,
         lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null
       };
@@ -685,7 +689,7 @@ const CourseEdit: React.FC = () => {
                       <Label htmlFor="telegram_activation_required">فعال‌سازی کانال تلگرام اجباری</Label>
                     </div>
                     
-                    {/* Smart Activation Section */}
+                     {/* Smart Activation Section */}
                      <div className="flex items-center space-x-2">
                        <Switch
                          id="smart_activation_enabled"
@@ -693,6 +697,15 @@ const CourseEdit: React.FC = () => {
                          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, smart_activation_enabled: checked }))}
                        />
                        <Label htmlFor="smart_activation_enabled">فعال‌سازی هوشمند</Label>
+                     </div>
+
+                     <div className="flex items-center space-x-2">
+                       <Switch
+                         id="rafiei_bot_followup_enabled"
+                         checked={formData.rafiei_bot_followup_enabled}
+                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_followup_enabled: checked }))}
+                       />
+                       <Label htmlFor="rafiei_bot_followup_enabled">کوچ شخصی تلگرام (پیگیری خودکار)</Label>
                      </div>
                      
                      <div className="flex items-center space-x-2">

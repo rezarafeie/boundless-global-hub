@@ -44,7 +44,8 @@ const CourseCreate: React.FC = () => {
     smart_activation_enabled: false,
     smart_activation_telegram_link: '',
     use_enrollments_as_leads: false,
-    lead_start_date: ''
+    lead_start_date: '',
+    rafiei_bot_followup_enabled: false
   });
 
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
@@ -130,6 +131,7 @@ const CourseCreate: React.FC = () => {
         telegram_activation_required: formData.telegram_activation_required,
         smart_activation_enabled: formData.smart_activation_enabled,
         smart_activation_telegram_link: formData.smart_activation_enabled ? formData.smart_activation_telegram_link.trim() : null,
+        rafiei_bot_followup_enabled: formData.rafiei_bot_followup_enabled,
         use_enrollments_as_leads: formData.use_enrollments_as_leads,
         lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null
       };
@@ -471,6 +473,15 @@ const CourseCreate: React.FC = () => {
                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, smart_activation_enabled: checked }))}
                       />
                       <Label htmlFor="smart_activation_enabled">فعال‌سازی هوشمند</Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="rafiei_bot_followup_enabled"
+                        checked={formData.rafiei_bot_followup_enabled}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_followup_enabled: checked }))}
+                      />
+                      <Label htmlFor="rafiei_bot_followup_enabled">کوچ شخصی تلگرام (پیگیری خودکار)</Label>
                     </div>
                     
                     {formData.smart_activation_enabled && (
