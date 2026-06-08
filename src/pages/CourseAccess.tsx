@@ -92,6 +92,7 @@ const CourseAccess: React.FC = () => {
   const { user, isAuthenticated, isLoading: authLoading, login, checkEnrollment } = useAuth();
   const { logCoursePageVisit, logMaterialDownload } = useAuthTracking();
   const { getLessonByNumber, getLessonNumberById } = useLessonNumber();
+  const isIranianIP = useIsIranianIP();
   
   // Function to replace user template variables in content
   const replaceUserTemplate = (content: string): string => {
@@ -804,7 +805,7 @@ const CourseAccess: React.FC = () => {
         </div>
 
         {/* VPN Warning */}
-        {course?.vpn_warning_enabled && (lesson.video_url || (lesson.content && lesson.content.includes('<iframe'))) && (
+        {course?.vpn_warning_enabled && isIranianIP === false && (lesson.video_url || (lesson.content && lesson.content.includes('<iframe'))) && (
           <Alert className="border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800">
             <WifiOff className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             <AlertTitle className="text-amber-800 dark:text-amber-300">برای پخش ویدیو، VPN خود را خاموش کنید</AlertTitle>
