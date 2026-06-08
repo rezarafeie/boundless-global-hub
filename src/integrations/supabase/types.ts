@@ -1394,6 +1394,7 @@ export type Database = {
           pre_launch_price: number | null
           price: number
           rafiei_bot_activation_required: boolean
+          rafiei_bot_followup_config: Json
           rafiei_bot_followup_enabled: boolean
           redirect_url: string | null
           sale_expires_at: string | null
@@ -1434,6 +1435,7 @@ export type Database = {
           pre_launch_price?: number | null
           price?: number
           rafiei_bot_activation_required?: boolean
+          rafiei_bot_followup_config?: Json
           rafiei_bot_followup_enabled?: boolean
           redirect_url?: string | null
           sale_expires_at?: string | null
@@ -1474,6 +1476,7 @@ export type Database = {
           pre_launch_price?: number | null
           price?: number
           rafiei_bot_activation_required?: boolean
+          rafiei_bot_followup_config?: Json
           rafiei_bot_followup_enabled?: boolean
           redirect_url?: string | null
           sale_expires_at?: string | null
@@ -2125,12 +2128,46 @@ export type Database = {
           },
         ]
       }
+      enrollment_followup_events: {
+        Row: {
+          enrollment_id: string
+          event_type: string
+          id: string
+          message_text: string | null
+          payload: Json
+          reply_text: string | null
+          sent_at: string
+          user_replied_at: string | null
+        }
+        Insert: {
+          enrollment_id: string
+          event_type: string
+          id?: string
+          message_text?: string | null
+          payload?: Json
+          reply_text?: string | null
+          sent_at?: string
+          user_replied_at?: string | null
+        }
+        Update: {
+          enrollment_id?: string
+          event_type?: string
+          id?: string
+          message_text?: string | null
+          payload?: Json
+          reply_text?: string | null
+          sent_at?: string
+          user_replied_at?: string | null
+        }
+        Relationships: []
+      }
       enrollments: {
         Row: {
           admin_notes: string | null
           approved_at: string | null
           approved_by: string | null
           chat_user_id: number | null
+          coaching_lessons_since_checkin: number
           country_code: string | null
           course_id: string
           created_at: string
@@ -2140,6 +2177,9 @@ export type Database = {
           followup_state: string
           full_name: string
           id: string
+          inactivity_stage: number
+          last_activity_at: string | null
+          last_lesson_completed_at: string | null
           manual_payment_status:
             | Database["public"]["Enums"]["manual_payment_status"]
             | null
@@ -2163,6 +2203,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           chat_user_id?: number | null
+          coaching_lessons_since_checkin?: number
           country_code?: string | null
           course_id: string
           created_at?: string
@@ -2172,6 +2213,9 @@ export type Database = {
           followup_state?: string
           full_name: string
           id?: string
+          inactivity_stage?: number
+          last_activity_at?: string | null
+          last_lesson_completed_at?: string | null
           manual_payment_status?:
             | Database["public"]["Enums"]["manual_payment_status"]
             | null
@@ -2195,6 +2239,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           chat_user_id?: number | null
+          coaching_lessons_since_checkin?: number
           country_code?: string | null
           course_id?: string
           created_at?: string
@@ -2204,6 +2249,9 @@ export type Database = {
           followup_state?: string
           full_name?: string
           id?: string
+          inactivity_stage?: number
+          last_activity_at?: string | null
+          last_lesson_completed_at?: string | null
           manual_payment_status?:
             | Database["public"]["Enums"]["manual_payment_status"]
             | null
