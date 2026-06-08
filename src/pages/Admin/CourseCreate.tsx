@@ -470,6 +470,16 @@ const CourseCreate: React.FC = () => {
                       />
                       <Label htmlFor="telegram_activation_required">فعال‌سازی کانال تلگرام اجباری</Label>
                     </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="vpn_warning_enabled"
+                        checked={formData.vpn_warning_enabled}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, vpn_warning_enabled: checked }))}
+                      />
+                      <Label htmlFor="vpn_warning_enabled">نمایش هشدار خاموش کردن VPN در پخش ویدیو</Label>
+                    </div>
+                    
                     
                     {/* Smart Activation Section */}
                     <div className="flex items-center space-x-2">
