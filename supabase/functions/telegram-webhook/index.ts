@@ -2644,11 +2644,24 @@ async function handleUpdate(update: any) {
 
   const user = await resolveUser(chat_id);
 
+  // Parse /start payload (deep link, e.g. /start enroll_<id>)
+  const startMatch = text.match(/^\/start(?:\s+(\S+))?$/);
+  const startPayload = startMatch?.[1] ?? null;
+
   // Unlinked user flow
   if (!user) {
     const session = await getSession(chat_id);
-    if (text === '/cancel' || text === '/start') {
+    if (text === '/cancel' || startMatch) {
       await clearSession(chat_id);
+      // Save pending enrollment so it survives login/signup
+      if (startPayload?.startsWith('enroll_')) {
+        const enrollment_id = startPayload.slice('enroll_'.length);
+        await setSession(chat_id, null, null, { pending_enroll: enrollment_id });
+        await sendMessage(chat_id,
+          `🎓 برای فعال‌سازی پیگیری دوره، ابتدا با شماره موبایلی که با آن ثبت‌نام کرده‌اید وارد شوید.`,
+          { keyboard: [[{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }]] });
+        return;
+      }
       const kbd = await buildStartKeyboard(null);
       await sendMessage(chat_id, [
         `👋 <b>به ربات آکادمی رفیعی خوش آمدید</b>`, ``,
@@ -2671,8 +2684,13 @@ async function handleUpdate(update: any) {
     return;
   }
 
-  if (text === '/start') {
+  if (startMatch) {
     await clearSession(chat_id);
+    if (startPayload?.startsWith('enroll_')) {
+      const enrollment_id = startPayload.slice('enroll_'.length);
+      await tryLinkEnrollment(chat_id, enrollment_id, user);
+      return;
+    }
     const kbd = await buildStartKeyboard(user);
     await sendMessage(chat_id, welcomeText(user), { keyboard: kbd });
     return;
