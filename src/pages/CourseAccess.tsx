@@ -1427,6 +1427,7 @@ const CourseAccess: React.FC = () => {
                     بازگشت
                   </Button>
                   <h2 className="font-medium text-lg truncate flex-1">{selectedLesson.title}</h2>
+                  <TelegramEnrollmentActivation courseId={course.id} badgeWhenLinked className="shrink-0" />
                 </div>
                 <div className="p-4">
                   {renderLessonContent(selectedLesson)}
