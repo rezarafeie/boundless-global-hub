@@ -208,6 +208,9 @@ export type Database = {
           quick_enroll_enabled: boolean
           rafieipay_enabled: boolean
           telegram_ai_assistant_enabled: boolean
+          telegram_bot_username: string | null
+          telegram_followup_ai_prompt: string | null
+          telegram_miniapp_base_url: string | null
           telegram_notify_consultation: boolean
           telegram_notify_daily_summary: boolean
           telegram_notify_lead_assigned: boolean
@@ -230,6 +233,9 @@ export type Database = {
           quick_enroll_enabled?: boolean
           rafieipay_enabled?: boolean
           telegram_ai_assistant_enabled?: boolean
+          telegram_bot_username?: string | null
+          telegram_followup_ai_prompt?: string | null
+          telegram_miniapp_base_url?: string | null
           telegram_notify_consultation?: boolean
           telegram_notify_daily_summary?: boolean
           telegram_notify_lead_assigned?: boolean
@@ -252,6 +258,9 @@ export type Database = {
           quick_enroll_enabled?: boolean
           rafieipay_enabled?: boolean
           telegram_ai_assistant_enabled?: boolean
+          telegram_bot_username?: string | null
+          telegram_followup_ai_prompt?: string | null
+          telegram_miniapp_base_url?: string | null
           telegram_notify_consultation?: boolean
           telegram_notify_daily_summary?: boolean
           telegram_notify_lead_assigned?: boolean
@@ -1384,6 +1393,7 @@ export type Database = {
           pre_launch_ends_at: string | null
           pre_launch_price: number | null
           price: number
+          rafiei_bot_followup_enabled: boolean
           redirect_url: string | null
           sale_expires_at: string | null
           sale_price: number | null
@@ -1422,6 +1432,7 @@ export type Database = {
           pre_launch_ends_at?: string | null
           pre_launch_price?: number | null
           price?: number
+          rafiei_bot_followup_enabled?: boolean
           redirect_url?: string | null
           sale_expires_at?: string | null
           sale_price?: number | null
@@ -1460,6 +1471,7 @@ export type Database = {
           pre_launch_ends_at?: string | null
           pre_launch_price?: number | null
           price?: number
+          rafiei_bot_followup_enabled?: boolean
           redirect_url?: string | null
           sale_expires_at?: string | null
           sale_price?: number | null
@@ -2120,6 +2132,9 @@ export type Database = {
           course_id: string
           created_at: string
           email: string
+          followup_hour_tehran: number | null
+          followup_last_at: string | null
+          followup_state: string
           full_name: string
           id: string
           manual_payment_status:
@@ -2133,6 +2148,8 @@ export type Database = {
           spotplayer_license_id: string | null
           spotplayer_license_key: string | null
           spotplayer_license_url: string | null
+          telegram_chat_id: number | null
+          telegram_linked_at: string | null
           updated_at: string
           woocommerce_order_id: number | null
           zarinpal_authority: string | null
@@ -2147,6 +2164,9 @@ export type Database = {
           course_id: string
           created_at?: string
           email: string
+          followup_hour_tehran?: number | null
+          followup_last_at?: string | null
+          followup_state?: string
           full_name: string
           id?: string
           manual_payment_status?:
@@ -2160,6 +2180,8 @@ export type Database = {
           spotplayer_license_id?: string | null
           spotplayer_license_key?: string | null
           spotplayer_license_url?: string | null
+          telegram_chat_id?: number | null
+          telegram_linked_at?: string | null
           updated_at?: string
           woocommerce_order_id?: number | null
           zarinpal_authority?: string | null
@@ -2174,6 +2196,9 @@ export type Database = {
           course_id?: string
           created_at?: string
           email?: string
+          followup_hour_tehran?: number | null
+          followup_last_at?: string | null
+          followup_state?: string
           full_name?: string
           id?: string
           manual_payment_status?:
@@ -2187,6 +2212,8 @@ export type Database = {
           spotplayer_license_id?: string | null
           spotplayer_license_key?: string | null
           spotplayer_license_url?: string | null
+          telegram_chat_id?: number | null
+          telegram_linked_at?: string | null
           updated_at?: string
           woocommerce_order_id?: number | null
           zarinpal_authority?: string | null

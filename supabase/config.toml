@@ -124,3 +124,6 @@ verify_jwt = false
 
 [functions.rafieipay-verify]
 verify_jwt = false
+
+[functions.telegram-enrollment-followup]
+verify_jwt = false

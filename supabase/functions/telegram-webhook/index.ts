@@ -744,7 +744,8 @@ async function findChatUserByPhone(local: string) {
 }
 
 async function startLogin(chat_id: number, message_id?: number) {
-  await setSession(chat_id, null, 'awaiting_phone', {});
+  const existing = await getSession(chat_id);
+  await setSession(chat_id, null, 'awaiting_phone', existing?.context ?? {});
   const txt = [
     `🔐 <b>ورود به حساب</b>`, ``,
     `لطفاً شماره موبایل خود را ارسال کنید (مثال: <code>09120000000</code>)`, ``,
@@ -781,12 +782,14 @@ async function handlePhoneInput(chat_id: number, text: string) {
     return;
   }
 
+  const prior = await getSession(chat_id);
+  const pending_enroll = prior?.context?.pending_enroll;
   if (user) {
-    await setSession(chat_id, user.id, 'awaiting_otp', { phone_local: norm.local, phone_formatted: norm.formatted, chat_user_id: user.id });
+    await setSession(chat_id, user.id, 'awaiting_otp', { phone_local: norm.local, phone_formatted: norm.formatted, chat_user_id: user.id, pending_enroll });
     await sendMessage(chat_id, `📨 کد ۴ رقمی برای <b>${escapeHtml(user.name)}</b> ارسال شد.\n\nلطفاً کد را ارسال کنید:`, { keyboard: BACK_HOME_KBD });
   } else {
     // New user — signup flow
-    await setSession(chat_id, null, 'awaiting_signup_otp', { phone_local: norm.local, phone_formatted: norm.formatted });
+    await setSession(chat_id, null, 'awaiting_signup_otp', { phone_local: norm.local, phone_formatted: norm.formatted, pending_enroll });
     await sendMessage(chat_id,
       `👤 <b>کاربری با این شماره یافت نشد — ساخت حساب جدید</b>\n\n📨 کد ۴ رقمی برای <code>${escapeHtml(norm.formatted)}</code> ارسال شد. لطفاً کد را ارسال کنید:`,
       { keyboard: BACK_HOME_KBD });
@@ -817,10 +820,12 @@ async function handleOtpInput(chat_id: number, text: string) {
     .eq('id', session.context.chat_user_id);
   if (error) { await sendMessage(chat_id, `❌ خطا در لینک حساب: ${error.message}`, { keyboard: BACK_HOME_KBD }); return; }
 
+  const pending_enroll = session.context?.pending_enroll as string | undefined;
   await clearSession(chat_id);
   const user = await resolveUser(chat_id);
   if (user) {
     await sendMessage(chat_id, `✅ <b>ورود موفق!</b>\n\n${welcomeText(user)}`, { keyboard: await buildStartKeyboard(user) });
+    if (pending_enroll) await tryLinkEnrollment(chat_id, pending_enroll, user);
   }
 }
 
@@ -919,11 +924,126 @@ async function handleSignupEmail(chat_id: number, text: string) {
       .eq('id', existing.id);
   }
 
+  const pending_enroll = session.context?.pending_enroll as string | undefined;
   await clearSession(chat_id);
   const user = await resolveUser(chat_id);
   if (user) {
     await sendMessage(chat_id, `🎉 <b>حساب شما با موفقیت ساخته شد!</b>\n\n${welcomeText(user)}`, { keyboard: await buildStartKeyboard(user) });
+    if (pending_enroll) await tryLinkEnrollment(chat_id, pending_enroll, user);
   }
+}
+
+// ============ Enrollment follow-up linking ============
+
+async function getFollowupSettings() {
+  const { data } = await supabase.from('admin_settings')
+    .select('telegram_bot_username, telegram_miniapp_base_url, telegram_followup_ai_prompt')
+    .eq('id', 1).maybeSingle();
+  return {
+    botUsername: ((data as any)?.telegram_bot_username ?? 'rafiei_bot').replace(/^@/, ''),
+    miniappBase: ((data as any)?.telegram_miniapp_base_url ?? 'https://academy.rafiei.co').replace(/\/+$/, ''),
+    aiPrompt: (data as any)?.telegram_followup_ai_prompt ?? '',
+  };
+}
+
+async function generateEnrollmentSsoUrl(enrollmentId: string, email: string | null, redirect: string): Promise<string> {
+  if (!email) return redirect;
+  try {
+    const r = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-sso-tokens`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+      body: JSON.stringify({ enrollmentId, userEmail: email }),
+    });
+    const j = await r.json();
+    const academy = j?.tokens?.find?.((t: any) => t.type === 'academy');
+    if (academy?.url) return `${academy.url}&redirect=${encodeURIComponent(redirect)}`;
+  } catch (e) { console.error('sso gen failed', e); }
+  return redirect;
+}
+
+function normPhone(p: string | null | undefined): string {
+  return (p ?? '').replace(/\D/g, '').replace(/^98/, '').replace(/^0/, '');
+}
+
+async function tryLinkEnrollment(chat_id: number, enrollment_id: string, user: BotUser): Promise<void> {
+  const { data: enr } = await supabase.from('enrollments')
+    .select('id, phone, course_id, payment_status, telegram_chat_id')
+    .eq('id', enrollment_id).maybeSingle();
+  if (!enr) { await sendMessage(chat_id, '❌ ثبت‌نام پیدا نشد.', { keyboard: await buildStartKeyboard(user) }); return; }
+  const { data: course } = await supabase.from('courses')
+    .select('id, title, slug, rafiei_bot_followup_enabled, support_link, telegram_channel_link')
+    .eq('id', enr.course_id).maybeSingle();
+  if (!(course as any)?.rafiei_bot_followup_enabled) {
+    await sendMessage(chat_id, '⚠️ پیگیری ربات برای این دوره فعال نیست.', { keyboard: await buildStartKeyboard(user) });
+    return;
+  }
+  if (normPhone(user.phone) && normPhone(enr.phone) && normPhone(user.phone) !== normPhone(enr.phone)) {
+    await sendMessage(chat_id, '🚫 این ثبت‌نام مربوط به شماره دیگری است. لطفاً با همان حساب وارد شوید.',
+      { keyboard: await buildStartKeyboard(user) });
+    return;
+  }
+
+  await supabase.from('enrollments').update({
+    telegram_chat_id: chat_id,
+    telegram_linked_at: new Date().toISOString(),
+    followup_state: 'linked',
+  }).eq('id', enrollment_id);
+
+  const { data: cu } = await supabase.from('chat_users').select('email').eq('id', user.id).maybeSingle();
+  const settings = await getFollowupSettings();
+  const slugOrId = (course as any).slug ?? (course as any).id;
+  const redirect = `${settings.miniappBase}/app/course/${slugOrId}`;
+  const ssoUrl = await generateEnrollmentSsoUrl(enrollment_id, cu?.email ?? null, redirect);
+
+  const kbd: InlineKeyboard = [
+    [{ text: '📚 شروع دوره (Mini App)', web_app: { url: ssoUrl } }],
+    [{ text: '🌐 باز کردن در مرورگر', url: ssoUrl }],
+  ];
+  if ((course as any).support_link) kbd.push([{ text: '🎧 فعال‌سازی پشتیبانی', url: (course as any).support_link }]);
+  if ((course as any).telegram_channel_link) kbd.push([{ text: '📢 کانال دوره', url: (course as any).telegram_channel_link }]);
+  kbd.push([{ text: '⏰ تنظیم زمان یادآوری روزانه', callback_data: `enroll:settime:${enrollment_id}` }]);
+  kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
+
+  await sendMessage(chat_id, [
+    `🎉 <b>به دوره «${escapeHtml((course as any).title)}» خوش آمدید!</b>`,
+    ``,
+    `از این پس کوچ شخصی شما در همین ربات کنار شماست تا قدم‌به‌قدم دوره را با شما کامل کند. ✨`,
+    ``,
+    `👇 برای شروع، یک گزینه را انتخاب کنید:`,
+  ].join('\n'), { keyboard: kbd });
+
+  await sendMessage(chat_id,
+    [
+      `⏰ <b>چه ساعتی از روز برای یادآوری مناسب است؟</b>`,
+      `یک عدد بین ۰ تا ۲۳ ارسال کنید (ساعت تهران).`,
+      `مثال: <code>21</code> یعنی هر روز ساعت ۹ شب.`,
+      ``,
+      `برای رد کردن: /skip`,
+    ].join('\n'));
+  await setSession(chat_id, user.id, 'awaiting_followup_time', { enrollment_id });
+}
+
+async function handleFollowupTimeInput(chat_id: number, text: string, user: BotUser) {
+  const session = await getSession(chat_id);
+  const enrollment_id = session?.context?.enrollment_id;
+  if (!enrollment_id) { await clearSession(chat_id); return; }
+  if (text.trim() === '/skip') {
+    await clearSession(chat_id);
+    await sendMessage(chat_id, '✅ بعداً می‌توانید زمان یادآوری را تنظیم کنید.',
+      { keyboard: await buildStartKeyboard(user) });
+    return;
+  }
+  const m = text.trim().replace(/\D/g, '');
+  const hour = parseInt(m, 10);
+  if (isNaN(hour) || hour < 0 || hour > 23) {
+    await sendMessage(chat_id, '❌ لطفاً عددی بین ۰ تا ۲۳ ارسال کنید.');
+    return;
+  }
+  await supabase.from('enrollments').update({ followup_hour_tehran: hour }).eq('id', enrollment_id);
+  await clearSession(chat_id);
+  await sendMessage(chat_id,
+    `✅ <b>عالی!</b> هر روز حدود ساعت ${hour}:00 تهران یک پیام شخصی از طرف کوچ شخصی شما دریافت می‌کنید. 🎯`,
+    { keyboard: await buildStartKeyboard(user) });
 }
 
 // ----- Student menu actions -----
@@ -2498,6 +2618,19 @@ async function handleUpdate(update: any) {
         if (sub === 'profile') { await studentProfile(chat_id, message_id, user); return; }
         if (sub === 'logout') { await studentLogout(chat_id, message_id, user); return; }
       }
+
+      if (action === 'enroll' && rest[0] === 'settime') {
+        const enrollment_id = rest[1];
+        await setSession(chat_id, user.id, 'awaiting_followup_time', { enrollment_id });
+        await editMessage(chat_id, message_id,
+          [
+            `⏰ <b>تنظیم زمان یادآوری روزانه</b>`,
+            `یک عدد بین ۰ تا ۲۳ ارسال کنید (ساعت تهران).`,
+            `برای حذف یادآوری: /skip`,
+          ].join('\n'),
+          [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]]);
+        return;
+      }
     } catch (e: any) {
       console.error('callback error:', e, 'data:', data);
       try {
@@ -2524,11 +2657,24 @@ async function handleUpdate(update: any) {
 
   const user = await resolveUser(chat_id);
 
+  // Parse /start payload (deep link, e.g. /start enroll_<id>)
+  const startMatch = text.match(/^\/start(?:\s+(\S+))?$/);
+  const startPayload = startMatch?.[1] ?? null;
+
   // Unlinked user flow
   if (!user) {
     const session = await getSession(chat_id);
-    if (text === '/cancel' || text === '/start') {
+    if (text === '/cancel' || startMatch) {
       await clearSession(chat_id);
+      // Save pending enrollment so it survives login/signup
+      if (startPayload?.startsWith('enroll_')) {
+        const enrollment_id = startPayload.slice('enroll_'.length);
+        await setSession(chat_id, null, null, { pending_enroll: enrollment_id });
+        await sendMessage(chat_id,
+          `🎓 برای فعال‌سازی پیگیری دوره، ابتدا با شماره موبایلی که با آن ثبت‌نام کرده‌اید وارد شوید.`,
+          { keyboard: [[{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }]] });
+        return;
+      }
       const kbd = await buildStartKeyboard(null);
       await sendMessage(chat_id, [
         `👋 <b>به ربات آکادمی رفیعی خوش آمدید</b>`, ``,
@@ -2551,8 +2697,13 @@ async function handleUpdate(update: any) {
     return;
   }
 
-  if (text === '/start') {
+  if (startMatch) {
     await clearSession(chat_id);
+    if (startPayload?.startsWith('enroll_')) {
+      const enrollment_id = startPayload.slice('enroll_'.length);
+      await tryLinkEnrollment(chat_id, enrollment_id, user);
+      return;
+    }
     const kbd = await buildStartKeyboard(user);
     await sendMessage(chat_id, welcomeText(user), { keyboard: kbd });
     return;
@@ -2578,6 +2729,11 @@ async function handleUpdate(update: any) {
   }
   if (session?.state === 'sales_chat') {
     await handleSalesChat(chat_id, msg, session);
+    return;
+  }
+
+  if (session?.state === 'awaiting_followup_time' && text) {
+    await handleFollowupTimeInput(chat_id, text, user);
     return;
   }
 
