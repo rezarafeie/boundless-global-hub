@@ -42,10 +42,11 @@ interface Course {
   gifts_link?: string | null;
   support_activation_required?: boolean;
   telegram_activation_required?: boolean;
-  smart_activation_enabled?: boolean;
-  smart_activation_telegram_link?: string | null;
-  use_enrollments_as_leads?: boolean;
-  lead_start_date?: string | null;
+   smart_activation_enabled?: boolean;
+   smart_activation_telegram_link?: string | null;
+   rafiei_bot_followup_enabled?: boolean;
+   use_enrollments_as_leads?: boolean;
+   lead_start_date?: string | null;
   created_at: string;
   updated_at: string;
 }
