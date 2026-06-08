@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/Layout/MainLayout';
 import StartCourseSection from '@/components/StartCourseSection';
+import { TelegramEnrollmentActivation } from '@/components/TelegramEnrollmentActivation';
 
 interface SSOToken {
   type: string;
