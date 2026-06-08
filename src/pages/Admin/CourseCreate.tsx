@@ -474,6 +474,15 @@ const CourseCreate: React.FC = () => {
                       />
                       <Label htmlFor="smart_activation_enabled">فعال‌سازی هوشمند</Label>
                     </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="rafiei_bot_followup_enabled"
+                        checked={formData.rafiei_bot_followup_enabled}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_followup_enabled: checked }))}
+                      />
+                      <Label htmlFor="rafiei_bot_followup_enabled">کوچ شخصی تلگرام (پیگیری خودکار)</Label>
+                    </div>
                     
                     {formData.smart_activation_enabled && (
                       <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800 mt-3">
