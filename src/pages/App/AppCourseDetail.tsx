@@ -20,6 +20,7 @@ import {
   Share,
   User
 } from "lucide-react";
+import { TelegramEnrollmentActivation } from "@/components/TelegramEnrollmentActivation";
 
 interface CourseData {
   id: string;
