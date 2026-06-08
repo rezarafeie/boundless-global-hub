@@ -164,6 +164,12 @@ const CourseEdit: React.FC = () => {
            telegram_only_access: data.telegram_only_access || false,
            rafiei_bot_followup_enabled: data.rafiei_bot_followup_enabled || false,
            rafiei_bot_activation_required: (data as any).rafiei_bot_activation_required || false,
+           rafiei_bot_followup_config: (data as any).rafiei_bot_followup_config && typeof (data as any).rafiei_bot_followup_config === 'object'
+             ? { lesson_complete: (data as any).rafiei_bot_followup_config.lesson_complete !== false,
+                 course_complete: (data as any).rafiei_bot_followup_config.course_complete !== false,
+                 inactivity: (data as any).rafiei_bot_followup_config.inactivity !== false,
+                 coaching: (data as any).rafiei_bot_followup_config.coaching !== false }
+             : { lesson_complete: true, course_complete: true, inactivity: true, coaching: true },
         use_enrollments_as_leads: data.use_enrollments_as_leads || false,
         lead_start_date: data.lead_start_date ? new Date(data.lead_start_date).toISOString().slice(0, 16) : ''
       });
