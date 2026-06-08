@@ -91,6 +91,7 @@ const CourseEdit: React.FC = () => {
     smart_activation_enabled: false,
     smart_activation_telegram_link: '',
     telegram_only_access: false,
+    rafiei_bot_followup_enabled: false,
     use_enrollments_as_leads: false,
     lead_start_date: ''
   });
