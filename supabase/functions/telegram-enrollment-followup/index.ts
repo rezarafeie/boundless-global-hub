@@ -458,13 +458,14 @@ Deno.serve(async (req) => {
 
     const settings = await getSettings();
     const queueProcessed = await drainQueue(settings);
-    let daily = 0, inactivity = 0, coaching = 0;
+    let daily = 0, inactivity = 0, coaching = 0, activation = 0;
     if (isHourly) {
       daily = await dailyHourPass(settings);
       inactivity = await inactivityPass(settings);
       coaching = await coachingPass(settings);
+      activation = await activationNudgePass();
     }
-    return new Response(JSON.stringify({ ok: true, queueProcessed, daily, inactivity, coaching, isHourly }),
+    return new Response(JSON.stringify({ ok: true, queueProcessed, daily, inactivity, coaching, activation, isHourly }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (e: any) {
     console.error('followup error', e);
