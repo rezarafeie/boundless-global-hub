@@ -358,6 +358,16 @@ const EnrollmentDetails: React.FC = () => {
           </div>
         </div>
 
+        {enrollment.course_id && (
+          <div className="mb-4">
+            <TelegramEnrollmentActivation
+              courseId={enrollment.course_id}
+              enrollmentId={enrollment.id}
+              badgeWhenLinked
+            />
+          </div>
+        )}
+
         <div className="space-y-6">
           {/* Status Card */}
           <Card>
