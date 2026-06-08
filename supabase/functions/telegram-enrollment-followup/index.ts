@@ -374,6 +374,80 @@ async function coachingPass(settings: any) {
   return n;
 }
 
+// ---------- Telegram-not-activated nudges (in-app push) ----------
+// Reminds users who paid for a follow-up-enabled course but never linked Telegram.
+// Tiers (days after enrollment): 1, 3, 7. Then a final reminder at 14 days.
+async function activationNudgePass() {
+  const TIERS: Array<{ days: number; eventType: string; title: string; body: (name: string, course: string) => string }> = [
+    { days: 1, eventType: 'activation_nudge_1d', title: '🤖 کوچ تلگرام رو فعال کن',
+      body: (n, c) => `${n} عزیز، کوچ شخصی تلگرام دوره «${c}» هنوز فعال نشده. با یک کلیک فعالش کن تا یادآوری‌ها و پشتیبانی شخصی‌ت رو روی تلگرام بگیری.` },
+    { days: 3, eventType: 'activation_nudge_3d', title: '⏰ هنوز فعال نکردی!',
+      body: (n, c) => `${n} جان، ۳ روزه ثبت‌نام کردی ولی کوچ تلگرام «${c}» رو فعال نکردی. از پیگیری‌های شخصی و یادآوری درس‌ها جا می‌مونی.` },
+    { days: 7, eventType: 'activation_nudge_7d', title: '🎯 آخرین فرصت فعال‌سازی کوچ',
+      body: (n, c) => `${n} عزیز، یه هفته‌ست منتظر فعال‌سازی کوچ تلگرام «${c}» هستیم. همین حالا فعالش کن تا مسیر یادگیریت رو با هم پیش ببریم.` },
+    { days: 14, eventType: 'activation_nudge_14d', title: '💬 کمکی از دست‌مون برمیاد؟',
+      body: (n, c) => `${n} جان، هنوز کوچ تلگرام «${c}» فعال نشده. اگه سوال یا مشکلی هست به ما بگو، کنارت هستیم.` },
+  ];
+  let n = 0;
+  for (const tier of TIERS) {
+    const upper = new Date(Date.now() - tier.days * 24 * 3600 * 1000).toISOString();
+    const lower = new Date(Date.now() - (tier.days + 14) * 24 * 3600 * 1000).toISOString();
+    const { data: rows } = await supabase
+      .from('enrollments')
+      .select('id, full_name, phone, email, course_id, created_at, chat_user_id, payment_status, telegram_chat_id, courses!inner(id, title, slug, rafiei_bot_followup_enabled)')
+      .is('telegram_chat_id', null)
+      .in('payment_status', ['completed', 'success'])
+      .lte('created_at', upper)
+      .gte('created_at', lower)
+      .limit(200);
+    for (const enr of (rows ?? []) as any[]) {
+      try {
+        const course = enr.courses;
+        if (!course?.rafiei_bot_followup_enabled) continue;
+        // Dedupe: skip if this tier already fired for this enrollment
+        const { count } = await supabase.from('enrollment_followup_events')
+          .select('id', { count: 'exact', head: true })
+          .eq('enrollment_id', enr.id)
+          .eq('event_type', tier.eventType);
+        if ((count ?? 0) > 0) continue;
+
+        const name = (enr.full_name ?? '').split(' ')[0] || 'دوست عزیز';
+        const title = tier.title;
+        const body = tier.body(name, course.title);
+
+        // Send in-app/browser push via OneSignal if we have a chat user
+        if (enr.chat_user_id) {
+          try {
+            await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-onesignal-notification`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+              body: JSON.stringify({
+                recipientUserIds: [enr.chat_user_id],
+                message: {
+                  id: Date.now(),
+                  text: body,
+                  senderName: title,
+                  senderId: 1,
+                  timestamp: new Date().toISOString(),
+                },
+              }),
+            });
+          } catch (e) { console.error('onesignal nudge failed', enr.id, e); }
+        }
+
+        await recordEvent(enr.id, tier.eventType, body, {
+          tier: tier.days,
+          channel: 'onesignal',
+          course_id: course.id,
+          course_title: course.title,
+        });
+        n++;
+      } catch (err) { console.error('activation nudge failed', enr.id, err); }
+    }
+  }
+  return n;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
