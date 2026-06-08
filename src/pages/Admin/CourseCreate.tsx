@@ -138,7 +138,8 @@ const CourseCreate: React.FC = () => {
         rafiei_bot_activation_required: formData.rafiei_bot_activation_required,
         rafiei_bot_followup_config: formData.rafiei_bot_followup_config,
         use_enrollments_as_leads: formData.use_enrollments_as_leads,
-        lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null
+        lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null,
+        vpn_warning_enabled: formData.vpn_warning_enabled
       };
 
       const { error } = await supabase
