@@ -162,6 +162,7 @@ const CourseEdit: React.FC = () => {
           smart_activation_telegram_link: data.smart_activation_telegram_link || '',
            telegram_only_access: data.telegram_only_access || false,
            rafiei_bot_followup_enabled: data.rafiei_bot_followup_enabled || false,
+           rafiei_bot_activation_required: (data as any).rafiei_bot_activation_required || false,
         use_enrollments_as_leads: data.use_enrollments_as_leads || false,
         lead_start_date: data.lead_start_date ? new Date(data.lead_start_date).toISOString().slice(0, 16) : ''
       });
