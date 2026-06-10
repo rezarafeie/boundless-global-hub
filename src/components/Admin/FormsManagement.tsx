@@ -200,6 +200,28 @@ const FormsManagement: React.FC = () => {
         <Button onClick={openNew}><Plus className="w-4 h-4 ml-2" /> فرم جدید</Button>
       </div>
 
+      {/* Built-in: Boundless Smart Test */}
+      <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-transparent">
+        <CardContent className="p-4 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <Sparkles className="w-5 h-5 text-emerald-500" />
+            <div>
+              <div className="font-semibold">تست هوشمند بدون مرز</div>
+              <div className="text-xs text-muted-foreground">فرم اختصاصی (داخلی) — مشاهده پاسخ‌های ثبت‌شده</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <a href="/assessment/boundless-smart-test" target="_blank" rel="noreferrer">
+              <Button size="sm" variant="outline"><ExternalLink className="w-4 h-4 ml-1" /> پیش‌نمایش</Button>
+            </a>
+            <a href="/enroll/admin/boundless-smart-test">
+              <Button size="sm"><Eye className="w-4 h-4 ml-1" /> پاسخ‌ها</Button>
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+
+
       <Card>
         <CardContent className="p-0">
           {loading ? (

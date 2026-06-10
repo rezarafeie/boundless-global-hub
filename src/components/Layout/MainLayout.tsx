@@ -34,7 +34,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const { totalHeight, hasBannerNotifications, headerHeight } = useNotificationHeight();
   
   // Routes where footer should be hidden
-  const hideFooterRoutes = ['/payreq'];
+  const hideFooterRoutes = ['/payreq', '/assessment/boundless-smart-test'];
   const shouldHideFooter = hideFooterRoutes.includes(location.pathname);
   
   // Routes where both header and footer should be hidden (redirect pages only)
