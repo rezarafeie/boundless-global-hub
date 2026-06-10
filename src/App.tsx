@@ -13,6 +13,7 @@ import { shouldShowMessengerOnly, shouldShowShortlinkOnly } from "./utils/subdom
 // Import all pages
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Unsubscribe from "./pages/Unsubscribe";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -248,6 +249,7 @@ const App = () => {
                     <Route path="/" element={<Index />} />
                     <Route path="/start" element={<Start />} />
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/unsubscribe" element={<Unsubscribe />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/blog" element={<Blog />} />
