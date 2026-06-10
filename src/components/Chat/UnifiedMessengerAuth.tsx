@@ -58,6 +58,9 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const [formattedPhoneForOTP, setFormattedPhoneForOTP] = useState('');
   const [otpVerified, setOtpVerified] = useState(false); // Track OTP verification status
   const [authMethod, setAuthMethod] = useState<'phone' | 'telegram'>('phone');
+  const [otpIdentifierType, setOtpIdentifierType] = useState<'phone' | 'email'>('phone');
+
+  const isEmailInput = (val: string) => /@/.test(val);
 
   // Initialize linking flow if linkingEmail is provided
   useEffect(() => {
