@@ -542,17 +542,38 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const handleOTPLogin = async () => {
     setLoading(true);
     try {
-      // Send OTP for login
-      const response = await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
-      console.log('📱 OTP sent successfully for login:', response);
-      
+      // Decide channel: email if user entered email or has email and is non-Iranian
+      const isEmail = isEmailInput(phoneNumber);
+      if (isEmail) {
+        const emailId = phoneNumber.trim().toLowerCase();
+        await rafieiAuth.sendEmailOTP(emailId);
+        setOtpIdentifierType('email');
+        setFormattedPhoneForOTP(emailId);
+        toast.success('کد تأیید به ایمیل شما ارسال شد');
+      } else if (countryCode !== '+98' && existingUser?.email) {
+        await rafieiAuth.sendEmailOTP(existingUser.email);
+        setOtpIdentifierType('email');
+        setFormattedPhoneForOTP(existingUser.email);
+        toast.success('کد تأیید به ایمیل شما ارسال شد');
+      } else {
+        const response = await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
+        console.log('📱 OTP sent successfully for login:', response);
+        let formattedPhone = phoneNumber;
+        if (countryCode === '+98') {
+          let cleanPhone = phoneNumber.replace(/\s|-/g, '');
+          if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+          formattedPhone = `${countryCode}${cleanPhone}`;
+        }
+        setOtpIdentifierType('phone');
+        setFormattedPhoneForOTP(formattedPhone);
+        toast.success('کد تأیید ارسال شد', {
+          description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
+        });
+      }
       setCurrentStep('otp-login');
-      toast.success('کد تأیید ارسال شد', {
-        description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
-      });
     } catch (error: any) {
       console.error('OTP send error for login:', error);
-      toast.error('خطا در ارسال کد تأیید');
+      toast.error(error.message || 'خطا در ارسال کد تأیید');
     } finally {
       setLoading(false);
     }
