@@ -2131,6 +2131,36 @@ export type Database = {
           },
         ]
       }
+      email_send_log: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          message_id: string
+          recipient_email: string | null
+          status: string
+          template_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_id: string
+          recipient_email?: string | null
+          status: string
+          template_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_id?: string
+          recipient_email?: string | null
+          status?: string
+          template_name?: string | null
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           course_id: string | null
@@ -2183,6 +2213,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_unsubscribe_tokens: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          token: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: []
       }
       enrollment_followup_events: {
         Row: {
@@ -4503,6 +4557,27 @@ export type Database = {
           is_active?: boolean | null
           is_boundless_only?: boolean | null
           name?: string
+        }
+        Relationships: []
+      }
+      suppressed_emails: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          reason?: string | null
         }
         Relationships: []
       }
