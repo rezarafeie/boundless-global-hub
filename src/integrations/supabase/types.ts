@@ -616,6 +616,59 @@ export type Database = {
         }
         Relationships: []
       }
+      boundless_smart_test_submissions: {
+        Row: {
+          answers: Json
+          chat_user_id: number | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          interest: string | null
+          mindset: string | null
+          outcome: string
+          phone: string | null
+          track_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          answers?: Json
+          chat_user_id?: number | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          interest?: string | null
+          mindset?: string | null
+          outcome?: string
+          phone?: string | null
+          track_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          answers?: Json
+          chat_user_id?: number | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          interest?: string | null
+          mindset?: string | null
+          outcome?: string
+          phone?: string | null
+          track_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boundless_smart_test_submissions_chat_user_id_fkey"
+            columns: ["chat_user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           created_at: string | null

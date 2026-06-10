@@ -11,6 +11,14 @@ const AssessmentCenter = () => {
 
   const tests = [
     {
+      title: "تست هوشمند بدون مرز",
+      description: "گفت‌وگوی هوشمند برای کشف مسیر کسب‌وکار بین‌المللی شما و سنجش آمادگی برای دوره بدون مرز",
+      category: "ویژه",
+      duration: "۸ دقیقه",
+      questions: 12,
+      slug: "boundless-smart-test"
+    },
+    {
       title: "تست شخصیت MBTI",
       description: "شناخت نوع شخصیت و الگوهای رفتاری شما بر اساس تئوری مایرز-بریگز",
       category: "شخصیت",
