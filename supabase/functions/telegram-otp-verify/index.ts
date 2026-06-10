@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
 
       // Also create academy_users row (best-effort)
       const { error: acadErr } = await supabase.from('academy_users').insert({
-        first_name: fname, last_name: '', email, phone: '+0', role: 'student',
+        first_name: fname, last_name: '', email, phone: `tg_${row.telegram_chat_id}`, role: 'student',
       });
       if (acadErr) console.error('academy_users insert failed (non-fatal)', acadErr);
     } else {
