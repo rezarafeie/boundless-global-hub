@@ -8,8 +8,10 @@ const corsHeaders = {
 };
 
 function json(data: unknown, status = 200) {
+  // Always return 200 so supabase.functions.invoke doesn't swallow the body as a non-2xx error;
+  // clients should branch on `data.error` / `data.needs_email`.
   return new Response(JSON.stringify(data), {
-    status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
 
