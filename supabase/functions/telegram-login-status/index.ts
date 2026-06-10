@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     );
     const { data, error } = await supabase
       .from('telegram_login_tokens')
-      .select('telegram_chat_id, telegram_username, first_name, expires_at')
+      .select('telegram_chat_id, telegram_username, first_name, expires_at, phone_verified, pending_phone, pending_country_code')
       .eq('token', token)
       .maybeSingle();
     if (error) throw error;
@@ -38,6 +38,9 @@ Deno.serve(async (req) => {
       expired,
       telegram_username: data.telegram_username,
       first_name: data.first_name,
+      phone_verified: !!data.phone_verified,
+      phone_from_telegram: data.phone_verified ? data.pending_phone : null,
+      country_code_from_telegram: data.phone_verified ? data.pending_country_code : null,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (e) {
     return new Response(JSON.stringify({ error: String((e as Error).message ?? e) }), {
