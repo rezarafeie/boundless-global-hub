@@ -136,6 +136,7 @@ Deno.serve(async (req) => {
       },
     });
   } catch (e) {
+    console.error('telegram-otp-verify exception', e);
     return json({ error: String((e as Error).message ?? e) }, 500);
   }
 });
