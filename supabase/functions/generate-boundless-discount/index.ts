@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
       code,
       course_id: BOUNDLESS_COURSE_ID,
       percentage: PERCENTAGE,
-      discount_type: 'percentage',
+      discount_type: 'course',
       max_uses: 1,
       current_uses: 0,
       is_active: true,
