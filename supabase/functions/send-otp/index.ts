@@ -11,54 +11,7 @@ interface OTPRequest {
   email?: string;
 }
 
-const GMAIL_CLIENT_ID = '242349790411-gkb8upvjoo1rcmtiru50mb9tu32eqt4g.apps.googleusercontent.com';
-const GMAIL_CLIENT_SECRET = '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';
 const KAVENEGAR_KEY = '2F4B6676516B71793064726B626D644153507A55504C4D61776B6A31613858706A6E473952616F766477343D';
-
-async function sendEmailOtp(supabase: any, email: string, code: string) {
-  const { data: creds } = await supabase.from('gmail_credentials').select('*').limit(1).maybeSingle();
-  if (!creds) throw new Error('email_provider_not_configured');
-
-  let accessToken = creds.access_token;
-  if (new Date() >= new Date(creds.token_expires_at)) {
-    const r = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: GMAIL_CLIENT_ID,
-        client_secret: GMAIL_CLIENT_SECRET,
-        refresh_token: creds.refresh_token,
-        grant_type: 'refresh_token',
-      }),
-    });
-    const refresh = await r.json();
-    if (!r.ok) throw new Error(`Token refresh failed: ${JSON.stringify(refresh)}`);
-    accessToken = refresh.access_token;
-    await supabase.from('gmail_credentials').update({
-      access_token: accessToken,
-      token_expires_at: new Date(Date.now() + refresh.expires_in * 1000).toISOString(),
-    }).eq('id', creds.id);
-  }
-
-  const subject = `Your Rafiei Academy verification code: ${code}`;
-  const html = `
-    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#fafafa;border-radius:12px">
-      <h2 style="margin:0 0 16px;color:#111">Rafiei Academy verification</h2>
-      <p style="color:#444">Use this one-time code to finish signing in:</p>
-      <div style="font-size:32px;letter-spacing:8px;font-weight:700;text-align:center;padding:16px;background:#fff;border-radius:8px;margin:16px 0">
-        ${code}
-      </div>
-      <p style="color:#888;font-size:12px">The code expires in 5 minutes. If you didn't request this, ignore the email.</p>
-    </div>`;
-  const raw = `From: Rafiei Academy <${creds.email_address}>\r\nTo: ${email}\r\nSubject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${html}`;
-  const base64 = btoa(unescape(encodeURIComponent(raw))).replace(/\+/g, '-').replace(/\//g, '_');
-  const send = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ raw: base64 }),
-  });
-  if (!send.ok) throw new Error(`Gmail send failed: ${await send.text()}`);
-}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -81,7 +34,24 @@ Deno.serve(async (req) => {
     if (isEmail) {
       identifier = body.email!.trim().toLowerCase();
       console.log('Sending email OTP to:', identifier, 'Code:', otpCode);
-      await sendEmailOtp(supabase, identifier, otpCode);
+
+      // Send via Lovable Cloud transactional email
+      const { error: sendError } = await supabase.functions.invoke(
+        'send-transactional-email',
+        {
+          body: {
+            templateName: 'otp-verification',
+            recipientEmail: identifier,
+            idempotencyKey: `otp-${identifier}-${otpCode}`,
+            templateData: { code: otpCode },
+          },
+        }
+      );
+
+      if (sendError) {
+        console.error('Email send error:', sendError);
+        throw new Error('Failed to send verification email');
+      }
     } else {
       const phone = body.phone!;
       const countryCode = body.countryCode || '+98';
