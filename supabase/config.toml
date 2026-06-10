@@ -127,3 +127,6 @@ verify_jwt = false
 
 [functions.telegram-enrollment-followup]
 verify_jwt = false
+
+[functions.generate-boundless-discount]
+verify_jwt = false
