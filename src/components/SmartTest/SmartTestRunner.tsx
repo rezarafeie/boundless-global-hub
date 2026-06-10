@@ -355,12 +355,13 @@ export const SmartTestRunner: React.FC = () => {
     setErrors(new Set());
   };
 
-  // Keep answers; just go back to the previous step for retry/review
+  // Keep answers; restart from the beginning of the track for retry
   const restartKeepData = () => {
     setPhase('track');
-    setPageIdx(Math.max(pages.length - 1, 0));
+    setPageIdx(0);
     setFinalOutcome(null);
     setAiMessage('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (!currentForm && phase !== 'ai') return null;
