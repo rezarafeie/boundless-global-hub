@@ -20,7 +20,7 @@ const MINDSET_1_VALUE = 'از ایران واقعا نمیشه کسب و کار 
 
 export const NOTE_FIELD_ID = 'user_note';
 export const MATERIAL_VALUE_FIELD_ID = '35';
-export const CONDITIONAL_RESPONSE_HTML_ID = '36';
+export const READY_TO_PAY_FIELD_ID = '39';
 
 export function resolveTrackId(answers: Answers): string | null {
   const interest = answers[MAIN_FIELDS.INTEREST];
@@ -32,19 +32,26 @@ export function resolveTrackId(answers: Answers): string | null {
   return `${base}${idx}`;
 }
 
-// Field ids that should NOT receive a "next button" because answer leads to a reject
-// Map<fieldId, rejectValueSubstring>
+// Reject = restart only (next button hidden, restart shown)
 export const REJECT_RADIO_VALUES: Record<string, string[]> = {
-  '4': ['نه بعید میدونم'], // time
-  '17': ['عمرا'], // change mindset rejected
-  '20': ['فکر نمیکنم آماده پرداخت'], // pay price rejected
-  '30': ['فعلا اولویتش'], // serious decision rejected
-  '39': ['امکان پرداخت ده دلار رو ندارم'], // ready to pay rejected
+  '4': ['نه بعید میدونم'],
+  '30': ['فعلا اولویتش'],
+};
+
+// Back-only = only allow going back (e.g. user wants to fix answers)
+export const BACK_ONLY_RADIO_VALUES: Record<string, string[]> = {
+  '23': ['میخوام بعضی پاسخ', 'میخوام پاسخ'],
+};
+
+// Radio values that contribute to final "rejected" outcome at the AI step
+export const FINAL_REJECT_RADIO_VALUES: Record<string, string[]> = {
+  '17': ['عمرا'],
+  '20': ['فکر نمیکنم آماده پرداخت'],
+  '39': ['امکان پرداخت ده دلار رو ندارم'],
 };
 
 /** Convert Aparat <script> embed in legacy HTML to a working <iframe> */
 function fixAparatEmbeds(html: string): string {
-  // Pattern: <script ... src="https://www.aparat.com/embed/HASH?..."></script>
   return html.replace(
     /<div[^>]*>\s*<script[^>]*src="https?:\/\/www\.aparat\.com\/embed\/([A-Za-z0-9]+)[^"]*"[^>]*><\/script>\s*<\/div>/gi,
     (_m, hash) =>
@@ -56,72 +63,102 @@ function fixAparatEmbeds(html: string): string {
   );
 }
 
-// Field ids prefilled in legacy subforms that we should hide (61-73 range)
-const SUBFORM_PREFILL_IDS = new Set(['61', '62', '63', '64', '65', '66', '67', '68', '69', '70', '71', '72', '73']);
+// Labels of prefill identity fields that show on subform page 1 (filtered out)
+const PREFILL_LABELS = new Set([
+  'نام',
+  'نام خانوادگی',
+  'شماره تلفن',
+  'وضعیت اشتغال',
+  'شغل',
+  'وضعیت کسب و کار',
+  'کسب و کار',
+  'علاقه',
+  'نگرش',
+  'درآمد',
+  'سن',
+  'توضیحات',
+]);
+
+const PREFILL_IDS = new Set(['61', '62', '63', '64', '65', '66', '67', '68', '69', '70', '71', '72', '73', '74', '75']);
 
 function transformSubform(form: SmartForm): SmartForm {
   const fields: SmartField[] = [];
   for (const f of form.fields) {
-    if ((f as any).id && SUBFORM_PREFILL_IDS.has((f as any).id)) continue;
+    // Filter prefill text inputs by id OR by label
+    if (
+      (f.kind === 'text' || f.kind === 'tel' || f.kind === 'email' || f.kind === 'number') &&
+      f.id !== MATERIAL_VALUE_FIELD_ID
+    ) {
+      if (PREFILL_IDS.has(f.id) || PREFILL_LABELS.has((f as any).label || '')) continue;
+    }
+
     if (f.kind === 'html') {
       let html = fixAparatEmbeds(f.html);
-      // Hide the "واقعا؟ ... منصفانه نباشه" response unless a value was entered
-      if ((f as any).id === CONDITIONAL_RESPONSE_HTML_ID && html.includes('منصفانه نباشه')) {
-        fields.push({
-          ...f,
-          html,
-          showIf: { logic: 'all', rules: [{ field: MATERIAL_VALUE_FIELD_ID, op: 'isnot', value: '' }] },
-        } as any);
-        continue;
-      }
       fields.push({ ...f, html } as SmartField);
-    } else {
-      fields.push(f);
+      continue;
     }
+
+    // Material value field (35) -> required + numeric
+    if (f.id === MATERIAL_VALUE_FIELD_ID && f.kind === 'number') {
+      fields.push({ ...f, required: true } as SmartField);
+      continue;
+    }
+
+    // Ready-to-pay (39) hidden until material value entered
+    if (f.id === READY_TO_PAY_FIELD_ID && f.kind === 'radio') {
+      fields.push({
+        ...f,
+        required: true,
+        showIf: { logic: 'all', rules: [{ field: MATERIAL_VALUE_FIELD_ID, op: 'isnot', value: '' }] },
+      } as any);
+      continue;
+    }
+
+    // Force all radio fields to required
+    if (f.kind === 'radio') {
+      fields.push({ ...f, required: true } as SmartField);
+      continue;
+    }
+
+    fields.push(f);
   }
   return { ...form, fields };
 }
 
 function transformMain(form: SmartForm): SmartForm {
-  // Build new ordered field list with explicit page breaks per the new flow
   const byId: Record<string, SmartField> = {};
   for (const f of form.fields) if ((f as any).id) byId[(f as any).id] = f;
 
   const mkPage = (id: string): SmartField => ({ id: `__page_${id}`, kind: 'page' } as any);
+  const req = (f: SmartField): SmartField => {
+    if (!f) return f;
+    if (f.kind === 'text' || f.kind === 'tel' || f.kind === 'email' || f.kind === 'number' || f.kind === 'radio') {
+      return { ...f, required: true } as SmartField;
+    }
+    return f;
+  };
 
   const fields: SmartField[] = [];
-
-  // Step 1a: welcome + first name
-  fields.push(byId['44'], byId['1']);
+  fields.push(byId['44'], req(byId['1']));
   fields.push(mkPage('after_first'));
-  // Step 1b: last name solo
-  fields.push(byId['46']);
+  fields.push(req(byId['46']));
   fields.push(mkPage('after_last'));
-  // Step 2a: خوشوقتم + phone
-  fields.push(byId['45'], byId['42']);
+  fields.push(byId['45'], req(byId['42']));
   fields.push(mkPage('after_phone'));
-  // Step 2b: email
-  fields.push(byId['52']);
+  fields.push(req(byId['52']));
   fields.push(mkPage('after_email'));
-  // Step 3: occupation
-  fields.push(byId['6'], byId['14'], byId['15'], byId['9']);
+  fields.push(byId['6'], req(byId['14']), req(byId['15']), req(byId['9']));
   fields.push(mkPage('after_occ'));
-  // Step 4: business situation
-  fields.push(byId['8'], byId['11'], byId['29']);
+  fields.push(byId['8'], req(byId['11']), req(byId['29']));
   fields.push(mkPage('after_biz'));
-  // Step 5: interest
-  fields.push(byId['19'], byId['21'], byId['22'], byId['23'], byId['24']);
+  fields.push(req(byId['19']), byId['21'], byId['22'], byId['23'], byId['24']);
   fields.push(mkPage('after_interest'));
-  // Step 6: mindset
-  fields.push(byId['25'], byId['27'], byId['28'], byId['30'], byId['31']);
+  fields.push(req(byId['25']), byId['27'], byId['28'], req(byId['30']), byId['31']);
   fields.push(mkPage('after_mindset'));
-  // Step 7: income
-  fields.push(byId['33'], byId['34'], byId['36'], byId['37'], byId['38'], byId['35']);
+  fields.push(req(byId['33']), byId['34'], byId['36'], byId['37'], byId['38'], req(byId['35']));
   fields.push(mkPage('after_income'));
-  // Step 8: age
-  fields.push(byId['49']);
+  fields.push(req(byId['49']));
   fields.push(mkPage('after_age'));
-  // Step 9: final + optional note
   fields.push(byId['41']);
   fields.push({
     id: NOTE_FIELD_ID,
