@@ -1208,19 +1208,52 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
               className="flex items-center h-14 rounded-2xl border border-border bg-muted/40 focus-within:bg-background focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10 transition-all overflow-hidden"
               dir="ltr"
             >
-              {!isEmailInput(phoneNumber) && (
-                <Select value={countryCode} onValueChange={setCountryCode}>
-                  <SelectTrigger className="w-[78px] h-full border-0 border-r border-border/60 rounded-none bg-transparent focus:ring-0 px-3 text-sm font-medium shrink-0">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getCountryCodeOptions().map((country, index) => (
-                      <SelectItem key={`${country.code}-${index}`} value={country.code}>
-                        {country.flag} {country.code}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {!isEmailInput(phoneNumber) && /\d/.test(phoneNumber) && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="h-full px-3 border-r border-border/60 text-sm font-medium shrink-0 flex items-center gap-1 hover:bg-muted/60 transition-colors"
+                    >
+                      <span>{getCountryByCode(countryCode)?.flag || '🌐'}</span>
+                      <span>{countryCode}</span>
+                      <ChevronDown className="w-3 h-3 opacity-60" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    className="p-0 w-[280px]"
+                    onOpenAutoFocus={(e) => {
+                      // allow Command input to receive focus naturally
+                    }}
+                  >
+                    <Command>
+                      <CommandInput placeholder="جستجو کشور یا کد..." inputMode="search" />
+                      <CommandList className="max-h-[280px] overflow-y-auto overscroll-contain">
+                        <CommandEmpty>یافت نشد</CommandEmpty>
+                        <CommandGroup>
+                          {getCountryCodeOptions().map((country, index) => (
+                            <CommandItem
+                              key={`${country.code}-${index}`}
+                              value={`${country.name} ${country.code}`}
+                              onSelect={() => {
+                                setCountryCode(country.code);
+                                (document.activeElement as HTMLElement)?.blur();
+                              }}
+                              className="flex items-center justify-between gap-2 cursor-pointer"
+                            >
+                              <span className="flex items-center gap-2 truncate">
+                                <span className="text-base">{country.flag}</span>
+                                <span className="truncate">{country.name}</span>
+                              </span>
+                              <span className="text-muted-foreground text-xs">{country.code}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               )}
               <Input
                 id="phone"
