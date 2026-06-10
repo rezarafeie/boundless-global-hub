@@ -1,102 +1,92 @@
-## Goal
-Extend the Telegram coach from a single daily-hour broadcast into a **personalized, multi-trigger coaching system** that reacts to the learner's real behavior — celebrating progress, re-engaging silent users, and asking coaching questions to better support them.
+# Boundless Smart Test — Phase 1: Exact Port
 
-## New trigger types
+Re-implement the existing WordPress/Gravity Forms test (`تست هوشمند بدون مرز`) inside the Academy as a modern, RTL, mobile-first multi-step quiz. Phase 1 = faithful port of the same questions, branching, copy and outcomes. Phase 2 (later) will layer AI personalization on top.
 
-1. **Lesson Completed (event-driven)**
-   - Fires within minutes after a user marks a lesson complete.
-   - AI generates a personalized congratulation referencing the just-finished lesson, then teases the next one with a Mini App button.
-   - De-duped: max 1 lesson-complete message per user/course per 6 hours (so bingeing doesn't spam).
+## What the test does (recap from the JSON export)
 
-2. **Course Completed (event-driven)**
-   - Single celebration message when last lesson is completed; suggests review / next course / sharing.
+Main form `تست جامع بدون مرز` collects: name, family, phone, email, employment status, business stance, interest area, mindset, income, age, notes. Branching uses two key answers:
 
-3. **Inactivity Nudge (scheduled, tiered)**
-   - 3-day silence: gentle "we missed you" + next lesson link.
-   - 7-day silence: motivational re-engagement + reminder of progress %.
-   - 14-day silence: final nudge with a coaching question ("what's blocking you?") — quick-reply buttons.
-   - Stops once user returns (any lesson progress or bot interaction) or course is complete.
+- **Field 19 — interest area** (4 options):
+  - فروشگاه اینترنتی → **dropshipping** track
+  - آژانس / خدمات → **freelancing** track
+  - بازار مالی → **NFT/trading** track
+  - آکادمی آنلاین → **academy** track
+- **Field 25 — mindset** (2 options): pessimistic (`نگرش ۱`) vs optimistic (`نگرش ۲`).
 
-4. **Coaching Check-in (scheduled, periodic)**
-   - Every ~5 lessons completed OR every 10 days of active learning, sends a short coaching question:
-     - "بزرگ‌ترین چالش الان چیه؟" / "چه چیزی برات از همه مفیدتر بوده؟" / "چه موضوعی رو بیشتر بخوای؟"
-   - Free-text answers are stored and surfaced in the CRM note for sales/support.
+→ 4 × 2 = **8 result tracks**, each a sub-form (دراپ شیپینگ ۱/۲، فریلنسری ۱/۲، ان‌اف‌تی ۱/۲، آکادمی ۱/۲). Every sub-form follows the same skeleton: prefilled context → ~5 commitment questions (time, expertise, familiarity with the business, willingness to change mindset, willingness to pay the price, ready to see result, perceived value in $, ready to start now) with branching encouragement/objection-handling HTML blocks, an Aparat video, then either:
+- **Congrats screen** → CTA to buy the Boundless course (with price), or
+- **Rejected screen** → retry button.
 
-5. **Existing daily-hour reminder** — kept as-is, but suppressed for 24h after any other automatic message lands.
+## Deliverable in Phase 1
 
-## Data model
+A new route `/assessment/boundless-smart-test` (and a card in the existing Assessment Center) that runs the full flow end-to-end with the exact copy, choices, branching rules, Aparat video embeds, congrats/rejected outcomes, and a payment CTA pointing to the existing Boundless course checkout. Submissions stored in Supabase for follow-up.
 
-New table `enrollment_followup_events` (audit + dedupe + coaching answer store):
+## Architecture
+
 ```text
-id uuid pk
-enrollment_id uuid fk
-event_type text  -- 'lesson_completed' | 'course_completed' | 'inactivity_3d' | 'inactivity_7d' | 'inactivity_14d' | 'coaching_checkin' | 'daily_hour'
-payload jsonb    -- { lessonId, lessonTitle, progressPct, question, answer, ... }
-message_text text
-sent_at timestamptz default now()
-user_replied_at timestamptz
+src/
+  pages/Assessment/BoundlessSmartTest.tsx        // route + shell
+  components/SmartTest/
+    SmartTestRunner.tsx                          // step engine (page-by-page, conditional visibility)
+    SmartTestField.tsx                           // renders text/radio/email/number/html
+    SmartTestProgress.tsx                        // progress bar + back/next
+    ResultCongrats.tsx                           // pass screen + CTA
+    ResultRejected.tsx                           // fail screen + retry
+  data/boundlessSmartTest/
+    mainForm.ts                                  // ported field list + conditions for form 2
+    tracks/
+      dropshipping1.ts  dropshipping2.ts
+      freelancing1.ts   freelancing2.ts
+      nft1.ts           nft2.ts
+      academy1.ts       academy2.ts
+    index.ts                                     // routing: (interest, mindset) → track
+    types.ts                                     // Field, Choice, Condition, Page, Track
+  lib/smartTestEngine.ts                         // evaluate conditional logic, compute pass/fail
 ```
 
-New columns on `enrollments`:
-- `last_lesson_completed_at timestamptz`
-- `last_activity_at timestamptz` (updated on any lesson progress or bot message)
-- `coaching_lessons_since_checkin int default 0`
-- `inactivity_stage smallint default 0`  -- 0/3/7/14
+Data model (TypeScript only — no SQL changes for the form definition):
 
-DB trigger on `user_lesson_progress` (insert/update with `is_completed=true`):
-- updates the matching `enrollments` row (by user phone + course): bumps counters, sets timestamps.
-- inserts a `telegram_notification_queue` row of kind `lesson_completed` for the followup worker to pick up within ~1 minute (avoids running AI in a DB trigger).
-
-## Workers
-
-Extend `telegram-enrollment-followup` into a dispatcher that handles all event types, plus a fast queue consumer:
-
-- **New edge function `telegram-followup-queue`** (cron: every 2 min)
-  - Drains `telegram_notification_queue` rows with kind in (`lesson_completed`, `course_completed`).
-  - Runs AI personalization, sends Telegram message, writes `enrollment_followup_events`.
-
-- **Existing `telegram-enrollment-followup`** (cron: hourly, unchanged trigger schedule)
-  - In addition to the current daily-hour reminder, on each run also:
-    - finds enrollments past inactivity thresholds (3/7/14 days since `last_activity_at`) where `rafiei_bot_followup_enabled` is on, course not yet complete, and `inactivity_stage` < target — sends the next tier and bumps the stage.
-    - finds enrollments due for a coaching check-in (counter >= 5 OR >= 10 days since last check-in event) and sends one.
-  - Skips any enrollment that received another automatic message in the last 24h (uses `enrollment_followup_events`).
-
-## Telegram reply handling
-
-In `telegram-webhook`:
-- When user replies to a coaching question (tracked by a `reply_to_message_id` we store, or quick-reply callback) → save into latest `enrollment_followup_events.payload.answer`, set `user_replied_at`, and post a CRM note on the user's profile so support sees it.
-- Any inbound message updates `enrollments.last_activity_at` and resets `inactivity_stage` to 0.
-
-## Admin UI
-
-In `CourseCreate` / `CourseEdit`, under the existing follow-up switch, add per-trigger toggles (default all ON when parent is on):
-- "پیام تبریک پس از اتمام هر درس"
-- "پیام تبریک پایان دوره"
-- "یادآوری در صورت غیبت (3/7/14 روز)"
-- "سوالات کوچینگ دوره‌ای"
-
-Stored as a single JSONB column `courses.rafiei_bot_followup_config` with shape:
-```text
-{ lesson_complete: bool, course_complete: bool, inactivity: bool, coaching: bool }
+```ts
+type Condition = { all?: Rule[]; any?: Rule[] };
+type Rule = { field: string; op: 'is'|'isNot'|'contains'; value: string };
+type Field =
+  | { kind:'text'|'email'|'number'|'tel'; id:string; label:string; required?:boolean; placeholder?:string; showIf?:Condition }
+  | { kind:'radio'; id:string; label:string; choices:{label:string;value:string}[]; required?:boolean; showIf?:Condition }
+  | { kind:'html'; id:string; html:string; showIf?:Condition }
+  | { kind:'video'; id:string; aparatId:string; showIf?:Condition };
+type Page = { id:string; fields:Field[] };
+type Track = { id:string; title:string; pages:Page[]; passWhen:Condition; rejectWhen:Condition };
 ```
 
-## Technical notes (for review)
+The engine walks pages sequentially, hides fields whose `showIf` doesn't match current answers, validates required fields, and finally evaluates `passWhen` / `rejectWhen` to decide which result screen to render.
 
-- AI prompt is extended to accept `event_type` + structured context (last lesson title, progress %, inactivity days, prior coaching answers) so the same `composeAiMessage` helper is reused.
-- All AI sends fall back to a static Persian template if the gateway errors.
-- Reuses existing `generateSsoUrl`, `sendMessage`, `mdToTelegramHtml`.
-- Cron jobs: add a 2-minute cron entry for `telegram-followup-queue`; the existing hourly cron for `telegram-enrollment-followup` is reused.
+## Persistence (Supabase)
 
-## Migration (will require approval before running)
-1. Create `enrollment_followup_events` table + grants + RLS (admin read; service role full).
-2. Add columns on `enrollments` (`last_lesson_completed_at`, `last_activity_at`, `coaching_lessons_since_checkin`, `inactivity_stage`).
-3. Add JSONB column `courses.rafiei_bot_followup_config` (default all true).
-4. Create trigger on `user_lesson_progress` to enqueue lesson-complete + bump counters.
-5. Add 2-min pg_cron for `telegram-followup-queue`.
+Reuse existing patterns; add ONE new table for submissions (kept simple — no per-answer rows in Phase 1):
 
-## Out of scope (ask before adding)
-- Sending followups via email/SMS (Telegram only for now).
-- Letting the user customize the coaching questions per course (uses a global pool).
-- A/B testing different prompt variants.
+- `boundless_smart_test_submissions`
+  - domain fields: `track_id`, `full_name`, `phone`, `email`, `interest`, `mindset`, `outcome` (`passed`|`rejected`|`abandoned`), `answers` (jsonb), `chat_user_id` (nullable FK to `chat_users.id` for logged-in users)
+  - Access rules (plain English):
+    - Anyone (including not-logged-in visitors) can create a submission.
+    - Logged-in chat users can read their own submissions.
+    - Admins can read all submissions.
+  - Plus standard `id` / `created_at` / `updated_at`.
 
-Ready to execute this — confirm and I'll run the migration and ship the code.
+(Schema is added via a Supabase migration; correct GRANTs + RLS will be included.)
+
+## Outcome → payment CTA
+
+Congrats screen reads the Boundless course price/slug from the existing `courses` table (slug used today on the Boundless landing page) and links to its existing checkout. No new payment logic.
+
+## Out of scope for Phase 1 (saved for Phase 2)
+
+- AI personalization of responses / copy.
+- Admin dashboard for submissions (data is in Supabase; admins can query).
+- A/B testing or variant editing UI.
+- Importing legacy submissions from WordPress.
+
+## Open questions before I build
+
+1. Course slug to link to from the congrats CTA — is it the existing `boundless-taste` course, or a different "Boundless" paid course in the academy?
+2. For the 8 Aparat videos referenced in the sub-forms, should I keep the **exact same Aparat IDs** from the JSON export, or do you want to swap them for new ones?
+3. Login requirement: allow anonymous test-takers (recommended, matches current WP behavior) or require Academy login before starting?
