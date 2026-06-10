@@ -4,7 +4,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
 
-const SITE_NAME = 'boundless-global-hub'
+const SITE_NAME = 'Rafiei Academy'
 const SENDER_DOMAIN = 'notify.academy.rafiei.co'
 const FROM_DOMAIN = 'academy.rafiei.co'
 

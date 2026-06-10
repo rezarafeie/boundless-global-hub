@@ -18,24 +18,23 @@ interface Props {
 }
 
 const OTPEmail = ({ code = '0000', recipientName }: Props) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="fa" dir="rtl">
     <Head />
-    <Preview>{`Your Rafiei Academy verification code: ${code}`}</Preview>
+    <Preview>{`کد تایید آکادمی رفیعی: ${code}`}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Rafiei Academy</Heading>
+        <Heading style={h1}>آکادمی رفیعی</Heading>
         <Text style={text}>
-          {recipientName ? `Hi ${recipientName},` : 'Hi there,'}
+          {recipientName ? `${recipientName} عزیز،` : 'سلام،'}
         </Text>
         <Text style={text}>
-          Use the verification code below to finish signing in. This code expires
-          in 5 minutes.
+          برای تکمیل ورود، از کد تایید زیر استفاده کنید. این کد تا ۵ دقیقه معتبر است.
         </Text>
         <Section style={codeBox}>
           <Text style={codeText}>{code}</Text>
         </Section>
         <Text style={hint}>
-          If you didn't request this code, you can safely ignore this email.
+          اگر این درخواست از سوی شما نبوده، می‌توانید این ایمیل را نادیده بگیرید.
         </Text>
       </Container>
     </Body>
@@ -45,7 +44,7 @@ const OTPEmail = ({ code = '0000', recipientName }: Props) => (
 export const template = {
   component: OTPEmail,
   subject: (data: Props) =>
-    `Your verification code: ${data?.code ?? ''}`.trim(),
+    `کد تایید شما: ${data?.code ?? ''}`.trim(),
   displayName: 'OTP verification code',
   previewData: { code: '1234' },
 } satisfies TemplateEntry
@@ -53,13 +52,14 @@ export const template = {
 const main: React.CSSProperties = {
   backgroundColor: '#ffffff',
   fontFamily:
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
+    "Vazir, Tahoma, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
 }
 
 const container: React.CSSProperties = {
   maxWidth: '480px',
   margin: '0 auto',
   padding: '32px 24px',
+  textAlign: 'right',
 }
 
 const h1: React.CSSProperties = {
@@ -72,7 +72,7 @@ const h1: React.CSSProperties = {
 const text: React.CSSProperties = {
   color: '#334155',
   fontSize: '15px',
-  lineHeight: '24px',
+  lineHeight: '26px',
   margin: '0 0 16px',
 }
 
@@ -96,6 +96,6 @@ const codeText: React.CSSProperties = {
 const hint: React.CSSProperties = {
   color: '#94a3b8',
   fontSize: '13px',
-  lineHeight: '20px',
+  lineHeight: '22px',
   margin: '24px 0 0',
 }
