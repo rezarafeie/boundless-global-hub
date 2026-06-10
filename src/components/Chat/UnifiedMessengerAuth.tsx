@@ -685,32 +685,21 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     
     try {
-      // Use the exact same formatted phone that was stored when OTP was sent
-      const phoneForVerification = formattedPhoneForOTP;
-      
-      console.log('🔍 Debug OTP verification:', {
-        formattedPhoneForOTP,
-        phoneForVerification,
-        phoneNumber,
-        countryCode
-      });
-      
-      if (!phoneForVerification) {
-        console.error('❌ formattedPhoneForOTP is null/undefined, creating phone format now...');
-        // Fallback: create the formatted phone if it's not set
-        let fallbackFormattedPhone = phoneNumber;
-        if (countryCode === '+98') {
-          let cleanPhone = phoneNumber.replace(/\s|-/g, '');
-          if (cleanPhone.startsWith('0')) {
-            cleanPhone = cleanPhone.substring(1);
-          }
-          fallbackFormattedPhone = `${countryCode}${cleanPhone}`;
-        }
-        console.log('🔧 Using fallback formatted phone:', fallbackFormattedPhone);
-        
-        await rafieiAuth.verifyOTP(fallbackFormattedPhone, code, countryCode);
+      if (otpIdentifierType === 'email') {
+        await rafieiAuth.verifyEmailOTP(formattedPhoneForOTP, code);
       } else {
-        await rafieiAuth.verifyOTP(phoneForVerification, code, countryCode);
+        const phoneForVerification = formattedPhoneForOTP;
+        if (!phoneForVerification) {
+          let fallbackFormattedPhone = phoneNumber;
+          if (countryCode === '+98') {
+            let cleanPhone = phoneNumber.replace(/\s|-/g, '');
+            if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+            fallbackFormattedPhone = `${countryCode}${cleanPhone}`;
+          }
+          await rafieiAuth.verifyOTP(fallbackFormattedPhone, code, countryCode);
+        } else {
+          await rafieiAuth.verifyOTP(phoneForVerification, code, countryCode);
+        }
       }
       console.log('✅ OTP verified successfully for login');
       setOtpVerified(true);
