@@ -58,6 +58,9 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const [formattedPhoneForOTP, setFormattedPhoneForOTP] = useState('');
   const [otpVerified, setOtpVerified] = useState(false); // Track OTP verification status
   const [authMethod, setAuthMethod] = useState<'phone' | 'telegram'>('phone');
+  const [otpIdentifierType, setOtpIdentifierType] = useState<'phone' | 'email'>('phone');
+
+  const isEmailInput = (val: string) => /@/.test(val);
 
   // Initialize linking flow if linkingEmail is provided
   useEffect(() => {
@@ -266,9 +269,55 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     e.preventDefault();
     
     if (!phoneNumber.trim()) {
-      toast.error('شماره تلفن را وارد کنید');
+      toast.error('شماره تلفن یا ایمیل را وارد کنید');
       return;
     }
+
+    // Email branch: only supports login of existing accounts
+    if (isEmailInput(phoneNumber)) {
+      const emailId = phoneNumber.trim().toLowerCase();
+      setLoading(true);
+      try {
+        const { data: userByEmail } = await supabase
+          .from('chat_users')
+          .select('*')
+          .eq('email', emailId)
+          .maybeSingle();
+
+        if (!userByEmail) {
+          toast.error('کاربری با این ایمیل یافت نشد. لطفاً با شماره تلفن ثبت نام کنید.');
+          return;
+        }
+
+        setExistingUser(userByEmail as any);
+        setIsLogin(true);
+        setOtpIdentifierType('email');
+        setFormattedPhoneForOTP(emailId);
+
+        // If user has no password OR clicks via login flow, send email OTP
+        if (!userByEmail.password_hash) {
+          try {
+            await rafieiAuth.sendEmailOTP(emailId);
+            setCurrentStep('otp-login');
+            toast.success('کد تأیید به ایمیل شما ارسال شد');
+          } catch (err: any) {
+            console.error('Email OTP send error:', err);
+            toast.error(err.message || 'خطا در ارسال کد ایمیل');
+          }
+        } else {
+          // Has password: go to password step (OTP fallback available)
+          setCurrentStep('password');
+        }
+      } catch (err) {
+        console.error('Email lookup error:', err);
+        toast.error('خطا در بررسی ایمیل');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    setOtpIdentifierType('phone');
 
     setLoading(true);
     try {
@@ -327,19 +376,31 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           console.log('🔐 User has no password, sending OTP automatically');
           setIsLogin(true);
           
-          // Skip OTP for non-Iranian users without password
+          // Non-Iranian user without password: send email OTP if email on file
           if (countryCode !== '+98') {
-            console.log('🌍 Non-Iranian user without password, redirecting to password setup');
-            setCurrentStep('password');
+            if (user.email) {
+              try {
+                await rafieiAuth.sendEmailOTP(user.email);
+                setOtpIdentifierType('email');
+                setFormattedPhoneForOTP(user.email);
+                setCurrentStep('otp-login');
+                toast.success('کد تأیید به ایمیل شما ارسال شد');
+              } catch (err: any) {
+                console.error('Email OTP error:', err);
+                setCurrentStep('password');
+                toast.error('خطا در ارسال کد، لطفاً رمز عبور تعین کنید');
+              }
+            } else {
+              console.log('🌍 Non-Iranian user without password or email, password setup');
+              setCurrentStep('password');
+            }
           } else {
-            // Send OTP for verification for Iranian users
+            // Send SMS OTP for Iranian users
             console.log('📱 About to send OTP for Iranian user:', phoneNumber, 'Country code:', countryCode);
             try {
               const response = await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
               console.log('📱 OTP sent successfully:', response);
               
-              // Store the formatted phone in the same format used by send-otp function
-              // Convert to international format that matches what's stored in database
               let formattedPhone = phoneNumber;
               if (countryCode === '+98') {
                 let cleanPhone = phoneNumber.replace(/\s|-/g, '');
@@ -348,6 +409,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                 }
                 formattedPhone = `${countryCode}${cleanPhone}`;
               }
+              setOtpIdentifierType('phone');
               setFormattedPhoneForOTP(formattedPhone);
               
               setCurrentStep('otp-login');
@@ -356,7 +418,6 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
               });
             } catch (otpError: any) {
               console.error('❌ OTP send error:', otpError);
-              // If OTP fails, still allow password setup
               setCurrentStep('password');
               toast.error('خطا در ارسال کد تأیید، لطفاً رمز عبور تعین کنید');
             }
@@ -430,8 +491,22 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       setLoading(true);
       try {
         let result;
-        
-        if (isAcademyAuth) {
+
+        // Email-based password login: verify against existingUser.password_hash
+        if (isEmailInput(phoneNumber) && existingUser) {
+          const bcrypt = (await import('bcryptjs')).default;
+          if (!existingUser.password_hash) {
+            toast.error('رمز عبور تنظیم نشده است');
+            return;
+          }
+          const ok = await bcrypt.compare(password, existingUser.password_hash);
+          if (!ok) {
+            toast.error('رمز عبور اشتباه است');
+            return;
+          }
+          const sessionToken = await messengerService.createSession(existingUser.id);
+          result = { session_token: sessionToken };
+        } else if (isAcademyAuth) {
           // Use unified auth service for academy authentication
           console.log('🎓 Academy login attempt for:', phoneNumber);
           const { unifiedAuthService } = await import('@/lib/unifiedAuthService');
@@ -481,17 +556,38 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const handleOTPLogin = async () => {
     setLoading(true);
     try {
-      // Send OTP for login
-      const response = await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
-      console.log('📱 OTP sent successfully for login:', response);
-      
+      // Decide channel: email if user entered email or has email and is non-Iranian
+      const isEmail = isEmailInput(phoneNumber);
+      if (isEmail) {
+        const emailId = phoneNumber.trim().toLowerCase();
+        await rafieiAuth.sendEmailOTP(emailId);
+        setOtpIdentifierType('email');
+        setFormattedPhoneForOTP(emailId);
+        toast.success('کد تأیید به ایمیل شما ارسال شد');
+      } else if (countryCode !== '+98' && existingUser?.email) {
+        await rafieiAuth.sendEmailOTP(existingUser.email);
+        setOtpIdentifierType('email');
+        setFormattedPhoneForOTP(existingUser.email);
+        toast.success('کد تأیید به ایمیل شما ارسال شد');
+      } else {
+        const response = await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
+        console.log('📱 OTP sent successfully for login:', response);
+        let formattedPhone = phoneNumber;
+        if (countryCode === '+98') {
+          let cleanPhone = phoneNumber.replace(/\s|-/g, '');
+          if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+          formattedPhone = `${countryCode}${cleanPhone}`;
+        }
+        setOtpIdentifierType('phone');
+        setFormattedPhoneForOTP(formattedPhone);
+        toast.success('کد تأیید ارسال شد', {
+          description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
+        });
+      }
       setCurrentStep('otp-login');
-      toast.success('کد تأیید ارسال شد', {
-        description: 'کد ۴ رقمی برای ورود به شماره شما ارسال شد'
-      });
     } catch (error: any) {
       console.error('OTP send error for login:', error);
-      toast.error('خطا در ارسال کد تأیید');
+      toast.error(error.message || 'خطا در ارسال کد تأیید');
     } finally {
       setLoading(false);
     }
@@ -603,32 +699,21 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     setLoading(true);
     
     try {
-      // Use the exact same formatted phone that was stored when OTP was sent
-      const phoneForVerification = formattedPhoneForOTP;
-      
-      console.log('🔍 Debug OTP verification:', {
-        formattedPhoneForOTP,
-        phoneForVerification,
-        phoneNumber,
-        countryCode
-      });
-      
-      if (!phoneForVerification) {
-        console.error('❌ formattedPhoneForOTP is null/undefined, creating phone format now...');
-        // Fallback: create the formatted phone if it's not set
-        let fallbackFormattedPhone = phoneNumber;
-        if (countryCode === '+98') {
-          let cleanPhone = phoneNumber.replace(/\s|-/g, '');
-          if (cleanPhone.startsWith('0')) {
-            cleanPhone = cleanPhone.substring(1);
-          }
-          fallbackFormattedPhone = `${countryCode}${cleanPhone}`;
-        }
-        console.log('🔧 Using fallback formatted phone:', fallbackFormattedPhone);
-        
-        await rafieiAuth.verifyOTP(fallbackFormattedPhone, code, countryCode);
+      if (otpIdentifierType === 'email') {
+        await rafieiAuth.verifyEmailOTP(formattedPhoneForOTP, code);
       } else {
-        await rafieiAuth.verifyOTP(phoneForVerification, code, countryCode);
+        const phoneForVerification = formattedPhoneForOTP;
+        if (!phoneForVerification) {
+          let fallbackFormattedPhone = phoneNumber;
+          if (countryCode === '+98') {
+            let cleanPhone = phoneNumber.replace(/\s|-/g, '');
+            if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+            fallbackFormattedPhone = `${countryCode}${cleanPhone}`;
+          }
+          await rafieiAuth.verifyOTP(fallbackFormattedPhone, code, countryCode);
+        } else {
+          await rafieiAuth.verifyOTP(phoneForVerification, code, countryCode);
+        }
       }
       console.log('✅ OTP verified successfully for login');
       setOtpVerified(true);
@@ -894,21 +979,31 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const handleForgotPasswordOTP = async () => {
     setLoading(true);
     try {
-      await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
-      // Store the formatted phone in the same format used by send-otp function
-      let formattedPhone = phoneNumber;
-      if (countryCode === '+98') {
-        let cleanPhone = phoneNumber.replace(/\s|-/g, '');
-        if (cleanPhone.startsWith('0')) {
-          cleanPhone = cleanPhone.substring(1);
+      const isEmail = isEmailInput(phoneNumber);
+      if (isEmail) {
+        const emailId = phoneNumber.trim().toLowerCase();
+        await rafieiAuth.sendEmailOTP(emailId);
+        setOtpIdentifierType('email');
+        setFormattedPhoneForOTP(emailId);
+      } else if (countryCode !== '+98' && existingUser?.email) {
+        await rafieiAuth.sendEmailOTP(existingUser.email);
+        setOtpIdentifierType('email');
+        setFormattedPhoneForOTP(existingUser.email);
+      } else {
+        await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
+        let formattedPhone = phoneNumber;
+        if (countryCode === '+98') {
+          let cleanPhone = phoneNumber.replace(/\s|-/g, '');
+          if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+          formattedPhone = `${countryCode}${cleanPhone}`;
         }
-        formattedPhone = `${countryCode}${cleanPhone}`;
+        setOtpIdentifierType('phone');
+        setFormattedPhoneForOTP(formattedPhone);
       }
-      setFormattedPhoneForOTP(formattedPhone);
       setCurrentStep('forgot-otp');
       toast.success('کد بازیابی ارسال شد');
     } catch (error: any) {
-      toast.error('خطا در ارسال کد بازیابی');
+      toast.error(error.message || 'خطا در ارسال کد بازیابی');
     } finally {
       setLoading(false);
     }
@@ -918,7 +1013,11 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     if (code.length !== 4) return;
     setLoading(true);
     try {
-      await rafieiAuth.verifyOTP(formattedPhoneForOTP, code, countryCode);
+      if (otpIdentifierType === 'email') {
+        await rafieiAuth.verifyEmailOTP(formattedPhoneForOTP, code);
+      } else {
+        await rafieiAuth.verifyOTP(formattedPhoneForOTP, code, countryCode);
+      }
       setCurrentStep('reset-password');
       setOtpVerified(true);
       setOtpCode('');
@@ -1101,29 +1200,39 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           <form onSubmit={handlePhoneSubmit} className="space-y-6">
             <div className="space-y-2">
               <div className="flex border-0 border-b border-border" dir="ltr">
-                <Select value={countryCode} onValueChange={setCountryCode}>
-                  <SelectTrigger className="w-20 border-0 rounded-none bg-transparent focus:ring-0 px-0">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                     {getCountryCodeOptions().map((country, index) => (
-                       <SelectItem key={`${country.code}-${index}`} value={country.code}>
-                         {country.flag} {country.code}
-                       </SelectItem>
-                     ))}
-                  </SelectContent>
-                </Select>
+                {!isEmailInput(phoneNumber) && (
+                  <Select value={countryCode} onValueChange={setCountryCode}>
+                    <SelectTrigger className="w-20 border-0 rounded-none bg-transparent focus:ring-0 px-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                       {getCountryCodeOptions().map((country, index) => (
+                         <SelectItem key={`${country.code}-${index}`} value={country.code}>
+                           {country.flag} {country.code}
+                         </SelectItem>
+                       ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <Input
                   id="phone"
-                  type="tel"
+                  type="text"
                   value={phoneNumber}
                   onChange={(e) => {
-                    let cleanValue = e.target.value.replace(/[^0-9]/g, '');
-                    // Remove leading zeros and plus signs
-                    cleanValue = cleanValue.replace(/^[0+]+/, '');
-                    setPhoneNumber(cleanValue);
+                    let v = e.target.value;
+                    if (isEmailInput(v)) {
+                      // Email mode: allow email characters, lowercase
+                      v = v.replace(/\s/g, '').toLowerCase();
+                    } else {
+                      v = v.replace(/[^0-9a-zA-Z@._\-+]/g, '');
+                      // If still purely numeric, strip leading 0 / +
+                      if (/^[0-9+]+$/.test(v)) {
+                        v = v.replace(/^[0+]+/, '');
+                      }
+                    }
+                    setPhoneNumber(v);
                   }}
-                  placeholder="شماره تلفن"
+                  placeholder="شماره تلفن یا ایمیل"
                   required
                   dir="ltr"
                   className="flex-1 h-12 border-0 rounded-none bg-transparent px-2 focus-visible:ring-0 placeholder:text-muted-foreground"

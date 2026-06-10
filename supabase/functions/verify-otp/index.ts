@@ -6,91 +6,77 @@ const corsHeaders = {
 };
 
 interface VerifyOTPRequest {
-  phone: string;
+  phone?: string;
+  email?: string;
   otpCode: string;
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { phone, otpCode }: VerifyOTPRequest = await req.json();
-    
-    // Format phone number consistently with send-otp function
-    let formattedPhone = phone;
-    // Handle Iranian phone numbers (remove leading 0 and add +98)
-    if (phone.startsWith('0') && phone.length === 11) {
-      formattedPhone = `+98${phone.substring(1)}`;
-    } else if (phone.length === 10 && phone.startsWith('9')) {
-      formattedPhone = `+98${phone}`;
-    } else if (!phone.startsWith('+98')) {
-      formattedPhone = `+98${phone}`;
+    const { phone, email, otpCode }: VerifyOTPRequest = await req.json();
+
+    let identifier: string;
+    if (email) {
+      identifier = email.trim().toLowerCase();
+    } else if (phone) {
+      // Format phone number consistently with send-otp function
+      let formattedPhone = phone;
+      if (phone.startsWith('0') && phone.length === 11) {
+        formattedPhone = `+98${phone.substring(1)}`;
+      } else if (phone.length === 10 && phone.startsWith('9')) {
+        formattedPhone = `+98${phone}`;
+      } else if (!phone.startsWith('+98') && !phone.startsWith('00')) {
+        formattedPhone = `+98${phone}`;
+      }
+      identifier = formattedPhone;
+    } else {
+      throw new Error('phone or email required');
     }
-    
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    // Check if OTP exists and is valid using the formatted phone
+
     const { data: otpData, error: otpError } = await supabase
       .from('otp_verifications')
       .select('*')
-      .eq('phone', formattedPhone)
+      .eq('phone', identifier)
       .eq('otp_code', otpCode)
       .eq('verified', false)
       .gt('expires_at', new Date().toISOString())
       .single();
-    
+
     if (otpError || !otpData) {
       return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Invalid or expired OTP'
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
-        }
+        JSON.stringify({ success: false, error: 'Invalid or expired OTP' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
-    
-    // Mark OTP as verified
+
     const { error: updateError } = await supabase
       .from('otp_verifications')
       .update({ verified: true })
-      .eq('phone', formattedPhone)
+      .eq('phone', identifier)
       .eq('otp_code', otpCode);
-    
+
     if (updateError) {
       console.error('Error updating OTP verification:', updateError);
       throw new Error('Failed to verify OTP');
     }
-    
+
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'OTP verified successfully'
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
+      JSON.stringify({ success: true, message: 'OTP verified successfully' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
-    
   } catch (error) {
     console.error('Error verifying OTP:', error);
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
+      JSON.stringify({ success: false, error: (error as Error).message }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });

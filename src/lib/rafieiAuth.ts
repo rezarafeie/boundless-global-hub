@@ -202,17 +202,7 @@ class RafieiAuthService {
     return { user, session_token };
   }
 
-  // Send email OTP using Supabase Auth
-  async sendEmailOTP(email: string): Promise<void> {
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email,
-      options: {
-        shouldCreateUser: false
-      }
-    });
-
-    if (error) throw error;
-  }
+  // (sendEmailOTP defined below via Gmail edge function)
 
   // Send SMS OTP using existing edge function
   async sendSMSOTP(phone: string, countryCode: string = '+98'): Promise<void> {
@@ -260,6 +250,28 @@ class RafieiAuthService {
     });
 
     if (error || !data.success) {
+      throw new Error(data?.error || 'کد تأیید نامعتبر است');
+    }
+  }
+
+  // Send email OTP via Gmail edge function
+  async sendEmailOTP(email: string): Promise<void> {
+    console.log('✉️ Sending email OTP to:', email);
+    const { data, error } = await supabase.functions.invoke('send-otp', {
+      body: { email },
+    });
+    if (error || !data?.success) {
+      throw new Error(data?.error || error?.message || 'خطا در ارسال کد ایمیل');
+    }
+  }
+
+  // Verify email OTP
+  async verifyEmailOTP(email: string, otpCode: string): Promise<void> {
+    console.log('🔐 Verifying email OTP:', email);
+    const { data, error } = await supabase.functions.invoke('verify-otp', {
+      body: { email, otpCode },
+    });
+    if (error || !data?.success) {
       throw new Error(data?.error || 'کد تأیید نامعتبر است');
     }
   }
