@@ -2719,6 +2719,46 @@ async function handleUpdate(update: any) {
   const startMatch = text.match(/^\/start(?:\s+(\S+))?$/);
   const startPayload = startMatch?.[1] ?? null;
 
+  // ===== Website login deep-link: /start login_<token> =====
+  if (startPayload?.startsWith('login_')) {
+    const loginToken = startPayload.slice('login_'.length);
+    const { data: row } = await supabase
+      .from('telegram_login_tokens')
+      .select('token, expires_at')
+      .eq('token', loginToken)
+      .maybeSingle();
+    if (!row) {
+      await sendMessage(chat_id, '❌ این لینک ورود نامعتبر است. لطفاً از وب‌سایت لینک جدید بگیرید.');
+      return;
+    }
+    if (new Date(row.expires_at) < new Date()) {
+      await sendMessage(chat_id, '⏰ این لینک ورود منقضی شده. لطفاً از وب‌سایت دوباره تلاش کنید.');
+      return;
+    }
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const tgUsername = msg?.from?.username ?? null;
+    const fName = msg?.from?.first_name ?? null;
+    await supabase
+      .from('telegram_login_tokens')
+      .update({
+        telegram_chat_id: chat_id,
+        telegram_username: tgUsername,
+        first_name: fName,
+        otp_code: otp,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('token', loginToken);
+    await sendMessage(chat_id, [
+      '🔐 <b>کد ورود به آکادمی</b>',
+      '',
+      `کد یکبار مصرف شما: <code>${otp}</code>`,
+      '',
+      'این کد را در صفحه ورود وب‌سایت وارد کنید.',
+      'اعتبار: ۱۵ دقیقه',
+    ].join('\n'));
+    return;
+  }
+
   // Unlinked user flow
   if (!user) {
     const session = await getSession(chat_id);
