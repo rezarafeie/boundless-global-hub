@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
           last_name: '',
           full_name: fname,
           email,
-          phone: '',
+          phone: `tg_${row.telegram_chat_id}`,
           country_code: '+0',
           user_id,
           telegram_chat_id: row.telegram_chat_id,
