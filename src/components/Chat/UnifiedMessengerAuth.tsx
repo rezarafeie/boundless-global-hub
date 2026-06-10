@@ -376,19 +376,31 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           console.log('🔐 User has no password, sending OTP automatically');
           setIsLogin(true);
           
-          // Skip OTP for non-Iranian users without password
+          // Non-Iranian user without password: send email OTP if email on file
           if (countryCode !== '+98') {
-            console.log('🌍 Non-Iranian user without password, redirecting to password setup');
-            setCurrentStep('password');
+            if (user.email) {
+              try {
+                await rafieiAuth.sendEmailOTP(user.email);
+                setOtpIdentifierType('email');
+                setFormattedPhoneForOTP(user.email);
+                setCurrentStep('otp-login');
+                toast.success('کد تأیید به ایمیل شما ارسال شد');
+              } catch (err: any) {
+                console.error('Email OTP error:', err);
+                setCurrentStep('password');
+                toast.error('خطا در ارسال کد، لطفاً رمز عبور تعین کنید');
+              }
+            } else {
+              console.log('🌍 Non-Iranian user without password or email, password setup');
+              setCurrentStep('password');
+            }
           } else {
-            // Send OTP for verification for Iranian users
+            // Send SMS OTP for Iranian users
             console.log('📱 About to send OTP for Iranian user:', phoneNumber, 'Country code:', countryCode);
             try {
               const response = await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
               console.log('📱 OTP sent successfully:', response);
               
-              // Store the formatted phone in the same format used by send-otp function
-              // Convert to international format that matches what's stored in database
               let formattedPhone = phoneNumber;
               if (countryCode === '+98') {
                 let cleanPhone = phoneNumber.replace(/\s|-/g, '');
@@ -397,6 +409,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
                 }
                 formattedPhone = `${countryCode}${cleanPhone}`;
               }
+              setOtpIdentifierType('phone');
               setFormattedPhoneForOTP(formattedPhone);
               
               setCurrentStep('otp-login');
@@ -405,7 +418,6 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
               });
             } catch (otpError: any) {
               console.error('❌ OTP send error:', otpError);
-              // If OTP fails, still allow password setup
               setCurrentStep('password');
               toast.error('خطا در ارسال کد تأیید، لطفاً رمز عبور تعین کنید');
             }
