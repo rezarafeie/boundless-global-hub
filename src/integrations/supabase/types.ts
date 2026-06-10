@@ -4767,6 +4767,42 @@ export type Database = {
           },
         ]
       }
+      telegram_login_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          first_name: string | null
+          otp_code: string | null
+          telegram_chat_id: number | null
+          telegram_username: string | null
+          token: string
+          updated_at: string
+          verified: boolean
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          first_name?: string | null
+          otp_code?: string | null
+          telegram_chat_id?: number | null
+          telegram_username?: string | null
+          token: string
+          updated_at?: string
+          verified?: boolean
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          first_name?: string | null
+          otp_code?: string | null
+          telegram_chat_id?: number | null
+          telegram_username?: string | null
+          token?: string
+          updated_at?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       telegram_notification_queue: {
         Row: {
           attempts: number
