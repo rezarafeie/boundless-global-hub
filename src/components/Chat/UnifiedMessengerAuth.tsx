@@ -269,9 +269,55 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     e.preventDefault();
     
     if (!phoneNumber.trim()) {
-      toast.error('شماره تلفن را وارد کنید');
+      toast.error('شماره تلفن یا ایمیل را وارد کنید');
       return;
     }
+
+    // Email branch: only supports login of existing accounts
+    if (isEmailInput(phoneNumber)) {
+      const emailId = phoneNumber.trim().toLowerCase();
+      setLoading(true);
+      try {
+        const { data: userByEmail } = await supabase
+          .from('chat_users')
+          .select('*')
+          .eq('email', emailId)
+          .maybeSingle();
+
+        if (!userByEmail) {
+          toast.error('کاربری با این ایمیل یافت نشد. لطفاً با شماره تلفن ثبت نام کنید.');
+          return;
+        }
+
+        setExistingUser(userByEmail as any);
+        setIsLogin(true);
+        setOtpIdentifierType('email');
+        setFormattedPhoneForOTP(emailId);
+
+        // If user has no password OR clicks via login flow, send email OTP
+        if (!userByEmail.password_hash) {
+          try {
+            await rafieiAuth.sendEmailOTP(emailId);
+            setCurrentStep('otp-login');
+            toast.success('کد تأیید به ایمیل شما ارسال شد');
+          } catch (err: any) {
+            console.error('Email OTP send error:', err);
+            toast.error(err.message || 'خطا در ارسال کد ایمیل');
+          }
+        } else {
+          // Has password: go to password step (OTP fallback available)
+          setCurrentStep('password');
+        }
+      } catch (err) {
+        console.error('Email lookup error:', err);
+        toast.error('خطا در بررسی ایمیل');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    setOtpIdentifierType('phone');
 
     setLoading(true);
     try {
