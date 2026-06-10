@@ -491,8 +491,22 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       setLoading(true);
       try {
         let result;
-        
-        if (isAcademyAuth) {
+
+        // Email-based password login: verify against existingUser.password_hash
+        if (isEmailInput(phoneNumber) && existingUser) {
+          const bcrypt = (await import('bcryptjs')).default;
+          if (!existingUser.password_hash) {
+            toast.error('رمز عبور تنظیم نشده است');
+            return;
+          }
+          const ok = await bcrypt.compare(password, existingUser.password_hash);
+          if (!ok) {
+            toast.error('رمز عبور اشتباه است');
+            return;
+          }
+          const sessionToken = await messengerService.createSession(existingUser.id);
+          result = { session_token: sessionToken };
+        } else if (isAcademyAuth) {
           // Use unified auth service for academy authentication
           console.log('🎓 Academy login attempt for:', phoneNumber);
           const { unifiedAuthService } = await import('@/lib/unifiedAuthService');
