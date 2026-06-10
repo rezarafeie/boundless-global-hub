@@ -965,21 +965,31 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const handleForgotPasswordOTP = async () => {
     setLoading(true);
     try {
-      await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
-      // Store the formatted phone in the same format used by send-otp function
-      let formattedPhone = phoneNumber;
-      if (countryCode === '+98') {
-        let cleanPhone = phoneNumber.replace(/\s|-/g, '');
-        if (cleanPhone.startsWith('0')) {
-          cleanPhone = cleanPhone.substring(1);
+      const isEmail = isEmailInput(phoneNumber);
+      if (isEmail) {
+        const emailId = phoneNumber.trim().toLowerCase();
+        await rafieiAuth.sendEmailOTP(emailId);
+        setOtpIdentifierType('email');
+        setFormattedPhoneForOTP(emailId);
+      } else if (countryCode !== '+98' && existingUser?.email) {
+        await rafieiAuth.sendEmailOTP(existingUser.email);
+        setOtpIdentifierType('email');
+        setFormattedPhoneForOTP(existingUser.email);
+      } else {
+        await rafieiAuth.sendSMSOTP(phoneNumber, countryCode);
+        let formattedPhone = phoneNumber;
+        if (countryCode === '+98') {
+          let cleanPhone = phoneNumber.replace(/\s|-/g, '');
+          if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1);
+          formattedPhone = `${countryCode}${cleanPhone}`;
         }
-        formattedPhone = `${countryCode}${cleanPhone}`;
+        setOtpIdentifierType('phone');
+        setFormattedPhoneForOTP(formattedPhone);
       }
-      setFormattedPhoneForOTP(formattedPhone);
       setCurrentStep('forgot-otp');
       toast.success('کد بازیابی ارسال شد');
     } catch (error: any) {
-      toast.error('خطا در ارسال کد بازیابی');
+      toast.error(error.message || 'خطا در ارسال کد بازیابی');
     } finally {
       setLoading(false);
     }
@@ -989,7 +999,11 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
     if (code.length !== 4) return;
     setLoading(true);
     try {
-      await rafieiAuth.verifyOTP(formattedPhoneForOTP, code, countryCode);
+      if (otpIdentifierType === 'email') {
+        await rafieiAuth.verifyEmailOTP(formattedPhoneForOTP, code);
+      } else {
+        await rafieiAuth.verifyOTP(formattedPhoneForOTP, code, countryCode);
+      }
       setCurrentStep('reset-password');
       setOtpVerified(true);
       setOtpCode('');
