@@ -4769,10 +4769,17 @@ export type Database = {
       }
       telegram_login_tokens: {
         Row: {
+          contact_otp_code: string | null
+          contact_otp_expires_at: string | null
           created_at: string
           expires_at: string
           first_name: string | null
           otp_code: string | null
+          pending_country_code: string | null
+          pending_email: string | null
+          pending_first_name: string | null
+          pending_phone: string | null
+          phone_verified: boolean
           telegram_chat_id: number | null
           telegram_username: string | null
           token: string
@@ -4780,10 +4787,17 @@ export type Database = {
           verified: boolean
         }
         Insert: {
+          contact_otp_code?: string | null
+          contact_otp_expires_at?: string | null
           created_at?: string
           expires_at?: string
           first_name?: string | null
           otp_code?: string | null
+          pending_country_code?: string | null
+          pending_email?: string | null
+          pending_first_name?: string | null
+          pending_phone?: string | null
+          phone_verified?: boolean
           telegram_chat_id?: number | null
           telegram_username?: string | null
           token: string
@@ -4791,10 +4805,17 @@ export type Database = {
           verified?: boolean
         }
         Update: {
+          contact_otp_code?: string | null
+          contact_otp_expires_at?: string | null
           created_at?: string
           expires_at?: string
           first_name?: string | null
           otp_code?: string | null
+          pending_country_code?: string | null
+          pending_email?: string | null
+          pending_first_name?: string | null
+          pending_phone?: string | null
+          phone_verified?: boolean
           telegram_chat_id?: number | null
           telegram_username?: string | null
           token?: string

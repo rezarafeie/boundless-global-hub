@@ -2749,13 +2749,63 @@ async function handleUpdate(update: any) {
       })
       .eq('token', loginToken);
     await sendMessage(chat_id, [
-      '🔐 <b>کد ورود به آکادمی</b>',
+      '🔐 <b>Academy login code / کد ورود به آکادمی</b>',
       '',
-      `کد یکبار مصرف شما: <code>${otp}</code>`,
+      `One-time code: <code>${otp}</code>`,
       '',
-      'این کد را در صفحه ورود وب‌سایت وارد کنید.',
-      'اعتبار: ۱۵ دقیقه',
+      'Enter this code on the website to finish signing in.',
+      'Valid for 15 minutes.',
     ].join('\n'));
+    // Ask the user to share their phone so registration can skip the second OTP.
+    await tgCall('sendMessage', {
+      chat_id,
+      text: '📱 Optional: tap the button below to share your phone with the academy so registration is one-tap.',
+      reply_markup: {
+        keyboard: [[{ text: '📱 Share my phone', request_contact: true }]],
+        resize_keyboard: true,
+        one_time_keyboard: true,
+      },
+    });
+    return;
+  }
+
+  // ===== Contact share (from "Share my phone" button after login deep-link) =====
+  if (msg?.contact?.phone_number) {
+    const rawPhone = String(msg.contact.phone_number).replace(/\s|-/g, '');
+    const normalized = rawPhone.startsWith('+') ? rawPhone : `+${rawPhone}`;
+    const countryCode = normalized.startsWith('+98') ? '+98'
+      : normalized.startsWith('+1') ? '+1'
+      : normalized.startsWith('+44') ? '+44'
+      : normalized.startsWith('+49') ? '+49'
+      : `+${normalized.slice(1, 3)}`;
+    // Attach to the most recent unverified login token for this chat
+    const { data: tokRow } = await supabase
+      .from('telegram_login_tokens')
+      .select('token, expires_at')
+      .eq('telegram_chat_id', chat_id)
+      .eq('verified', false)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (tokRow && new Date(tokRow.expires_at) > new Date()) {
+      await supabase.from('telegram_login_tokens').update({
+        pending_phone: normalized,
+        pending_country_code: countryCode,
+        phone_verified: true,
+        updated_at: new Date().toISOString(),
+      }).eq('token', tokRow.token);
+      await tgCall('sendMessage', {
+        chat_id,
+        text: '✅ Phone shared. You can finish on the website now.',
+        reply_markup: { remove_keyboard: true },
+      });
+    } else {
+      await tgCall('sendMessage', {
+        chat_id,
+        text: 'Thanks! No active login session found, please retry from the website.',
+        reply_markup: { remove_keyboard: true },
+      });
+    }
     return;
   }
 
