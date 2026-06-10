@@ -10,14 +10,39 @@ interface Props {
   userName?: string;
   usdRate?: number | null;
   error?: boolean;
+  answers?: Record<string, string>;
 }
 
 const formatIRR = (n: number) =>
   new Intl.NumberFormat('fa-IR').format(Math.round(n));
 
-const renderHtml = (raw: string, userName?: string, usdRate?: number | null) => {
+const MINDSET_REJECT_17 =
+  'نه فکر میکنم نگرشی که الان دارم خوبه. یه عمر با همین فرمون زندگی کردم. حالا تغییرش بدم؟ عمرا!';
+const PAYMENT_REJECT_20 =
+  'نه فکر نمیکنم آماده پرداخت بهایی باشم! فعلا میخوام همینطوری برا خودم بگردم تا ببینم چی میشه';
+
+const rewriteRejectReason = (html: string, answers?: Record<string, string>) => {
+  if (!html.includes('قصد تغییر نگرش برای ورود و پرداخت بهای')) return html;
+  const a = answers || {};
+  const mindsetReject = a['17'] === MINDSET_REJECT_17;
+  const paymentReject = a['20'] === PAYMENT_REJECT_20;
+  let reason = 'قصد تغییر نگرش برای ورود و پرداخت بهای مسیر بدون مرز رو ندارید';
+  if (mindsetReject && !paymentReject) reason = 'قصد تغییر نگرش برای ورود به مسیر بدون مرز رو ندارید';
+  else if (!mindsetReject && paymentReject) reason = 'قصد پرداخت بهای مسیر بدون مرز رو ندارید';
+  return html.replace(
+    /قصد تغییر نگرش برای ورود و پرداخت بهای مسیر بدون مرز رو ندارید/g,
+    reason,
+  );
+};
+
+const renderHtml = (
+  raw: string,
+  userName?: string,
+  usdRate?: number | null,
+  answers?: Record<string, string>,
+) => {
   const safeName = (userName || '').trim();
-  let replaced = raw
+  let replaced = rewriteRejectReason(raw, answers)
     .replace(/\{user:display_name\}/g, safeName || 'دوست من')
     .replace(/\{Name:1\}/g, safeName || 'دوست من');
 
@@ -32,7 +57,7 @@ const renderHtml = (raw: string, userName?: string, usdRate?: number | null) => 
   return { __html: replaced };
 };
 
-export const SmartTestField: React.FC<Props> = ({ field, value, onChange, userName, usdRate, error }) => {
+export const SmartTestField: React.FC<Props> = ({ field, value, onChange, userName, usdRate, error, answers }) => {
   if (field.kind === 'page') return null;
 
   if (field.kind === 'html') {
@@ -40,7 +65,7 @@ export const SmartTestField: React.FC<Props> = ({ field, value, onChange, userNa
       <div
         className="text-foreground/90 leading-loose [&_a]:text-primary [&_b]:font-bold [&_h2]:text-xl [&_h2]:font-bold [&_iframe]:w-full [&_iframe]:h-full"
         dir="rtl"
-        dangerouslySetInnerHTML={renderHtml(field.html, userName, usdRate)}
+        dangerouslySetInnerHTML={renderHtml(field.html, userName, usdRate, answers)}
       />
     );
   }

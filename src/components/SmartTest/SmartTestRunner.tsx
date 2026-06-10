@@ -533,6 +533,7 @@ export const SmartTestRunner: React.FC = () => {
               userName={userName}
               usdRate={usdRate}
               error={errors.has(f.id)}
+              answers={answers}
             />
           </div>
         ))}
