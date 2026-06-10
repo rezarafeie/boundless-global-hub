@@ -21,6 +21,7 @@ const renderHtml = (raw: string, userName?: string) => {
 };
 
 export const SmartTestField: React.FC<Props> = ({ field, value, onChange, userName }) => {
+  if (field.kind === 'page') return null;
   if (field.kind === 'html') {
     return (
       <div
