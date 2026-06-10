@@ -202,17 +202,7 @@ class RafieiAuthService {
     return { user, session_token };
   }
 
-  // Send email OTP using Supabase Auth
-  async sendEmailOTP(email: string): Promise<void> {
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email,
-      options: {
-        shouldCreateUser: false
-      }
-    });
-
-    if (error) throw error;
-  }
+  // (sendEmailOTP defined below via Gmail edge function)
 
   // Send SMS OTP using existing edge function
   async sendSMSOTP(phone: string, countryCode: string = '+98'): Promise<void> {
