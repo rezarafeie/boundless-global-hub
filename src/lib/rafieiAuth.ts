@@ -264,6 +264,28 @@ class RafieiAuthService {
     }
   }
 
+  // Send email OTP via Gmail edge function
+  async sendEmailOTP(email: string): Promise<void> {
+    console.log('✉️ Sending email OTP to:', email);
+    const { data, error } = await supabase.functions.invoke('send-otp', {
+      body: { email },
+    });
+    if (error || !data?.success) {
+      throw new Error(data?.error || error?.message || 'خطا در ارسال کد ایمیل');
+    }
+  }
+
+  // Verify email OTP
+  async verifyEmailOTP(email: string, otpCode: string): Promise<void> {
+    console.log('🔐 Verifying email OTP:', email);
+    const { data, error } = await supabase.functions.invoke('verify-otp', {
+      body: { email, otpCode },
+    });
+    if (error || !data?.success) {
+      throw new Error(data?.error || 'کد تأیید نامعتبر است');
+    }
+  }
+
   // Set password for existing user
   async setPasswordForUser(identifier: string, password: string): Promise<{ user: RafieiUser; session_token: string }> {
     const type = this.detectInputType(identifier);
