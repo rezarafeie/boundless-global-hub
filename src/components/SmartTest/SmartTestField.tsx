@@ -9,25 +9,38 @@ interface Props {
   value: string;
   onChange: (id: string, v: string) => void;
   userName?: string;
+  usdRate?: number | null;
 }
 
-const renderHtml = (raw: string, userName?: string) => {
-  // Replace common GF merge tags
+const formatIRR = (n: number) =>
+  new Intl.NumberFormat('fa-IR').format(Math.round(n));
+
+const renderHtml = (raw: string, userName?: string, usdRate?: number | null) => {
   const safeName = (userName || '').trim();
-  const replaced = raw
+  let replaced = raw
     .replace(/\{user:display_name\}/g, safeName || 'دوست من')
     .replace(/\{Name:1\}/g, safeName || 'دوست من');
+
+  // Replace legacy currency shortcode with live USD/IRR rate
+  const rateText = usdRate
+    ? `${formatIRR(usdRate)} تومان`
+    : 'در حال دریافت نرخ روز...';
+  replaced = replaced.replace(
+    /\[mnswmc_currency[^\]]*\]/g,
+    `<b class="text-primary">${rateText}</b>`,
+  );
+
   return { __html: replaced };
 };
 
-export const SmartTestField: React.FC<Props> = ({ field, value, onChange, userName }) => {
+export const SmartTestField: React.FC<Props> = ({ field, value, onChange, userName, usdRate }) => {
   if (field.kind === 'page') return null;
   if (field.kind === 'html') {
     return (
       <div
-        className="prose prose-sm dark:prose-invert max-w-none text-foreground leading-loose [&_a]:text-primary [&_b]:font-bold [&_h2]:text-xl [&_h2]:font-bold"
+        className="prose prose-sm dark:prose-invert max-w-none text-foreground leading-loose [&_a]:text-primary [&_b]:font-bold [&_h2]:text-xl [&_h2]:font-bold [&_iframe]:w-full [&_iframe]:h-full"
         dir="rtl"
-        dangerouslySetInnerHTML={renderHtml(field.html, userName)}
+        dangerouslySetInnerHTML={renderHtml(field.html, userName, usdRate)}
       />
     );
   }
@@ -48,7 +61,7 @@ export const SmartTestField: React.FC<Props> = ({ field, value, onChange, userNa
   if (field.kind === 'radio') {
     return (
       <div className="space-y-3" dir="rtl">
-        <Label className="text-base font-semibold text-foreground">
+        <Label className="text-base font-semibold text-foreground text-right block">
           {field.label}
           {field.required ? <span className="text-destructive"> *</span> : null}
         </Label>
@@ -63,12 +76,12 @@ export const SmartTestField: React.FC<Props> = ({ field, value, onChange, userNa
               <label
                 key={id}
                 htmlFor={id}
-                className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 text-sm transition-colors hover:bg-muted/50 ${
+                className={`flex flex-row-reverse cursor-pointer items-start gap-3 rounded-lg border p-4 text-sm transition-colors hover:bg-muted/50 ${
                   value === c.value ? 'border-primary bg-primary/5' : 'border-border'
                 }`}
               >
-                <RadioGroupItem id={id} value={c.value} className="mt-1" />
-                <span className="leading-relaxed">{c.label}</span>
+                <RadioGroupItem id={id} value={c.value} className="mt-1 shrink-0" />
+                <span className="flex-1 text-right leading-relaxed">{c.label}</span>
               </label>
             );
           })}
@@ -80,17 +93,19 @@ export const SmartTestField: React.FC<Props> = ({ field, value, onChange, userNa
   // text / email / number / tel
   return (
     <div className="space-y-2" dir="rtl">
-      <Label htmlFor={field.id} className="text-base font-semibold text-foreground">
+      <Label htmlFor={field.id} className="text-base font-semibold text-foreground text-right block">
         {field.label}
-        {field.required ? <span className="text-destructive"> *</span> : null}
+        {(field as any).required ? <span className="text-destructive"> *</span> : null}
       </Label>
       <Input
         id={field.id}
         type={field.kind === 'number' ? 'number' : field.kind === 'email' ? 'email' : 'text'}
         inputMode={field.kind === 'tel' ? 'tel' : field.kind === 'number' ? 'numeric' : undefined}
-        placeholder={field.placeholder}
+        placeholder={(field as any).placeholder}
         value={value}
         onChange={(e) => onChange(field.id, e.target.value)}
+        className="text-right"
+        dir="rtl"
       />
     </div>
   );
