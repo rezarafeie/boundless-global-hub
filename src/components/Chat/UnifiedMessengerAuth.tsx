@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { detectCountryCode, formatPhoneWithCountryCode, getCountryCodeOptions } from '@/lib/countryCodeUtils';
 import useGoogleAuthSettings from '@/hooks/useGoogleAuthSettings';
 import { rafieiAuth } from '@/lib/rafieiAuth';
+import TelegramAuthPanel from '@/components/Chat/TelegramAuthPanel';
 
 interface UnifiedMessengerAuthProps {
   onAuthenticated: (sessionToken: string, userName: string, user: MessengerUser) => void;
@@ -56,6 +57,7 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
   const [isGoogleLinking, setIsGoogleLinking] = useState(false);
   const [formattedPhoneForOTP, setFormattedPhoneForOTP] = useState('');
   const [otpVerified, setOtpVerified] = useState(false); // Track OTP verification status
+  const [authMethod, setAuthMethod] = useState<'phone' | 'telegram'>('phone');
 
   // Initialize linking flow if linkingEmail is provided
   useEffect(() => {
@@ -1075,6 +1077,27 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
       </CardHeader>
       <CardContent>
         {currentStep === 'phone' && (
+          <div className="mb-6 flex rounded-full border border-border p-1 bg-muted/30">
+            <button
+              type="button"
+              onClick={() => setAuthMethod('phone')}
+              className={`flex-1 h-9 rounded-full text-sm transition-colors ${authMethod === 'phone' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+            >
+              شماره موبایل
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthMethod('telegram')}
+              className={`flex-1 h-9 rounded-full text-sm transition-colors ${authMethod === 'telegram' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+            >
+              تلگرام
+            </button>
+          </div>
+        )}
+        {currentStep === 'phone' && authMethod === 'telegram' && (
+          <TelegramAuthPanel onAuthenticated={onAuthenticated} />
+        )}
+        {currentStep === 'phone' && authMethod === 'phone' && (
           <form onSubmit={handlePhoneSubmit} className="space-y-6">
             <div className="space-y-2">
               <div className="flex border-0 border-b border-border" dir="ltr">
