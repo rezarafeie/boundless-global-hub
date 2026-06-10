@@ -8,8 +8,10 @@ const corsHeaders = {
 };
 
 function json(data: unknown, status = 200) {
+  // Always return 200 so supabase.functions.invoke doesn't swallow the body as a non-2xx error;
+  // clients should branch on `data.error` / `data.needs_email`.
   return new Response(JSON.stringify(data), {
-    status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
 
@@ -83,13 +85,17 @@ Deno.serve(async (req) => {
         })
         .select()
         .single();
-      if (insErr) return json({ error: insErr.message }, 500);
+      if (insErr) {
+        console.error('chat_users insert failed', insErr);
+        return json({ error: insErr.message }, 500);
+      }
       user = inserted;
 
       // Also create academy_users row (best-effort)
-      await supabase.from('academy_users').insert({
-        first_name: fname, last_name: '', email, phone: '', role: 'student',
+      const { error: acadErr } = await supabase.from('academy_users').insert({
+        first_name: fname, last_name: '', email, phone: '+0', role: 'student',
       });
+      if (acadErr) console.error('academy_users insert failed (non-fatal)', acadErr);
     } else {
       // Sync username if changed
       if (row.telegram_username && row.telegram_username !== user.telegram_username) {
@@ -130,6 +136,7 @@ Deno.serve(async (req) => {
       },
     });
   } catch (e) {
+    console.error('telegram-otp-verify exception', e);
     return json({ error: String((e as Error).message ?? e) }, 500);
   }
 });
