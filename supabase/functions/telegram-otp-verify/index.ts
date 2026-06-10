@@ -85,13 +85,17 @@ Deno.serve(async (req) => {
         })
         .select()
         .single();
-      if (insErr) return json({ error: insErr.message }, 500);
+      if (insErr) {
+        console.error('chat_users insert failed', insErr);
+        return json({ error: insErr.message }, 500);
+      }
       user = inserted;
 
       // Also create academy_users row (best-effort)
-      await supabase.from('academy_users').insert({
-        first_name: fname, last_name: '', email, phone: '', role: 'student',
+      const { error: acadErr } = await supabase.from('academy_users').insert({
+        first_name: fname, last_name: '', email, phone: '+0', role: 'student',
       });
+      if (acadErr) console.error('academy_users insert failed (non-fatal)', acadErr);
     } else {
       // Sync username if changed
       if (row.telegram_username && row.telegram_username !== user.telegram_username) {
