@@ -87,6 +87,7 @@ import MessengerPending from "./pages/MessengerPending";
 // Assessment and other pages
 import AssessmentCenter from "./pages/AssessmentCenter";
 import TestLanding from "./pages/Assessment/TestLanding";
+import BoundlessSmartTest from "./pages/Assessment/BoundlessSmartTest";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import UserDashboard from "./pages/Dashboard";
 import InstructorProfile from "./pages/InstructorProfile";
@@ -360,6 +361,7 @@ const App = () => {
 
                     {/* Assessment */}
                     <Route path="/assessment" element={<AssessmentCenter />} />
+                    <Route path="/assessment/boundless-smart-test" element={<BoundlessSmartTest />} />
                     <Route path="/assessment/:slug" element={<TestLanding />} />
                     <Route path="/tests" element={<Tests />} />
                     <Route path="/access" element={<TestAccess />} />
