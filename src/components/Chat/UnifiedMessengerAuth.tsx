@@ -1104,29 +1104,39 @@ const UnifiedMessengerAuth: React.FC<UnifiedMessengerAuthProps> = ({ onAuthentic
           <form onSubmit={handlePhoneSubmit} className="space-y-6">
             <div className="space-y-2">
               <div className="flex border-0 border-b border-border" dir="ltr">
-                <Select value={countryCode} onValueChange={setCountryCode}>
-                  <SelectTrigger className="w-20 border-0 rounded-none bg-transparent focus:ring-0 px-0">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                     {getCountryCodeOptions().map((country, index) => (
-                       <SelectItem key={`${country.code}-${index}`} value={country.code}>
-                         {country.flag} {country.code}
-                       </SelectItem>
-                     ))}
-                  </SelectContent>
-                </Select>
+                {!isEmailInput(phoneNumber) && (
+                  <Select value={countryCode} onValueChange={setCountryCode}>
+                    <SelectTrigger className="w-20 border-0 rounded-none bg-transparent focus:ring-0 px-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                       {getCountryCodeOptions().map((country, index) => (
+                         <SelectItem key={`${country.code}-${index}`} value={country.code}>
+                           {country.flag} {country.code}
+                         </SelectItem>
+                       ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <Input
                   id="phone"
-                  type="tel"
+                  type="text"
                   value={phoneNumber}
                   onChange={(e) => {
-                    let cleanValue = e.target.value.replace(/[^0-9]/g, '');
-                    // Remove leading zeros and plus signs
-                    cleanValue = cleanValue.replace(/^[0+]+/, '');
-                    setPhoneNumber(cleanValue);
+                    let v = e.target.value;
+                    if (isEmailInput(v)) {
+                      // Email mode: allow email characters, lowercase
+                      v = v.replace(/\s/g, '').toLowerCase();
+                    } else {
+                      v = v.replace(/[^0-9a-zA-Z@._\-+]/g, '');
+                      // If still purely numeric, strip leading 0 / +
+                      if (/^[0-9+]+$/.test(v)) {
+                        v = v.replace(/^[0+]+/, '');
+                      }
+                    }
+                    setPhoneNumber(v);
                   }}
-                  placeholder="شماره تلفن"
+                  placeholder="شماره تلفن یا ایمیل"
                   required
                   dir="ltr"
                   className="flex-1 h-12 border-0 rounded-none bg-transparent px-2 focus-visible:ring-0 placeholder:text-muted-foreground"
