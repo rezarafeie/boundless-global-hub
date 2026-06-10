@@ -11,14 +11,18 @@ serve(async (req) => {
   }
 
   try {
-    const { answers, outcome, trackId, fullName, note } = await req.json();
+    const { answers, outcome, trackId, fullName, note, stream } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
 
     const systemPrompt = `تو رضا رفیعی هستی، مربی پروژه بدون مرز. یک پیام شخصی، صمیمی و انگیزه‌بخش به فارسی برای کاربر بنویس (حدود ۱۵۰ تا ۲۵۰ کلمه) که نتیجه تست هوشمندش رو تفسیر کنه.
 - اگه outcome=passed: تبریک بگو، نقاط قوتش رو بر اساس پاسخ‌هاش بگو، و انگیزه بده برای ثبت‌نام در دوره بدون مرز.
 - اگه outcome=rejected: با احترام بگو که الان شرایطش مناسب نیست، چه چیزی باید تغییر کنه، و امیدوار نگهش دار.
-لحن: گرم، دوستانه، شخصی. از نام کاربر استفاده کن. پاسخت فقط متن خام فارسی باشه، بدون markdown یا توضیح اضافی.`;
+
+قوانین خروجی (مهم):
+- فقط متن خام فارسی. هیچ markdown ای استفاده نکن: نه **، نه ##، نه *، نه backtick، نه - برای لیست.
+- پاراگراف‌های کوتاه با خط جدید جدا کن.
+- لحن گرم، دوستانه و شخصی. از نام کاربر استفاده کن.`;
 
     const userPrompt = `نام کاربر: ${fullName || 'دوست عزیز'}
 مسیر انتخابی: ${trackId}
@@ -40,6 +44,7 @@ ${JSON.stringify(answers, null, 2).slice(0, 2500)}`;
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.85,
+        stream: !!stream,
       }),
     });
 
@@ -55,9 +60,19 @@ ${JSON.stringify(answers, null, 2).slice(0, 2500)}`;
       throw new Error(`AI ${aiResponse.status}`);
     }
 
+    if (stream && aiResponse.body) {
+      return new Response(aiResponse.body, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }
+
     const aiData = await aiResponse.json();
     const message = aiData.choices?.[0]?.message?.content || '';
-
     return new Response(JSON.stringify({ message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
