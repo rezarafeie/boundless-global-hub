@@ -1,92 +1,79 @@
-# Boundless Smart Test — Phase 1: Exact Port
+# Telegram Login/Register for Academy
 
-Re-implement the existing WordPress/Gravity Forms test (`تست هوشمند بدون مرز`) inside the Academy as a modern, RTL, mobile-first multi-step quiz. Phase 1 = faithful port of the same questions, branching, copy and outcomes. Phase 2 (later) will layer AI personalization on top.
+Add an alternative login/register flow using a Telegram bot, alongside the existing phone/password flow. User can manually toggle to Telegram from the auth screen.
 
-## What the test does (recap from the JSON export)
-
-Main form `تست جامع بدون مرز` collects: name, family, phone, email, employment status, business stance, interest area, mindset, income, age, notes. Branching uses two key answers:
-
-- **Field 19 — interest area** (4 options):
-  - فروشگاه اینترنتی → **dropshipping** track
-  - آژانس / خدمات → **freelancing** track
-  - بازار مالی → **NFT/trading** track
-  - آکادمی آنلاین → **academy** track
-- **Field 25 — mindset** (2 options): pessimistic (`نگرش ۱`) vs optimistic (`نگرش ۲`).
-
-→ 4 × 2 = **8 result tracks**, each a sub-form (دراپ شیپینگ ۱/۲، فریلنسری ۱/۲، ان‌اف‌تی ۱/۲، آکادمی ۱/۲). Every sub-form follows the same skeleton: prefilled context → ~5 commitment questions (time, expertise, familiarity with the business, willingness to change mindset, willingness to pay the price, ready to see result, perceived value in $, ready to start now) with branching encouragement/objection-handling HTML blocks, an Aparat video, then either:
-- **Congrats screen** → CTA to buy the Boundless course (with price), or
-- **Rejected screen** → retry button.
-
-## Deliverable in Phase 1
-
-A new route `/assessment/boundless-smart-test` (and a card in the existing Assessment Center) that runs the full flow end-to-end with the exact copy, choices, branching rules, Aparat video embeds, congrats/rejected outcomes, and a payment CTA pointing to the existing Boundless course checkout. Submissions stored in Supabase for follow-up.
-
-## Architecture
+## Flow (Bot-based OTP)
 
 ```text
-src/
-  pages/Assessment/BoundlessSmartTest.tsx        // route + shell
-  components/SmartTest/
-    SmartTestRunner.tsx                          // step engine (page-by-page, conditional visibility)
-    SmartTestField.tsx                           // renders text/radio/email/number/html
-    SmartTestProgress.tsx                        // progress bar + back/next
-    ResultCongrats.tsx                           // pass screen + CTA
-    ResultRejected.tsx                           // fail screen + retry
-  data/boundlessSmartTest/
-    mainForm.ts                                  // ported field list + conditions for form 2
-    tracks/
-      dropshipping1.ts  dropshipping2.ts
-      freelancing1.ts   freelancing2.ts
-      nft1.ts           nft2.ts
-      academy1.ts       academy2.ts
-    index.ts                                     // routing: (interest, mindset) → track
-    types.ts                                     // Field, Choice, Condition, Page, Track
-  lib/smartTestEngine.ts                         // evaluate conditional logic, compute pass/fail
+Auth screen
+  └─ [Phone] | [Telegram]  ← toggle
+        │
+        ▼ Telegram tab
+  1) Show button: "Open @AcademyBot on Telegram"
+     → Deep link: t.me/<bot>?start=<login_token>
+  2) User opens bot, taps Start
+     → telegram-webhook captures chat_id+username,
+       links to login_token, sends 6-digit OTP in chat
+  3) UI polls /telegram-login-status?token=login_token
+     → as soon as chat_id is bound, show OTP input
+  4) User pastes code → telegram-otp-verify
+     - Existing telegram user → issue session, login
+     - New user → ask for email + first name → create
+       chat_users + academy_users → issue session
 ```
 
-Data model (TypeScript only — no SQL changes for the form definition):
+## Database (1 migration)
 
-```ts
-type Condition = { all?: Rule[]; any?: Rule[] };
-type Rule = { field: string; op: 'is'|'isNot'|'contains'; value: string };
-type Field =
-  | { kind:'text'|'email'|'number'|'tel'; id:string; label:string; required?:boolean; placeholder?:string; showIf?:Condition }
-  | { kind:'radio'; id:string; label:string; choices:{label:string;value:string}[]; required?:boolean; showIf?:Condition }
-  | { kind:'html'; id:string; html:string; showIf?:Condition }
-  | { kind:'video'; id:string; aparatId:string; showIf?:Condition };
-type Page = { id:string; fields:Field[] };
-type Track = { id:string; title:string; pages:Page[]; passWhen:Condition; rejectWhen:Condition };
+```sql
+-- Add Telegram identity to chat_users
+ALTER TABLE public.chat_users
+  ADD COLUMN IF NOT EXISTS telegram_chat_id BIGINT UNIQUE,
+  ADD COLUMN IF NOT EXISTS telegram_username TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_chat_users_telegram_chat_id
+  ON public.chat_users(telegram_chat_id);
+
+-- Short-lived login tokens (deep link payload)
+CREATE TABLE public.telegram_login_tokens (
+  token TEXT PRIMARY KEY,
+  otp_code TEXT,
+  telegram_chat_id BIGINT,
+  telegram_username TEXT,
+  first_name TEXT,
+  verified BOOLEAN NOT NULL DEFAULT false,
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '15 minutes'),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE ON public.telegram_login_tokens TO anon, authenticated;
+GRANT ALL ON public.telegram_login_tokens TO service_role;
+ALTER TABLE public.telegram_login_tokens ENABLE ROW LEVEL SECURITY;
+-- access is via edge functions using service_role; no client policies needed
 ```
 
-The engine walks pages sequentially, hides fields whose `showIf` doesn't match current answers, validates required fields, and finally evaluates `passWhen` / `rejectWhen` to decide which result screen to render.
+## Edge functions (4, all `verify_jwt = false`)
 
-## Persistence (Supabase)
+- `telegram-login-start` — POST, creates a `login_token`, returns `{ token, bot_url }`.
+- `telegram-webhook` — Telegram → bot. Handles `/start <token>` and free-text `/login`. Stores chat_id+username on the token row, generates 6-digit OTP, sends to user via `sendMessage`.
+- `telegram-login-status` — GET `?token=…` returns `{ bound: bool, telegram_username, first_name }` so the UI can advance to OTP input.
+- `telegram-otp-verify` — POST `{ token, code, email?, firstName? }`. Verifies OTP, looks up `chat_users` by `telegram_chat_id`; if missing, requires `email` + `firstName` and creates `chat_users` + `academy_users` row, then issues a unified session (re-use `messengerService.createSession` pattern).
 
-Reuse existing patterns; add ONE new table for submissions (kept simple — no per-answer rows in Phase 1):
+Bot API calls go through the existing Telegram helper pattern (`supabase/functions/_shared/telegram.ts`), which already uses `TELEGRAM_BOT_TOKEN`. After deploy, call `telegram-set-webhook` (existing function) so updates route to our new `telegram-webhook` — but note the project already has a `telegram-webhook` function for another bot. We'll add a small router switch inside it OR use a separate path. Cleanest: **add the login handler inside the existing `telegram-webhook`** and branch on `/start <token>` text.
 
-- `boundless_smart_test_submissions`
-  - domain fields: `track_id`, `full_name`, `phone`, `email`, `interest`, `mindset`, `outcome` (`passed`|`rejected`|`abandoned`), `answers` (jsonb), `chat_user_id` (nullable FK to `chat_users.id` for logged-in users)
-  - Access rules (plain English):
-    - Anyone (including not-logged-in visitors) can create a submission.
-    - Logged-in chat users can read their own submissions.
-    - Admins can read all submissions.
-  - Plus standard `id` / `created_at` / `updated_at`.
+## Frontend (`src/components/Chat/UnifiedMessengerAuth.tsx`)
 
-(Schema is added via a Supabase migration; correct GRANTs + RLS will be included.)
+- Add a small tab/toggle at the top: `[شماره موبایل] [تلگرام]`.
+- New steps: `tg-open` → `tg-otp` → `tg-email` (only if new user).
+- On mount of Telegram tab, call `telegram-login-start` → render "Open Telegram bot" button (`window.open(bot_url)`) + countdown.
+- Poll `telegram-login-status` every 2s until `bound=true`, then show 6-digit `InputOTP`.
+- Submit `telegram-otp-verify`; on `needs_email` response, show email + first name form, resubmit.
+- On success, call existing `onAuthenticated(sessionToken, name, user)`.
 
-## Outcome → payment CTA
+## Secrets
 
-Congrats screen reads the Boundless course price/slug from the existing `courses` table (slug used today on the Boundless landing page) and links to its existing checkout. No new payment logic.
+Requires existing `TELEGRAM_BOT_TOKEN` (already configured for other flows — will verify with `fetch_secrets`; if missing, prompt user to add).
 
-## Out of scope for Phase 1 (saved for Phase 2)
+## Out of scope
 
-- AI personalization of responses / copy.
-- Admin dashboard for submissions (data is in Supabase; admins can query).
-- A/B testing or variant editing UI.
-- Importing legacy submissions from WordPress.
-
-## Open questions before I build
-
-1. Course slug to link to from the congrats CTA — is it the existing `boundless-taste` course, or a different "Boundless" paid course in the academy?
-2. For the 8 Aparat videos referenced in the sub-forms, should I keep the **exact same Aparat IDs** from the JSON export, or do you want to swap them for new ones?
-3. Login requirement: allow anonymous test-takers (recommended, matches current WP behavior) or require Academy login before starting?
+- No changes to Iranian phone flow.
+- No automatic geo-toggle (per user choice "manual toggle").
+- No Telegram avatar storage.
