@@ -270,6 +270,7 @@ const App = () => {
                     <Route path="/enroll/pending" element={<EnrollPending />} />
                     <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
                     <Route path="/enroll/admin/tests" element={<EnrollAdminTests />} />
+                    <Route path="/enroll/admin/boundless-smart-test" element={<BoundlessSmartTestSubmissions />} />
                     <Route path="/test-enrollment/admin/:id" element={<TestEnrollmentAdminDetails />} />
                     <Route path="/enroll/admin/email" element={<EnrollmentEmailAdmin />} />
                     <Route path="/admin/course/create" element={<CourseCreate />} />
