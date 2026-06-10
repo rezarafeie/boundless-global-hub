@@ -112,8 +112,7 @@ export const SmartTestRunner: React.FC = () => {
     const htmlReject = visible.some(
       (f) =>
         f.kind === 'html' &&
-        (f.html.includes('متاسفانه') ||
-          f.html.includes('واجد شرایط نیستید') ||
+        (f.html.includes('واجد شرایط نیستید') ||
           f.html.includes('جلوتر نمیتونیم بریم')),
     );
     if (htmlReject) return true;
