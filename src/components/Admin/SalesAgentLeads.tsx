@@ -28,7 +28,9 @@ import {
   DollarSign,
   X,
   Download,
-  Upload
+  Upload,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
