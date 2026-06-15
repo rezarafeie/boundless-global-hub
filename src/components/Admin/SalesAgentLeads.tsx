@@ -381,8 +381,14 @@ const SalesAgentLeads: React.FC = () => {
       filteredLeads = filteredLeads.filter(l => !l.chat_user_id || !excludedUserIds.has(l.chat_user_id));
     }
 
+    filteredLeads.sort((a, b) => {
+      const ta = new Date(a.assigned_at).getTime();
+      const tb = new Date(b.assigned_at).getTime();
+      return assignedSort === 'desc' ? tb - ta : ta - tb;
+    });
+
     setLeads(filteredLeads);
-  }, [allLeads, searchTerm, courseFilter, crmFilter, paymentStatusFilter, crmStatusFilter, excludeCourseFilter, excludedUserIds]);
+  }, [allLeads, searchTerm, courseFilter, crmFilter, paymentStatusFilter, crmStatusFilter, excludeCourseFilter, excludedUserIds, assignedSort]);
 
   const openLeadDetail = async (lead: Lead) => {
     setSelectedLead(lead);
