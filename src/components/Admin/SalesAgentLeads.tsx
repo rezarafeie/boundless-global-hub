@@ -817,26 +817,39 @@ const SalesAgentLeads: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">#</TableHead>
                   <TableHead className="w-12">CRM</TableHead>
                   <TableHead>نام</TableHead>
                   <TableHead>تلفن</TableHead>
                   <TableHead>دوره</TableHead>
                   <TableHead>وضعیت پرداخت</TableHead>
                   <TableHead>مبلغ</TableHead>
-                  <TableHead>تاریخ واگذاری</TableHead>
+                  <TableHead>
+                    <button
+                      type="button"
+                      onClick={() => setAssignedSort(s => s === 'desc' ? 'asc' : 'desc')}
+                      className="inline-flex items-center gap-1 hover:text-primary transition-colors"
+                    >
+                      تاریخ واگذاری
+                      {assignedSort === 'desc' ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />}
+                    </button>
+                  </TableHead>
                   <TableHead>عملیات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {leads.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
                       لیدی یافت نشد
                     </TableCell>
                   </TableRow>
                 ) : (
-                  leads.map(lead => (
+                  leads.map((lead, index) => (
                     <TableRow key={lead.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openLeadDetail(lead)}>
+                      <TableCell className="text-sm text-muted-foreground font-medium">
+                        {(index + 1).toLocaleString('fa-IR')}
+                      </TableCell>
                       <TableCell className="text-lg">
                         {getCRMStatusIcon(lead.crm_status)}
                       </TableCell>
