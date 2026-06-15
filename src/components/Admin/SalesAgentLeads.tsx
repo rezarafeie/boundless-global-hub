@@ -146,6 +146,9 @@ const SalesAgentLeads: React.FC = () => {
     untouched: 0
   });
 
+  // Sort by assigned_at
+  const [assignedSort, setAssignedSort] = useState<'desc' | 'asc'>('desc');
+
   const fetchLeads = async () => {
     if (!user?.messengerData?.id) return;
     
