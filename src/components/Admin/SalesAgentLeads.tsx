@@ -150,6 +150,9 @@ const SalesAgentLeads: React.FC = () => {
 
   // Sort by assigned_at
   const [assignedSort, setAssignedSort] = useState<'desc' | 'asc'>('desc');
+  // Filter by assigned_at date range (YYYY-MM-DD strings)
+  const [assignedFrom, setAssignedFrom] = useState<string>('');
+  const [assignedTo, setAssignedTo] = useState<string>('');
 
   const fetchLeads = async () => {
     if (!user?.messengerData?.id) return;
