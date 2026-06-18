@@ -248,6 +248,22 @@ const DailyReport = () => {
               </TabsList>
 
               <TabsContent value="sales" className="space-y-4">
+                <div className="flex items-center justify-between gap-2 p-3 rounded-lg bg-muted/40 border">
+                  <div className="text-xs text-muted-foreground leading-relaxed">
+                    بر اساس فعالیت امروز شما در پنل (یادداشت‌های CRM و پیگیری‌ها) فیلدها به‌صورت خودکار پر می‌شوند. مقادیر قابل ویرایش هستند.
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={autoDetectSalesActivity}
+                    disabled={autoDetecting}
+                    className="gap-2 shrink-0"
+                  >
+                    {autoDetecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                    تشخیص خودکار
+                  </Button>
+                </div>
                 <div className="grid gap-4">
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2">
