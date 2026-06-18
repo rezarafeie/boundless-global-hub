@@ -333,6 +333,33 @@ const UserCRM: React.FC<UserCRMProps> = ({
 
     setIsSubmitting(true);
     try {
+      // Edit mode: update existing note and exit early (no follow-up/webhook re-trigger)
+      if (editingNoteId) {
+        const { error: updateError } = await supabase
+          .from('crm_notes')
+          .update({
+            content: newNote.content,
+            type: newNote.type,
+            status: newNote.status,
+            course_id: newNote.course_id === 'none' ? null : newNote.course_id,
+          })
+          .eq('id', editingNoteId);
+
+        if (updateError) throw updateError;
+
+        toast({ title: 'موفق', description: 'یادداشت با موفقیت ویرایش شد.' });
+        setEditingNoteId(null);
+        setNewNote({
+          content: '', type: 'note', status: 'در انتظار پرداخت',
+          course_id: preselectedCourseId || 'none',
+          schedule_followup: false, followup_title: '',
+          followup_date_option: 'tomorrow', followup_time: '09:00', followup_custom_date: ''
+        });
+        setIsAddingNote(false);
+        await fetchCRMNotes();
+        return;
+      }
+
       // Insert CRM note and get the created record
       const { data: createdNote, error } = await supabase
         .from('crm_notes')
