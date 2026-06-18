@@ -323,14 +323,14 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                 <>
                   {/* Support Conversations */}
                   {filteredSupportConversations.length > 0 && (
-                    <div className="mb-4">
+                    <div className="mb-4 space-y-1">
                       {filteredSupportConversations.map((supportConv) => (
                         <div
                           key={`support-${supportConv.id}`}
                           onClick={() => handleSupportConversationSelect(supportConv)}
-                          className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-muted"
+                          className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-muted h-[64px]"
                         >
-                          <Avatar className="w-10 h-10">
+                          <Avatar className="w-10 h-10 shrink-0">
                             <AvatarFallback 
                               style={{ backgroundColor: '#3B82F6' }}
                               className="text-white font-medium"
@@ -338,10 +338,10 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                               <Headphones className="w-5 h-5" />
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 overflow-hidden">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="text-sm font-medium truncate text-right">{supportConv.name}</p>
-                              <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium truncate text-right text-foreground flex-1 min-w-0">{supportConv.name || 'پشتیبانی'}</p>
+                              <div className="flex items-center gap-2 shrink-0">
                                 {supportConv.unread_count > 0 && (
                                   <div className="bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
                                     {supportConv.unread_count > 99 ? "99+" : supportConv.unread_count}
@@ -368,30 +368,30 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
 
                   {/* Group Rooms */}
                   {filteredRooms.length > 0 && (
-                    <div className="mb-4">
+                    <div className="mb-4 space-y-1">
                       {filteredRooms.map((room) => (
                         <div
                           key={room.id}
                           onClick={() => onRoomSelect(room)}
-                          className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors h-[64px] ${
                             selectedRoom?.id === room.id
                               ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
                               : 'hover:bg-muted'
                           }`}
                         >
-                          <Avatar className="w-10 h-10">
+                          <Avatar className="w-10 h-10 shrink-0">
                             <AvatarImage src={room.avatar_url} alt={room.name} />
                             <AvatarFallback 
-                              style={{ backgroundColor: getAvatarColor(room.name) }}
+                              style={{ backgroundColor: getAvatarColor(room.name || 'G') }}
                               className="text-white font-medium"
                             >
-                              {room.name.charAt(0)}
+                              {(room.name || 'G').charAt(0)}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 overflow-hidden">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="text-sm font-medium truncate text-right">{room.name}</p>
-                              <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium truncate text-right text-foreground flex-1 min-w-0">{room.name || 'گروه'}</p>
+                              <div className="flex items-center gap-2 shrink-0">
                                 <span className="text-xs text-muted-foreground">
                                   گروه
                                 </span>
@@ -410,7 +410,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
 
                   {/* Private Conversations */}
                   {filteredConversations.length > 0 && (
-                    <div className="mb-4">
+                    <div className="mb-4 space-y-1">
                       {filteredConversations.map((conversation) => (
                         <div
                           key={conversation.id}
@@ -423,13 +423,13 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                               setTimeout(() => updateConversationsList(), 100);
                             }
                           }}
-                          className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors relative ${
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors relative h-[64px] ${
                             selectedUser?.id === conversation.other_user?.id
                               ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
                               : 'hover:bg-muted'
                           }`}
                         >
-                          <Avatar className="w-10 h-10">
+                          <Avatar className="w-10 h-10 shrink-0">
                             <AvatarImage 
                               src={conversation.other_user?.avatar_url} 
                               alt={conversation.other_user?.name}
@@ -441,12 +441,12 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                               {conversation.other_user?.name?.charAt(0) || 'U'}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 overflow-hidden">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="text-sm font-medium truncate text-right">
-                                {conversation.other_user?.name || "کاربر نامشخص"}
+                              <p className="text-sm font-medium truncate text-right text-foreground flex-1 min-w-0">
+                                {conversation.other_user?.name || conversation.other_user?.username || "کاربر نامشخص"}
                               </p>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 shrink-0">
                                 {conversation.unread_count > 0 && (
                                   <div className="bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
                                     {conversation.unread_count > 99 ? "99+" : conversation.unread_count}
@@ -470,6 +470,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                       ))}
                     </div>
                   )}
+
                 </>
               )}
 
