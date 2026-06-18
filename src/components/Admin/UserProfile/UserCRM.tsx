@@ -95,6 +95,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
   
   // Form states
   const [isAddingNote, setIsAddingNote] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [newNote, setNewNote] = useState({
     content: '',
     type: 'note',
