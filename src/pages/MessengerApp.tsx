@@ -220,10 +220,17 @@ const MessengerApp = () => {
   }
 
   if (showAuth || (!isAuthenticated && !unifiedUser)) {
+    window.location.replace('/auth?redirect=/hub/messenger');
     return (
-      <MessengerAuth onAuthenticated={handleAuthenticated} />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-foreground">در حال انتقال به صفحه ورود...</p>
+        </div>
+      </div>
     );
   }
+
 
   const isOfflineMode = forceOffline || !isOnline;
   
