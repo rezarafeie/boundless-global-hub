@@ -386,6 +386,16 @@ const SalesAgentLeads: React.FC = () => {
       filteredLeads = filteredLeads.filter(l => !l.chat_user_id || !excludedUserIds.has(l.chat_user_id));
     }
 
+    // Apply assigned date range filter
+    if (assignedFrom) {
+      const fromTs = new Date(assignedFrom + 'T00:00:00').getTime();
+      filteredLeads = filteredLeads.filter(l => new Date(l.assigned_at).getTime() >= fromTs);
+    }
+    if (assignedTo) {
+      const toTs = new Date(assignedTo + 'T23:59:59').getTime();
+      filteredLeads = filteredLeads.filter(l => new Date(l.assigned_at).getTime() <= toTs);
+    }
+
     filteredLeads.sort((a, b) => {
       const ta = new Date(a.assigned_at).getTime();
       const tb = new Date(b.assigned_at).getTime();
@@ -393,7 +403,7 @@ const SalesAgentLeads: React.FC = () => {
     });
 
     setLeads(filteredLeads);
-  }, [allLeads, searchTerm, courseFilter, crmFilter, paymentStatusFilter, crmStatusFilter, excludeCourseFilter, excludedUserIds, assignedSort]);
+  }, [allLeads, searchTerm, courseFilter, crmFilter, paymentStatusFilter, crmStatusFilter, excludeCourseFilter, excludedUserIds, assignedSort, assignedFrom, assignedTo]);
 
   const openLeadDetail = async (lead: Lead) => {
     setSelectedLead(lead);
