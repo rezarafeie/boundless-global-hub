@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Phone, MessageSquare, CheckCircle, XCircle, Calendar, FileText, Send, Clock, User } from 'lucide-react';
+import { Phone, MessageSquare, CheckCircle, XCircle, Calendar, FileText, Send, Clock, User, Wand2, Loader2 } from 'lucide-react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { format } from 'date-fns-jalali';
 
