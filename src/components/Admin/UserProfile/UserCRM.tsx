@@ -647,13 +647,16 @@ const UserCRM: React.FC<UserCRMProps> = ({
         </CardContent>
       </Card>
 
-      {/* Add Note Dialog - Same as EnrollmentCRM */}
-      <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
+      {/* Add/Edit Note Dialog */}
+      <Dialog open={isAddingNote} onOpenChange={(open) => {
+        setIsAddingNote(open);
+        if (!open) setEditingNoteId(null);
+      }}>
         <DialogContent className="max-w-[95vw] w-[95vw] sm:max-w-md md:max-w-lg lg:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>افزودن یادداشت CRM</DialogTitle>
+            <DialogTitle>{editingNoteId ? 'ویرایش یادداشت CRM' : 'افزودن یادداشت CRM'}</DialogTitle>
             <DialogDescription>
-              یادداشت جدید اضافه کنید و در صورت نیاز پیگیری زمان‌بندی کنید
+              {editingNoteId ? 'یادداشت موجود را ویرایش کنید' : 'یادداشت جدید اضافه کنید و در صورت نیاز پیگیری زمان‌بندی کنید'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4" dir="rtl">
