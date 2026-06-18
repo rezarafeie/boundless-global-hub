@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Phone, MessageSquare, CheckCircle, XCircle, Calendar, FileText, Send, Clock, User } from 'lucide-react';
+import { Phone, MessageSquare, CheckCircle, XCircle, Calendar, FileText, Send, Clock, User, Wand2, Loader2 } from 'lucide-react';
 import MainLayout from '@/components/Layout/MainLayout';
 import { format } from 'date-fns-jalali';
 
@@ -142,6 +142,65 @@ const DailyReport = () => {
     }
   };
 
+  const [autoDetecting, setAutoDetecting] = useState(false);
+
+  const autoDetectSalesActivity = async () => {
+    if (!user?.messengerData?.id) {
+      toast.error('لطفا وارد حساب کاربری شوید');
+      return;
+    }
+    setAutoDetecting(true);
+    try {
+      const creatorName = user.messengerData.name;
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      const end = new Date(); end.setHours(23, 59, 59, 999);
+
+      // Pull today's CRM notes authored by this agent (created_by stores the name)
+      const { data: notes, error: notesError } = await supabase
+        .from('crm_notes')
+        .select('id, type, status, created_at, created_by')
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())
+        .eq('created_by', creatorName);
+
+      if (notesError) throw notesError;
+
+      const all = notes || [];
+      const calls_made = all.filter(n => n.type === 'call').length;
+      const crm_entries = all.length;
+      const successful_conversions = all.filter(n => n.status === 'موفق').length;
+      const failed_leads = all.filter(n => n.status === 'کنسل' || n.status === 'پاسخ نداده').length;
+
+      // Followups scheduled today linked to this agent's notes today
+      const noteIds = all.map(n => n.id);
+      let followups_scheduled = 0;
+      if (noteIds.length > 0) {
+        const { count } = await supabase
+          .from('crm_followups')
+          .select('id', { count: 'exact', head: true })
+          .in('crm_activity_id', noteIds)
+          .gte('created_at', start.toISOString())
+          .lte('created_at', end.toISOString());
+        followups_scheduled = count || 0;
+      }
+
+      setSalesData({
+        calls_made,
+        crm_entries,
+        successful_conversions,
+        failed_leads,
+        followups_scheduled,
+      });
+
+      toast.success('فعالیت‌های امروز شما به‌صورت خودکار پر شد. می‌توانید مقادیر را ویرایش کنید.');
+    } catch (e: any) {
+      console.error('Auto-detect error:', e);
+      toast.error('خطا در تشخیص خودکار فعالیت‌ها');
+    } finally {
+      setAutoDetecting(false);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <MainLayout>
@@ -189,6 +248,22 @@ const DailyReport = () => {
               </TabsList>
 
               <TabsContent value="sales" className="space-y-4">
+                <div className="flex items-center justify-between gap-2 p-3 rounded-lg bg-muted/40 border">
+                  <div className="text-xs text-muted-foreground leading-relaxed">
+                    بر اساس فعالیت امروز شما در پنل (یادداشت‌های CRM و پیگیری‌ها) فیلدها به‌صورت خودکار پر می‌شوند. مقادیر قابل ویرایش هستند.
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={autoDetectSalesActivity}
+                    disabled={autoDetecting}
+                    className="gap-2 shrink-0"
+                  >
+                    {autoDetecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                    تشخیص خودکار
+                  </Button>
+                </div>
                 <div className="grid gap-4">
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2">
