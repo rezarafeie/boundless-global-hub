@@ -597,6 +597,29 @@ const UserCRM: React.FC<UserCRMProps> = ({
                             <Button
                               variant="ghost"
                               size="sm"
+                              onClick={() => {
+                                setEditingNoteId(note.id);
+                                setNewNote({
+                                  content: note.content,
+                                  type: note.type,
+                                  status: note.status,
+                                  course_id: note.course_id || 'none',
+                                  schedule_followup: false,
+                                  followup_title: '',
+                                  followup_date_option: 'tomorrow',
+                                  followup_time: '09:00',
+                                  followup_custom_date: ''
+                                });
+                                setIsAddingNote(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-800"
+                              title="ویرایش"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleDeleteNote(note.id)}
                               className="text-red-600 hover:text-red-800"
                             >
