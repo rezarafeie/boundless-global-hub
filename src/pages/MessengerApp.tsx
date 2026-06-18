@@ -265,10 +265,10 @@ const MessengerApp = () => {
   } : null) as MessengerUser | null;
 
   if (!currentUser) {
-    return (
-      <MessengerAuth onAuthenticated={handleAuthenticated} />
-    );
+    window.location.replace('/auth?redirect=/hub/messenger');
+    return null;
   }
+
 
   return (
     <ReplyProvider>
