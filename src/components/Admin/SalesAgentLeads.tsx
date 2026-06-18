@@ -792,6 +792,19 @@ const SalesAgentLeads: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="w-[150px]">
+              <Label className="text-xs text-muted-foreground mb-1 block">واگذاری از تاریخ</Label>
+              <Input type="date" value={assignedFrom} onChange={(e) => setAssignedFrom(e.target.value)} />
+            </div>
+            <div className="w-[150px]">
+              <Label className="text-xs text-muted-foreground mb-1 block">تا تاریخ</Label>
+              <Input type="date" value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} />
+            </div>
+            {(assignedFrom || assignedTo) && (
+              <Button onClick={() => { setAssignedFrom(''); setAssignedTo(''); }} variant="ghost" size="sm" title="پاک کردن فیلتر تاریخ">
+                <X className="h-4 w-4" />
+              </Button>
+            )}
             <Button onClick={fetchLeads} disabled={loading} variant="outline" size="icon" title="بروزرسانی">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             </Button>
