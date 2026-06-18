@@ -1026,13 +1026,16 @@ const UserCRM: React.FC<UserCRMProps> = ({
                 </div>
               )}
             </div>
+            )}
             
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsAddingNote(false)}>
+              <Button variant="outline" onClick={() => { setIsAddingNote(false); setEditingNoteId(null); }}>
                 لغو
               </Button>
               <Button onClick={handleAddNote} disabled={isSubmitting}>
-                {isSubmitting ? 'در حال افزودن...' : 'افزودن یادداشت'}
+                {isSubmitting
+                  ? (editingNoteId ? 'در حال ذخیره...' : 'در حال افزودن...')
+                  : (editingNoteId ? 'ذخیره تغییرات' : 'افزودن یادداشت')}
               </Button>
             </div>
           </div>
