@@ -953,7 +953,8 @@ const UserCRM: React.FC<UserCRMProps> = ({
               />
             </div>
 
-            {/* Follow-up Scheduling Section */}
+            {/* Follow-up Scheduling Section - only available on new notes */}
+            {!editingNoteId && (
             <div className="border-t pt-4 space-y-4">
               <div className="flex items-center gap-2" dir="rtl">
                 <Checkbox
