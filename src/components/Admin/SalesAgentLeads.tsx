@@ -150,6 +150,9 @@ const SalesAgentLeads: React.FC = () => {
 
   // Sort by assigned_at
   const [assignedSort, setAssignedSort] = useState<'desc' | 'asc'>('desc');
+  // Filter by assigned_at date range (YYYY-MM-DD strings)
+  const [assignedFrom, setAssignedFrom] = useState<string>('');
+  const [assignedTo, setAssignedTo] = useState<string>('');
 
   const fetchLeads = async () => {
     if (!user?.messengerData?.id) return;
@@ -383,6 +386,16 @@ const SalesAgentLeads: React.FC = () => {
       filteredLeads = filteredLeads.filter(l => !l.chat_user_id || !excludedUserIds.has(l.chat_user_id));
     }
 
+    // Apply assigned date range filter
+    if (assignedFrom) {
+      const fromTs = new Date(assignedFrom + 'T00:00:00').getTime();
+      filteredLeads = filteredLeads.filter(l => new Date(l.assigned_at).getTime() >= fromTs);
+    }
+    if (assignedTo) {
+      const toTs = new Date(assignedTo + 'T23:59:59').getTime();
+      filteredLeads = filteredLeads.filter(l => new Date(l.assigned_at).getTime() <= toTs);
+    }
+
     filteredLeads.sort((a, b) => {
       const ta = new Date(a.assigned_at).getTime();
       const tb = new Date(b.assigned_at).getTime();
@@ -390,7 +403,7 @@ const SalesAgentLeads: React.FC = () => {
     });
 
     setLeads(filteredLeads);
-  }, [allLeads, searchTerm, courseFilter, crmFilter, paymentStatusFilter, crmStatusFilter, excludeCourseFilter, excludedUserIds, assignedSort]);
+  }, [allLeads, searchTerm, courseFilter, crmFilter, paymentStatusFilter, crmStatusFilter, excludeCourseFilter, excludedUserIds, assignedSort, assignedFrom, assignedTo]);
 
   const openLeadDetail = async (lead: Lead) => {
     setSelectedLead(lead);
@@ -779,6 +792,19 @@ const SalesAgentLeads: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="w-[150px]">
+              <Label className="text-xs text-muted-foreground mb-1 block">واگذاری از تاریخ</Label>
+              <Input type="date" value={assignedFrom} onChange={(e) => setAssignedFrom(e.target.value)} />
+            </div>
+            <div className="w-[150px]">
+              <Label className="text-xs text-muted-foreground mb-1 block">تا تاریخ</Label>
+              <Input type="date" value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} />
+            </div>
+            {(assignedFrom || assignedTo) && (
+              <Button onClick={() => { setAssignedFrom(''); setAssignedTo(''); }} variant="ghost" size="sm" title="پاک کردن فیلتر تاریخ">
+                <X className="h-4 w-4" />
+              </Button>
+            )}
             <Button onClick={fetchLeads} disabled={loading} variant="outline" size="icon" title="بروزرسانی">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             </Button>

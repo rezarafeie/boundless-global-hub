@@ -95,6 +95,7 @@ const UserCRM: React.FC<UserCRMProps> = ({
   
   // Form states
   const [isAddingNote, setIsAddingNote] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [newNote, setNewNote] = useState({
     content: '',
     type: 'note',
@@ -332,6 +333,33 @@ const UserCRM: React.FC<UserCRMProps> = ({
 
     setIsSubmitting(true);
     try {
+      // Edit mode: update existing note and exit early (no follow-up/webhook re-trigger)
+      if (editingNoteId) {
+        const { error: updateError } = await supabase
+          .from('crm_notes')
+          .update({
+            content: newNote.content,
+            type: newNote.type,
+            status: newNote.status,
+            course_id: newNote.course_id === 'none' ? null : newNote.course_id,
+          })
+          .eq('id', editingNoteId);
+
+        if (updateError) throw updateError;
+
+        toast({ title: 'موفق', description: 'یادداشت با موفقیت ویرایش شد.' });
+        setEditingNoteId(null);
+        setNewNote({
+          content: '', type: 'note', status: 'در انتظار پرداخت',
+          course_id: preselectedCourseId || 'none',
+          schedule_followup: false, followup_title: '',
+          followup_date_option: 'tomorrow', followup_time: '09:00', followup_custom_date: ''
+        });
+        setIsAddingNote(false);
+        await fetchCRMNotes();
+        return;
+      }
+
       // Insert CRM note and get the created record
       const { data: createdNote, error } = await supabase
         .from('crm_notes')
@@ -569,6 +597,29 @@ const UserCRM: React.FC<UserCRMProps> = ({
                             <Button
                               variant="ghost"
                               size="sm"
+                              onClick={() => {
+                                setEditingNoteId(note.id);
+                                setNewNote({
+                                  content: note.content,
+                                  type: note.type,
+                                  status: note.status,
+                                  course_id: note.course_id || 'none',
+                                  schedule_followup: false,
+                                  followup_title: '',
+                                  followup_date_option: 'tomorrow',
+                                  followup_time: '09:00',
+                                  followup_custom_date: ''
+                                });
+                                setIsAddingNote(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-800"
+                              title="ویرایش"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleDeleteNote(note.id)}
                               className="text-red-600 hover:text-red-800"
                             >
@@ -596,13 +647,16 @@ const UserCRM: React.FC<UserCRMProps> = ({
         </CardContent>
       </Card>
 
-      {/* Add Note Dialog - Same as EnrollmentCRM */}
-      <Dialog open={isAddingNote} onOpenChange={setIsAddingNote}>
+      {/* Add/Edit Note Dialog */}
+      <Dialog open={isAddingNote} onOpenChange={(open) => {
+        setIsAddingNote(open);
+        if (!open) setEditingNoteId(null);
+      }}>
         <DialogContent className="max-w-[95vw] w-[95vw] sm:max-w-md md:max-w-lg lg:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>افزودن یادداشت CRM</DialogTitle>
+            <DialogTitle>{editingNoteId ? 'ویرایش یادداشت CRM' : 'افزودن یادداشت CRM'}</DialogTitle>
             <DialogDescription>
-              یادداشت جدید اضافه کنید و در صورت نیاز پیگیری زمان‌بندی کنید
+              {editingNoteId ? 'یادداشت موجود را ویرایش کنید' : 'یادداشت جدید اضافه کنید و در صورت نیاز پیگیری زمان‌بندی کنید'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4" dir="rtl">
@@ -899,7 +953,8 @@ const UserCRM: React.FC<UserCRMProps> = ({
               />
             </div>
 
-            {/* Follow-up Scheduling Section */}
+            {/* Follow-up Scheduling Section - only available on new notes */}
+            {!editingNoteId && (
             <div className="border-t pt-4 space-y-4">
               <div className="flex items-center gap-2" dir="rtl">
                 <Checkbox
@@ -971,13 +1026,16 @@ const UserCRM: React.FC<UserCRMProps> = ({
                 </div>
               )}
             </div>
+            )}
             
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsAddingNote(false)}>
+              <Button variant="outline" onClick={() => { setIsAddingNote(false); setEditingNoteId(null); }}>
                 لغو
               </Button>
               <Button onClick={handleAddNote} disabled={isSubmitting}>
-                {isSubmitting ? 'در حال افزودن...' : 'افزودن یادداشت'}
+                {isSubmitting
+                  ? (editingNoteId ? 'در حال ذخیره...' : 'در حال افزودن...')
+                  : (editingNoteId ? 'ذخیره تغییرات' : 'افزودن یادداشت')}
               </Button>
             </div>
           </div>
