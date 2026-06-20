@@ -11,6 +11,7 @@ import Header from "@/components/Layout/Header";
 
 const TestLanding = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [showIframe, setShowIframe] = useState(false);
 
   // Test iframe URL mapping
