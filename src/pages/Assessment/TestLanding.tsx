@@ -563,11 +563,12 @@ const TestLanding = () => {
   }
 
   const handleStartTest = () => {
-    const testUrl = testIframeMap[slug!];
-    if (testUrl) {
-      setShowIframe(true);
-    }
+    if (!slug) return;
+    // Route to internal Esanj-powered enrollment flow (same as /tests),
+    // instead of the deprecated external auth.rafiei.co iframe.
+    navigate(`/enroll?test=${slug}`);
   };
+
 
   const getColorClasses = (color: string) => {
     const colorMap = {
