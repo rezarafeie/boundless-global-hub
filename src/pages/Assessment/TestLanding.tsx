@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useParams, Navigate } from "react-router-dom";
+import { useParams, Navigate, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import Header from "@/components/Layout/Header";
 
 const TestLanding = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [showIframe, setShowIframe] = useState(false);
 
   // Test iframe URL mapping
@@ -562,11 +563,12 @@ const TestLanding = () => {
   }
 
   const handleStartTest = () => {
-    const testUrl = testIframeMap[slug!];
-    if (testUrl) {
-      setShowIframe(true);
-    }
+    if (!slug) return;
+    // Route to internal Esanj-powered enrollment flow (same as /tests),
+    // instead of the deprecated external auth.rafiei.co iframe.
+    navigate(`/enroll?test=${slug}`);
   };
+
 
   const getColorClasses = (color: string) => {
     const colorMap = {
