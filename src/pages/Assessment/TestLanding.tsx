@@ -555,7 +555,8 @@ const TestLanding = () => {
     if (!slug) return;
     // Route to internal Esanj-powered enrollment flow (same as /tests),
     // instead of the deprecated external auth.rafiei.co iframe.
-    navigate(`/enroll?test=${slug}`);
+    const dbSlug = dbSlugMap[slug] || slug;
+    navigate(`/enroll?test=${dbSlug}`);
   };
 
 
@@ -576,22 +577,7 @@ const TestLanding = () => {
     return colorMap[color as keyof typeof colorMap] || "from-blue-500 to-blue-600";
   };
 
-  if (showIframe && testIframeMap[slug!]) {
-    return (
-      <MainLayout>
-        <div className="min-h-screen">
-          <EnhancedIframe
-            src={testIframeMap[slug!]}
-            title={currentTest.title}
-            style={{
-              height: 'calc(100vh - 80px)',
-              minHeight: '600px'
-            }}
-          />
-        </div>
-      </MainLayout>
-    );
-  }
+
 
   return (
     <MainLayout>
