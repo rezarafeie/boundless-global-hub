@@ -121,13 +121,13 @@ const DailyReport = () => {
       } else {
         const { error } = await supabase
           .from('daily_reports')
-          .insert([{
+          .upsert([{
             user_id: user.messengerData.id,
             role: activeRole,
             report_date: today,
             data: JSON.parse(JSON.stringify(reportData)),
             notes,
-          }]);
+          }], { onConflict: 'user_id,report_date' });
 
         if (error) throw error;
         toast.success('گزارش با موفقیت ثبت شد');
