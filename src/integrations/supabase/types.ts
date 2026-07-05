@@ -557,6 +557,224 @@ export type Database = {
         }
         Relationships: []
       }
+      assignment_ai_logs: {
+        Row: {
+          assignment_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          model: string | null
+          prompt: string | null
+          response: Json | null
+          submission_id: string | null
+        }
+        Insert: {
+          assignment_id?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          model?: string | null
+          prompt?: string | null
+          response?: Json | null
+          submission_id?: string | null
+        }
+        Update: {
+          assignment_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          model?: string | null
+          prompt?: string | null
+          response?: Json | null
+          submission_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_ai_logs_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_ai_logs_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "assignment_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assignment_submissions: {
+        Row: {
+          admin_feedback: string | null
+          ai_feedback: Json | null
+          answers: Json
+          assignment_id: string
+          created_at: string
+          files: Json
+          id: string
+          reviewed_at: string | null
+          reviewed_by: number | null
+          score: number | null
+          status: string
+          student_id: number
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_feedback?: string | null
+          ai_feedback?: Json | null
+          answers?: Json
+          assignment_id: string
+          created_at?: string
+          files?: Json
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: number | null
+          score?: number | null
+          status?: string
+          student_id: number
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_feedback?: string | null
+          ai_feedback?: Json | null
+          answers?: Json
+          assignment_id?: string
+          created_at?: string
+          files?: Json
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: number | null
+          score?: number | null
+          status?: string
+          student_id?: number
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_submissions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assignment_templates: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          template_json: Json
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          template_json: Json
+          title: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          template_json?: Json
+          title?: string
+        }
+        Relationships: []
+      }
+      assignments: {
+        Row: {
+          ai_feedback_enabled: boolean
+          ai_feedback_prompt: string | null
+          allow_resubmit: boolean
+          blocks: Json
+          course_id: string | null
+          created_at: string
+          created_by: string | null
+          cta_config: Json
+          description: string | null
+          due_date: string | null
+          estimated_minutes: number | null
+          id: string
+          lesson_id: string | null
+          manual_review_enabled: boolean
+          passing_score: number | null
+          required: boolean
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ai_feedback_enabled?: boolean
+          ai_feedback_prompt?: string | null
+          allow_resubmit?: boolean
+          blocks?: Json
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          cta_config?: Json
+          description?: string | null
+          due_date?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          lesson_id?: string | null
+          manual_review_enabled?: boolean
+          passing_score?: number | null
+          required?: boolean
+          status?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ai_feedback_enabled?: boolean
+          ai_feedback_prompt?: string | null
+          allow_resubmit?: boolean
+          blocks?: Json
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          cta_config?: Json
+          description?: string | null
+          due_date?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          lesson_id?: string | null
+          manual_review_enabled?: boolean
+          passing_score?: number | null
+          required?: boolean
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "course_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       black_friday_discounts: {
         Row: {
           course_id: string
