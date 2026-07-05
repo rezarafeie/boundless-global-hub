@@ -353,6 +353,11 @@ const AppLessonView = () => {
           </div>
         )}
 
+        {/* Assignments for this lesson */}
+        <AssignmentSection lessonId={lesson.id} />
+
+
+
         {/* Action Buttons */}
         <div className="px-4 pb-6">
           <div className="space-y-3">
