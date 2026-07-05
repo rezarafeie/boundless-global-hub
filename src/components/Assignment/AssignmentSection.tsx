@@ -143,6 +143,10 @@ const AssignmentCard: React.FC<{
     saveTimer.current = setTimeout(() => upsertDraft(next), 800);
   };
 
+  const [awaitingFeedback, setAwaitingFeedback] = useState(false);
+  const [localSubmission, setLocalSubmission] = useState<AssignmentSubmission | undefined>(submission);
+  useEffect(() => { setLocalSubmission(submission); }, [submission?.id, submission?.ai_feedback]);
+
   const handleSubmit = async () => {
     // required check
     for (const b of assignment.blocks) {
@@ -155,6 +159,7 @@ const AssignmentCard: React.FC<{
       }
     }
     setSubmitting(true);
+    setOpen(true);
     try {
       let subId = currentSubId;
       if (!subId) {
@@ -164,23 +169,48 @@ const AssignmentCard: React.FC<{
           .select().single();
         if (error) throw error;
         subId = data.id;
+        setCurrentSubId(subId);
+        setLocalSubmission(data as unknown as AssignmentSubmission);
       } else {
         const { error } = await supabase
           .from('assignment_submissions')
           .update({ answers: answers as any, status: 'submitted', submitted_at: new Date().toISOString() } as any)
           .eq('id', subId);
         if (error) throw error;
+        setLocalSubmission((prev) => prev ? { ...prev, status: 'submitted' as SubmissionStatus, submitted_at: new Date().toISOString() } : prev);
       }
 
-      if (assignment.ai_feedback_enabled) {
-        toast.info('در حال دریافت بازخورد هوشمند...');
-        const { error: fbError } = await supabase.functions.invoke('ai-feedback-assignment', {
-          body: { submission_id: subId },
-        });
-        if (fbError) console.error(fbError);
-      }
       toast.success('تمرین با موفقیت ارسال شد');
-      onSaved();
+
+      if (assignment.ai_feedback_enabled) {
+        setAwaitingFeedback(true);
+        // fire and poll DB so the feedback appears automatically
+        supabase.functions.invoke('ai-feedback-assignment', { body: { submission_id: subId } })
+          .catch((e) => console.error(e));
+
+        const started = Date.now();
+        const poll = async () => {
+          while (Date.now() - started < 90_000) {
+            await new Promise((r) => setTimeout(r, 2000));
+            const { data } = await supabase
+              .from('assignment_submissions')
+              .select('*')
+              .eq('id', subId!)
+              .maybeSingle();
+            if (data && (data as any).ai_feedback) {
+              setLocalSubmission(data as unknown as AssignmentSubmission);
+              setAwaitingFeedback(false);
+              onSaved();
+              return;
+            }
+          }
+          setAwaitingFeedback(false);
+          onSaved();
+        };
+        poll();
+      } else {
+        onSaved();
+      }
     } catch (e) {
       console.error(e);
       toast.error('خطا در ارسال تمرین');
@@ -188,6 +218,7 @@ const AssignmentCard: React.FC<{
       setSubmitting(false);
     }
   };
+
 
   const statusColor: Record<string, string> = {
     not_started: 'bg-muted text-muted-foreground',
