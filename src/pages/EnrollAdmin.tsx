@@ -448,7 +448,10 @@ const EnrollAdmin: React.FC = () => {
     <div className="flex min-h-screen w-full">
       <AdminSidebar 
         activeView={activeView}
-        onViewChange={setActiveView}
+        onViewChange={(view) => {
+          if (view === 'assignments') { window.location.href = '/admin/assignments'; return; }
+          setActiveView(view);
+        }}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         userRole={userRole}
