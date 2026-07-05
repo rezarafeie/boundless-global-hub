@@ -44,6 +44,7 @@ const menuItems = [
   { id: 'dashboard', label: 'داشبورد', icon: LayoutDashboard },
   { id: 'courses', label: 'دوره‌ها', icon: BookOpen },
   { id: 'tests', label: 'آزمون‌ها', icon: Brain },
+  { id: 'assignments', label: 'تمرین‌ها', icon: ClipboardCheck },
   { id: 'webinars', label: 'وبینارها', icon: Calendar },
   { id: 'consultations', label: 'مشاوره‌ها', icon: Video },
   { id: 'enrollments', label: 'ثبت‌نام‌ها', icon: UserCheck },
