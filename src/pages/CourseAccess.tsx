@@ -36,6 +36,7 @@ import { useLessonNumber } from '@/hooks/useLessonNumber';
 import { useAuthTracking } from '@/hooks/useAuthTracking';
 import { TelegramEnrollmentActivation } from '@/components/TelegramEnrollmentActivation';
 import { useIsIranianIP } from '@/hooks/useIsIranianIP';
+import { AssignmentSection } from '@/components/Assignment/AssignmentSection';
 
 interface Course {
   id: string;
@@ -842,6 +843,11 @@ const CourseAccess: React.FC = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Assignments for this lesson */}
+            <div className="-mx-4">
+              <AssignmentSection lessonId={lesson.id} />
+            </div>
 
             {/* Next Lesson Button */}
             {nextLesson && (

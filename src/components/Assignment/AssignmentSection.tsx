@@ -108,7 +108,10 @@ const AssignmentCard: React.FC<{
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [currentSubId, setCurrentSubId] = useState<string | undefined>(submission?.id);
-  const status: SubmissionStatus | 'not_started' = submission?.status || 'not_started';
+  const [awaitingFeedback, setAwaitingFeedback] = useState(false);
+  const [localSubmission, setLocalSubmission] = useState<AssignmentSubmission | undefined>(submission);
+  const effectiveSubmission = localSubmission || submission;
+  const status: SubmissionStatus | 'not_started' = effectiveSubmission?.status || 'not_started';
   const readonly = ['submitted', 'reviewed', 'completed'].includes(status);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -143,6 +146,9 @@ const AssignmentCard: React.FC<{
     saveTimer.current = setTimeout(() => upsertDraft(next), 800);
   };
 
+  useEffect(() => { setLocalSubmission(submission); }, [submission?.id, submission?.ai_feedback]);
+
+
   const handleSubmit = async () => {
     // required check
     for (const b of assignment.blocks) {
@@ -155,6 +161,7 @@ const AssignmentCard: React.FC<{
       }
     }
     setSubmitting(true);
+    setOpen(true);
     try {
       let subId = currentSubId;
       if (!subId) {
@@ -164,23 +171,48 @@ const AssignmentCard: React.FC<{
           .select().single();
         if (error) throw error;
         subId = data.id;
+        setCurrentSubId(subId);
+        setLocalSubmission(data as unknown as AssignmentSubmission);
       } else {
         const { error } = await supabase
           .from('assignment_submissions')
           .update({ answers: answers as any, status: 'submitted', submitted_at: new Date().toISOString() } as any)
           .eq('id', subId);
         if (error) throw error;
+        setLocalSubmission((prev) => prev ? { ...prev, status: 'submitted' as SubmissionStatus, submitted_at: new Date().toISOString() } : prev);
       }
 
-      if (assignment.ai_feedback_enabled) {
-        toast.info('در حال دریافت بازخورد هوشمند...');
-        const { error: fbError } = await supabase.functions.invoke('ai-feedback-assignment', {
-          body: { submission_id: subId },
-        });
-        if (fbError) console.error(fbError);
-      }
       toast.success('تمرین با موفقیت ارسال شد');
-      onSaved();
+
+      if (assignment.ai_feedback_enabled) {
+        setAwaitingFeedback(true);
+        // fire and poll DB so the feedback appears automatically
+        supabase.functions.invoke('ai-feedback-assignment', { body: { submission_id: subId } })
+          .catch((e) => console.error(e));
+
+        const started = Date.now();
+        const poll = async () => {
+          while (Date.now() - started < 90_000) {
+            await new Promise((r) => setTimeout(r, 2000));
+            const { data } = await supabase
+              .from('assignment_submissions')
+              .select('*')
+              .eq('id', subId!)
+              .maybeSingle();
+            if (data && (data as any).ai_feedback) {
+              setLocalSubmission(data as unknown as AssignmentSubmission);
+              setAwaitingFeedback(false);
+              onSaved();
+              return;
+            }
+          }
+          setAwaitingFeedback(false);
+          onSaved();
+        };
+        poll();
+      } else {
+        onSaved();
+      }
     } catch (e) {
       console.error(e);
       toast.error('خطا در ارسال تمرین');
@@ -188,6 +220,7 @@ const AssignmentCard: React.FC<{
       setSubmitting(false);
     }
   };
+
 
   const statusColor: Record<string, string> = {
     not_started: 'bg-muted text-muted-foreground',
@@ -240,8 +273,24 @@ const AssignmentCard: React.FC<{
               />
             ))}
 
-            {submission?.ai_feedback && (
-              <FeedbackReport feedback={submission.ai_feedback} adminFeedback={submission.admin_feedback} />
+            {awaitingFeedback && !effectiveSubmission?.ai_feedback && (
+              <div className="rounded-lg border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  کوچ هوشمند در حال بررسی پاسخ‌های شماست...
+                </div>
+                <div className="space-y-2">
+                  <div className="h-3 rounded bg-primary/10 animate-pulse w-11/12" />
+                  <div className="h-3 rounded bg-primary/10 animate-pulse w-9/12" />
+                  <div className="h-3 rounded bg-primary/10 animate-pulse w-10/12" />
+                  <div className="h-3 rounded bg-primary/10 animate-pulse w-7/12" />
+                </div>
+                <p className="text-xs text-muted-foreground">این کار معمولاً چند ثانیه طول می‌کشد. لطفاً همین‌جا بمانید.</p>
+              </div>
+            )}
+
+            {effectiveSubmission?.ai_feedback && (
+              <FeedbackReport feedback={effectiveSubmission.ai_feedback} adminFeedback={effectiveSubmission.admin_feedback} />
             )}
 
             <CTASection ctas={assignment.cta_config?.ctas} />
@@ -259,11 +308,12 @@ const AssignmentCard: React.FC<{
               </div>
             )}
 
-            {status === 'submitted' && !submission?.ai_feedback && (
+            {status === 'submitted' && !effectiveSubmission?.ai_feedback && !awaitingFeedback && (
               <div className="text-center text-sm text-muted-foreground py-2">
                 تمرین ارسال شد. در انتظار بازخورد...
               </div>
             )}
+
 
             {(status === 'submitted' || status === 'reviewed' || status === 'completed') && assignment.allow_resubmit && (
               <Button

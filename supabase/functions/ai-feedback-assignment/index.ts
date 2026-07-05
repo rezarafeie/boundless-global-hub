@@ -71,9 +71,22 @@ ${answersFormatted}
       throw new Error(`AI gateway error ${aiRes.status}: ${errText}`);
     }
     const aiJson = await aiRes.json();
-    const content = aiJson.choices?.[0]?.message?.content || '{}';
+    let content: string = aiJson.choices?.[0]?.message?.content || '{}';
+    content = content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
     let feedback: any;
-    try { feedback = JSON.parse(content); } catch { feedback = { summary: content }; }
+    try {
+      feedback = JSON.parse(content);
+    } catch {
+      const m = content.match(/\{[\s\S]*\}/);
+      if (m) {
+        try { feedback = JSON.parse(m[0]); } catch { feedback = { summary: content }; }
+      } else {
+        feedback = { summary: content };
+      }
+    }
+    for (const k of ['strengths', 'weaknesses', 'next_steps']) {
+      if (feedback[k] && !Array.isArray(feedback[k])) feedback[k] = [String(feedback[k])];
+    }
 
     await supabase.from('assignment_submissions').update({
       ai_feedback: feedback,
