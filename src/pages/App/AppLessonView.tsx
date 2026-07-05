@@ -24,6 +24,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TelegramEnrollmentActivation } from "@/components/TelegramEnrollmentActivation";
 import { useIsIranianIP } from "@/hooks/useIsIranianIP";
+import { AssignmentSection } from "@/components/Assignment/AssignmentSection";
 
 interface LessonData {
   id: string;
@@ -351,6 +352,11 @@ const AppLessonView = () => {
             </Card>
           </div>
         )}
+
+        {/* Assignments for this lesson */}
+        <AssignmentSection lessonId={lesson.id} />
+
+
 
         {/* Action Buttons */}
         <div className="px-4 pb-6">

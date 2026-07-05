@@ -127,6 +127,8 @@ import SmartTestResults from "./pages/SmartTestResults";
 import CourseContentManagement from "./pages/Course/CourseContentManagement";
 import CourseCreate from "./pages/Admin/CourseCreate";
 import CourseEdit from "./pages/Admin/CourseEdit";
+import AssignmentsList from "./pages/Admin/Assignments/AssignmentsList";
+import AssignmentEditor from "./pages/Admin/Assignments/AssignmentEditor";
 import WebinarLogin from "./pages/WebinarLogin";
 import WebinarRegistration from "./pages/WebinarRegistration";
 import WebinarAdmin from "./pages/WebinarAdmin";
@@ -277,6 +279,8 @@ const App = () => {
                     <Route path="/enroll/admin/email" element={<EnrollmentEmailAdmin />} />
                     <Route path="/admin/course/create" element={<CourseCreate />} />
                     <Route path="/admin/course/edit/:courseId" element={<CourseEdit />} />
+                    <Route path="/admin/assignments" element={<AssignmentsList />} />
+                    <Route path="/admin/assignments/:id" element={<AssignmentEditor />} />
                     <Route path="/enroll/admin/course/:courseId" element={<CourseManagement />} />
                     <Route path="/enroll/admin/course/:courseId/lessons" element={<CourseContentManagement />} />
                     <Route path="/enroll/reject" element={<EnrollReject />} />
