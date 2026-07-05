@@ -279,6 +279,8 @@ const App = () => {
                     <Route path="/enroll/admin/email" element={<EnrollmentEmailAdmin />} />
                     <Route path="/admin/course/create" element={<CourseCreate />} />
                     <Route path="/admin/course/edit/:courseId" element={<CourseEdit />} />
+                    <Route path="/admin/assignments" element={<AssignmentsList />} />
+                    <Route path="/admin/assignments/:id" element={<AssignmentEditor />} />
                     <Route path="/enroll/admin/course/:courseId" element={<CourseManagement />} />
                     <Route path="/enroll/admin/course/:courseId/lessons" element={<CourseContentManagement />} />
                     <Route path="/enroll/reject" element={<EnrollReject />} />
