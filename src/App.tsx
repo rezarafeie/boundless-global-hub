@@ -127,6 +127,8 @@ import SmartTestResults from "./pages/SmartTestResults";
 import CourseContentManagement from "./pages/Course/CourseContentManagement";
 import CourseCreate from "./pages/Admin/CourseCreate";
 import CourseEdit from "./pages/Admin/CourseEdit";
+import AssignmentsList from "./pages/Admin/Assignments/AssignmentsList";
+import AssignmentEditor from "./pages/Admin/Assignments/AssignmentEditor";
 import WebinarLogin from "./pages/WebinarLogin";
 import WebinarRegistration from "./pages/WebinarRegistration";
 import WebinarAdmin from "./pages/WebinarAdmin";
