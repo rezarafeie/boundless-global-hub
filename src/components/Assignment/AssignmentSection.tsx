@@ -146,9 +146,8 @@ const AssignmentCard: React.FC<{
     saveTimer.current = setTimeout(() => upsertDraft(next), 800);
   };
 
-  const [awaitingFeedback, setAwaitingFeedback] = useState(false);
-  const [localSubmission, setLocalSubmission] = useState<AssignmentSubmission | undefined>(submission);
   useEffect(() => { setLocalSubmission(submission); }, [submission?.id, submission?.ai_feedback]);
+
 
   const handleSubmit = async () => {
     // required check
