@@ -75,13 +75,17 @@ const AssignmentEditor: React.FC = () => {
   };
 
   const save = async () => {
-    let blocks: AssignmentBlock[]; let cta_config: any;
-    try { blocks = JSON.parse(blocksJson); } catch { toast.error('JSON بلوک‌ها نامعتبر است'); return; }
+    let blocksToSave: AssignmentBlock[]; let cta_config: any;
+    if (showJson) {
+      try { blocksToSave = JSON.parse(blocksJson); } catch { toast.error('JSON بلوک‌ها نامعتبر است'); return; }
+    } else {
+      blocksToSave = blocks;
+    }
     try { cta_config = JSON.parse(ctaJson); } catch { toast.error('JSON CTAها نامعتبر است'); return; }
     if (!a.title) { toast.error('عنوان الزامی است'); return; }
 
     setSaving(true);
-    const payload = { ...a, blocks, cta_config };
+    const payload = { ...a, blocks: blocksToSave, cta_config };
     delete (payload as any).id; delete (payload as any).created_at; delete (payload as any).updated_at;
 
     if (isNew) {
@@ -114,7 +118,9 @@ const AssignmentEditor: React.FC = () => {
       ai_feedback_enabled: gen.ai_feedback_enabled ?? prev.ai_feedback_enabled,
       ai_feedback_prompt: gen.ai_feedback_prompt || prev.ai_feedback_prompt,
     }));
-    setBlocksJson(JSON.stringify(gen.blocks || [], null, 2));
+    const genBlocks = (gen.blocks || []) as AssignmentBlock[];
+    setBlocks(genBlocks);
+    setBlocksJson(JSON.stringify(genBlocks, null, 2));
     setAiOpen(false);
     toast.success('پیش‌نویس با AI ساخته شد. قبل از ذخیره بررسی کنید.');
   };
