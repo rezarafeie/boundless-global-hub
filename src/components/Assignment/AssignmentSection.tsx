@@ -160,14 +160,14 @@ const AssignmentCard: React.FC<{
       if (!subId) {
         const { data, error } = await supabase
           .from('assignment_submissions')
-          .insert({ assignment_id: assignment.id, student_id: studentId, answers, status: 'submitted', submitted_at: new Date().toISOString() })
+          .insert({ assignment_id: assignment.id, student_id: studentId, answers: answers as any, status: 'submitted', submitted_at: new Date().toISOString() } as any)
           .select().single();
         if (error) throw error;
         subId = data.id;
       } else {
         const { error } = await supabase
           .from('assignment_submissions')
-          .update({ answers, status: 'submitted', submitted_at: new Date().toISOString() })
+          .update({ answers: answers as any, status: 'submitted', submitted_at: new Date().toISOString() } as any)
           .eq('id', subId);
         if (error) throw error;
       }
@@ -272,7 +272,7 @@ const AssignmentCard: React.FC<{
                 onClick={async () => {
                   const { data } = await supabase
                     .from('assignment_submissions')
-                    .insert({ assignment_id: assignment.id, student_id: studentId, answers, status: 'draft' })
+                    .insert({ assignment_id: assignment.id, student_id: studentId, answers: answers as any, status: 'draft' } as any)
                     .select().single();
                   if (data) {
                     setCurrentSubId(data.id);
