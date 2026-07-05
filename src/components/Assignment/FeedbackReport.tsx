@@ -2,12 +2,38 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, AlertCircle, ArrowLeft, Sparkles } from 'lucide-react';
+import { MarkdownLite } from '@/lib/markdownLite';
 import type { AIFeedback } from '@/types/assignment';
 
+// Recover a proper AIFeedback object if the DB row stored a JSON string
+// (or the summary contains an embedded JSON blob) instead of a real object.
+function normalizeFeedback(raw: any): AIFeedback {
+  if (!raw) return {};
+  let fb: any = raw;
+  if (typeof fb === 'string') {
+    const cleaned = fb.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    try { fb = JSON.parse(cleaned); }
+    catch {
+      const m = cleaned.match(/\{[\s\S]*\}/);
+      if (m) { try { fb = JSON.parse(m[0]); } catch { fb = { summary: cleaned }; } }
+      else fb = { summary: cleaned };
+    }
+  }
+  if (typeof fb.summary === 'string' && fb.summary.includes('"score"') && fb.summary.includes('{')) {
+    const m = fb.summary.match(/\{[\s\S]*\}/);
+    if (m) { try { fb = { ...fb, ...JSON.parse(m[0]) }; } catch { /* ignore */ } }
+  }
+  for (const k of ['strengths', 'weaknesses', 'next_steps'] as const) {
+    if (fb[k] && !Array.isArray(fb[k])) fb[k] = [String(fb[k])];
+  }
+  return fb as AIFeedback;
+}
+
 export const FeedbackReport: React.FC<{ feedback: AIFeedback; adminFeedback?: string | null }> = ({
-  feedback,
+  feedback: rawFeedback,
   adminFeedback,
 }) => {
+  const feedback = normalizeFeedback(rawFeedback);
   return (
     <div className="space-y-3">
       <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
@@ -25,7 +51,7 @@ export const FeedbackReport: React.FC<{ feedback: AIFeedback; adminFeedback?: st
           </div>
 
           {feedback.summary && (
-            <p className="text-sm leading-7 text-foreground">{feedback.summary}</p>
+            <MarkdownLite text={feedback.summary} className="text-sm leading-7 text-foreground" />
           )}
 
           {feedback.strengths && feedback.strengths.length > 0 && (
@@ -34,7 +60,7 @@ export const FeedbackReport: React.FC<{ feedback: AIFeedback; adminFeedback?: st
                 <CheckCircle2 className="h-4 w-4" /> نقاط قوت
               </div>
               <ul className="space-y-1 pr-6 list-disc text-sm">
-                {feedback.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                {feedback.strengths.map((s, i) => <li key={i}><MarkdownLite text={String(s)} /></li>)}
               </ul>
             </div>
           )}
@@ -45,7 +71,7 @@ export const FeedbackReport: React.FC<{ feedback: AIFeedback; adminFeedback?: st
                 <AlertCircle className="h-4 w-4" /> نقاط قابل بهبود
               </div>
               <ul className="space-y-1 pr-6 list-disc text-sm">
-                {feedback.weaknesses.map((s, i) => <li key={i}>{s}</li>)}
+                {feedback.weaknesses.map((s, i) => <li key={i}><MarkdownLite text={String(s)} /></li>)}
               </ul>
             </div>
           )}
@@ -56,7 +82,7 @@ export const FeedbackReport: React.FC<{ feedback: AIFeedback; adminFeedback?: st
                 <ArrowLeft className="h-4 w-4" /> قدم بعدی
               </div>
               <ul className="space-y-1 pr-6 list-disc text-sm">
-                {feedback.next_steps.map((s, i) => <li key={i}>{s}</li>)}
+                {feedback.next_steps.map((s, i) => <li key={i}><MarkdownLite text={String(s)} /></li>)}
               </ul>
             </div>
           )}
@@ -67,7 +93,7 @@ export const FeedbackReport: React.FC<{ feedback: AIFeedback; adminFeedback?: st
         <Card>
           <CardContent className="p-4">
             <div className="text-sm font-medium mb-2">بازخورد کوچ</div>
-            <p className="text-sm leading-7 whitespace-pre-wrap">{adminFeedback}</p>
+            <MarkdownLite text={adminFeedback} className="text-sm leading-7" />
           </CardContent>
         </Card>
       )}
