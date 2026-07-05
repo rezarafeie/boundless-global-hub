@@ -24,6 +24,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TelegramEnrollmentActivation } from "@/components/TelegramEnrollmentActivation";
 import { useIsIranianIP } from "@/hooks/useIsIranianIP";
+import { AssignmentSection } from "@/components/Assignment/AssignmentSection";
 
 interface LessonData {
   id: string;
