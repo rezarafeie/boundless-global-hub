@@ -844,6 +844,11 @@ const CourseAccess: React.FC = () => {
               </Card>
             )}
 
+            {/* Assignments for this lesson */}
+            <div className="-mx-4">
+              <AssignmentSection lessonId={lesson.id} />
+            </div>
+
             {/* Next Lesson Button */}
             {nextLesson && (
               <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
