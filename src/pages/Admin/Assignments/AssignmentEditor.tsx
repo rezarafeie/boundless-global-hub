@@ -214,11 +214,33 @@ const AssignmentEditor: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="blocks">
-          <div className="text-xs text-muted-foreground mb-2">
-            بلوک‌ها به صورت JSON. انواع مجاز: title, description, short_text, long_text, number, single_choice, multiple_choice, rating, checklist, file_upload, image_upload, link, hint
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-xs text-muted-foreground">
+              بلوک‌ها را به صورت بصری بسازید. برای تنظیمات پیشرفته می‌توانید به حالت JSON بروید.
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={showJson}
+                onCheckedChange={(v) => {
+                  if (v) {
+                    setBlocksJson(JSON.stringify(blocks, null, 2));
+                  } else {
+                    try {
+                      const parsed = JSON.parse(blocksJson) as AssignmentBlock[];
+                      setBlocks(parsed);
+                    } catch { toast.error('JSON نامعتبر؛ اصلاح کنید یا حالت بصری را انتخاب کنید'); return; }
+                  }
+                  setShowJson(v);
+                }}
+              />
+              <Label className="text-xs">حالت JSON</Label>
+            </div>
           </div>
-          <Textarea rows={20} className="font-mono text-xs" dir="ltr" value={blocksJson} onChange={(e) => setBlocksJson(e.target.value)} />
-        </TabsContent>
+          {showJson ? (
+            <Textarea rows={20} className="font-mono text-xs" dir="ltr" value={blocksJson} onChange={(e) => setBlocksJson(e.target.value)} />
+          ) : (
+            <BlockBuilder blocks={blocks} onChange={syncBlocks} />
+          )}
 
         <TabsContent value="ai" className="space-y-3">
           <div className="flex items-center gap-2"><Switch checked={!!a.ai_feedback_enabled} onCheckedChange={(v) => setA({ ...a, ai_feedback_enabled: v })} /><Label>فعال‌سازی بازخورد هوشمند</Label></div>
