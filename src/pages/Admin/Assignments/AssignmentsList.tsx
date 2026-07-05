@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Copy } from 'lucide-react';
+import { Plus, Pencil, Trash2, Copy, Inbox } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { Assignment } from '@/types/assignment';
@@ -64,6 +64,9 @@ const AssignmentsList: React.FC = () => {
                   {a.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{a.description}</p>}
                 </div>
                 <div className="flex gap-1">
+                  <Button size="icon" variant="ghost" onClick={() => navigate(`/admin/assignments/${a.id}/submissions`)} title="پاسخ‌ها">
+                    <Inbox className="h-4 w-4" />
+                  </Button>
                   <Button size="icon" variant="ghost" onClick={() => navigate(`/admin/assignments/${a.id}`)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
