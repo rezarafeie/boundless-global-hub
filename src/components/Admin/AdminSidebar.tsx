@@ -26,7 +26,8 @@ import {
   Kanban,
   Receipt,
   Video,
-  FileText
+  FileText,
+  ClipboardCheck
 } from 'lucide-react';
 
 interface AdminSidebarProps {
