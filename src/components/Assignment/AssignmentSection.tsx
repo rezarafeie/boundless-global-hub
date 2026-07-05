@@ -121,11 +121,11 @@ const AssignmentCard: React.FC<{
     setSaving(true);
     try {
       if (currentSubId) {
-        await supabase.from('assignment_submissions').update({ answers: nextAnswers }).eq('id', currentSubId);
+        await supabase.from('assignment_submissions').update({ answers: nextAnswers as any }).eq('id', currentSubId);
       } else {
         const { data, error } = await supabase
           .from('assignment_submissions')
-          .insert({ assignment_id: assignment.id, student_id: studentId, answers: nextAnswers, status: 'draft' })
+          .insert({ assignment_id: assignment.id, student_id: studentId, answers: nextAnswers as any, status: "draft" } as any)
           .select()
           .single();
         if (!error && data) setCurrentSubId(data.id);
