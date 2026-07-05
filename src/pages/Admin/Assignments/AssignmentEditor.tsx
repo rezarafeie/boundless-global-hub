@@ -241,6 +241,8 @@ const AssignmentEditor: React.FC = () => {
           ) : (
             <BlockBuilder blocks={blocks} onChange={syncBlocks} />
           )}
+        </TabsContent>
+
 
         <TabsContent value="ai" className="space-y-3">
           <div className="flex items-center gap-2"><Switch checked={!!a.ai_feedback_enabled} onCheckedChange={(v) => setA({ ...a, ai_feedback_enabled: v })} /><Label>فعال‌سازی بازخورد هوشمند</Label></div>
