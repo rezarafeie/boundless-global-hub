@@ -36,6 +36,7 @@ import { useLessonNumber } from '@/hooks/useLessonNumber';
 import { useAuthTracking } from '@/hooks/useAuthTracking';
 import { TelegramEnrollmentActivation } from '@/components/TelegramEnrollmentActivation';
 import { useIsIranianIP } from '@/hooks/useIsIranianIP';
+import { AssignmentSection } from '@/components/Assignment/AssignmentSection';
 
 interface Course {
   id: string;
