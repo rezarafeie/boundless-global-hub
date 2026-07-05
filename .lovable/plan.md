@@ -1,112 +1,89 @@
+# Telegram Support Activation Tracking System
 
-# سیستم تمرین و ارزیابی درس‌ها (Assignment System)
+A full activation-tracking flow where the Telegram bot is only a gateway. Real support still happens in the @rafieiacademy chat, but every step (dashboard click → bot open → support button click → manual activation) is logged so admins can follow up.
 
-هدف: افزودن یک سیستم کامل تمرین به هر درس، با پشتیبانی از انواع بلوک‌ها، بازخورد هوش مصنوعی، بازبینی ادمین، و CTAهای هدایت به پشتیبانی/تلگرام/تست هوشمند.
+## 1. Course-edit toggles (admin)
 
-## بررسی وضعیت فعلی
+Add three new fields to `courses` (edit page → "پشتیبانی و تلگرام" section):
 
-- `course_lessons` موجود است؛ درس‌ها از طریق `AppLessonView.tsx` نمایش داده می‌شوند → محل قرارگیری کارت تمرین همان‌جا زیر محتوای درس.
-- `chat_users.id` (integer) شناسه‌ی کاربر است؛ ثبت‌نام از طریق `enrollments.chat_user_id`. برای دسترسی دانشجو به تمرین همان الگو استفاده می‌شود.
-- Supabase Storage موجود است (`messenger-files`) — یک باکت جدید `assignment-uploads` اضافه می‌شود.
-- Lovable AI Gateway برای تولید تمرین و بازخورد استفاده می‌شود (بدون کلید کاربر).
-- بات تلگرام از قبل به‌عنوان connector موجود است → صرفاً یک edge function برای forward کردن ارسال‌ها.
+- `telegram_support_activation_enabled` (bool) — enables the whole tracked flow. When ON, the "Activate Support" card in enrollment/dashboard sends the student through the bot deep link instead of the current direct `t.me/rafieiacademy?text=...` link.
+- `telegram_course_access_via_bot_enabled` (bool) — same idea for the "Course access via Telegram" card (bot-mediated instead of direct channel/group link).
+- `telegram_bot_welcome_message` (text, Persian, with `{{name}}` / `{{course_title}}` placeholders) — shown when the bot receives the deep link. Prefilled with the default message from the spec.
 
-## معماری کلی
+The existing per-course "prefilled support message" field is reused as the message template the bot's inline button opens in @rafieiacademy.
 
-```text
-Lesson Page ── AssignmentCard ── AssignmentRunner (blocks renderer)
-                                    │
-                                    ├── Draft autosave (submissions.status=draft)
-                                    └── Submit → edge:submit-assignment
-                                                    ├── ذخیره submission
-                                                    ├── (اختیاری) edge:ai-feedback-assignment
-                                                    └── (اختیاری) trigger telegram/support
+## 2. Database
 
-Admin ── AssignmentsList ── AssignmentBuilder (blocks DnD)
-                          ├── JSON Import/Export
-                          ├── AI Create (edge:ai-generate-assignment)
-                          ├── AI Edit  (edge:ai-edit-assignment)
-                          └── SubmissionsReview
-```
+New tables (both RLS-enabled, granted to `authenticated` + `service_role`):
 
-## فازها
+**`support_activations`** — one row per (user, course, order):
+`id, user_id, course_id, enrollment_id, activation_token (unique), bot_deep_link, support_prefilled_link, status, telegram_id, telegram_username, telegram_first_name, telegram_last_name, opened_bot_at, clicked_support_button_at, activated_at, activated_by_admin_id, last_followup_at, followup_count, admin_note, assigned_agent_id, metadata_json, created_at, updated_at`
 
-### فاز ۱ — Schema و زیرساخت
-جداول جدید در Supabase:
+Status enum: `not_started | opened_bot | clicked_support_button | pending_manual_confirmation | activated | needs_followup | failed`.
 
-- `assignments` — عنوان، توضیح، `lesson_id`، `course_id`، `blocks` (jsonb)، `required`، `ai_feedback_enabled`، `manual_review_enabled`، `ai_feedback_prompt`، `passing_score`، `estimated_minutes`، `cta_config` (jsonb: telegram/support/smart_test/…)، `status` (draft/published/archived)، `tags` (text[])، `created_by`.
-- `assignment_submissions` — `assignment_id`، `student_id` (chat_users.id)، `answers` (jsonb)، `files` (jsonb[])، `status` (draft/submitted/reviewed/needs_revision/completed)، `ai_feedback` (jsonb)، `admin_feedback` (text)، `score`، `submitted_at`، `reviewed_at`، `reviewed_by`.
-- `assignment_ai_logs` — برای audit پرامپت‌ها و پاسخ‌های AI.
-- `assignment_templates` — قالب‌های آماده (۱۰ قالب فارسی از لیست کاربر).
+**`support_activation_events`** — append-only audit log:
+`id, support_activation_id, user_id, course_id, event_type, payload_json, created_at`.
 
-RLS و GRANTs:
-- Students → فقط submissionهای خودشان (`student_id = current chat_users.id از session`).
-- Admins/support → از طریق `user_roles` و helper موجود.
-- `assignments` read: authenticated؛ write: admin only.
+RLS:
+- Students: `SELECT` their own rows only.
+- Admins (`has_role admin`): full access.
+- Support agents: access rows where `assigned_agent_id = auth.uid()` or unassigned.
+- Inserts/updates from the bot happen via service role in the edge function.
 
-Storage bucket خصوصی: `assignment-uploads/{user_id}/{submission_id}/…` با policy مبتنی بر ownership.
+A DB function `ensure_support_activation(user_id, course_id, enrollment_id)` creates the row on demand and returns the token / links.
 
-### فاز ۲ — Block Schema (frontend types)
-یک TypeScript union `AssignmentBlock` با انواع:
-`title | description | short_text | long_text | number | single_choice | multiple_choice | button_choice | rating | checklist | image_upload | file_upload | link | media_link | scenario | ai_answer | hint | example`
+## 3. Edge functions
 
-هر بلوک: `{ id, type, label, required, options?, validation?, help?, meta? }`.
-یک Zod schema برای validate کردن JSON import/export.
+- `telegram-bot-webhook` (extend existing bot webhook if present, otherwise new): handles `/start sact_<token>`. Validates token, updates status → `opened_bot`, stores telegram user info, sends the Persian welcome message with an inline URL button whose URL is the encoded `t.me/rafieiacademy?text=...` support link. Logs `opened_bot` event. When the inline button is pressed (callback_query), updates status → `clicked_support_button`, logs the event.
+- `support-activation-create`: called from the dashboard card. Creates/returns the activation row and returns `bot_deep_link`. Logs `dashboard_clicked`.
+- `support-activation-followup-cron` (scheduled, optional): moves stale rows to `needs_followup` / `pending_manual_confirmation` per the timing rules.
 
-### فاز ۳ — Student UX (زیر هر درس)
-فایل‌های جدید:
-- `src/components/Assignment/AssignmentCard.tsx` — کارت جمع‌شونده با badgeهای status/required/زمان.
-- `src/components/Assignment/AssignmentRunner.tsx` — رندر بلوک‌ها + autosave (debounced upsert روی submission draft).
-- `src/components/Assignment/blocks/*` — یک کامپوننت به ازای هر type.
-- `src/components/Assignment/FeedbackReport.tsx` — نمایش زیبای AI feedback (score, strengths, weaknesses, next steps, CTA button).
-- `src/components/Assignment/CTASection.tsx` — دکمه‌های Telegram/Support/SmartTest بر اساس `cta_config`.
-- ادغام در `AppLessonView.tsx`: زیر بخش محتوا، `<AssignmentSection lessonId={lesson.id} />`.
+Bot secret verified via `X-Telegram-Bot-Api-Secret-Token` (derived from `TELEGRAM_API_KEY`, matches existing pattern in the project).
 
-موبایل: submit button چسبان با `env(safe-area-inset-bottom)`.
+## 4. Student dashboard card
 
-### فاز ۴ — Admin Builder
-- `src/pages/Admin/Assignments/AssignmentsList.tsx` — جدول با فیلتر course/lesson/status.
-- `src/pages/Admin/Assignments/AssignmentBuilder.tsx` — چپ: پالت بلوک‌ها، وسط: preview قابل‌مرتب‌سازی (dnd-kit)، راست: تنظیمات بلوک/تمرین.
-- `JsonImportExportDialog.tsx` — validate با Zod، preview قبل از save، دکمه copy schema.
-- `AssignmentPreviewDialog.tsx` — رندر با همان AssignmentRunner در حالت readonly.
+Update `TelegramEnrollmentActivation` (and the equivalent "course access" card) to branch on the new course toggles:
 
-### فاز ۵ — AI (Edge Functions با Lovable AI Gateway)
-- `supabase/functions/ai-generate-assignment` — ورودی: عنوان درس/خلاصه/هدف/سختی → خروجی JSON تمرین (structured output با Zod schema).
-- `supabase/functions/ai-edit-assignment` — دستور طبیعی + draft فعلی → draft جدید (بدون overwrite تا تأیید ادمین).
-- `supabase/functions/ai-feedback-assignment` — پاسخ‌های دانشجو + `ai_feedback_prompt` → JSON بازخورد (score/summary/strengths/weaknesses/next_steps/cta).
-- مدل پیش‌فرض: `google/gemini-3-flash-preview`. لاگ در `assignment_ai_logs`.
+- If toggle OFF → current direct `t.me/...` behaviour (unchanged).
+- If toggle ON → call `support-activation-create`, then render the four states from the spec (`not_started`, `opened_bot`, `clicked_support_button/pending_manual_confirmation`, `activated`) with the exact Persian titles/texts/buttons. Button always opens the bot deep link in a new tab; realtime subscription on `support_activations` updates the card as the status advances.
 
-### فاز ۶ — Admin Review Panel
-- `src/pages/Admin/Assignments/SubmissionsReview.tsx` — فیلترها (course/lesson/assignment/student/status/score/date)، مشاهده‌ی جزئیات، افزودن feedback، تغییر status، اجرای مجدد AI، export CSV، assign به support agent.
+Mounted in both website mode (enrollment/course-access pages) and app mode (AppLessonView / AppCourseDetail), matching where the current activation card already appears.
 
-### فاز ۷ — یکپارچگی‌ها
-- **Telegram**: edge `assignment-to-telegram` که پیام خلاصه‌ی submission + لینک را از طریق connector تلگرام ارسال می‌کند.
-- **Support Activation**: ایجاد ردیف در `support_conversations` با ref به submission.
-- **Smart Test / Consultation / Course purchase**: صرفاً لینک داخلی از `cta_config`.
+## 5. Admin dashboard `/admin/support-activations`
 
-### فاز ۸ — Templates و داده‌ی نمونه
-Seed کردن ۱۰ قالب فارسی درخواستی + یک تمرین نمونه‌ی فعال روی یک درس نمایشی.
+New page + sidebar entry ("فعال‌سازی پشتیبانی"):
 
-## جزئیات فنی
+- Table of activations with filters: course, status, purchase date range, opened-bot, clicked-support-button, activated/not, search by name/phone/email/token.
+- Smart segment tabs: "خریدار بدون ورود به ربات", "وارد ربات، بدون کلیک", "کلیک کرده، تایید نشده", ">24h", ">3d", "دوره‌های گران بدون فعال‌سازی".
+- Row actions: mark activated, mark needs-followup, copy support message, copy bot deep link, regenerate token, add note, assign to agent, view event timeline.
+- CSV export.
 
-- Autosave: `useDebouncedCallback` روی answers، upsert در `assignment_submissions` با status='draft' و unique `(assignment_id, student_id, status='draft')`.
-- File upload: از `fileUploadService.ts` موجود با bucket جدید.
-- Access: چک enrollment قبل از باز شدن تمرین (مثل الگوی `AppLessonView`).
-- Validation: Zod در client و در edge function.
-- Realtime (اختیاری فاز بعد): notify دانشجو وقتی admin_feedback ثبت شد.
+## 6. Lead management integration
 
-## خارج از scope این پلن
+Add "وضعیت فعال‌سازی پشتیبانی" filter + the six smart segments to the existing lead list, joined via `support_activations` on `user_id`.
 
-- Grading خودکار پیچیده (rubric-based) → فاز آینده.
-- Peer review → فاز آینده.
-- Analytics عمیق روی نرخ تکمیل تمرین → فاز آینده.
+## 7. Analytics widgets
 
-## تحویل نهایی
+New card set on the admin dashboard: total buyers, opened-bot rate, clicked-support-button rate, manual activation rate, pending count, needs-followup count, avg time purchase→bot, avg time bot→activation, activation rate by course.
 
-- ۴ جدول + storage bucket + RLS + GRANTs
-- ۳ edge function AI + ۱ edge function Telegram
-- کامپوننت‌های Student (کارت، runner، بلوک‌ها، feedback، CTA) ادغام‌شده در `AppLessonView`
-- صفحات Admin: List، Builder، JSON I/O، Review
-- ۱۰ قالب seed شده
+## Technical notes
 
-آیا این طرح را بسازم؟ اگر بخشی را می‌خواهی ابتدا (مثلاً فقط فاز ۱–۳ برای MVP دانشجو) بگو تا با همان شروع کنم.
+- Token: `crypto.randomUUID()` (URL-safe, unique index).
+- Deep link stored server-side; bot username pulled from `admin_settings.telegram_bot_username` (already used elsewhere).
+- Realtime enabled on `support_activations` so the student card auto-refreshes when the bot updates status.
+- All new UI is Persian RTL, reuses existing shadcn tokens (no hardcoded colours).
+- Because Telegram cannot confirm the user actually pressed Send in @rafieiacademy, final `activated` transition is either (a) manual by admin/support, or (b) if the bot is later added to the support account as a userbot, automatic — schema supports both; only the manual path is built now.
+
+## Rollout order
+
+1. Migration (tables, enum, RLS, grants, `ensure_support_activation` function, realtime publication).
+2. Course-edit form fields + types.
+3. `telegram-bot-webhook` handler for `sact_` deep link + callback.
+4. `support-activation-create` edge function.
+5. Student dashboard card rewrite (branch on toggle).
+6. Admin `/admin/support-activations` page + sidebar entry.
+7. Lead management filter + smart segments.
+8. Analytics widgets.
+9. Optional follow-up cron.
+
+Confirm and I'll start with step 1 (the migration).
