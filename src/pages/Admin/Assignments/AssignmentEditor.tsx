@@ -75,12 +75,12 @@ const AssignmentEditor: React.FC = () => {
     delete (payload as any).id; delete (payload as any).created_at; delete (payload as any).updated_at;
 
     if (isNew) {
-      const { data, error } = await supabase.from('assignments').insert(payload).select().single();
+      const { data, error } = await supabase.from('assignments').insert(payload as any).select().single();
       if (error) { toast.error('خطا: ' + error.message); setSaving(false); return; }
       toast.success('ذخیره شد');
       navigate(`/admin/assignments/${data.id}`);
     } else {
-      const { error } = await supabase.from('assignments').update(payload).eq('id', id);
+      const { error } = await supabase.from('assignments').update(payload as any).eq('id', id);
       if (error) toast.error('خطا: ' + error.message);
       else toast.success('ذخیره شد');
     }
