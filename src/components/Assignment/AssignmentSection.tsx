@@ -273,8 +273,24 @@ const AssignmentCard: React.FC<{
               />
             ))}
 
-            {submission?.ai_feedback && (
-              <FeedbackReport feedback={submission.ai_feedback} adminFeedback={submission.admin_feedback} />
+            {awaitingFeedback && !effectiveSubmission?.ai_feedback && (
+              <div className="rounded-lg border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  کوچ هوشمند در حال بررسی پاسخ‌های شماست...
+                </div>
+                <div className="space-y-2">
+                  <div className="h-3 rounded bg-primary/10 animate-pulse w-11/12" />
+                  <div className="h-3 rounded bg-primary/10 animate-pulse w-9/12" />
+                  <div className="h-3 rounded bg-primary/10 animate-pulse w-10/12" />
+                  <div className="h-3 rounded bg-primary/10 animate-pulse w-7/12" />
+                </div>
+                <p className="text-xs text-muted-foreground">این کار معمولاً چند ثانیه طول می‌کشد. لطفاً همین‌جا بمانید.</p>
+              </div>
+            )}
+
+            {effectiveSubmission?.ai_feedback && (
+              <FeedbackReport feedback={effectiveSubmission.ai_feedback} adminFeedback={effectiveSubmission.admin_feedback} />
             )}
 
             <CTASection ctas={assignment.cta_config?.ctas} />
@@ -292,11 +308,12 @@ const AssignmentCard: React.FC<{
               </div>
             )}
 
-            {status === 'submitted' && !submission?.ai_feedback && (
+            {status === 'submitted' && !effectiveSubmission?.ai_feedback && !awaitingFeedback && (
               <div className="text-center text-sm text-muted-foreground py-2">
                 تمرین ارسال شد. در انتظار بازخورد...
               </div>
             )}
+
 
             {(status === 'submitted' || status === 'reviewed' || status === 'completed') && assignment.allow_resubmit && (
               <Button
