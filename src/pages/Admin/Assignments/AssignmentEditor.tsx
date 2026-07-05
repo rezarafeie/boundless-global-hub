@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { Sparkles, Save, Eye } from 'lucide-react';
 import type { Assignment, AssignmentBlock } from '@/types/assignment';
 import { AssignmentSection } from '@/components/Assignment/AssignmentSection';
+import { BlockBuilder } from '@/components/Assignment/BlockBuilder';
 
 const EMPTY: Partial<Assignment> = {
   title: '',
@@ -34,7 +35,9 @@ const AssignmentEditor: React.FC = () => {
   const navigate = useNavigate();
   const isNew = !id || id === 'new';
   const [a, setA] = useState<Partial<Assignment>>(EMPTY);
+  const [blocks, setBlocks] = useState<AssignmentBlock[]>([]);
   const [blocksJson, setBlocksJson] = useState('[]');
+  const [showJson, setShowJson] = useState(false);
   const [ctaJson, setCtaJson] = useState('{}');
   const [courses, setCourses] = useState<any[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
@@ -58,11 +61,18 @@ const AssignmentEditor: React.FC = () => {
     supabase.from('assignments').select('*').eq('id', id).single().then(({ data }) => {
       if (data) {
         setA(data as unknown as Assignment);
-        setBlocksJson(JSON.stringify(data.blocks, null, 2));
+        const bl = (data.blocks as unknown as AssignmentBlock[]) || [];
+        setBlocks(bl);
+        setBlocksJson(JSON.stringify(bl, null, 2));
         setCtaJson(JSON.stringify(data.cta_config, null, 2));
       }
     });
   }, [id, isNew]);
+
+  const syncBlocks = (b: AssignmentBlock[]) => {
+    setBlocks(b);
+    setBlocksJson(JSON.stringify(b, null, 2));
+  };
 
   const save = async () => {
     let blocks: AssignmentBlock[]; let cta_config: any;
