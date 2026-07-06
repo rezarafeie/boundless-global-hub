@@ -843,7 +843,7 @@ async function wrapWithSso(
       token,
       user_email: userEmail,
       type: 'academy',
-      course_slug: opts?.courseSlug ?? null,
+      course_slug: opts?.courseSlug ?? 'general',
       enrollment_id: opts?.enrollmentId ?? null,
     });
     if (error) {
