@@ -46,18 +46,50 @@ Deno.serve(async (req) => {
     const email = (user as any)?.email || '';
     const courseTitle = (course as any)?.title || '';
 
-    const raw = [
-      `درود وقت بخیر، برای فعال‌سازی پشتیبانی ${courseTitle} پیام میدم خدمتتون.sact`,
-      `نام: ${name}`,
-      `نام خانوادگی: ${lastname}`,
-      `شماره همراه: ${phone}`,
-      `ایمیل: ${email}`,
-      `شناسه کاربر: ${user_id}`,
-      `شناسه دوره: ${course_id}`,
-      `کد فعال‌سازی: ${row.activation_token}`,
-    ].join('\n');
+    const applyPlaceholders = (s: string) =>
+      s
+        .replace(/\{name\}/gi, name)
+        .replace(/\{first_name\}/gi, name)
+        .replace(/\{lastname\}/gi, lastname)
+        .replace(/\{last_name\}/gi, lastname)
+        .replace(/\{phone\}/gi, phone)
+        .replace(/\{email\}/gi, email)
+        .replace(/\{course\}/gi, courseTitle)
+        .replace(/\{course_title\}/gi, courseTitle)
+        .replace(/\{user_id\}/gi, String(user_id))
+        .replace(/\{course_id\}/gi, course_id)
+        .replace(/\{activation_token\}/gi, row.activation_token ?? '');
 
-    const supportLink = `https://t.me/rafieiacademy?text=${encodeURIComponent(raw)}`;
+    // Prefer the course's smart activation telegram link if configured.
+    const smartLink: string = (course as any)?.smart_activation_telegram_link || '';
+    let supportLink: string;
+
+    if (smartLink && smartLink.trim()) {
+      try {
+        const u = new URL(smartLink.trim());
+        const textParam = u.searchParams.get('text');
+        if (textParam !== null) {
+          u.searchParams.set('text', applyPlaceholders(textParam));
+          supportLink = u.toString();
+        } else {
+          supportLink = applyPlaceholders(smartLink.trim());
+        }
+      } catch {
+        supportLink = applyPlaceholders(smartLink.trim());
+      }
+    } else {
+      const raw = [
+        `درود وقت بخیر، برای فعال‌سازی پشتیبانی ${courseTitle} پیام میدم خدمتتون.sact`,
+        `نام: ${name}`,
+        `نام خانوادگی: ${lastname}`,
+        `شماره همراه: ${phone}`,
+        `ایمیل: ${email}`,
+        `شناسه کاربر: ${user_id}`,
+        `شناسه دوره: ${course_id}`,
+        `کد فعال‌سازی: ${row.activation_token}`,
+      ].join('\n');
+      supportLink = `https://t.me/rafieiacademy?text=${encodeURIComponent(raw)}`;
+    }
 
     if (!row.support_prefilled_link || row.support_prefilled_link !== supportLink) {
       await supabase
