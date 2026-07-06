@@ -299,7 +299,9 @@ const CourseEdit: React.FC = () => {
         telegram_course_access_via_bot_enabled: formData.telegram_course_access_via_bot_enabled,
         telegram_bot_welcome_message: formData.telegram_bot_welcome_message?.trim() || null,
         telegram_bot_activated_message: formData.telegram_bot_activated_message?.trim() || null,
-        telegram_bot_activation_buttons: (formData.telegram_bot_activation_buttons || []).filter((b: any) => b?.text?.trim() && b?.url?.trim())
+        telegram_bot_activation_buttons: (formData.telegram_bot_activation_buttons || []).filter((b: any) => b?.text?.trim() && b?.url?.trim()),
+        telegram_activation_keyword: formData.telegram_activation_keyword?.trim() || null
+
       };
 
       const { error } = await supabase
