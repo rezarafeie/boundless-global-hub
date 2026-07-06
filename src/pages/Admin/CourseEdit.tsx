@@ -816,9 +816,52 @@ mba
                         </p>
                       </div>
                     )}
+
+                    {/* Telegram Bot Support Activation Tracking */}
+                    <div className="border-t pt-4 mt-4 space-y-3">
+                      <h4 className="text-sm font-semibold text-foreground">فعال‌سازی پشتیبانی از طریق ربات تلگرام (رهگیری کامل)</h4>
+
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="telegram_support_activation_enabled"
+                          checked={formData.telegram_support_activation_enabled}
+                          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, telegram_support_activation_enabled: checked }))}
+                        />
+                        <Label htmlFor="telegram_support_activation_enabled">فعال‌سازی پشتیبانی از طریق ربات تلگرام</Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground pr-8">
+                        در صورت فعال بودن، کارت «فعال‌سازی پشتیبانی» کاربر را به ربات تلگرام هدایت می‌کند و کل مراحل فعال‌سازی رهگیری می‌شود.
+                      </p>
+
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="telegram_course_access_via_bot_enabled"
+                          checked={formData.telegram_course_access_via_bot_enabled}
+                          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, telegram_course_access_via_bot_enabled: checked }))}
+                        />
+                        <Label htmlFor="telegram_course_access_via_bot_enabled">دسترسی دوره از طریق ربات تلگرام</Label>
+                      </div>
+
+                      {formData.telegram_support_activation_enabled && (
+                        <div className="bg-muted/40 p-3 rounded-lg mt-2">
+                          <Label htmlFor="telegram_bot_welcome_message">پیام خوش‌آمدگویی ربات</Label>
+                          <Textarea
+                            id="telegram_bot_welcome_message"
+                            value={formData.telegram_bot_welcome_message}
+                            onChange={(e) => setFormData(prev => ({ ...prev, telegram_bot_welcome_message: e.target.value }))}
+                            rows={7}
+                            className="mt-2"
+                          />
+                          <p className="text-xs text-muted-foreground mt-2">
+                            متغیرهای در دسترس: {"{{name}}"}, {"{{course_title}}"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
+
 
 
               {/* SpotPlayer Section */}
