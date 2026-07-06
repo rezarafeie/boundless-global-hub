@@ -1683,6 +1683,7 @@ export type Database = {
           support_activation_required: boolean | null
           support_link: string | null
           telegram_activation_required: boolean | null
+          telegram_bot_activated_message: string | null
           telegram_bot_welcome_message: string | null
           telegram_channel_link: string | null
           telegram_course_access_via_bot_enabled: boolean
@@ -1728,6 +1729,7 @@ export type Database = {
           support_activation_required?: boolean | null
           support_link?: string | null
           telegram_activation_required?: boolean | null
+          telegram_bot_activated_message?: string | null
           telegram_bot_welcome_message?: string | null
           telegram_channel_link?: string | null
           telegram_course_access_via_bot_enabled?: boolean
@@ -1773,6 +1775,7 @@ export type Database = {
           support_activation_required?: boolean | null
           support_link?: string | null
           telegram_activation_required?: boolean | null
+          telegram_bot_activated_message?: string | null
           telegram_bot_welcome_message?: string | null
           telegram_channel_link?: string | null
           telegram_course_access_via_bot_enabled?: boolean
