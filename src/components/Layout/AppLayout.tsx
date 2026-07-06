@@ -2,6 +2,12 @@ import React, { ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Home,
   BookOpen,
   TrendingUp,
@@ -12,6 +18,7 @@ import {
   MoreVertical,
   GraduationCap,
   LogOut,
+  Monitor,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,6 +51,22 @@ const AppLayout = ({ children, title, showBackButton = true, rightAction }: AppL
   const handleBack = () => {
     if (window.history.length > 1) navigate(-1);
     else navigate("/app/dashboard");
+  };
+
+  const switchToFullMode = () => {
+    const currentPath = location.pathname;
+    if (currentPath === "/app/dashboard") {
+      navigate("/dashboard");
+    } else if (currentPath.startsWith("/app/course/")) {
+      const slug = currentPath.split("/app/course/")[1].split("/")[0];
+      navigate(`/courses/${slug}`);
+    } else if (currentPath === "/app/tests") {
+      navigate("/tests");
+    } else if (currentPath === "/app/profile") {
+      navigate("/profile");
+    } else {
+      navigate("/");
+    }
   };
 
   const BackIcon = isRtl ? ArrowRight : ArrowLeft;
@@ -115,6 +138,15 @@ const AppLayout = ({ children, title, showBackButton = true, rightAction }: AppL
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 shrink-0"
+                onClick={switchToFullMode}
+                aria-label="نمای کامل"
+              >
+                <Monitor size={16} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
                 onClick={() => logout()}
                 aria-label="خروج"
               >
@@ -178,11 +210,22 @@ const AppLayout = ({ children, title, showBackButton = true, rightAction }: AppL
                   {title || "آکادمی رفیعی"}
                 </h1>
               </div>
-              {rightAction || (
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical size={18} />
-                </Button>
-              )}
+              <div className="flex items-center gap-1">
+                {rightAction}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreVertical size={18} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align={isRtl ? "start" : "end"} sideOffset={8}>
+                    <DropdownMenuItem onClick={switchToFullMode}>
+                      <Monitor size={16} className="ml-2" />
+                      <span>نمای کامل</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </header>
 
