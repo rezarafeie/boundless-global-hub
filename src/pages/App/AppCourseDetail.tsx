@@ -55,7 +55,7 @@ interface CourseLesson {
 const AppCourseDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { getLessonByNumber } = useLessonNumber();
   const [activeTab, setActiveTab] = useState("lessons");
   const [loading, setLoading] = useState(true);
@@ -63,14 +63,16 @@ const AppCourseDetail = () => {
   const [sections, setSections] = useState<CourseSection[]>([]);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!isAuthenticated) {
-      navigate('/auth');
+      const current = window.location.pathname + window.location.search;
+      navigate(`/auth?redirect=${encodeURIComponent(current)}`, { replace: true });
       return;
     }
     if (slug) {
       fetchCourseData();
     }
-  }, [slug, isAuthenticated, navigate]);
+  }, [slug, isAuthenticated, authLoading, navigate]);
 
   const fetchCourseData = async () => {
     if (!slug || !user?.id) return;
