@@ -241,8 +241,24 @@ const AppCourseDetail = () => {
     }
   };
 
+  const handleShare = async () => {
+    const url = window.location.href;
+    const title = course?.title || 'دوره';
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        const { toast } = await import('sonner');
+        toast.success('لینک دوره کپی شد');
+      }
+    } catch (e) {
+      // user cancelled or share failed
+    }
+  };
+
   const rightAction = (
-    <Button variant="ghost" size="icon" className="h-8 w-8">
+    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleShare}>
       <Share size={18} />
     </Button>
   );
@@ -370,6 +386,7 @@ const AppCourseDetail = () => {
                         {section.lessons.map((lesson) => (
                           <div 
                             key={lesson.id}
+                            dir="rtl"
                             className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
                               lesson.locked 
                                 ? 'bg-muted/50 cursor-not-allowed opacity-60' 
@@ -379,7 +396,7 @@ const AppCourseDetail = () => {
                             }`}
                             onClick={() => handleLessonClick(lesson)}
                           >
-                            <div className="flex flex-row-reverse items-center gap-3">
+                            <div className="flex items-center gap-3">
                               {lesson.locked ? (
                                 <Lock size={16} className="text-muted-foreground" />
                               ) : lesson.completed ? (
