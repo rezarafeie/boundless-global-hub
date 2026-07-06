@@ -1022,6 +1022,7 @@ const EnrollSuccess: React.FC = () => {
         .select(`
           *,
           courses (
+            id,
             title,
             slug,
             redirect_url,
