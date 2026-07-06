@@ -144,6 +144,7 @@ import UserDetail from "./pages/UserDetail";
 // Test Admin components
 import EnrollAdminTests from "./pages/EnrollAdminTests";
 import BoundlessSmartTestSubmissions from "./pages/Admin/BoundlessSmartTestSubmissions";
+import SupportActivations from "./pages/Admin/SupportActivations";
 import TestEnrollmentAdminDetails from "./pages/TestEnrollmentAdminDetails";
 
 // Test components
