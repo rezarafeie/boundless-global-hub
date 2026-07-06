@@ -172,7 +172,7 @@ export function TelegramEnrollmentActivation({
       }
       return (
         <div className={`rounded-lg border border-green-500/40 bg-green-500/5 p-4 ${className ?? ''}`} dir="rtl">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-row-reverse items-center gap-2 mb-1">
             <CheckCircle2 className="h-5 w-5 text-green-600" />
             <h4 className="font-semibold">پشتیبانی فعال است</h4>
           </div>
@@ -204,7 +204,7 @@ export function TelegramEnrollmentActivation({
 
     return (
       <div className={`rounded-lg border p-4 space-y-3 ${className ?? ''}`} dir="rtl">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-row-reverse items-center gap-2">
           <Icon className="h-5 w-5 text-primary" />
           <h4 className="font-semibold">{title}</h4>
         </div>
