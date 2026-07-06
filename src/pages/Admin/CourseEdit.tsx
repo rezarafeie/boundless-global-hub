@@ -49,6 +49,8 @@ interface Course {
    telegram_support_activation_enabled?: boolean;
    telegram_course_access_via_bot_enabled?: boolean;
    telegram_bot_welcome_message?: string | null;
+   telegram_bot_activated_message?: string | null;
+   telegram_bot_activation_buttons?: any;
     use_enrollments_as_leads?: boolean;
     lead_start_date?: string | null;
     vpn_warning_enabled?: boolean;
@@ -102,6 +104,8 @@ const CourseEdit: React.FC = () => {
     telegram_support_activation_enabled: false,
     telegram_course_access_via_bot_enabled: false,
     telegram_bot_welcome_message: 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال و دوره برات فعال بشه.',
+    telegram_bot_activated_message: 'درود بر شما {{name}} 🌱\nپشتیبانی اختصاصی شما با موفقیت فعال شد ✅\n\nدسترسی به دوره «{{course_title}}» از دکمه‌های زیر برای شما فعال است.\n\nبا آرزوی موفقیت\nتیم پشتیبانی آکادمی رفیعی',
+    telegram_bot_activation_buttons: [] as { text: string; url: string }[],
     use_enrollments_as_leads: false,
     lead_start_date: '',
     vpn_warning_enabled: false
@@ -183,7 +187,9 @@ const CourseEdit: React.FC = () => {
         vpn_warning_enabled: (data as any).vpn_warning_enabled || false,
         telegram_support_activation_enabled: (data as any).telegram_support_activation_enabled || false,
         telegram_course_access_via_bot_enabled: (data as any).telegram_course_access_via_bot_enabled || false,
-        telegram_bot_welcome_message: (data as any).telegram_bot_welcome_message || 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال و دوره برات فعال بشه.'
+        telegram_bot_welcome_message: (data as any).telegram_bot_welcome_message || 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال و دوره برات فعال بشه.',
+        telegram_bot_activated_message: (data as any).telegram_bot_activated_message || 'درود بر شما {{name}} 🌱\nپشتیبانی اختصاصی شما با موفقیت فعال شد ✅\n\nدسترسی به دوره «{{course_title}}» از دکمه‌های زیر برای شما فعال است.\n\nبا آرزوی موفقیت\nتیم پشتیبانی آکادمی رفیعی',
+        telegram_bot_activation_buttons: Array.isArray((data as any).telegram_bot_activation_buttons) ? (data as any).telegram_bot_activation_buttons : [],
       });
 
       // If editing a dollar-priced course, fetch the exchange rate
@@ -285,7 +291,9 @@ const CourseEdit: React.FC = () => {
         vpn_warning_enabled: formData.vpn_warning_enabled,
         telegram_support_activation_enabled: formData.telegram_support_activation_enabled,
         telegram_course_access_via_bot_enabled: formData.telegram_course_access_via_bot_enabled,
-        telegram_bot_welcome_message: formData.telegram_bot_welcome_message?.trim() || null
+        telegram_bot_welcome_message: formData.telegram_bot_welcome_message?.trim() || null,
+        telegram_bot_activated_message: formData.telegram_bot_activated_message?.trim() || null,
+        telegram_bot_activation_buttons: (formData.telegram_bot_activation_buttons || []).filter((b: any) => b?.text?.trim() && b?.url?.trim())
       };
 
       const { error } = await supabase
@@ -855,6 +863,74 @@ mba
                           <p className="text-xs text-muted-foreground mt-2">
                             متغیرهای در دسترس: {"{{name}}"}, {"{{course_title}}"}
                           </p>
+                        </div>
+                      )}
+
+                      {formData.telegram_support_activation_enabled && (
+                        <div className="bg-muted/40 p-3 rounded-lg mt-2">
+                          <Label htmlFor="telegram_bot_activated_message">پیام پس از فعال‌سازی پشتیبانی</Label>
+                          <Textarea
+                            id="telegram_bot_activated_message"
+                            value={formData.telegram_bot_activated_message}
+                            onChange={(e) => setFormData(prev => ({ ...prev, telegram_bot_activated_message: e.target.value }))}
+                            rows={7}
+                            className="mt-2"
+                          />
+                          <p className="text-xs text-muted-foreground mt-2">
+                            پس از فعال‌سازی پشتیبانی، این پیام همراه با دکمه‌های دسترسی دوره برای کاربر ارسال می‌شود. متغیرها: {"{{name}}"}, {"{{course_title}}"}
+                          </p>
+
+                          <div className="mt-4">
+                            <Label>دکمه‌های سفارشی زیر پیام</Label>
+                            <p className="text-xs text-muted-foreground mt-1 mb-2">علاوه بر دکمه‌های پیش‌فرض (دسترسی دوره، کانال، پشتیبانی)، این دکمه‌ها هم افزوده می‌شوند.</p>
+                            <div className="space-y-2">
+                              {(formData.telegram_bot_activation_buttons || []).map((btn: { text: string; url: string }, idx: number) => (
+                                <div key={idx} className="flex gap-2">
+                                  <Input
+                                    placeholder="متن دکمه"
+                                    value={btn.text}
+                                    onChange={(e) => {
+                                      const arr = [...(formData.telegram_bot_activation_buttons || [])];
+                                      arr[idx] = { ...arr[idx], text: e.target.value };
+                                      setFormData(prev => ({ ...prev, telegram_bot_activation_buttons: arr }));
+                                    }}
+                                  />
+                                  <Input
+                                    placeholder="https://..."
+                                    value={btn.url}
+                                    onChange={(e) => {
+                                      const arr = [...(formData.telegram_bot_activation_buttons || [])];
+                                      arr[idx] = { ...arr[idx], url: e.target.value };
+                                      setFormData(prev => ({ ...prev, telegram_bot_activation_buttons: arr }));
+                                    }}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      const arr = [...(formData.telegram_bot_activation_buttons || [])];
+                                      arr.splice(idx, 1);
+                                      setFormData(prev => ({ ...prev, telegram_bot_activation_buttons: arr }));
+                                    }}
+                                  >
+                                    حذف
+                                  </Button>
+                                </div>
+                              ))}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setFormData(prev => ({
+                                  ...prev,
+                                  telegram_bot_activation_buttons: [...(prev.telegram_bot_activation_buttons || []), { text: '', url: '' }]
+                                }))}
+                              >
+                                افزودن دکمه
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
