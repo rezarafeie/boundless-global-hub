@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { enrollmentAuthService, EnrollmentAuthData } from '@/lib/enrollmentAuthService';
 import { esanjService } from '@/lib/esanjService';
+import { openInNewTab } from '@/lib/utils';
 import { toast } from 'sonner';
 import MainLayout from '@/components/Layout/MainLayout';
 import StartCourseSection from '@/components/StartCourseSection';
