@@ -73,6 +73,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
   userEmail 
 }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [ssoTokens, setSsoTokens] = useState<SSOToken[]>([]);
   const [loadingSSO, setLoadingSSO] = useState(false);
   const [supportActivated, setSupportActivated] = useState(false);
