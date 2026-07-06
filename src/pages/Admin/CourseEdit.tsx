@@ -104,6 +104,8 @@ const CourseEdit: React.FC = () => {
     telegram_support_activation_enabled: false,
     telegram_course_access_via_bot_enabled: false,
     telegram_bot_welcome_message: 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال و دوره برات فعال بشه.',
+    telegram_bot_activated_message: 'درود بر شما {{name}} 🌱\nپشتیبانی اختصاصی شما با موفقیت فعال شد ✅\n\nدسترسی به دوره «{{course_title}}» از دکمه‌های زیر برای شما فعال است.\n\nبا آرزوی موفقیت\nتیم پشتیبانی آکادمی رفیعی',
+    telegram_bot_activation_buttons: [] as { text: string; url: string }[],
     use_enrollments_as_leads: false,
     lead_start_date: '',
     vpn_warning_enabled: false
