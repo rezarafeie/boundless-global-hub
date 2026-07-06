@@ -205,7 +205,29 @@ const EnrollmentDetails: React.FC = () => {
     }
   };
 
-  const handleSmartActivation = () => {
+  const resolveTelegramUrl = async (originalUrl: string, kind: 'support' | 'telegram'): Promise<string> => {
+    const c: any = enrollment?.courses;
+    if (!enrollment || !c) return originalUrl;
+    const useBot = kind === 'support'
+      ? !!c.telegram_support_activation_enabled
+      : !!c.telegram_course_access_via_bot_enabled;
+    if (!useBot) return originalUrl;
+    const uid = user?.id ? Number(user.id) : null;
+    if (!uid) return originalUrl;
+    try {
+      const { data, error } = await supabase.functions.invoke('support-activation-create', {
+        body: { user_id: uid, course_id: c.id, enrollment_id: enrollment.id },
+      });
+      if (error) throw error;
+      const link = (data as any)?.activation?.bot_deep_link as string | undefined;
+      return link || originalUrl;
+    } catch (e) {
+      console.error('bot deep link fetch failed', e);
+      return originalUrl;
+    }
+  };
+
+  const handleSmartActivation = async () => {
     if (!enrollmentId) return;
     
     // Mark smart activation as clicked in localStorage
@@ -225,8 +247,10 @@ const EnrollmentDetails: React.FC = () => {
     localStorage.setItem(activationKey, JSON.stringify(activations));
     setSmartActivated(true);
     
-    // Open the link
-    window.open(enrollment!.courses.smart_activation_telegram_link!, '_blank');
+    // Route through bot if activation is enabled, otherwise open the raw link
+    const rawUrl = enrollment!.courses.smart_activation_telegram_link!;
+    const finalUrl = await resolveTelegramUrl(rawUrl, 'support');
+    window.open(finalUrl, '_blank');
     
     toast({
       title: "فعال‌سازی هوشمند",
