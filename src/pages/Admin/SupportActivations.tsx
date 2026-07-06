@@ -336,6 +336,9 @@ const SupportActivations: React.FC = () => {
                         <Button size="sm" variant="ghost" onClick={() => regenerateToken(r)} title="بازتولید توکن">
                           <RefreshCw className="h-3 w-3" />
                         </Button>
+                        <Button size="sm" variant="ghost" onClick={() => openLogs(r)} title="لاگ پیگیری‌ها">
+                          <FileText className="h-3 w-3" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -345,6 +348,34 @@ const SupportActivations: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!logRow} onOpenChange={(o) => !o && setLogRow(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>لاگ پیگیری‌ها — {logRow?.chat_users?.name || logRow?.user_id}</DialogTitle>
+          </DialogHeader>
+          {logs.length === 0 && <p className="text-sm text-muted-foreground py-4">هیچ لاگی ثبت نشده است.</p>}
+          <div className="space-y-2">
+            {logs.map((l) => (
+              <div key={l.id} className="border rounded-lg p-3 text-xs">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <Badge variant={l.status === 'sent' ? 'default' : 'destructive'}>{l.status}</Badge>
+                    <span className="font-semibold">مرحله {l.stage} — {l.channel}</span>
+                  </div>
+                  <span className="text-muted-foreground">{new Date(l.created_at).toLocaleString('fa-IR')}</span>
+                </div>
+                {l.error_message && <div className="text-destructive mt-1">{l.error_message}</div>}
+                {l.payload && (
+                  <pre className="mt-2 bg-muted/40 p-2 rounded overflow-x-auto text-[10px]" dir="ltr">
+{JSON.stringify(l.payload, null, 2)}
+                  </pre>
+                )}
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
