@@ -1133,6 +1133,30 @@ const EnrollSuccess: React.FC = () => {
     }
   };
 
+  // Route to Telegram bot deep link when bot activation is enabled for this course.
+  const resolveTelegramUrl = async (originalUrl: string, kind: 'support' | 'telegram'): Promise<string> => {
+    const c: any = result?.course;
+    const enrollment: any = result?.enrollment;
+    if (!c || !enrollment) return originalUrl;
+    const useBot = kind === 'support'
+      ? !!c.telegram_support_activation_enabled
+      : !!c.telegram_course_access_via_bot_enabled;
+    if (!useBot) return originalUrl;
+    const uid = user?.id ? Number(user.id) : (enrollment.chat_user_id ?? null);
+    if (!uid) return originalUrl;
+    try {
+      const { data, error } = await supabase.functions.invoke('support-activation-create', {
+        body: { user_id: uid, course_id: c.id, enrollment_id: enrollment.id },
+      });
+      if (error) throw error;
+      const link = (data as any)?.activation?.bot_deep_link as string | undefined;
+      return link || originalUrl;
+    } catch (e) {
+      console.error('bot deep link fetch failed', e);
+      return originalUrl;
+    }
+  };
+
   const handleRetry = () => {
     setVerifying(true);
     verifyPayment();
@@ -1286,7 +1310,7 @@ const EnrollSuccess: React.FC = () => {
               ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-300 dark:border-green-700 cursor-default shadow-lg'
               : 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 border-green-300 dark:border-green-700 hover:shadow-xl cursor-pointer transform hover:scale-105'
           }`}
-                          onClick={() => {
+                          onClick={async () => {
                             if (!smartActivated) {
                               // Mark smart activation as clicked in localStorage
                               if (result.enrollment?.id) {
@@ -1306,8 +1330,9 @@ const EnrollSuccess: React.FC = () => {
                                 localStorage.setItem(activationKey, JSON.stringify(activations));
                                 setSmartActivated(true);
                                 
-                                // Open the link in current tab and then show success page
-                                window.location.href = replacePlaceholders(result.course.smart_activation_telegram_link, result.enrollment);
+                                const rawUrl = replacePlaceholders(result.course.smart_activation_telegram_link, result.enrollment);
+                                const finalUrl = await resolveTelegramUrl(rawUrl, 'support');
+                                window.location.href = finalUrl;
                               }
                             }
                           }}
@@ -1368,11 +1393,13 @@ const EnrollSuccess: React.FC = () => {
                       
                       {/* Telegram Channel Activation */}
                       {result.course.telegram_activation_required && result.course.telegram_channel_link && (
-                        <a 
-                          href={result.course.telegram_channel_link} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900/30 dark:hover:to-cyan-900/30 transition-all duration-200 border border-blue-200 dark:border-blue-800 hover:shadow-md group"
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const finalUrl = await resolveTelegramUrl(result.course.telegram_channel_link!, 'telegram');
+                            window.open(finalUrl, '_blank', 'noopener,noreferrer');
+                          }}
+                          className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900/30 dark:hover:to-cyan-900/30 transition-all duration-200 border border-blue-200 dark:border-blue-800 hover:shadow-md group text-right w-full"
                         >
                           <div className="w-8 h-8 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
                             <Send className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -1386,7 +1413,7 @@ const EnrollSuccess: React.FC = () => {
                             </p>
                           </div>
                           <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-                        </a>
+                        </button>
                       )}
                       
                       {/* Telegram Activation without link - just show requirement */}

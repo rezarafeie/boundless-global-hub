@@ -49,6 +49,11 @@ export const TelegramBotManagement = () => {
     telegram_sales_default_course_id: null as string | null,
   });
   const [savingSales, setSavingSales] = useState(false);
+  const [welcomeSettings, setWelcomeSettings] = useState({
+    telegram_bot_welcome_logged_in: '',
+    telegram_bot_welcome_logged_out: '',
+  });
+  const [savingWelcome, setSavingWelcome] = useState(false);
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
 
   const fetchUsers = async () => {
@@ -66,7 +71,7 @@ export const TelegramBotManagement = () => {
   const fetchSettings = async () => {
     const { data } = await supabase
       .from('admin_settings')
-      .select('telegram_notify_lead_assigned, telegram_notify_consultation, telegram_notify_daily_summary, telegram_ai_assistant_enabled, telegram_sales_ai_enabled, telegram_sales_ai_prompt, telegram_sales_ai_model, telegram_sales_default_course_id' as any)
+      .select('telegram_notify_lead_assigned, telegram_notify_consultation, telegram_notify_daily_summary, telegram_ai_assistant_enabled, telegram_sales_ai_enabled, telegram_sales_ai_prompt, telegram_sales_ai_model, telegram_sales_default_course_id, telegram_bot_welcome_logged_in, telegram_bot_welcome_logged_out' as any)
       .eq('id', 1)
       .maybeSingle();
     if (data) {
@@ -82,6 +87,10 @@ export const TelegramBotManagement = () => {
         telegram_sales_ai_prompt: d.telegram_sales_ai_prompt ?? '',
         telegram_sales_ai_model: d.telegram_sales_ai_model ?? 'google/gemini-2.5-flash',
         telegram_sales_default_course_id: d.telegram_sales_default_course_id ?? null,
+      });
+      setWelcomeSettings({
+        telegram_bot_welcome_logged_in: d.telegram_bot_welcome_logged_in ?? '',
+        telegram_bot_welcome_logged_out: d.telegram_bot_welcome_logged_out ?? '',
       });
     }
   };
@@ -106,6 +115,20 @@ export const TelegramBotManagement = () => {
     if (error) toast({ title: 'خطا', description: error.message, variant: 'destructive' });
     else toast({ title: '✅ تنظیمات مشاور فروش ذخیره شد' });
   };
+
+  const saveWelcomeSettings = async () => {
+    setSavingWelcome(true);
+    const { error } = await supabase.from('admin_settings').update({
+      telegram_bot_welcome_logged_in: welcomeSettings.telegram_bot_welcome_logged_in || null,
+      telegram_bot_welcome_logged_out: welcomeSettings.telegram_bot_welcome_logged_out || null,
+      updated_at: new Date().toISOString(),
+    } as any).eq('id', 1);
+    setSavingWelcome(false);
+    if (error) toast({ title: 'خطا', description: error.message, variant: 'destructive' });
+    else toast({ title: '✅ پیام‌های خوش‌آمدگویی ذخیره شد' });
+  };
+
+
 
 
   const linkUser = async (userId: number) => {
@@ -286,6 +309,49 @@ export const TelegramBotManagement = () => {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Send className="w-4 h-4" /> پیام خوش‌آمدگویی ربات
+          </CardTitle>
+          <CardDescription>
+            پیام اولی که ربات هنگام /start ارسال می‌کند. متغیرهای قابل استفاده:
+            <br />
+            <code dir="ltr">{'{name}'}</code>, <code dir="ltr">{'{first_name}'}</code>, <code dir="ltr">{'{last_name}'}</code>,{' '}
+            <code dir="ltr">{'{phone}'}</code>, <code dir="ltr">{'{email}'}</code>, <code dir="ltr">{'{role}'}</code>,{' '}
+            <code dir="ltr">{'{courses}'}</code>, <code dir="ltr">{'{chat_id}'}</code>,{' '}
+            <code dir="ltr">{'{date}'}</code>, <code dir="ltr">{'{time}'}</code>, <code dir="ltr">{'{datetime}'}</code>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-sm">پیام برای کاربران وارد شده (لینک شده)</Label>
+            <Textarea
+              dir="rtl"
+              rows={8}
+              className="text-sm"
+              value={welcomeSettings.telegram_bot_welcome_logged_in}
+              onChange={(e) => setWelcomeSettings(s => ({ ...s, telegram_bot_welcome_logged_in: e.target.value }))}
+              placeholder={'سلام {name} 👋\nنقش شما: {role}\nدوره‌های شما: {courses}\n\nاز منوی زیر استفاده کنید:'}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm">پیام برای کاربران وارد نشده (لینک نشده)</Label>
+            <Textarea
+              dir="rtl"
+              rows={8}
+              className="text-sm"
+              value={welcomeSettings.telegram_bot_welcome_logged_out}
+              onChange={(e) => setWelcomeSettings(s => ({ ...s, telegram_bot_welcome_logged_out: e.target.value }))}
+              placeholder={'👋 به ربات آکادمی رفیعی خوش آمدید\n\nبرای ورود روی دکمه زیر بزنید یا از فرم‌های زیر استفاده کنید.\n\nChat ID شما: {chat_id}\nتاریخ: {date}'}
+            />
+          </div>
+          <Button onClick={saveWelcomeSettings} disabled={savingWelcome} size="sm" className="w-full sm:w-auto">
+            <Save className="w-4 h-4 ml-2" />
+            {savingWelcome ? 'در حال ذخیره...' : 'ذخیره پیام‌های خوش‌آمدگویی'}
+          </Button>
+        </CardContent>
+      </Card>
 
 
       <Card>

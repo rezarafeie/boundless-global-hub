@@ -154,6 +154,93 @@ function welcomeText(user: BotUser): string {
   ].join('\n');
 }
 
+function roleLabel(role: string | null | undefined): string {
+  const roleNames: Record<string, string> = {
+    admin: 'مدیر کل', sales_manager: 'مدیر فروش', sales_agent: 'کارشناس فروش', student: 'دانشجو',
+  };
+  return roleNames[role ?? 'student'] ?? 'کاربر';
+}
+
+async function loadWelcomeTemplates(): Promise<{ logged_in: string | null; logged_out: string | null }> {
+  const { data } = await supabase
+    .from('admin_settings')
+    .select('telegram_bot_welcome_logged_in, telegram_bot_welcome_logged_out')
+    .eq('id', 1)
+    .maybeSingle();
+  return {
+    logged_in: (data as any)?.telegram_bot_welcome_logged_in ?? null,
+    logged_out: (data as any)?.telegram_bot_welcome_logged_out ?? null,
+  };
+}
+
+function fmtTehran(kind: 'date' | 'time' | 'datetime'): string {
+  const now = new Date();
+  const opts: Intl.DateTimeFormatOptions = { timeZone: 'Asia/Tehran' };
+  if (kind === 'date' || kind === 'datetime') {
+    opts.year = 'numeric'; opts.month = '2-digit'; opts.day = '2-digit';
+  }
+  if (kind === 'time' || kind === 'datetime') {
+    opts.hour = '2-digit'; opts.minute = '2-digit';
+  }
+  return new Intl.DateTimeFormat('fa-IR', opts).format(now);
+}
+
+function applyWelcomePlaceholders(template: string, ctx: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (_m, k) => ctx[k] ?? '');
+}
+
+async function buildWelcomeContext(chat_id: number, user: BotUser | null): Promise<Record<string, string>> {
+  const ctx: Record<string, string> = {
+    chat_id: String(chat_id),
+    date: fmtTehran('date'),
+    time: fmtTehran('time'),
+    datetime: fmtTehran('datetime'),
+    name: '', first_name: '', last_name: '', phone: '', email: '', role: '', courses: '',
+  };
+  if (!user) return ctx;
+  const { data: u } = await supabase
+    .from('chat_users')
+    .select('name, first_name, last_name, phone, email, role')
+    .eq('id', user.id)
+    .maybeSingle();
+  const nm = (u as any) ?? {};
+  ctx.name = escapeHtml(nm.name ?? user.name ?? '');
+  ctx.first_name = escapeHtml(nm.first_name ?? '');
+  ctx.last_name = escapeHtml(nm.last_name ?? '');
+  ctx.phone = escapeHtml(nm.phone ?? user.phone ?? '');
+  ctx.email = escapeHtml(nm.email ?? '');
+  ctx.role = escapeHtml(roleLabel(user.role));
+  const phone = nm.phone ?? user.phone;
+  if (phone) {
+    const variants = [phone, `0${phone}`, String(phone).replace(/^0/, '')];
+    const { data: enrs } = await supabase
+      .from('enrollments')
+      .select('courses(title)')
+      .in('phone', variants)
+      .in('payment_status', ['success', 'completed'])
+      .limit(20);
+    const titles = (enrs ?? []).map((e: any) => e.courses?.title).filter(Boolean);
+    ctx.courses = escapeHtml(titles.join('، '));
+  }
+  return ctx;
+}
+
+async function renderWelcome(chat_id: number, user: BotUser | null): Promise<string> {
+  const templates = await loadWelcomeTemplates();
+  const tpl = user ? templates.logged_in : templates.logged_out;
+  if (tpl && tpl.trim()) {
+    const ctx = await buildWelcomeContext(chat_id, user);
+    return applyWelcomePlaceholders(tpl, ctx);
+  }
+  // Fallback to defaults
+  if (user) return welcomeText(user);
+  return [
+    `👋 <b>به ربات آکادمی رفیعی خوش آمدید</b>`, ``,
+    `از فرم‌های زیر استفاده کنید یا با شماره موبایل وارد شوید.`, ``,
+    `Chat ID شما: <code>${chat_id}</code>`,
+  ].join('\n');
+}
+
 // ============ Filter helpers ============
 function periodSince(p?: string): string | null {
   const now = new Date();
@@ -824,7 +911,7 @@ async function handleOtpInput(chat_id: number, text: string) {
   await clearSession(chat_id);
   const user = await resolveUser(chat_id);
   if (user) {
-    await sendMessage(chat_id, `✅ <b>ورود موفق!</b>\n\n${welcomeText(user)}`, { keyboard: await buildStartKeyboard(user) });
+    await sendMessage(chat_id, `✅ <b>ورود موفق!</b>\n\n${await renderWelcome(chat_id, user)}`, { keyboard: await buildStartKeyboard(user) });
     if (pending_enroll) await tryLinkEnrollment(chat_id, pending_enroll, user);
   }
 }
@@ -928,7 +1015,7 @@ async function handleSignupEmail(chat_id: number, text: string) {
   await clearSession(chat_id);
   const user = await resolveUser(chat_id);
   if (user) {
-    await sendMessage(chat_id, `🎉 <b>حساب شما با موفقیت ساخته شد!</b>\n\n${welcomeText(user)}`, { keyboard: await buildStartKeyboard(user) });
+    await sendMessage(chat_id, `🎉 <b>حساب شما با موفقیت ساخته شد!</b>\n\n${await renderWelcome(chat_id, user)}`, { keyboard: await buildStartKeyboard(user) });
     if (pending_enroll) await tryLinkEnrollment(chat_id, pending_enroll, user);
   }
 }
@@ -2913,11 +3000,7 @@ async function handleUpdate(update: any) {
         return;
       }
       const kbd = await buildStartKeyboard(null);
-      await sendMessage(chat_id, [
-        `👋 <b>به ربات آکادمی رفیعی خوش آمدید</b>`, ``,
-        `از فرم‌های زیر استفاده کنید یا با شماره موبایل وارد شوید.`, ``,
-        `Chat ID شما: <code>${chat_id}</code>`,
-      ].join('\n'), { keyboard: kbd });
+      await sendMessage(chat_id, await renderWelcome(chat_id, null), { keyboard: kbd });
       return;
     }
     if (session?.state === 'awaiting_phone' && text) { await handlePhoneInput(chat_id, text); return; }
@@ -2942,7 +3025,7 @@ async function handleUpdate(update: any) {
       return;
     }
     const kbd = await buildStartKeyboard(user);
-    await sendMessage(chat_id, welcomeText(user), { keyboard: kbd });
+    await sendMessage(chat_id, await renderWelcome(chat_id, user), { keyboard: kbd });
     return;
   }
 
