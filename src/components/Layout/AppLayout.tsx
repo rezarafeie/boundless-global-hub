@@ -138,6 +138,15 @@ const AppLayout = ({ children, title, showBackButton = true, rightAction }: AppL
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 shrink-0"
+                onClick={switchToFullMode}
+                aria-label="نمای کامل"
+              >
+                <Monitor size={16} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
                 onClick={() => logout()}
                 aria-label="خروج"
               >
