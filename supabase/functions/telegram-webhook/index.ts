@@ -3016,7 +3016,7 @@ async function handleUpdate(update: any) {
         const targetChat = (act as any).telegram_id;
         if (targetChat) {
           const [{ data: course }, { data: cu }] = await Promise.all([
-            supabase.from('courses').select('title, telegram_bot_activated_message, telegram_channel_link, redirect_url, support_link, slug').eq('id', act.course_id).maybeSingle(),
+            supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', act.course_id).maybeSingle(),
             supabase.from('chat_users').select('name, first_name').eq('id', act.user_id).maybeSingle(),
           ]);
           const displayName = (cu as any)?.first_name || (cu as any)?.name || 'دوست عزیز';
@@ -3043,27 +3043,40 @@ async function handleUpdate(update: any) {
           if (channel) buttons.push([{ text: '📢 کانال دوره', url: channel }]);
           const support = (course as any)?.support_link;
           if (support) buttons.push([{ text: '💬 ارتباط با پشتیبان', url: support }]);
+          const customButtons = Array.isArray((course as any)?.telegram_bot_activation_buttons)
+            ? ((course as any).telegram_bot_activation_buttons as any[])
+            : [];
+          for (const b of customButtons) {
+            if (b?.text && b?.url) buttons.push([{ text: String(b.text), url: String(b.url) }]);
+          }
 
-          try {
-            await tgCall('sendMessage', {
-              chat_id: targetChat,
-              text: welcome,
-              parse_mode: 'HTML',
-              reply_markup: buttons.length ? { inline_keyboard: buttons } : undefined,
-            });
-          } catch (e) { console.warn('activated welcome send failed', e); }
+          // Send welcome DM to the user's private chat with bot (if known)
+          if (targetChat) {
+            try {
+              await tgCall('sendMessage', {
+                chat_id: targetChat,
+                text: welcome,
+                parse_mode: 'HTML',
+                reply_markup: buttons.length ? { inline_keyboard: buttons } : undefined,
+              });
+            } catch (e) { console.warn('activated welcome DM failed', e); }
+          }
+
+          // Reply in the chat where the activation message was sent (business/support group)
+          if (business_connection_id || (msg?.chat?.type && msg.chat.type !== 'private')) {
+            try {
+              await tgCall('sendMessage', {
+                chat_id,
+                text: welcome,
+                parse_mode: 'HTML',
+                reply_to_message_id: msg.message_id,
+                reply_markup: buttons.length ? { inline_keyboard: buttons } : undefined,
+                ...(business_connection_id ? { business_connection_id } : {}),
+              });
+            } catch (e) { console.warn('activated welcome reply failed', e); }
+          }
         }
 
-        if (business_connection_id || (msg?.chat?.type && msg.chat.type !== 'private')) {
-          try {
-            await tgCall('sendMessage', {
-              chat_id,
-              text: '✅ پشتیبانی برای این کاربر با موفقیت فعال شد.',
-              reply_to_message_id: msg.message_id,
-              ...(business_connection_id ? { business_connection_id } : {}),
-            });
-          } catch {}
-        }
         return;
       }
       if (act && act.status === 'activated' && (business_connection_id || (msg?.chat?.type && msg.chat.type !== 'private'))) {
