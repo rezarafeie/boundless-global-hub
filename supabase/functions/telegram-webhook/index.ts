@@ -2818,10 +2818,11 @@ async function handleUpdate(update: any) {
     return;
   }
 
-  // Messages
-  const msg = update.message ?? update.edited_message;
+  // Messages (including Telegram Business messages)
+  const msg = update.message ?? update.edited_message ?? update.business_message ?? update.edited_business_message;
   if (!msg?.chat?.id) return;
   const chat_id = msg.chat.id;
+  const business_connection_id: string | undefined = msg?.business_connection_id ?? update.business_message?.business_connection_id ?? update.edited_business_message?.business_connection_id;
   const text: string = msg.text ?? '';
 
   // Personalized coach: refresh activity + capture coaching answers (best-effort)
