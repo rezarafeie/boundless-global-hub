@@ -2435,8 +2435,9 @@ async function handleUpdate(update: any) {
       await clearSession(chat_id);
       const u = await resolveUser(chat_id);
       const kbd = await buildStartKeyboard(u);
-      const txt = u ? welcomeText(u) : '👋 منوی اصلی';
+      const txt = await renderWelcome(chat_id, u);
       await editMessage(chat_id, message_id, txt, kbd);
+
       return;
     }
     if (data === 'ai:start') {
