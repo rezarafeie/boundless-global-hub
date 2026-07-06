@@ -208,7 +208,16 @@ const CourseEdit: React.FC = () => {
         telegram_bot_activation_buttons: Array.isArray((data as any).telegram_bot_activation_buttons) ? (data as any).telegram_bot_activation_buttons : [],
         telegram_activation_keyword: (data as any).telegram_activation_keyword || '',
         support_prefilled_message_template: (data as any).support_prefilled_message_template || '',
-
+        support_followup_enabled: (data as any).support_followup_enabled ?? true,
+        support_followup_stage1_delay_minutes: (data as any).support_followup_stage1_delay_minutes ?? 60,
+        support_followup_stage2_delay_minutes: (data as any).support_followup_stage2_delay_minutes ?? 60,
+        support_followup_stage3_delay_minutes: (data as any).support_followup_stage3_delay_minutes ?? 180,
+        support_followup_max_repeats: (data as any).support_followup_max_repeats ?? 2,
+        support_followup_stage1_email_subject: (data as any).support_followup_stage1_email_subject || '',
+        support_followup_stage1_email_body: (data as any).support_followup_stage1_email_body || '',
+        support_followup_stage1_sms_text: (data as any).support_followup_stage1_sms_text || '',
+        support_followup_stage2_bot_text: (data as any).support_followup_stage2_bot_text || '',
+        support_followup_stage3_business_text: (data as any).support_followup_stage3_business_text || '',
       });
 
       // If editing a dollar-priced course, fetch the exchange rate
