@@ -1316,7 +1316,7 @@ const EnrollSuccess: React.FC = () => {
                           type="button"
                           onClick={async () => {
                             const finalUrl = await resolveTelegramUrl('', 'support');
-                            if (finalUrl) window.open(finalUrl, '_blank', 'noopener,noreferrer');
+                            if (finalUrl) openInNewTab(finalUrl);
                           }}
                           className="flex items-center gap-3 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 border-2 border-green-300 dark:border-green-700 hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] cursor-pointer text-right w-full group"
                         >
