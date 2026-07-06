@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { TetherlandService } from '@/lib/tetherlandService';
 import MainLayout from '@/components/Layout/MainLayout';
+import TestStageButton from '@/components/Admin/TestStageButton';
 
 interface Course {
   id: string;
