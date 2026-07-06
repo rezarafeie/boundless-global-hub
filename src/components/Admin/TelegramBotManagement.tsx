@@ -116,6 +116,17 @@ export const TelegramBotManagement = () => {
     else toast({ title: '✅ تنظیمات مشاور فروش ذخیره شد' });
   };
 
+  const saveWelcomeSettings = async () => {
+    setSavingWelcome(true);
+    const { error } = await supabase.from('admin_settings').update({
+      telegram_bot_welcome_logged_in: welcomeSettings.telegram_bot_welcome_logged_in || null,
+      telegram_bot_welcome_logged_out: welcomeSettings.telegram_bot_welcome_logged_out || null,
+      updated_at: new Date().toISOString(),
+    } as any).eq('id', 1);
+    setSavingWelcome(false);
+    if (error) toast({ title: 'خطا', description: error.message, variant: 'destructive' });
+    else toast({ title: '✅ پیام‌های خوش‌آمدگویی ذخیره شد' });
+
 
   const linkUser = async (userId: number) => {
     const val = chatIdInputs[userId]?.trim();
