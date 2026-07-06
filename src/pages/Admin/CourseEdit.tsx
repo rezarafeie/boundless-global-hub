@@ -99,6 +99,9 @@ const CourseEdit: React.FC = () => {
     rafiei_bot_followup_enabled: false,
     rafiei_bot_activation_required: false,
     rafiei_bot_followup_config: { lesson_complete: true, course_complete: true, inactivity: true, coaching: true } as { lesson_complete: boolean; course_complete: boolean; inactivity: boolean; coaching: boolean },
+    telegram_support_activation_enabled: false,
+    telegram_course_access_via_bot_enabled: false,
+    telegram_bot_welcome_message: 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال و دوره برات فعال بشه.',
     use_enrollments_as_leads: false,
     lead_start_date: '',
     vpn_warning_enabled: false
