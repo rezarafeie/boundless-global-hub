@@ -71,7 +71,7 @@ export const TelegramBotManagement = () => {
   const fetchSettings = async () => {
     const { data } = await supabase
       .from('admin_settings')
-      .select('telegram_notify_lead_assigned, telegram_notify_consultation, telegram_notify_daily_summary, telegram_ai_assistant_enabled, telegram_sales_ai_enabled, telegram_sales_ai_prompt, telegram_sales_ai_model, telegram_sales_default_course_id' as any)
+      .select('telegram_notify_lead_assigned, telegram_notify_consultation, telegram_notify_daily_summary, telegram_ai_assistant_enabled, telegram_sales_ai_enabled, telegram_sales_ai_prompt, telegram_sales_ai_model, telegram_sales_default_course_id, telegram_bot_welcome_logged_in, telegram_bot_welcome_logged_out' as any)
       .eq('id', 1)
       .maybeSingle();
     if (data) {
@@ -87,6 +87,10 @@ export const TelegramBotManagement = () => {
         telegram_sales_ai_prompt: d.telegram_sales_ai_prompt ?? '',
         telegram_sales_ai_model: d.telegram_sales_ai_model ?? 'google/gemini-2.5-flash',
         telegram_sales_default_course_id: d.telegram_sales_default_course_id ?? null,
+      });
+      setWelcomeSettings({
+        telegram_bot_welcome_logged_in: d.telegram_bot_welcome_logged_in ?? '',
+        telegram_bot_welcome_logged_out: d.telegram_bot_welcome_logged_out ?? '',
       });
     }
   };
