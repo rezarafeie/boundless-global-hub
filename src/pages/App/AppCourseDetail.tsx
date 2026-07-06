@@ -304,7 +304,7 @@ const AppCourseDetail = () => {
             <CardContent className="p-4">
               <div className="space-y-4">
                 <div>
-                  <h2 className="text-xl font-bold mb-2">{course.title}</h2>
+                  <h2 className="text-xl font-bold mb-2 text-right">{course.title}</h2>
                   <p className="text-muted-foreground text-sm">{course.description}</p>
                 </div>
                 
@@ -363,7 +363,7 @@ const AppCourseDetail = () => {
                 sections.map((section) => (
                   <Card key={section.id}>
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-base">{section.title}</CardTitle>
+                      <CardTitle className="text-base text-right">{section.title}</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0">
                       <div className="space-y-2">
@@ -388,8 +388,8 @@ const AppCourseDetail = () => {
                                 <Play size={16} className="text-primary" />
                               )}
                               <div>
-                                <p className="font-medium text-sm">{lesson.title}</p>
-                                <p className="text-xs text-muted-foreground">{lesson.duration} دقیقه</p>
+                                <p className="font-medium text-sm text-right">{lesson.title}</p>
+                                <p className="text-xs text-muted-foreground text-right">{lesson.duration} دقیقه</p>
                               </div>
                             </div>
                             {lesson.completed && (
