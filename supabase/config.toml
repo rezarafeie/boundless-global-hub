@@ -154,3 +154,10 @@ verify_jwt = false
 
 [functions.handle-email-suppression]
 verify_jwt = false
+
+[functions.support-activation-followup-cron]
+verify_jwt = false
+
+[functions.support-activation-followup-test]
+verify_jwt = false
+

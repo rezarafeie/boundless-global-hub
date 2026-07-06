@@ -1686,11 +1686,18 @@ export type Database = {
           support_followup_stage1_delay_minutes: number
           support_followup_stage1_email_body: string | null
           support_followup_stage1_email_subject: string | null
+          support_followup_stage1_enabled: boolean
+          support_followup_stage1_repeat_delay_minutes: number
+          support_followup_stage1_sms_template_url: string | null
           support_followup_stage1_sms_text: string | null
           support_followup_stage2_bot_text: string | null
           support_followup_stage2_delay_minutes: number
+          support_followup_stage2_enabled: boolean
+          support_followup_stage2_repeat_delay_minutes: number
           support_followup_stage3_business_text: string | null
           support_followup_stage3_delay_minutes: number
+          support_followup_stage3_enabled: boolean
+          support_followup_stage3_repeat_delay_minutes: number
           support_link: string | null
           support_prefilled_message_template: string | null
           telegram_activation_keyword: string | null
@@ -1745,11 +1752,18 @@ export type Database = {
           support_followup_stage1_delay_minutes?: number
           support_followup_stage1_email_body?: string | null
           support_followup_stage1_email_subject?: string | null
+          support_followup_stage1_enabled?: boolean
+          support_followup_stage1_repeat_delay_minutes?: number
+          support_followup_stage1_sms_template_url?: string | null
           support_followup_stage1_sms_text?: string | null
           support_followup_stage2_bot_text?: string | null
           support_followup_stage2_delay_minutes?: number
+          support_followup_stage2_enabled?: boolean
+          support_followup_stage2_repeat_delay_minutes?: number
           support_followup_stage3_business_text?: string | null
           support_followup_stage3_delay_minutes?: number
+          support_followup_stage3_enabled?: boolean
+          support_followup_stage3_repeat_delay_minutes?: number
           support_link?: string | null
           support_prefilled_message_template?: string | null
           telegram_activation_keyword?: string | null
@@ -1804,11 +1818,18 @@ export type Database = {
           support_followup_stage1_delay_minutes?: number
           support_followup_stage1_email_body?: string | null
           support_followup_stage1_email_subject?: string | null
+          support_followup_stage1_enabled?: boolean
+          support_followup_stage1_repeat_delay_minutes?: number
+          support_followup_stage1_sms_template_url?: string | null
           support_followup_stage1_sms_text?: string | null
           support_followup_stage2_bot_text?: string | null
           support_followup_stage2_delay_minutes?: number
+          support_followup_stage2_enabled?: boolean
+          support_followup_stage2_repeat_delay_minutes?: number
           support_followup_stage3_business_text?: string | null
           support_followup_stage3_delay_minutes?: number
+          support_followup_stage3_enabled?: boolean
+          support_followup_stage3_repeat_delay_minutes?: number
           support_link?: string | null
           support_prefilled_message_template?: string | null
           telegram_activation_keyword?: string | null

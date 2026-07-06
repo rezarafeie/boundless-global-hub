@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { TetherlandService } from '@/lib/tetherlandService';
 import MainLayout from '@/components/Layout/MainLayout';
+import TestStageButton from '@/components/Admin/TestStageButton';
 
 interface Course {
   id: string;
@@ -112,13 +113,20 @@ const CourseEdit: React.FC = () => {
     telegram_activation_keyword: '',
     support_prefilled_message_template: '',
     support_followup_enabled: true,
+    support_followup_stage1_enabled: true,
+    support_followup_stage2_enabled: true,
+    support_followup_stage3_enabled: true,
     support_followup_stage1_delay_minutes: 60,
     support_followup_stage2_delay_minutes: 60,
     support_followup_stage3_delay_minutes: 180,
+    support_followup_stage1_repeat_delay_minutes: 1440,
+    support_followup_stage2_repeat_delay_minutes: 1440,
+    support_followup_stage3_repeat_delay_minutes: 1440,
     support_followup_max_repeats: 2,
     support_followup_stage1_email_subject: '',
     support_followup_stage1_email_body: '',
     support_followup_stage1_sms_text: '',
+    support_followup_stage1_sms_template_url: 'https://api.kavenegar.com/v1/{api_key}/verify/lookup.json?receptor={user_phone_number}&token={user_name}&token10={course_title}&template=welcomefollowup',
     support_followup_stage2_bot_text: '',
     support_followup_stage3_business_text: '',
 
@@ -209,13 +217,20 @@ const CourseEdit: React.FC = () => {
         telegram_activation_keyword: (data as any).telegram_activation_keyword || '',
         support_prefilled_message_template: (data as any).support_prefilled_message_template || '',
         support_followup_enabled: (data as any).support_followup_enabled ?? true,
+        support_followup_stage1_enabled: (data as any).support_followup_stage1_enabled ?? true,
+        support_followup_stage2_enabled: (data as any).support_followup_stage2_enabled ?? true,
+        support_followup_stage3_enabled: (data as any).support_followup_stage3_enabled ?? true,
         support_followup_stage1_delay_minutes: (data as any).support_followup_stage1_delay_minutes ?? 60,
         support_followup_stage2_delay_minutes: (data as any).support_followup_stage2_delay_minutes ?? 60,
         support_followup_stage3_delay_minutes: (data as any).support_followup_stage3_delay_minutes ?? 180,
+        support_followup_stage1_repeat_delay_minutes: (data as any).support_followup_stage1_repeat_delay_minutes ?? 1440,
+        support_followup_stage2_repeat_delay_minutes: (data as any).support_followup_stage2_repeat_delay_minutes ?? 1440,
+        support_followup_stage3_repeat_delay_minutes: (data as any).support_followup_stage3_repeat_delay_minutes ?? 1440,
         support_followup_max_repeats: (data as any).support_followup_max_repeats ?? 2,
         support_followup_stage1_email_subject: (data as any).support_followup_stage1_email_subject || '',
         support_followup_stage1_email_body: (data as any).support_followup_stage1_email_body || '',
         support_followup_stage1_sms_text: (data as any).support_followup_stage1_sms_text || '',
+        support_followup_stage1_sms_template_url: (data as any).support_followup_stage1_sms_template_url || 'https://api.kavenegar.com/v1/{api_key}/verify/lookup.json?receptor={user_phone_number}&token={user_name}&token10={course_title}&template=welcomefollowup',
         support_followup_stage2_bot_text: (data as any).support_followup_stage2_bot_text || '',
         support_followup_stage3_business_text: (data as any).support_followup_stage3_business_text || '',
       });
@@ -325,13 +340,20 @@ const CourseEdit: React.FC = () => {
         telegram_activation_keyword: formData.telegram_activation_keyword?.trim() || null,
         support_prefilled_message_template: formData.support_prefilled_message_template?.trim() || null,
         support_followup_enabled: formData.support_followup_enabled,
+        support_followup_stage1_enabled: formData.support_followup_stage1_enabled,
+        support_followup_stage2_enabled: formData.support_followup_stage2_enabled,
+        support_followup_stage3_enabled: formData.support_followup_stage3_enabled,
         support_followup_stage1_delay_minutes: Number(formData.support_followup_stage1_delay_minutes) || 60,
         support_followup_stage2_delay_minutes: Number(formData.support_followup_stage2_delay_minutes) || 60,
         support_followup_stage3_delay_minutes: Number(formData.support_followup_stage3_delay_minutes) || 180,
+        support_followup_stage1_repeat_delay_minutes: Number(formData.support_followup_stage1_repeat_delay_minutes) || 1440,
+        support_followup_stage2_repeat_delay_minutes: Number(formData.support_followup_stage2_repeat_delay_minutes) || 1440,
+        support_followup_stage3_repeat_delay_minutes: Number(formData.support_followup_stage3_repeat_delay_minutes) || 1440,
         support_followup_max_repeats: Number(formData.support_followup_max_repeats) || 2,
         support_followup_stage1_email_subject: formData.support_followup_stage1_email_subject?.trim() || null,
         support_followup_stage1_email_body: formData.support_followup_stage1_email_body?.trim() || null,
         support_followup_stage1_sms_text: formData.support_followup_stage1_sms_text?.trim() || null,
+        support_followup_stage1_sms_template_url: formData.support_followup_stage1_sms_template_url?.trim() || null,
         support_followup_stage2_bot_text: formData.support_followup_stage2_bot_text?.trim() || null,
         support_followup_stage3_business_text: formData.support_followup_stage3_business_text?.trim() || null,
 
@@ -1033,98 +1055,126 @@ mba
                       </p>
 
                       {/* Stage 1: Email + SMS */}
-                      <div className="bg-muted/40 p-3 rounded-lg space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h5 className="text-sm font-semibold">مرحله ۱ — کاربر خرید کرده ولی وارد ربات نشده (ایمیل + پیامک)</h5>
-                          <div className="flex items-center gap-2 text-xs">
-                            <Label>تأخیر (دقیقه):</Label>
-                            <Input
-                              type="number"
-                              min={5}
-                              className="w-20 h-8"
-                              value={formData.support_followup_stage1_delay_minutes}
-                              onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_delay_minutes: Number(e.target.value) }))}
+                      <div className="bg-muted/40 p-3 rounded-lg space-y-3">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <h5 className="text-sm font-semibold">مرحله ۱ — خریدار وارد ربات نشده (ایمیل + پیامک)</h5>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={formData.support_followup_stage1_enabled}
+                              onCheckedChange={(v) => setFormData(prev => ({ ...prev, support_followup_stage1_enabled: v }))}
                             />
+                            <Label className="text-xs">فعال</Label>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs">تأخیر ارسال اول (دقیقه)</Label>
+                            <Input type="number" min={1} className="h-8"
+                              value={formData.support_followup_stage1_delay_minutes}
+                              onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_delay_minutes: Number(e.target.value) }))} />
+                          </div>
+                          <div>
+                            <Label className="text-xs">فاصله بین تکرارها (دقیقه)</Label>
+                            <Input type="number" min={1} className="h-8"
+                              value={formData.support_followup_stage1_repeat_delay_minutes}
+                              onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_repeat_delay_minutes: Number(e.target.value) }))} />
                           </div>
                         </div>
                         <div>
                           <Label>موضوع ایمیل</Label>
-                          <Input
-                            value={formData.support_followup_stage1_email_subject}
+                          <Input value={formData.support_followup_stage1_email_subject}
                             onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_email_subject: e.target.value }))}
-                            className="mt-1"
-                            dir="rtl"
-                          />
+                            className="mt-1" dir="rtl" />
                         </div>
                         <div>
                           <Label>متن ایمیل</Label>
-                          <Textarea
-                            rows={5}
-                            value={formData.support_followup_stage1_email_body}
+                          <Textarea rows={5} value={formData.support_followup_stage1_email_body}
                             onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_email_body: e.target.value }))}
-                            className="mt-1"
-                            dir="rtl"
-                          />
+                            className="mt-1" dir="rtl" />
                         </div>
                         <div>
-                          <Label>متن پیامک (کاوه‌نگار)</Label>
-                          <Textarea
-                            rows={2}
-                            value={formData.support_followup_stage1_sms_text}
+                          <Label>متن پیامک (fallback در صورت خالی بودن آدرس تمپلیت)</Label>
+                          <Textarea rows={2} value={formData.support_followup_stage1_sms_text}
                             onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_sms_text: e.target.value }))}
-                            className="mt-1"
-                            dir="rtl"
-                          />
+                            className="mt-1" dir="rtl" />
                         </div>
+                        <div>
+                          <Label>آدرس تمپلیت کاوه‌نگار (Lookup API)</Label>
+                          <Textarea rows={2} value={formData.support_followup_stage1_sms_template_url}
+                            onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_sms_template_url: e.target.value }))}
+                            className="mt-1 font-mono text-xs" dir="ltr" />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            متغیرهای مجاز: <code>{'{api_key}'}</code>, <code>{'{user_phone_number}'}</code>, <code>{'{user_name}'}</code>, <code>{'{course_title}'}</code>. در صورت خالی بودن، از متن پیامک بالا استفاده می‌شود.
+                          </p>
+                        </div>
+                        <TestStageButton stage={1} courseId={courseId!} />
                       </div>
 
                       {/* Stage 2: Bot */}
-                      <div className="bg-muted/40 p-3 rounded-lg space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h5 className="text-sm font-semibold">مرحله ۲ — وارد ربات شده ولی روی «فعال‌سازی پشتیبانی» نزده (پیام از ربات)</h5>
-                          <div className="flex items-center gap-2 text-xs">
-                            <Label>تأخیر (دقیقه):</Label>
-                            <Input
-                              type="number"
-                              min={5}
-                              className="w-20 h-8"
-                              value={formData.support_followup_stage2_delay_minutes}
-                              onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage2_delay_minutes: Number(e.target.value) }))}
+                      <div className="bg-muted/40 p-3 rounded-lg space-y-3">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <h5 className="text-sm font-semibold">مرحله ۲ — وارد ربات شده، روی «فعال‌سازی پشتیبانی» نزده</h5>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={formData.support_followup_stage2_enabled}
+                              onCheckedChange={(v) => setFormData(prev => ({ ...prev, support_followup_stage2_enabled: v }))}
                             />
+                            <Label className="text-xs">فعال</Label>
                           </div>
                         </div>
-                        <Textarea
-                          rows={4}
-                          value={formData.support_followup_stage2_bot_text}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs">تأخیر ارسال اول (دقیقه)</Label>
+                            <Input type="number" min={1} className="h-8"
+                              value={formData.support_followup_stage2_delay_minutes}
+                              onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage2_delay_minutes: Number(e.target.value) }))} />
+                          </div>
+                          <div>
+                            <Label className="text-xs">فاصله بین تکرارها (دقیقه)</Label>
+                            <Input type="number" min={1} className="h-8"
+                              value={formData.support_followup_stage2_repeat_delay_minutes}
+                              onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage2_repeat_delay_minutes: Number(e.target.value) }))} />
+                          </div>
+                        </div>
+                        <Textarea rows={4} value={formData.support_followup_stage2_bot_text}
                           onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage2_bot_text: e.target.value }))}
-                          dir="rtl"
-                        />
+                          dir="rtl" />
+                        <TestStageButton stage={2} courseId={courseId!} />
                       </div>
 
                       {/* Stage 3: Business chat */}
-                      <div className="bg-muted/40 p-3 rounded-lg space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h5 className="text-sm font-semibold">مرحله ۳ — پیام پشتیبانی ارسال شده ولی فعال‌سازی نهایی نشده (چت پشتیبانی)</h5>
-                          <div className="flex items-center gap-2 text-xs">
-                            <Label>تأخیر (دقیقه):</Label>
-                            <Input
-                              type="number"
-                              min={5}
-                              className="w-20 h-8"
-                              value={formData.support_followup_stage3_delay_minutes}
-                              onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage3_delay_minutes: Number(e.target.value) }))}
+                      <div className="bg-muted/40 p-3 rounded-lg space-y-3">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <h5 className="text-sm font-semibold">مرحله ۳ — پیام پشتیبانی ارسال شده، فعال‌سازی نهایی نشده</h5>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={formData.support_followup_stage3_enabled}
+                              onCheckedChange={(v) => setFormData(prev => ({ ...prev, support_followup_stage3_enabled: v }))}
                             />
+                            <Label className="text-xs">فعال</Label>
                           </div>
                         </div>
-                        <Textarea
-                          rows={4}
-                          value={formData.support_followup_stage3_business_text}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs">تأخیر ارسال اول (دقیقه)</Label>
+                            <Input type="number" min={1} className="h-8"
+                              value={formData.support_followup_stage3_delay_minutes}
+                              onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage3_delay_minutes: Number(e.target.value) }))} />
+                          </div>
+                          <div>
+                            <Label className="text-xs">فاصله بین تکرارها (دقیقه)</Label>
+                            <Input type="number" min={1} className="h-8"
+                              value={formData.support_followup_stage3_repeat_delay_minutes}
+                              onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage3_repeat_delay_minutes: Number(e.target.value) }))} />
+                          </div>
+                        </div>
+                        <Textarea rows={4} value={formData.support_followup_stage3_business_text}
                           onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage3_business_text: e.target.value }))}
-                          dir="rtl"
-                        />
+                          dir="rtl" />
                         <p className="text-xs text-muted-foreground">
                           در صورت تنظیم <code>telegram_business_connection_id</code> در تنظیمات ادمین، پیام به صورت چت بیزینسی از حساب @rafieiacademy ارسال می‌شود؛ در غیر این صورت از طریق ربات به کاربر ارسال می‌گردد.
                         </p>
+                        <TestStageButton stage={3} courseId={courseId!} />
                       </div>
                     </div>
                   </div>
