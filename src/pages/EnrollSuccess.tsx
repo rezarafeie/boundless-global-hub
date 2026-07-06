@@ -1300,7 +1300,7 @@ const EnrollSuccess: React.FC = () => {
                 )}
 
                 {/* Activation Requirements (if activated) */}
-                {result.course && ((result.course.support_activation_required && !result.course.smart_activation_enabled) || result.course.smart_activation_enabled || result.course.telegram_activation_required) && (
+                {result.course && ((result.course.support_activation_required && !result.course.smart_activation_enabled) || result.course.smart_activation_enabled || result.course.telegram_activation_required || result.course.telegram_support_activation_enabled) && (
                   <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
                     <h3 className="font-semibold text-amber-800 dark:text-amber-400 mb-3 flex items-center gap-2">
                       ⚠️ فعال‌سازی‌های مهم
@@ -1309,8 +1309,36 @@ const EnrollSuccess: React.FC = () => {
                       برای دسترسی کامل به محتوای دوره، لطفاً موارد زیر را انجام دهید:
                     </p>
                     <div className="space-y-3">
-                      {/* Regular Support Activation */}
-                      {result.course.support_activation_required && !result.course.smart_activation_enabled && (
+                      {/* Bot-based Support Activation (when smart activation is off) */}
+                      {!result.course.smart_activation_enabled && result.course.telegram_support_activation_enabled && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const finalUrl = await resolveTelegramUrl('', 'support');
+                            if (finalUrl) window.open(finalUrl, '_blank', 'noopener,noreferrer');
+                          }}
+                          className="flex items-center gap-3 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 border-2 border-green-300 dark:border-green-700 hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] cursor-pointer text-right w-full group"
+                        >
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                            <Send className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm sm:text-base leading-tight flex items-center gap-2 flex-wrap">
+                              <span>🚀 فعال‌سازی پشتیبانی دوره (اجباری)</span>
+                              <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 text-xs px-2 py-0.5 font-bold animate-pulse">
+                                ضروری
+                              </Badge>
+                            </p>
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                              👆 کلیک کنید تا در ربات تلگرام فعال شود
+                            </p>
+                          </div>
+                          <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                        </button>
+                      )}
+
+                      {/* Regular Support Activation (legacy indicator) */}
+                      {result.course.support_activation_required && !result.course.smart_activation_enabled && !result.course.telegram_support_activation_enabled && (
                         <div className="flex items-center gap-2 text-sm">
                           <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
                           <span>فعال‌سازی پشتیبانی (اجباری)</span>
