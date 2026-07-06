@@ -42,8 +42,10 @@ const AppLearning = () => {
   const [tasks, setTasks] = useState<LearningTask[]>([]);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!isAuthenticated) {
-      navigate('/auth');
+      const current = window.location.pathname + window.location.search;
+      navigate(`/auth?redirect=${encodeURIComponent(current)}`, { replace: true });
       return;
     }
     fetchLearningData();
