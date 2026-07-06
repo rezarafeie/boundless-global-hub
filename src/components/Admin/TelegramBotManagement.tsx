@@ -126,6 +126,9 @@ export const TelegramBotManagement = () => {
     setSavingWelcome(false);
     if (error) toast({ title: 'خطا', description: error.message, variant: 'destructive' });
     else toast({ title: '✅ پیام‌های خوش‌آمدگویی ذخیره شد' });
+  };
+
+
 
 
   const linkUser = async (userId: number) => {
