@@ -13,14 +13,17 @@ import { TrendingUp, Target, Calendar, CheckCircle, Play, Clock, BookOpen } from
 interface LearningTask {
   id: string;
   title: string;
-  type: 'lesson' | 'course' | 'test';
+  type: 'lesson' | 'course' | 'test' | 'assignment';
   priority: 'high' | 'medium' | 'low';
   dueDate: string;
   completed: boolean;
   course_title?: string;
   course_slug?: string;
   lesson_id?: string;
+  lesson_number?: number;
+  assignment_id?: string;
 }
+
 
 interface LearningStats {
   weeklyProgress: number;
