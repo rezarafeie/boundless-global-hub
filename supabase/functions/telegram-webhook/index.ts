@@ -3093,6 +3093,12 @@ async function handleUpdate(update: any) {
                 reply_markup: buttons.length ? { inline_keyboard: buttons } : undefined,
               });
             } catch (e) { console.warn('activated welcome DM failed', e); }
+
+            // Follow up with the /start menu so the user can access bot features
+            try {
+              const linkedUser = await resolveUser(targetChat);
+              await sendMessage(targetChat, await renderWelcome(targetChat, linkedUser), { keyboard: await buildStartKeyboard(linkedUser) });
+            } catch (e) { console.warn('post-activation start menu failed', e); }
           }
 
           // Reply in the chat where the activation message was sent (business/support group)
