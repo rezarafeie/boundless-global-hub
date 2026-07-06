@@ -1759,7 +1759,7 @@ async function endSalesChat(chat_id: number, _message_id: number | null) {
   await sendMessage(chat_id, '✅ گفت‌وگو پایان یافت. ممنون از وقتی که گذاشتید 🙏', { removeKeyboard: true });
   const u = await resolveUser(chat_id);
   const homeKbd = await buildStartKeyboard(u);
-  await sendMessage(chat_id, u ? welcomeText(u) : '👋 منوی اصلی', { keyboard: homeKbd });
+  await sendMessage(chat_id, await renderWelcome(chat_id, u), { keyboard: homeKbd });
 }
 
 async function showSalesPaymentOptions(chat_id: number, _message_id: number | null) {
