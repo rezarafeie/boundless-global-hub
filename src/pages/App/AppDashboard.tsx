@@ -45,7 +45,7 @@ interface UserStats {
 
 const AppDashboard = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [stats, setStats] = useState<UserStats>({
@@ -62,7 +62,7 @@ const AppDashboard = () => {
       return;
     }
     fetchUserData();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   const fetchUserData = async () => {
     if (!user?.id) return;

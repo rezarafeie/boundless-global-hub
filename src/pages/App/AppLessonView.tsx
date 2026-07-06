@@ -45,7 +45,7 @@ interface LessonData {
 const AppLessonView = () => {
   const { courseSlug: paramCourseSlug, lessonNumber } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { getLessonByNumber } = useLessonNumber();
   const isIranianIP = useIsIranianIP();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -63,7 +63,7 @@ const AppLessonView = () => {
     if (lessonNumber) {
       fetchLessonData();
     }
-  }, [lessonNumber, isAuthenticated, navigate]);
+  }, [lessonNumber, isAuthenticated, authLoading, navigate]);
 
   const fetchLessonData = async () => {
     if (!lessonNumber || !user?.id) return;

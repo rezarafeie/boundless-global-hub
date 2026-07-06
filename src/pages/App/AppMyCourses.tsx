@@ -32,7 +32,7 @@ interface EnrolledCourse {
 
 const AppMyCourses = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
 
@@ -42,7 +42,7 @@ const AppMyCourses = () => {
       return;
     }
     fetchEnrolledCourses();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   const fetchEnrolledCourses = async () => {
     if (!user?.id) return;

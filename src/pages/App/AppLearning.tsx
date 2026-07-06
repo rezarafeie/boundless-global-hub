@@ -31,7 +31,7 @@ interface LearningStats {
 
 const AppLearning = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<LearningStats>({
     weeklyProgress: 0,
@@ -47,7 +47,7 @@ const AppLearning = () => {
       return;
     }
     fetchLearningData();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   const fetchLearningData = async () => {
     if (!user?.id) return;

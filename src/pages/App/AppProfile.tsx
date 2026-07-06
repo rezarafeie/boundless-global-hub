@@ -26,7 +26,7 @@ interface UserProfile {
 
 const AppProfile = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
@@ -36,7 +36,7 @@ const AppProfile = () => {
       return;
     }
     fetchUserProfile();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   const fetchUserProfile = async () => {
     if (!user?.id) return;
