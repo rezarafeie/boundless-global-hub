@@ -2769,6 +2769,68 @@ async function handleUpdate(update: any) {
     return;
   }
 
+  // ===== Support activation deep-link: /start sact_<token> =====
+  if (startPayload?.startsWith('sact_')) {
+    const token = startPayload.slice('sact_'.length);
+    const { data: act } = await supabase
+      .from('support_activations')
+      .select('id, user_id, course_id, status, support_prefilled_link')
+      .eq('activation_token', token)
+      .maybeSingle();
+    if (!act) {
+      await sendMessage(chat_id, '❌ لینک فعال‌سازی نامعتبر است. لطفاً از داشبورد آکادمی دوباره تلاش کنید.');
+      return;
+    }
+    // Load course + user for message rendering
+    const [{ data: course }, { data: cu }] = await Promise.all([
+      supabase.from('courses').select('title, telegram_bot_welcome_message').eq('id', act.course_id).maybeSingle(),
+      supabase.from('chat_users').select('name, first_name').eq('id', act.user_id).maybeSingle(),
+    ]);
+    const displayName = (cu as any)?.first_name || (cu as any)?.name || 'دوست عزیز';
+    const courseTitle = (course as any)?.title || 'دوره';
+    const defaultTpl = 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال بشه.';
+    const tpl = ((course as any)?.telegram_bot_welcome_message as string | null) || defaultTpl;
+    const welcome = tpl
+      .replace(/\{\{name\}\}/g, escapeHtml(displayName))
+      .replace(/\{\{course_title\}\}/g, escapeHtml(courseTitle));
+
+    // Update status → opened_bot (do not downgrade if already further)
+    const newStatus = ['clicked_support_button', 'pending_manual_confirmation', 'activated'].includes(act.status)
+      ? act.status
+      : 'opened_bot';
+    await supabase.from('support_activations').update({
+      status: newStatus,
+      opened_bot_at: new Date().toISOString(),
+      telegram_id: chat_id,
+      telegram_username: msg?.from?.username ?? null,
+      telegram_first_name: msg?.from?.first_name ?? null,
+      telegram_last_name: msg?.from?.last_name ?? null,
+    }).eq('id', act.id);
+    await supabase.from('support_activation_events').insert({
+      support_activation_id: act.id,
+      user_id: act.user_id,
+      course_id: act.course_id,
+      event_type: 'opened_bot',
+      payload_json: { chat_id },
+    });
+
+    const supportUrl = act.support_prefilled_link || `https://t.me/rafieiacademy`;
+    await tgCall('sendMessage', {
+      chat_id,
+      text: welcome,
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[
+          { text: 'فعال‌سازی پشتیبانی دوره', url: supportUrl, callback_data: `sact:click:${act.id}` } as any,
+        ], [
+          { text: 'ثبت کلیک روی دکمه پشتیبانی', callback_data: `sact:click:${act.id}` },
+        ]],
+      },
+    });
+    return;
+  }
+
+
   // ===== Contact share (from "Share my phone" button after login deep-link) =====
   if (msg?.contact?.phone_number) {
     const rawPhone = String(msg.contact.phone_number).replace(/\s|-/g, '');
