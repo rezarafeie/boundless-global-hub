@@ -508,6 +508,22 @@ const EnrollmentAdmin: React.FC = () => {
             </Suspense>
           </ErrorBoundary>
         );
+      case 'assignments':
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <AssignmentsList />
+            </Suspense>
+          </ErrorBoundary>
+        );
+      case 'support-activations':
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <SupportActivations />
+            </Suspense>
+          </ErrorBoundary>
+        );
       default:
         // Don't show dashboard summary for enrollment managers or sales agents who are not messenger admins
         if ((userRole === 'enrollments_manager' || isSalesAgent) && !isMessengerAdmin) {
