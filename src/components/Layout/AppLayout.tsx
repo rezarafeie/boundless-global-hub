@@ -201,11 +201,22 @@ const AppLayout = ({ children, title, showBackButton = true, rightAction }: AppL
                   {title || "آکادمی رفیعی"}
                 </h1>
               </div>
-              {rightAction || (
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical size={18} />
-                </Button>
-              )}
+              <div className="flex items-center gap-1">
+                {rightAction}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreVertical size={18} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align={isRtl ? "start" : "end"} sideOffset={8}>
+                    <DropdownMenuItem onClick={switchToFullMode}>
+                      <Monitor size={16} className="ml-2" />
+                      <span>نمای کامل</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </header>
 
