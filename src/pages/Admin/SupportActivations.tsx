@@ -46,6 +46,7 @@ const SupportActivations: React.FC = () => {
   const [courseId, setCourseId] = useState<string>('all');
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [q, setQ] = useState('');
+  const [segment, setSegment] = useState<string>('all');
   const { toast } = useToast();
   const navigate = useNavigate();
 
