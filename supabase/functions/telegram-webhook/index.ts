@@ -2466,31 +2466,75 @@ async function handleUpdate(update: any) {
       return;
     }
 
-    // ===== Support activation: mark clicked_support_button =====
+    // ===== Support activation: user confirmed sending message → fully activate =====
     if (data.startsWith('sact:sent:')) {
       const actId = data.slice('sact:sent:'.length);
       const { data: cur } = await supabase
         .from('support_activations')
-        .select('id, status, user_id, course_id')
+        .select('id, status, user_id, course_id, telegram_id')
         .eq('id', actId)
         .maybeSingle();
       if (cur) {
-        const nextStatus = cur.status === 'activated' ? 'activated' : 'pending_manual_confirmation';
-        await supabase.from('support_activations').update({
-          status: nextStatus,
-          clicked_support_button_at: new Date().toISOString(),
-        }).eq('id', actId);
-        await supabase.from('support_activation_events').insert({
-          support_activation_id: actId,
-          user_id: cur.user_id,
-          course_id: cur.course_id,
-          event_type: 'clicked_support_button',
-          payload_json: { via: 'inline_button' },
+        if (cur.status !== 'activated') {
+          await supabase.from('support_activations').update({
+            status: 'activated',
+            activated_at: new Date().toISOString(),
+            clicked_support_button_at: new Date().toISOString(),
+          }).eq('id', actId);
+          await supabase.from('support_activation_events').insert({
+            support_activation_id: actId,
+            user_id: cur.user_id,
+            course_id: cur.course_id,
+            event_type: 'activated_via_confirm_button',
+            payload_json: { via: 'inline_button' },
+          });
+        }
+
+        // Load course + user, build welcome + buttons
+        const [{ data: course }, { data: cu }] = await Promise.all([
+          supabase.from('courses').select('title, telegram_bot_activated_message, telegram_channel_link, redirect_url, support_link, slug').eq('id', cur.course_id).maybeSingle(),
+          supabase.from('chat_users').select('name, first_name').eq('id', cur.user_id).maybeSingle(),
+        ]);
+        const displayName = (cu as any)?.first_name || (cu as any)?.name || 'دوست عزیز';
+        const courseTitle = (course as any)?.title || 'دوره';
+        const defaultTpl = [
+          'درود بر شما {{name}} 🌱',
+          'پشتیبانی اختصاصی شما با موفقیت فعال شد ✅',
+          '',
+          'دسترسی به دوره «{{course_title}}» از دکمه‌های زیر برای شما فعال است.',
+          '',
+          'با آرزوی موفقیت',
+          'تیم پشتیبانی آکادمی رفیعی',
+        ].join('\n');
+        const tpl = ((course as any)?.telegram_bot_activated_message as string | null) || defaultTpl;
+        const welcome = tpl
+          .replace(/\{\{name\}\}/g, escapeHtml(displayName))
+          .replace(/\{\{course_title\}\}/g, escapeHtml(courseTitle));
+
+        const buttons: { text: string; url: string }[][] = [];
+        const slug = (course as any)?.slug;
+        const accessUrl = (course as any)?.redirect_url || (slug ? `https://academy.rafiei.co/access?course=${slug}` : null);
+        if (accessUrl) buttons.push([{ text: '🚀 شروع و دسترسی به دوره', url: accessUrl }]);
+        const channel = (course as any)?.telegram_channel_link;
+        if (channel) buttons.push([{ text: '📢 کانال دوره', url: channel }]);
+        const support = (course as any)?.support_link;
+        if (support) buttons.push([{ text: '💬 ارتباط با پشتیبان', url: support }]);
+
+        try {
+          await editMessage(chat_id, message_id, '✅ پشتیبانی شما فعال شد.', []);
+        } catch {}
+        await tgCall('sendMessage', {
+          chat_id,
+          text: welcome,
+          parse_mode: 'HTML',
+          reply_markup: buttons.length ? { inline_keyboard: buttons } : undefined,
         });
+      } else {
+        await editMessage(chat_id, message_id, '❌ فعال‌سازی یافت نشد.', []);
       }
-      await editMessage(chat_id, message_id, '⏳ پیام شما در انتظار تایید تیم پشتیبانی است. به‌زودی فعال‌سازی انجام می‌شود.', []);
       return;
     }
+
 
 
     const userEarly = await resolveUser(chat_id);
