@@ -1682,6 +1682,7 @@ export type Database = {
           spotplayer_course_id: string | null
           support_activation_required: boolean | null
           support_link: string | null
+          telegram_activation_keyword: string | null
           telegram_activation_required: boolean | null
           telegram_bot_activated_message: string | null
           telegram_bot_activation_buttons: Json
@@ -1729,6 +1730,7 @@ export type Database = {
           spotplayer_course_id?: string | null
           support_activation_required?: boolean | null
           support_link?: string | null
+          telegram_activation_keyword?: string | null
           telegram_activation_required?: boolean | null
           telegram_bot_activated_message?: string | null
           telegram_bot_activation_buttons?: Json
@@ -1776,6 +1778,7 @@ export type Database = {
           spotplayer_course_id?: string | null
           support_activation_required?: boolean | null
           support_link?: string | null
+          telegram_activation_keyword?: string | null
           telegram_activation_required?: boolean | null
           telegram_bot_activated_message?: string | null
           telegram_bot_activation_buttons?: Json
