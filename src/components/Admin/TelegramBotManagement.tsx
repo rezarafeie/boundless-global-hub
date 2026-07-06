@@ -49,6 +49,11 @@ export const TelegramBotManagement = () => {
     telegram_sales_default_course_id: null as string | null,
   });
   const [savingSales, setSavingSales] = useState(false);
+  const [welcomeSettings, setWelcomeSettings] = useState({
+    telegram_bot_welcome_logged_in: '',
+    telegram_bot_welcome_logged_out: '',
+  });
+  const [savingWelcome, setSavingWelcome] = useState(false);
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
 
   const fetchUsers = async () => {
