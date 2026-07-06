@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle2, Copy, RefreshCw, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Copy, RefreshCw, ArrowRight, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 type Row = {
