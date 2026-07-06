@@ -2379,6 +2379,33 @@ async function handleUpdate(update: any) {
       return;
     }
 
+    // ===== Support activation: mark clicked_support_button =====
+    if (data.startsWith('sact:sent:')) {
+      const actId = data.slice('sact:sent:'.length);
+      const { data: cur } = await supabase
+        .from('support_activations')
+        .select('id, status, user_id, course_id')
+        .eq('id', actId)
+        .maybeSingle();
+      if (cur) {
+        const nextStatus = cur.status === 'activated' ? 'activated' : 'pending_manual_confirmation';
+        await supabase.from('support_activations').update({
+          status: nextStatus,
+          clicked_support_button_at: new Date().toISOString(),
+        }).eq('id', actId);
+        await supabase.from('support_activation_events').insert({
+          support_activation_id: actId,
+          user_id: cur.user_id,
+          course_id: cur.course_id,
+          event_type: 'clicked_support_button',
+          payload_json: { via: 'inline_button' },
+        });
+      }
+      await editMessage(chat_id, message_id, '⏳ پیام شما در انتظار تایید تیم پشتیبانی است. به‌زودی فعال‌سازی انجام می‌شود.', []);
+      return;
+    }
+
+
     const userEarly = await resolveUser(chat_id);
     if (data.startsWith('webinar:view:')) {
       const prefix = data.split(':')[2];
