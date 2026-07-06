@@ -397,31 +397,15 @@ const AppCourseDetail = () => {
             </TabsContent>
 
             <TabsContent value="homework" className="mt-4 space-y-3">
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-medium mb-2">تکالیف به‌زودی</h3>
-                  <p className="text-sm text-muted-foreground">
-                    تکالیف و پروژه‌های عملی این دوره به‌زودی اضافه خواهد شد
-                  </p>
-                </CardContent>
-              </Card>
+              <CourseHomeworkTab
+                courseId={course.id}
+                courseSlug={course.slug}
+                sections={sections}
+              />
             </TabsContent>
 
             <TabsContent value="notes" className="mt-4 space-y-3">
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-medium mb-2">یادداشت‌ها</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    یادداشت‌های خود را در اینجا ذخیره کنید
-                  </p>
-                  <Button variant="outline">
-                    <FileText size={16} className="ml-2" />
-                    افزودن یادداشت جدید
-                  </Button>
-                </CardContent>
-              </Card>
+              <CourseNotesTab courseId={course.id} />
             </TabsContent>
           </Tabs>
         </div>
