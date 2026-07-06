@@ -139,9 +139,20 @@ const AppCourseDetail = () => {
         console.error('Error fetching sections:', sectionsError);
       }
 
+      // Fetch user's lesson progress for this course
+      const { data: progressData } = await supabase
+        .from('user_lesson_progress')
+        .select('lesson_id, is_completed')
+        .eq('user_id', parseInt(user.id))
+        .eq('course_id', courseData.id);
+      const completedMap = new Map<string, boolean>();
+      (progressData || []).forEach((p: any) => {
+        completedMap.set(p.lesson_id, !!p.is_completed);
+      });
+
       // If no sections exist, create a virtual section with all lessons
       let transformedSections: CourseSection[] = [];
-      
+
       if (!sectionsData || sectionsData.length === 0) {
         // Fetch lessons directly for courses without sections
         const { data: lessonsData, error: lessonsError } = await supabase
@@ -152,7 +163,6 @@ const AppCourseDetail = () => {
 
         if (lessonsError) {
           console.error('Error fetching lessons:', lessonsError);
-          // Don't redirect immediately, try to continue with empty sections
         }
 
         if (lessonsData && lessonsData.length > 0) {
@@ -166,17 +176,15 @@ const AppCourseDetail = () => {
               duration: lesson.duration || 15,
               order_index: lesson.order_index || index + 1,
               lesson_number: lesson.lesson_number || index + 1,
-              completed: Math.random() > 0.5, // TODO: Get real completion status
-              locked: false // Don't lock lessons for courses without sections
+              completed: completedMap.get(lesson.id) === true,
+              locked: false
             }))
           }];
         } else {
-          // Course has no lessons, create empty course structure
           console.warn('Course has no lessons:', courseData.slug);
           transformedSections = [];
         }
       } else {
-        // Transform sections data with lesson completion status
         transformedSections = sectionsData.map(section => ({
           id: section.id,
           title: section.title,
@@ -187,8 +195,8 @@ const AppCourseDetail = () => {
             duration: lesson.duration || 15,
             order_index: lesson.order_index,
             lesson_number: lesson.lesson_number || index + 1,
-            completed: Math.random() > 0.5, // TODO: Get real completion status
-            locked: index > 3 // Lock lessons after the first 4
+            completed: completedMap.get(lesson.id) === true,
+            locked: false
           })) || []
         }));
       }
