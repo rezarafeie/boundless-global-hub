@@ -237,6 +237,14 @@ const AppLearning = () => {
       case 'test':
         navigate('/app/tests');
         break;
+      case 'assignment':
+        if (task.course_slug && task.lesson_number) {
+          navigate(`/app/course/${task.course_slug}/lesson/${task.lesson_number}?tab=homework`);
+        } else if (task.course_slug) {
+          navigate(`/app/course/${task.course_slug}?tab=homework`);
+        }
+        break;
+
     }
   };
 
