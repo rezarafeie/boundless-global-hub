@@ -22,6 +22,8 @@ interface CourseActionLinksProps {
     support_activation_required?: boolean;
     telegram_activation_required?: boolean;
     smart_activation_enabled?: boolean;
+    telegram_support_activation_enabled?: boolean;
+    telegram_course_access_via_bot_enabled?: boolean;
   };
   enrollment: {
     id: string;
@@ -29,6 +31,7 @@ interface CourseActionLinksProps {
     email?: string;
   };
   userEmail?: string;
+  userId?: number | null;
   onSupportActivated?: () => void;
   onTelegramActivated?: () => void;
   supportActivated?: boolean;
@@ -40,6 +43,7 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
   course, 
   enrollment, 
   userEmail,
+  userId,
   onSupportActivated,
   onTelegramActivated,
   supportActivated = false,
@@ -48,6 +52,27 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
 }) => {
   const { toast } = useToast();
   const [clickedActions, setClickedActions] = useState<Set<string>>(new Set());
+  const [botDeepLink, setBotDeepLink] = useState<string | null>(null);
+
+  const useBotForSupport = !!course.telegram_support_activation_enabled;
+  const useBotForTelegram = !!course.telegram_course_access_via_bot_enabled;
+
+  const ensureBotDeepLink = async (): Promise<string | null> => {
+    if (botDeepLink) return botDeepLink;
+    if (!userId) return null;
+    try {
+      const { data, error } = await supabase.functions.invoke('support-activation-create', {
+        body: { user_id: userId, course_id: course.id, enrollment_id: enrollment.id },
+      });
+      if (error) throw error;
+      const link = (data as any)?.activation?.bot_deep_link as string | undefined;
+      if (link) { setBotDeepLink(link); return link; }
+    } catch (e) {
+      console.error('support-activation-create failed', e);
+    }
+    return null;
+  };
+
 
   const logClick = async (actionType: 'support' | 'telegram' | 'gifts') => {
     try {
@@ -80,16 +105,22 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
     }
   };
 
-  const handleActionClick = (url: string, actionType: 'support' | 'telegram' | 'gifts') => {
-    // Open link in new tab
-    window.open(url, '_blank', 'noopener,noreferrer');
+  const handleActionClick = async (url: string, actionType: 'support' | 'telegram' | 'gifts') => {
+    let target = url;
+    if ((actionType === 'support' && useBotForSupport) || (actionType === 'telegram' && useBotForTelegram)) {
+      const bot = await ensureBotDeepLink();
+      if (bot) target = bot;
+      else {
+        toast({ title: 'خطا در فعال‌سازی', description: 'لطفاً دوباره تلاش کنید', variant: 'destructive' });
+        return;
+      }
+    }
+    window.open(target, '_blank', 'noopener,noreferrer');
     
-    // Log the click (only once per action)
     if (!clickedActions.has(actionType)) {
       logClick(actionType);
     }
 
-    // Trigger activation callbacks for required activations
     if (actionType === 'support' && course.support_activation_required && onSupportActivated) {
       onSupportActivated();
     }
@@ -98,6 +129,7 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
       onTelegramActivated();
     }
   };
+
 
   const actionButtons = [
     {

@@ -20,6 +20,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import CourseActionLinks from './CourseActionLinks';
 import RafieiPlayerSection from './RafieiPlayerSection';
+import { useAuth } from '@/contexts/AuthContext';
+
 
 interface StartCourseSectionProps {
   enrollment: {
@@ -50,7 +52,10 @@ interface StartCourseSectionProps {
     support_activation_required?: boolean;
     telegram_activation_required?: boolean;
     smart_activation_enabled?: boolean;
+    telegram_support_activation_enabled?: boolean;
+    telegram_course_access_via_bot_enabled?: boolean;
   } | undefined;
+
   onEnterCourse: () => void;
   userEmail?: string;
 }
@@ -68,6 +73,7 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
   userEmail 
 }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [ssoTokens, setSsoTokens] = useState<SSOToken[]>([]);
   const [loadingSSO, setLoadingSSO] = useState(false);
   const [supportActivated, setSupportActivated] = useState(false);
@@ -504,12 +510,14 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                 course={course}
                 enrollment={enrollment}
                 userEmail={userEmail || enrollment?.email}
+                userId={user?.id ? parseInt(user.id) : null}
                 onSupportActivated={handleActivateSupport}
                 onTelegramActivated={handleActivateTelegram}
                 supportActivated={supportActivated}
                 telegramActivated={telegramActivated}
                 startingStepNumber={enabledAccessTypesCount + 1}
               />
+
             </div>
           ) : null;
         })()}
