@@ -105,16 +105,22 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
     }
   };
 
-  const handleActionClick = (url: string, actionType: 'support' | 'telegram' | 'gifts') => {
-    // Open link in new tab
-    window.open(url, '_blank', 'noopener,noreferrer');
+  const handleActionClick = async (url: string, actionType: 'support' | 'telegram' | 'gifts') => {
+    let target = url;
+    if ((actionType === 'support' && useBotForSupport) || (actionType === 'telegram' && useBotForTelegram)) {
+      const bot = await ensureBotDeepLink();
+      if (bot) target = bot;
+      else {
+        toast({ title: 'خطا در فعال‌سازی', description: 'لطفاً دوباره تلاش کنید', variant: 'destructive' });
+        return;
+      }
+    }
+    window.open(target, '_blank', 'noopener,noreferrer');
     
-    // Log the click (only once per action)
     if (!clickedActions.has(actionType)) {
       logClick(actionType);
     }
 
-    // Trigger activation callbacks for required activations
     if (actionType === 'support' && course.support_activation_required && onSupportActivated) {
       onSupportActivated();
     }
@@ -123,6 +129,7 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
       onTelegramActivated();
     }
   };
+
 
   const actionButtons = [
     {
