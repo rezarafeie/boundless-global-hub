@@ -220,7 +220,7 @@ const CourseAccess: React.FC = () => {
       // Fetch all courses that match the slugs and have free access
       const { data: coursesData, error: coursesError } = await supabase
         .from('courses')
-        .select('id, title, description, slug, price, enable_course_access, is_free_access, support_link, telegram_channel_link, gifts_link, support_activation_required, telegram_activation_required, vpn_warning_enabled')
+        .select('id, title, description, slug, price, enable_course_access, is_free_access, support_link, telegram_channel_link, gifts_link, support_activation_required, telegram_activation_required, vpn_warning_enabled, telegram_support_activation_enabled, telegram_course_access_via_bot_enabled')
         .in('slug', multipleCourses)
         .eq('is_active', true)
         .eq('is_free_access', true)
@@ -419,7 +419,7 @@ const CourseAccess: React.FC = () => {
       // Fetch course information
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
-        .select('id, title, description, slug, price, enable_course_access, is_free_access, support_link, telegram_channel_link, gifts_link, support_activation_required, telegram_activation_required, vpn_warning_enabled')
+        .select('id, title, description, slug, price, enable_course_access, is_free_access, support_link, telegram_channel_link, gifts_link, support_activation_required, telegram_activation_required, vpn_warning_enabled, telegram_support_activation_enabled, telegram_course_access_via_bot_enabled')
         .eq('slug', courseSlug)
         .eq('is_active', true)
         .single();
