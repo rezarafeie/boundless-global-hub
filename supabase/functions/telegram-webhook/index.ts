@@ -3025,7 +3025,7 @@ async function handleUpdate(update: any) {
       return;
     }
     const kbd = await buildStartKeyboard(user);
-    await sendMessage(chat_id, welcomeText(user), { keyboard: kbd });
+    await sendMessage(chat_id, await renderWelcome(chat_id, user), { keyboard: kbd });
     return;
   }
 
