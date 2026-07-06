@@ -241,8 +241,24 @@ const AppCourseDetail = () => {
     }
   };
 
+  const handleShare = async () => {
+    const url = window.location.href;
+    const title = course?.title || 'دوره';
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        const { toast } = await import('sonner');
+        toast.success('لینک دوره کپی شد');
+      }
+    } catch (e) {
+      // user cancelled or share failed
+    }
+  };
+
   const rightAction = (
-    <Button variant="ghost" size="icon" className="h-8 w-8">
+    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleShare}>
       <Share size={18} />
     </Button>
   );
