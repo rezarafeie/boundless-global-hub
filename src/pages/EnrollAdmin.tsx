@@ -38,8 +38,11 @@ import SalesDashboard from '@/components/Admin/SalesDashboard';
 import TestManagement from '@/components/Admin/TestManagement';
 import AnalyticsReports from '@/components/Admin/AnalyticsReports';
 import WebinarManagement from '@/components/Admin/WebinarManagement';
+import SupportActivations from '@/pages/Admin/SupportActivations';
+import AssignmentsList from '@/pages/Admin/Assignments/AssignmentsList';
 import { useUserRole } from '@/hooks/useUserRole';
 import { AdminSidebar } from '@/components/Admin/AdminSidebar';
+
 
 interface Enrollment {
   id: string;
@@ -449,8 +452,6 @@ const EnrollAdmin: React.FC = () => {
       <AdminSidebar 
         activeView={activeView}
         onViewChange={(view) => {
-          if (view === 'assignments') { window.location.href = '/admin/assignments'; return; }
-          if (view === 'support-activations') { window.location.href = '/admin/support-activations'; return; }
           setActiveView(view);
         }}
         isOpen={isSidebarOpen}
@@ -470,7 +471,10 @@ const EnrollAdmin: React.FC = () => {
         {activeView === 'tests' && <TestManagement />}
         {activeView === 'analytics' && <AnalyticsReports />}
         {activeView === 'sales' && canViewSales && <SalesDashboard />}
-        {(activeView === 'enrollments' || (!['webinars', 'tests', 'analytics', 'sales'].includes(activeView))) && (
+        {activeView === 'assignments' && <AssignmentsList />}
+        {activeView === 'support-activations' && <SupportActivations />}
+        {(activeView === 'enrollments' || (!['webinars', 'tests', 'analytics', 'sales', 'assignments', 'support-activations'].includes(activeView))) && (
+
           <Card>
             <CardHeader className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
