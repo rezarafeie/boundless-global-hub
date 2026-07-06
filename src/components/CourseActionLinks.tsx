@@ -116,7 +116,7 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
         return;
       }
     }
-    window.open(target, '_blank', 'noopener,noreferrer');
+    openInNewTab(target);
     
     if (!clickedActions.has(actionType)) {
       logClick(actionType);
