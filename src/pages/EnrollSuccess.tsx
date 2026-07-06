@@ -203,6 +203,7 @@ const TestEnrollmentSuccessView: React.FC<TestEnrollmentSuccessViewProps> = ({
         .select(`
           *,
           tests!inner(
+            id,
             title,
             test_id,
             price
@@ -954,6 +955,7 @@ const EnrollSuccess: React.FC = () => {
         .select(`
           *,
           courses (
+            id,
             title,
             slug,
             redirect_url,
@@ -1134,7 +1136,7 @@ const EnrollSuccess: React.FC = () => {
   };
 
   // Route to Telegram bot deep link when bot activation is enabled for this course.
-  const resolveTelegramUrl = async (originalUrl: string, kind: 'support' | 'telegram'): Promise<string> => {
+  const resolveTelegramUrl = async (originalUrl: string, kind: 'support' | 'telegram'): Promise<string | null> => {
     const c: any = result?.course;
     const enrollment: any = result?.enrollment;
     if (!c || !enrollment) return originalUrl;
@@ -1143,18 +1145,30 @@ const EnrollSuccess: React.FC = () => {
       : !!c.telegram_course_access_via_bot_enabled;
     if (!useBot) return originalUrl;
     const uid = user?.id ? Number(user.id) : (enrollment.chat_user_id ?? null);
-    if (!uid) return originalUrl;
+    if (!uid || !c.id) {
+      toast({
+        title: 'خطا در ساخت لینک ربات',
+        description: 'شناسه کاربر یا دوره پیدا نشد. لطفاً صفحه را رفرش کنید و دوباره بزنید.',
+        variant: 'destructive'
+      });
+      return null;
+    }
     try {
       const { data, error } = await supabase.functions.invoke('support-activation-create', {
         body: { user_id: uid, course_id: c.id, enrollment_id: enrollment.id },
       });
       if (error) throw error;
       const link = (data as any)?.activation?.bot_deep_link as string | undefined;
-      return link || originalUrl;
+      if (link) return link;
     } catch (e) {
       console.error('bot deep link fetch failed', e);
-      return originalUrl;
     }
+    toast({
+      title: 'خطا در ساخت لینک ربات',
+      description: 'لینک مستقیم پشتیبانی باز نشد؛ لطفاً چند لحظه دیگر دوباره تلاش کنید.',
+      variant: 'destructive'
+    });
+    return null;
   };
 
   const handleRetry = () => {
@@ -1332,7 +1346,7 @@ const EnrollSuccess: React.FC = () => {
                                 
                                 const rawUrl = replacePlaceholders(result.course.smart_activation_telegram_link, result.enrollment);
                                 const finalUrl = await resolveTelegramUrl(rawUrl, 'support');
-                                window.location.href = finalUrl;
+                                if (finalUrl) window.location.href = finalUrl;
                               }
                             }
                           }}
@@ -1397,7 +1411,7 @@ const EnrollSuccess: React.FC = () => {
                           type="button"
                           onClick={async () => {
                             const finalUrl = await resolveTelegramUrl(result.course.telegram_channel_link!, 'telegram');
-                            window.open(finalUrl, '_blank', 'noopener,noreferrer');
+                            if (finalUrl) window.open(finalUrl, '_blank', 'noopener,noreferrer');
                           }}
                           className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900/30 dark:hover:to-cyan-900/30 transition-all duration-200 border border-blue-200 dark:border-blue-800 hover:shadow-md group text-right w-full"
                         >
