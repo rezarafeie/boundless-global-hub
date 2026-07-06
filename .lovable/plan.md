@@ -1,89 +1,74 @@
-# Telegram Support Activation Tracking System
+## Support Activation Followup System
 
-A full activation-tracking flow where the Telegram bot is only a gateway. Real support still happens in the @rafieiacademy chat, but every step (dashboard click → bot open → support button click → manual activation) is logged so admins can follow up.
+Add tiered followups to nudge buyers who stall at any step of the support-activation funnel. Channels per stage, all delays configurable per course in admin.
 
-## 1. Course-edit toggles (admin)
+### Stages & default rules
 
-Add three new fields to `courses` (edit page → "پشتیبانی و تلگرام" section):
+| # | Trigger (from `support_activations`) | Delay (default) | Channels |
+|---|---|---|---|
+| 1 | Purchase created, `status = not_started` (never opened bot) | 1h | Email (Lovable Emails) + SMS (Kavenegar) |
+| 2 | `status = opened_bot` (in bot, no support click) | 1h | Telegram bot message (to user in bot) |
+| 3 | `status = clicked_support_button` / `pending_manual_confirmation` (clicked, not activated) | 3h | Telegram business chat message (bot posts as business account in @rafieiacademy DM) |
 
-- `telegram_support_activation_enabled` (bool) — enables the whole tracked flow. When ON, the "Activate Support" card in enrollment/dashboard sends the student through the bot deep link instead of the current direct `t.me/rafieiacademy?text=...` link.
-- `telegram_course_access_via_bot_enabled` (bool) — same idea for the "Course access via Telegram" card (bot-mediated instead of direct channel/group link).
-- `telegram_bot_welcome_message` (text, Persian, with `{{name}}` / `{{course_title}}` placeholders) — shown when the bot receives the deep link. Prefilled with the default message from the spec.
+Each stage sends **once**; a second reminder per stage after the same delay again (max 2 per stage, then stop). Delays and per-stage enable flags are editable per course.
 
-The existing per-course "prefilled support message" field is reused as the message template the bot's inline button opens in @rafieiacademy.
+### DB migration
 
-## 2. Database
+New columns on `courses`:
+- `support_followup_enabled` bool default true
+- `support_followup_stage1_delay_minutes` int default 60
+- `support_followup_stage2_delay_minutes` int default 60
+- `support_followup_stage3_delay_minutes` int default 180
+- `support_followup_stage1_email_subject`, `support_followup_stage1_email_body`, `support_followup_stage1_sms_text`
+- `support_followup_stage2_bot_text`
+- `support_followup_stage3_business_text`
+- `support_followup_max_repeats` int default 2
 
-New tables (both RLS-enabled, granted to `authenticated` + `service_role`):
+New columns on `support_activations`:
+- `followup_stage1_sent_count`, `stage2_sent_count`, `stage3_sent_count` int default 0
+- `last_followup_stage`, `last_followup_at` (last_followup_at already exists)
 
-**`support_activations`** — one row per (user, course, order):
-`id, user_id, course_id, enrollment_id, activation_token (unique), bot_deep_link, support_prefilled_link, status, telegram_id, telegram_username, telegram_first_name, telegram_last_name, opened_bot_at, clicked_support_button_at, activated_at, activated_by_admin_id, last_followup_at, followup_count, admin_note, assigned_agent_id, metadata_json, created_at, updated_at`
+New table `support_activation_followup_log` (audit) with grants + RLS (admin read).
 
-Status enum: `not_started | opened_bot | clicked_support_button | pending_manual_confirmation | activated | needs_followup | failed`.
+### Edge functions
 
-**`support_activation_events`** — append-only audit log:
-`id, support_activation_id, user_id, course_id, event_type, payload_json, created_at`.
+1. **`support-activation-followup-cron`** — runs every 5 min via `pg_cron`. Scans `support_activations` joined with `courses` and enrollment, evaluates each stage's delay against `created_at` / `opened_bot_at` / `clicked_support_button_at`, sends any due message via the right channel, increments counters, writes an audit row.
+2. **Reuse** `send-enrollment-email` pattern for email; add a small `send-kavenegar-sms` edge function (uses `KAVENEGAR_API_KEY`, `send` endpoint with edit-if-exists pattern per user note).
+3. **Telegram business chat**: send via existing bot using `sendMessage` with the user's stored `telegram_id` (regular DM through the bot). Note: true Telegram Business API messaging as the @rafieiacademy account requires a Business Connection; if only bot-DM is available, we use that and label it clearly. I'll implement bot-DM now and leave a hook to swap in `business_connection_id` when set.
 
-RLS:
-- Students: `SELECT` their own rows only.
-- Admins (`has_role admin`): full access.
-- Support agents: access rows where `assigned_agent_id = auth.uid()` or unassigned.
-- Inserts/updates from the bot happen via service role in the edge function.
+### pg_cron schedule
+```sql
+select cron.schedule('support-followup', '*/5 * * * *',
+  $$ select net.http_post(url:='.../functions/v1/support-activation-followup-cron', headers:=..., body:='{}') $$);
+```
 
-A DB function `ensure_support_activation(user_id, course_id, enrollment_id)` creates the row on demand and returns the token / links.
+### Admin UI
 
-## 3. Edge functions
+- `CourseEdit.tsx` → new "پیگیری پشتیبانی" section with the 3 stage cards (enable toggle, delay input, message editor, subject/SMS fields where relevant).
+- `SupportActivations.tsx` → add a "پیگیری‌ها" column showing counts + last stage/time.
 
-- `telegram-bot-webhook` (extend existing bot webhook if present, otherwise new): handles `/start sact_<token>`. Validates token, updates status → `opened_bot`, stores telegram user info, sends the Persian welcome message with an inline URL button whose URL is the encoded `t.me/rafieiacademy?text=...` support link. Logs `opened_bot` event. When the inline button is pressed (callback_query), updates status → `clicked_support_button`, logs the event.
-- `support-activation-create`: called from the dashboard card. Creates/returns the activation row and returns `bot_deep_link`. Logs `dashboard_clicked`.
-- `support-activation-followup-cron` (scheduled, optional): moves stale rows to `needs_followup` / `pending_manual_confirmation` per the timing rules.
+### Persian message drafts (editable per course)
 
-Bot secret verified via `X-Telegram-Bot-Api-Secret-Token` (derived from `TELEGRAM_API_KEY`, matches existing pattern in the project).
+**Stage 1 — Email** (subject) «قدم آخر برای فعال‌سازی دوره {{course_title}}»  
+Body: خوش‌آمد + یادآوری کلیک روی دکمه فعال‌سازی پشتیبانی در داشبورد + لینک SSO به دوره.
 
-## 4. Student dashboard card
+**Stage 1 — SMS**: «{{name}} عزیز، برای فعال‌سازی پشتیبانی دوره {{course_title}} به داشبورد آکادمی رفیعی مراجعه کنید: academy.rafiei.co»
 
-Update `TelegramEnrollmentActivation` (and the equivalent "course access" card) to branch on the new course toggles:
+**Stage 2 — Bot**: «سلام {{name}} 👋 وارد ربات شدی ولی هنوز روی دکمه «فعال‌سازی پشتیبانی» نزدی. یه کلیک کافیه تا تیم پشتیبانی دوره {{course_title}} رو برات فعال کنه.» + inline button `فعال‌سازی پشتیبانی`.
 
-- If toggle OFF → current direct `t.me/...` behaviour (unchanged).
-- If toggle ON → call `support-activation-create`, then render the four states from the spec (`not_started`, `opened_bot`, `clicked_support_button/pending_manual_confirmation`, `activated`) with the exact Persian titles/texts/buttons. Button always opens the bot deep link in a new tab; realtime subscription on `support_activations` updates the card as the status advances.
+**Stage 3 — Business/DM**: «{{name}} جان، پیامت رو دیدیم ولی هنوز فعال‌سازی نهایی نشده. اگر سوالی هست همینجا بنویس تا سریع رسیدگی کنیم 🙏 (دوره: {{course_title}})»
 
-Mounted in both website mode (enrollment/course-access pages) and app mode (AppLessonView / AppCourseDetail), matching where the current activation card already appears.
+### Secrets needed
 
-## 5. Admin dashboard `/admin/support-activations`
+- `KAVENEGAR_API_KEY` — user must add.
+- Email uses existing Lovable Emails / `send-enrollment-email` domain.
 
-New page + sidebar entry ("فعال‌سازی پشتیبانی"):
+### Rollout
 
-- Table of activations with filters: course, status, purchase date range, opened-bot, clicked-support-button, activated/not, search by name/phone/email/token.
-- Smart segment tabs: "خریدار بدون ورود به ربات", "وارد ربات، بدون کلیک", "کلیک کرده، تایید نشده", ">24h", ">3d", "دوره‌های گران بدون فعال‌سازی".
-- Row actions: mark activated, mark needs-followup, copy support message, copy bot deep link, regenerate token, add note, assign to agent, view event timeline.
-- CSV export.
+1. Migration (columns + audit table + grants + RLS).
+2. `send-kavenegar-sms` function + secret request.
+3. `support-activation-followup-cron` function + pg_cron schedule.
+4. Admin course-edit UI section.
+5. Admin dashboard column.
 
-## 6. Lead management integration
-
-Add "وضعیت فعال‌سازی پشتیبانی" filter + the six smart segments to the existing lead list, joined via `support_activations` on `user_id`.
-
-## 7. Analytics widgets
-
-New card set on the admin dashboard: total buyers, opened-bot rate, clicked-support-button rate, manual activation rate, pending count, needs-followup count, avg time purchase→bot, avg time bot→activation, activation rate by course.
-
-## Technical notes
-
-- Token: `crypto.randomUUID()` (URL-safe, unique index).
-- Deep link stored server-side; bot username pulled from `admin_settings.telegram_bot_username` (already used elsewhere).
-- Realtime enabled on `support_activations` so the student card auto-refreshes when the bot updates status.
-- All new UI is Persian RTL, reuses existing shadcn tokens (no hardcoded colours).
-- Because Telegram cannot confirm the user actually pressed Send in @rafieiacademy, final `activated` transition is either (a) manual by admin/support, or (b) if the bot is later added to the support account as a userbot, automatic — schema supports both; only the manual path is built now.
-
-## Rollout order
-
-1. Migration (tables, enum, RLS, grants, `ensure_support_activation` function, realtime publication).
-2. Course-edit form fields + types.
-3. `telegram-bot-webhook` handler for `sact_` deep link + callback.
-4. `support-activation-create` edge function.
-5. Student dashboard card rewrite (branch on toggle).
-6. Admin `/admin/support-activations` page + sidebar entry.
-7. Lead management filter + smart segments.
-8. Analytics widgets.
-9. Optional follow-up cron.
-
-Confirm and I'll start with step 1 (the migration).
+Confirm and I'll start with step 1.
