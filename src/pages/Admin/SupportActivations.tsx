@@ -80,15 +80,46 @@ const SupportActivations: React.FC = () => {
   }, [status, courseId]);
 
   const filtered = useMemo(() => {
-    if (!q.trim()) return rows;
+    let list = rows;
+    if (segment !== 'all') {
+      const now = Date.now();
+      const hoursSince = (iso: string | null) => (iso ? (now - new Date(iso).getTime()) / 36e5 : Infinity);
+      list = list.filter((r) => {
+        switch (segment) {
+          case 'no_bot': return r.status === 'not_started';
+          case 'opened_no_click': return r.status === 'opened_bot';
+          case 'clicked_unconfirmed': return r.status === 'clicked_support_button' || r.status === 'pending_manual_confirmation';
+          case 'over_24h': return r.status !== 'activated' && hoursSince(r.created_at) > 24;
+          case 'over_3d': return r.status !== 'activated' && hoursSince(r.created_at) > 72;
+          default: return true;
+        }
+      });
+    }
+    if (!q.trim()) return list;
     const s = q.trim().toLowerCase();
-    return rows.filter((r) =>
+    return list.filter((r) =>
       (r.chat_users?.name || '').toLowerCase().includes(s) ||
       (r.chat_users?.phone || '').toLowerCase().includes(s) ||
       (r.chat_users?.email || '').toLowerCase().includes(s) ||
       r.activation_token.toLowerCase().includes(s)
     );
-  }, [rows, q]);
+  }, [rows, q, segment]);
+
+  const stats = useMemo(() => {
+    const total = rows.length;
+    const opened = rows.filter((r) => !!r.opened_bot_at).length;
+    const clicked = rows.filter((r) => !!r.clicked_support_button_at).length;
+    const activated = rows.filter((r) => r.status === 'activated').length;
+    const pending = rows.filter((r) => r.status === 'pending_manual_confirmation' || r.status === 'clicked_support_button').length;
+    const followup = rows.filter((r) => r.status === 'needs_followup').length;
+    const durations = rows.filter((r) => r.opened_bot_at).map((r) => (new Date(r.opened_bot_at!).getTime() - new Date(r.created_at).getTime()) / 6e4);
+    const avgToBot = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
+    const actDur = rows.filter((r) => r.activated_at && r.opened_bot_at).map((r) => (new Date(r.activated_at!).getTime() - new Date(r.opened_bot_at!).getTime()) / 6e4);
+    const avgBotToAct = actDur.length ? Math.round(actDur.reduce((a, b) => a + b, 0) / actDur.length) : 0;
+    const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
+    return { total, opened, clicked, activated, pending, followup, avgToBot, avgBotToAct, openedPct: pct(opened), clickedPct: pct(clicked), activatedPct: pct(activated) };
+  }, [rows]);
+
 
   const setStatusRow = async (id: string, newStatus: string) => {
     const patch: any = { status: newStatus };
