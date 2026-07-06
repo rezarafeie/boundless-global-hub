@@ -104,7 +104,7 @@ export function TelegramEnrollmentActivation({
     load();
 
     const channel = supabase
-      .channel(`support-act-${user.id}-${courseId}`)
+      .channel(`support-act-${user.id}-${courseId}-${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         {
