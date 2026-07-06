@@ -865,6 +865,74 @@ mba
                           </p>
                         </div>
                       )}
+
+                      {formData.telegram_support_activation_enabled && (
+                        <div className="bg-muted/40 p-3 rounded-lg mt-2">
+                          <Label htmlFor="telegram_bot_activated_message">پیام پس از فعال‌سازی پشتیبانی</Label>
+                          <Textarea
+                            id="telegram_bot_activated_message"
+                            value={formData.telegram_bot_activated_message}
+                            onChange={(e) => setFormData(prev => ({ ...prev, telegram_bot_activated_message: e.target.value }))}
+                            rows={7}
+                            className="mt-2"
+                          />
+                          <p className="text-xs text-muted-foreground mt-2">
+                            پس از فعال‌سازی پشتیبانی، این پیام همراه با دکمه‌های دسترسی دوره برای کاربر ارسال می‌شود. متغیرها: {"{{name}}"}, {"{{course_title}}"}
+                          </p>
+
+                          <div className="mt-4">
+                            <Label>دکمه‌های سفارشی زیر پیام</Label>
+                            <p className="text-xs text-muted-foreground mt-1 mb-2">علاوه بر دکمه‌های پیش‌فرض (دسترسی دوره، کانال، پشتیبانی)، این دکمه‌ها هم افزوده می‌شوند.</p>
+                            <div className="space-y-2">
+                              {(formData.telegram_bot_activation_buttons || []).map((btn: { text: string; url: string }, idx: number) => (
+                                <div key={idx} className="flex gap-2">
+                                  <Input
+                                    placeholder="متن دکمه"
+                                    value={btn.text}
+                                    onChange={(e) => {
+                                      const arr = [...(formData.telegram_bot_activation_buttons || [])];
+                                      arr[idx] = { ...arr[idx], text: e.target.value };
+                                      setFormData(prev => ({ ...prev, telegram_bot_activation_buttons: arr }));
+                                    }}
+                                  />
+                                  <Input
+                                    placeholder="https://..."
+                                    value={btn.url}
+                                    onChange={(e) => {
+                                      const arr = [...(formData.telegram_bot_activation_buttons || [])];
+                                      arr[idx] = { ...arr[idx], url: e.target.value };
+                                      setFormData(prev => ({ ...prev, telegram_bot_activation_buttons: arr }));
+                                    }}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      const arr = [...(formData.telegram_bot_activation_buttons || [])];
+                                      arr.splice(idx, 1);
+                                      setFormData(prev => ({ ...prev, telegram_bot_activation_buttons: arr }));
+                                    }}
+                                  >
+                                    حذف
+                                  </Button>
+                                </div>
+                              ))}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setFormData(prev => ({
+                                  ...prev,
+                                  telegram_bot_activation_buttons: [...(prev.telegram_bot_activation_buttons || []), { text: '', url: '' }]
+                                }))}
+                              >
+                                افزودن دکمه
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
