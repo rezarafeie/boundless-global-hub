@@ -20,6 +20,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import CourseActionLinks from './CourseActionLinks';
 import RafieiPlayerSection from './RafieiPlayerSection';
+import { useAuth } from '@/contexts/AuthContext';
+
 
 interface StartCourseSectionProps {
   enrollment: {
