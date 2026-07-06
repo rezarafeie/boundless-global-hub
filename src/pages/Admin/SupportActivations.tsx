@@ -46,6 +46,7 @@ const SupportActivations: React.FC = () => {
   const [courseId, setCourseId] = useState<string>('all');
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [q, setQ] = useState('');
+  const [segment, setSegment] = useState<string>('all');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -80,15 +81,46 @@ const SupportActivations: React.FC = () => {
   }, [status, courseId]);
 
   const filtered = useMemo(() => {
-    if (!q.trim()) return rows;
+    let list = rows;
+    if (segment !== 'all') {
+      const now = Date.now();
+      const hoursSince = (iso: string | null) => (iso ? (now - new Date(iso).getTime()) / 36e5 : Infinity);
+      list = list.filter((r) => {
+        switch (segment) {
+          case 'no_bot': return r.status === 'not_started';
+          case 'opened_no_click': return r.status === 'opened_bot';
+          case 'clicked_unconfirmed': return r.status === 'clicked_support_button' || r.status === 'pending_manual_confirmation';
+          case 'over_24h': return r.status !== 'activated' && hoursSince(r.created_at) > 24;
+          case 'over_3d': return r.status !== 'activated' && hoursSince(r.created_at) > 72;
+          default: return true;
+        }
+      });
+    }
+    if (!q.trim()) return list;
     const s = q.trim().toLowerCase();
-    return rows.filter((r) =>
+    return list.filter((r) =>
       (r.chat_users?.name || '').toLowerCase().includes(s) ||
       (r.chat_users?.phone || '').toLowerCase().includes(s) ||
       (r.chat_users?.email || '').toLowerCase().includes(s) ||
       r.activation_token.toLowerCase().includes(s)
     );
-  }, [rows, q]);
+  }, [rows, q, segment]);
+
+  const stats = useMemo(() => {
+    const total = rows.length;
+    const opened = rows.filter((r) => !!r.opened_bot_at).length;
+    const clicked = rows.filter((r) => !!r.clicked_support_button_at).length;
+    const activated = rows.filter((r) => r.status === 'activated').length;
+    const pending = rows.filter((r) => r.status === 'pending_manual_confirmation' || r.status === 'clicked_support_button').length;
+    const followup = rows.filter((r) => r.status === 'needs_followup').length;
+    const durations = rows.filter((r) => r.opened_bot_at).map((r) => (new Date(r.opened_bot_at!).getTime() - new Date(r.created_at).getTime()) / 6e4);
+    const avgToBot = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
+    const actDur = rows.filter((r) => r.activated_at && r.opened_bot_at).map((r) => (new Date(r.activated_at!).getTime() - new Date(r.opened_bot_at!).getTime()) / 6e4);
+    const avgBotToAct = actDur.length ? Math.round(actDur.reduce((a, b) => a + b, 0) / actDur.length) : 0;
+    const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
+    return { total, opened, clicked, activated, pending, followup, avgToBot, avgBotToAct, openedPct: pct(opened), clickedPct: pct(clicked), activatedPct: pct(activated) };
+  }, [rows]);
+
 
   const setStatusRow = async (id: string, newStatus: string) => {
     const patch: any = { status: newStatus };
@@ -163,7 +195,53 @@ const SupportActivations: React.FC = () => {
         <Button variant="outline" onClick={exportCsv}>خروجی CSV</Button>
       </div>
 
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        {[
+          { label: 'کل خریداران', value: stats.total, sub: '' },
+          { label: 'ورود به ربات', value: stats.opened, sub: `${stats.openedPct}%` },
+          { label: 'کلیک پشتیبانی', value: stats.clicked, sub: `${stats.clickedPct}%` },
+          { label: 'فعال شده', value: stats.activated, sub: `${stats.activatedPct}%` },
+          { label: 'در انتظار تایید', value: stats.pending, sub: '' },
+          { label: 'نیاز به پیگیری', value: stats.followup, sub: '' },
+        ].map((s) => (
+          <Card key={s.label}>
+            <CardContent className="p-3">
+              <div className="text-xs text-muted-foreground">{s.label}</div>
+              <div className="text-xl font-bold">{s.value.toLocaleString('fa-IR')}</div>
+              {s.sub && <div className="text-xs text-primary">{s.sub}</div>}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card><CardContent className="p-3">
+          <div className="text-xs text-muted-foreground">میانگین خرید → ورود ربات</div>
+          <div className="text-lg font-semibold">{stats.avgToBot.toLocaleString('fa-IR')} دقیقه</div>
+        </CardContent></Card>
+        <Card><CardContent className="p-3">
+          <div className="text-xs text-muted-foreground">میانگین ربات → فعال‌سازی</div>
+          <div className="text-lg font-semibold">{stats.avgBotToAct.toLocaleString('fa-IR')} دقیقه</div>
+        </CardContent></Card>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {[
+          { k: 'all', l: 'همه' },
+          { k: 'no_bot', l: 'بدون ورود به ربات' },
+          { k: 'opened_no_click', l: 'وارد ربات، بدون کلیک' },
+          { k: 'clicked_unconfirmed', l: 'کلیک کرده، تایید نشده' },
+          { k: 'over_24h', l: 'بیش از ۲۴ ساعت' },
+          { k: 'over_3d', l: 'بیش از ۳ روز' },
+        ].map((seg) => (
+          <Button key={seg.k} size="sm" variant={segment === seg.k ? 'default' : 'outline'} onClick={() => setSegment(seg.k)}>
+            {seg.l}
+          </Button>
+        ))}
+      </div>
+
       <Card>
+
         <CardHeader>
           <CardTitle className="text-base">فیلترها</CardTitle>
         </CardHeader>
