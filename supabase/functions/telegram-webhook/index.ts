@@ -2492,7 +2492,7 @@ async function handleUpdate(update: any) {
 
         // Load course + user, build welcome + buttons
         const [{ data: course }, { data: cu }] = await Promise.all([
-          supabase.from('courses').select('title, telegram_bot_activated_message, telegram_channel_link, redirect_url, support_link, slug').eq('id', cur.course_id).maybeSingle(),
+          supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', cur.course_id).maybeSingle(),
           supabase.from('chat_users').select('name, first_name').eq('id', cur.user_id).maybeSingle(),
         ]);
         const displayName = (cu as any)?.first_name || (cu as any)?.name || 'دوست عزیز';
@@ -2519,6 +2519,12 @@ async function handleUpdate(update: any) {
         if (channel) buttons.push([{ text: '📢 کانال دوره', url: channel }]);
         const support = (course as any)?.support_link;
         if (support) buttons.push([{ text: '💬 ارتباط با پشتیبان', url: support }]);
+        const customButtons = Array.isArray((course as any)?.telegram_bot_activation_buttons)
+          ? ((course as any).telegram_bot_activation_buttons as any[])
+          : [];
+        for (const b of customButtons) {
+          if (b?.text && b?.url) buttons.push([{ text: String(b.text), url: String(b.url) }]);
+        }
 
         try {
           await editMessage(chat_id, message_id, '✅ پشتیبانی شما فعال شد.', []);
