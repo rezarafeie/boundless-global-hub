@@ -195,7 +195,53 @@ const SupportActivations: React.FC = () => {
         <Button variant="outline" onClick={exportCsv}>خروجی CSV</Button>
       </div>
 
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        {[
+          { label: 'کل خریداران', value: stats.total, sub: '' },
+          { label: 'ورود به ربات', value: stats.opened, sub: `${stats.openedPct}%` },
+          { label: 'کلیک پشتیبانی', value: stats.clicked, sub: `${stats.clickedPct}%` },
+          { label: 'فعال شده', value: stats.activated, sub: `${stats.activatedPct}%` },
+          { label: 'در انتظار تایید', value: stats.pending, sub: '' },
+          { label: 'نیاز به پیگیری', value: stats.followup, sub: '' },
+        ].map((s) => (
+          <Card key={s.label}>
+            <CardContent className="p-3">
+              <div className="text-xs text-muted-foreground">{s.label}</div>
+              <div className="text-xl font-bold">{s.value.toLocaleString('fa-IR')}</div>
+              {s.sub && <div className="text-xs text-primary">{s.sub}</div>}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card><CardContent className="p-3">
+          <div className="text-xs text-muted-foreground">میانگین خرید → ورود ربات</div>
+          <div className="text-lg font-semibold">{stats.avgToBot.toLocaleString('fa-IR')} دقیقه</div>
+        </CardContent></Card>
+        <Card><CardContent className="p-3">
+          <div className="text-xs text-muted-foreground">میانگین ربات → فعال‌سازی</div>
+          <div className="text-lg font-semibold">{stats.avgBotToAct.toLocaleString('fa-IR')} دقیقه</div>
+        </CardContent></Card>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {[
+          { k: 'all', l: 'همه' },
+          { k: 'no_bot', l: 'بدون ورود به ربات' },
+          { k: 'opened_no_click', l: 'وارد ربات، بدون کلیک' },
+          { k: 'clicked_unconfirmed', l: 'کلیک کرده، تایید نشده' },
+          { k: 'over_24h', l: 'بیش از ۲۴ ساعت' },
+          { k: 'over_3d', l: 'بیش از ۳ روز' },
+        ].map((seg) => (
+          <Button key={seg.k} size="sm" variant={segment === seg.k ? 'default' : 'outline'} onClick={() => setSegment(seg.k)}>
+            {seg.l}
+          </Button>
+        ))}
+      </div>
+
       <Card>
+
         <CardHeader>
           <CardTitle className="text-base">فیلترها</CardTitle>
         </CardHeader>
