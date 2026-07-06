@@ -180,7 +180,10 @@ const CourseEdit: React.FC = () => {
              : { lesson_complete: true, course_complete: true, inactivity: true, coaching: true },
         use_enrollments_as_leads: data.use_enrollments_as_leads || false,
         lead_start_date: data.lead_start_date ? new Date(data.lead_start_date).toISOString().slice(0, 16) : '',
-        vpn_warning_enabled: (data as any).vpn_warning_enabled || false
+        vpn_warning_enabled: (data as any).vpn_warning_enabled || false,
+        telegram_support_activation_enabled: (data as any).telegram_support_activation_enabled || false,
+        telegram_course_access_via_bot_enabled: (data as any).telegram_course_access_via_bot_enabled || false,
+        telegram_bot_welcome_message: (data as any).telegram_bot_welcome_message || 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال و دوره برات فعال بشه.'
       });
 
       // If editing a dollar-priced course, fetch the exchange rate
