@@ -304,7 +304,7 @@ const AppCourseDetail = () => {
             <CardContent className="p-4">
               <div className="space-y-4">
                 <div>
-                  <h2 className="text-xl font-bold mb-2 text-right">{course.title}</h2>
+                  <h2 className="text-xl font-bold mb-2 text-right dir="rtl" w-full">{course.title}</h2>
                   <p className="text-muted-foreground text-sm">{course.description}</p>
                 </div>
                 
@@ -327,7 +327,7 @@ const AppCourseDetail = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
+                  <div className="flex flex-row-reverse justify-between text-sm">
                     <span>پیشرفت دوره</span>
                     <span className="font-medium">{course.progress}%</span>
                   </div>
@@ -379,7 +379,7 @@ const AppCourseDetail = () => {
                             }`}
                             onClick={() => handleLessonClick(lesson)}
                           >
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-row-reverse items-center gap-3">
                               {lesson.locked ? (
                                 <Lock size={16} className="text-muted-foreground" />
                               ) : lesson.completed ? (
@@ -387,9 +387,9 @@ const AppCourseDetail = () => {
                               ) : (
                                 <Play size={16} className="text-primary" />
                               )}
-                              <div>
-                                <p className="font-medium text-sm text-right">{lesson.title}</p>
-                                <p className="text-xs text-muted-foreground text-right">{lesson.duration} دقیقه</p>
+                              <div className="text-right">
+                                <p className="font-medium text-sm">{lesson.title}</p>
+                                <p className="text-xs text-muted-foreground">{lesson.duration} دقیقه</p>
                               </div>
                             </div>
                             {lesson.completed && (
