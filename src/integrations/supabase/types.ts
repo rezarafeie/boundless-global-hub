@@ -1681,6 +1681,16 @@ export type Database = {
           smart_activation_telegram_link: string | null
           spotplayer_course_id: string | null
           support_activation_required: boolean | null
+          support_followup_enabled: boolean
+          support_followup_max_repeats: number
+          support_followup_stage1_delay_minutes: number
+          support_followup_stage1_email_body: string | null
+          support_followup_stage1_email_subject: string | null
+          support_followup_stage1_sms_text: string | null
+          support_followup_stage2_bot_text: string | null
+          support_followup_stage2_delay_minutes: number
+          support_followup_stage3_business_text: string | null
+          support_followup_stage3_delay_minutes: number
           support_link: string | null
           support_prefilled_message_template: string | null
           telegram_activation_keyword: string | null
@@ -1730,6 +1740,16 @@ export type Database = {
           smart_activation_telegram_link?: string | null
           spotplayer_course_id?: string | null
           support_activation_required?: boolean | null
+          support_followup_enabled?: boolean
+          support_followup_max_repeats?: number
+          support_followup_stage1_delay_minutes?: number
+          support_followup_stage1_email_body?: string | null
+          support_followup_stage1_email_subject?: string | null
+          support_followup_stage1_sms_text?: string | null
+          support_followup_stage2_bot_text?: string | null
+          support_followup_stage2_delay_minutes?: number
+          support_followup_stage3_business_text?: string | null
+          support_followup_stage3_delay_minutes?: number
           support_link?: string | null
           support_prefilled_message_template?: string | null
           telegram_activation_keyword?: string | null
@@ -1779,6 +1799,16 @@ export type Database = {
           smart_activation_telegram_link?: string | null
           spotplayer_course_id?: string | null
           support_activation_required?: boolean | null
+          support_followup_enabled?: boolean
+          support_followup_max_repeats?: number
+          support_followup_stage1_delay_minutes?: number
+          support_followup_stage1_email_body?: string | null
+          support_followup_stage1_email_subject?: string | null
+          support_followup_stage1_sms_text?: string | null
+          support_followup_stage2_bot_text?: string | null
+          support_followup_stage2_delay_minutes?: number
+          support_followup_stage3_business_text?: string | null
+          support_followup_stage3_delay_minutes?: number
           support_link?: string | null
           support_prefilled_message_template?: string | null
           telegram_activation_keyword?: string | null
@@ -4479,6 +4509,53 @@ export type Database = {
           },
         ]
       }
+      support_activation_followup_log: {
+        Row: {
+          channel: string
+          course_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          payload: Json | null
+          stage: number
+          status: string
+          support_activation_id: string
+          user_id: number | null
+        }
+        Insert: {
+          channel: string
+          course_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          stage: number
+          status?: string
+          support_activation_id: string
+          user_id?: number | null
+        }
+        Update: {
+          channel?: string
+          course_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          stage?: number
+          status?: string
+          support_activation_id?: string
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_activation_followup_log_support_activation_id_fkey"
+            columns: ["support_activation_id"]
+            isOneToOne: false
+            referencedRelation: "support_activations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_activations: {
         Row: {
           activated_at: string | null
@@ -4492,8 +4569,13 @@ export type Database = {
           created_at: string
           enrollment_id: string | null
           followup_count: number
+          followup_stage1_sent_count: number
+          followup_stage2_sent_count: number
+          followup_stage3_sent_count: number
           id: string
           last_followup_at: string | null
+          last_followup_sent_at: string | null
+          last_followup_stage: number | null
           metadata_json: Json
           opened_bot_at: string | null
           status: Database["public"]["Enums"]["support_activation_status"]
@@ -4517,8 +4599,13 @@ export type Database = {
           created_at?: string
           enrollment_id?: string | null
           followup_count?: number
+          followup_stage1_sent_count?: number
+          followup_stage2_sent_count?: number
+          followup_stage3_sent_count?: number
           id?: string
           last_followup_at?: string | null
+          last_followup_sent_at?: string | null
+          last_followup_stage?: number | null
           metadata_json?: Json
           opened_bot_at?: string | null
           status?: Database["public"]["Enums"]["support_activation_status"]
@@ -4542,8 +4629,13 @@ export type Database = {
           created_at?: string
           enrollment_id?: string | null
           followup_count?: number
+          followup_stage1_sent_count?: number
+          followup_stage2_sent_count?: number
+          followup_stage3_sent_count?: number
           id?: string
           last_followup_at?: string | null
+          last_followup_sent_at?: string | null
+          last_followup_stage?: number | null
           metadata_json?: Json
           opened_bot_at?: string | null
           status?: Database["public"]["Enums"]["support_activation_status"]
@@ -6282,8 +6374,13 @@ export type Database = {
           created_at: string
           enrollment_id: string | null
           followup_count: number
+          followup_stage1_sent_count: number
+          followup_stage2_sent_count: number
+          followup_stage3_sent_count: number
           id: string
           last_followup_at: string | null
+          last_followup_sent_at: string | null
+          last_followup_stage: number | null
           metadata_json: Json
           opened_bot_at: string | null
           status: Database["public"]["Enums"]["support_activation_status"]
