@@ -45,64 +45,66 @@ const AppLayout = ({ children, title, showBackButton = true, rightAction }: AppL
   };
 
   return (
-    <div 
-      className="min-h-screen bg-background flex flex-col"
+    <div
+      className="min-h-screen bg-muted/30 flex justify-center"
       dir={direction}
     >
-      {/* Top Bar */}
-      <header className="sticky top-0 z-50 bg-card border-b border-border/50 backdrop-blur-sm">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            {showBackButton && (
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={handleBack}
-                className="h-8 w-8"
-              >
-                <ArrowLeft size={18} />
+      <div className="relative w-full max-w-md min-h-screen bg-background flex flex-col shadow-xl md:border-x border-border/50">
+        {/* Top Bar */}
+        <header className="sticky top-0 z-40 bg-card border-b border-border/50 backdrop-blur-sm">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-3">
+              {showBackButton && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleBack}
+                  className="h-8 w-8"
+                >
+                  <ArrowLeft size={18} />
+                </Button>
+              )}
+              <h1 className="text-lg font-semibold text-foreground truncate">
+                {title || "آکادمی رفیعی"}
+              </h1>
+            </div>
+            {rightAction || (
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreVertical size={18} />
               </Button>
             )}
-            <h1 className="text-lg font-semibold text-foreground truncate">
-              {title || "آکادمی رفیعی"}
-            </h1>
           </div>
-          {rightAction || (
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreVertical size={18} />
-            </Button>
-          )}
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content */}
-      <main className="flex-1 pb-20 overflow-y-auto">
-        {children}
-      </main>
+        {/* Main Content */}
+        <main className="flex-1 pb-20 overflow-y-auto">
+          {children}
+        </main>
 
-      {/* Bottom Tab Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border/50 backdrop-blur-sm">
-        <div className="flex justify-around py-2">
-          {bottomNavItems.map((item) => {
-            const isActive = isActivePath(item.path);
-            return (
-              <Button
-                key={item.path}
-                variant="ghost"
-                onClick={() => navigate(item.path)}
-                className={`flex flex-col items-center gap-1 h-auto py-2 px-3 min-w-0 flex-1 ${
-                  isActive 
-                    ? 'text-primary bg-primary/10' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <item.icon size={20} />
-                <span className="text-xs font-medium truncate">{item.label}</span>
-              </Button>
-            );
-          })}
-        </div>
-      </nav>
+        {/* Bottom Tab Navigation */}
+        <nav className="fixed bottom-0 left-0 right-0 md:absolute md:left-0 md:right-0 z-50 bg-card border-t border-border/50 backdrop-blur-sm mx-auto max-w-md">
+          <div className="flex justify-around py-2">
+            {bottomNavItems.map((item) => {
+              const isActive = isActivePath(item.path);
+              return (
+                <Button
+                  key={item.path}
+                  variant="ghost"
+                  onClick={() => navigate(item.path)}
+                  className={`flex flex-col items-center gap-1 h-auto py-2 px-3 min-w-0 flex-1 ${
+                    isActive
+                      ? 'text-primary bg-primary/10'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <item.icon size={20} />
+                  <span className="text-xs font-medium truncate">{item.label}</span>
+                </Button>
+              );
+            })}
+          </div>
+        </nav>
+      </div>
     </div>
   );
 };
