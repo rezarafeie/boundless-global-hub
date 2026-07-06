@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Bot, CheckCircle2, Clock, MessageCircleQuestion } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { openInNewTab } from '@/lib/utils';
 
 interface Props {
   enrollmentId?: string;
