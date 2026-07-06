@@ -811,6 +811,52 @@ async function renderReports(chat_id: number, message_id: number | null, user: B
 
 // ============ Student / Login flow ============
 const ACADEMY_BASE = 'https://academy.rafiei.co';
+const ACADEMY_HOSTS = new Set(['academy.rafiei.co', 'www.academy.rafiei.co']);
+
+/**
+ * Wrap a URL in an SSO redirect so the user lands auto-logged-in.
+ * - If the URL points to the academy site (or is a relative path), generate
+ *   an sso_tokens row for `userEmail` and return `/sso-access?token=...&redirect=...`.
+ * - Otherwise (t.me links, other domains) return the URL as-is.
+ * Falls back to the original URL on any error / missing email.
+ */
+async function wrapWithSso(
+  url: string,
+  userEmail: string | null,
+  opts?: { courseSlug?: string | null; enrollmentId?: string | null }
+): Promise<string> {
+  if (!url) return url;
+  if (!userEmail) return url;
+  try {
+    let path: string;
+    if (url.startsWith('/')) {
+      path = url;
+    } else {
+      const u = new URL(url);
+      if (!ACADEMY_HOSTS.has(u.hostname)) return url;
+      // Already an SSO url — leave alone
+      if (u.pathname === '/sso-access') return url;
+      path = `${u.pathname}${u.search}${u.hash}`;
+    }
+    const token = `sso_${crypto.randomUUID().replace(/-/g, '')}_${Date.now()}`;
+    const { error } = await supabase.from('sso_tokens').insert({
+      token,
+      user_email: userEmail,
+      type: 'academy',
+      course_slug: opts?.courseSlug ?? null,
+      enrollment_id: opts?.enrollmentId ?? null,
+    });
+    if (error) {
+      console.warn('wrapWithSso insert failed', error);
+      return url;
+    }
+    return `${ACADEMY_BASE}/sso-access?token=${token}&redirect=${encodeURIComponent(path)}`;
+  } catch (e) {
+    console.warn('wrapWithSso failed for url', url, e);
+    return url;
+  }
+}
+
 
 function normalizePhoneIR(input: string): { local: string; formatted: string } | null {
   // local: 9XXXXXXXXX (no leading 0)  formatted: +989XXXXXXXXX
