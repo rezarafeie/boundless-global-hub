@@ -51,6 +51,8 @@ interface Course {
    telegram_bot_welcome_message?: string | null;
    telegram_bot_activated_message?: string | null;
    telegram_bot_activation_buttons?: any;
+   telegram_activation_keyword?: string | null;
+
     use_enrollments_as_leads?: boolean;
     lead_start_date?: string | null;
     vpn_warning_enabled?: boolean;
@@ -106,6 +108,8 @@ const CourseEdit: React.FC = () => {
     telegram_bot_welcome_message: 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال و دوره برات فعال بشه.',
     telegram_bot_activated_message: 'درود بر شما {{name}} 🌱\nپشتیبانی اختصاصی شما با موفقیت فعال شد ✅\n\nدسترسی به دوره «{{course_title}}» از دکمه‌های زیر برای شما فعال است.\n\nبا آرزوی موفقیت\nتیم پشتیبانی آکادمی رفیعی',
     telegram_bot_activation_buttons: [] as { text: string; url: string }[],
+    telegram_activation_keyword: '',
+
     use_enrollments_as_leads: false,
     lead_start_date: '',
     vpn_warning_enabled: false
@@ -190,6 +194,8 @@ const CourseEdit: React.FC = () => {
         telegram_bot_welcome_message: (data as any).telegram_bot_welcome_message || 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال و دوره برات فعال بشه.',
         telegram_bot_activated_message: (data as any).telegram_bot_activated_message || 'درود بر شما {{name}} 🌱\nپشتیبانی اختصاصی شما با موفقیت فعال شد ✅\n\nدسترسی به دوره «{{course_title}}» از دکمه‌های زیر برای شما فعال است.\n\nبا آرزوی موفقیت\nتیم پشتیبانی آکادمی رفیعی',
         telegram_bot_activation_buttons: Array.isArray((data as any).telegram_bot_activation_buttons) ? (data as any).telegram_bot_activation_buttons : [],
+        telegram_activation_keyword: (data as any).telegram_activation_keyword || '',
+
       });
 
       // If editing a dollar-priced course, fetch the exchange rate
@@ -293,7 +299,9 @@ const CourseEdit: React.FC = () => {
         telegram_course_access_via_bot_enabled: formData.telegram_course_access_via_bot_enabled,
         telegram_bot_welcome_message: formData.telegram_bot_welcome_message?.trim() || null,
         telegram_bot_activated_message: formData.telegram_bot_activated_message?.trim() || null,
-        telegram_bot_activation_buttons: (formData.telegram_bot_activation_buttons || []).filter((b: any) => b?.text?.trim() && b?.url?.trim())
+        telegram_bot_activation_buttons: (formData.telegram_bot_activation_buttons || []).filter((b: any) => b?.text?.trim() && b?.url?.trim()),
+        telegram_activation_keyword: formData.telegram_activation_keyword?.trim() || null
+
       };
 
       const { error } = await supabase
@@ -840,6 +848,21 @@ mba
                       <p className="text-xs text-muted-foreground pr-8">
                         در صورت فعال بودن، کارت «فعال‌سازی پشتیبانی» کاربر را به ربات تلگرام هدایت می‌کند و کل مراحل فعال‌سازی رهگیری می‌شود.
                       </p>
+
+                      <div className="bg-muted/40 p-3 rounded-lg mt-2">
+                        <Label htmlFor="telegram_activation_keyword">کلمه کلیدی فعال‌سازی</Label>
+                        <Input
+                          id="telegram_activation_keyword"
+                          value={formData.telegram_activation_keyword}
+                          onChange={(e) => setFormData(prev => ({ ...prev, telegram_activation_keyword: e.target.value }))}
+                          placeholder="مثال: mba, sba, bt"
+                          className="mt-2"
+                        />
+                        <p className="text-xs text-muted-foreground mt-2">
+                          این کلمه در ابتدای پیام پیش‌فرض پشتیبانی قرار می‌گیرد تا تیم پشتیبانی سریع دوره را شناسایی کند. در صورت خالی بودن از slug دوره استفاده می‌شود.
+                        </p>
+                      </div>
+
 
                       <div className="flex items-center space-x-2">
                         <Switch
