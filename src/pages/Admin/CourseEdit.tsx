@@ -282,7 +282,10 @@ const CourseEdit: React.FC = () => {
         rafiei_bot_followup_config: formData.rafiei_bot_followup_config,
         use_enrollments_as_leads: formData.use_enrollments_as_leads,
         lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null,
-        vpn_warning_enabled: formData.vpn_warning_enabled
+        vpn_warning_enabled: formData.vpn_warning_enabled,
+        telegram_support_activation_enabled: formData.telegram_support_activation_enabled,
+        telegram_course_access_via_bot_enabled: formData.telegram_course_access_via_bot_enabled,
+        telegram_bot_welcome_message: formData.telegram_bot_welcome_message?.trim() || null
       };
 
       const { error } = await supabase
