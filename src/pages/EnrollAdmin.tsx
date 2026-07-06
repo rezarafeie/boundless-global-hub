@@ -450,6 +450,7 @@ const EnrollAdmin: React.FC = () => {
         activeView={activeView}
         onViewChange={(view) => {
           if (view === 'assignments') { window.location.href = '/admin/assignments'; return; }
+          if (view === 'support-activations') { window.location.href = '/admin/support-activations'; return; }
           setActiveView(view);
         }}
         isOpen={isSidebarOpen}

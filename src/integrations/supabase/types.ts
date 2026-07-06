@@ -1677,8 +1677,11 @@ export type Database = {
           support_activation_required: boolean | null
           support_link: string | null
           telegram_activation_required: boolean | null
+          telegram_bot_welcome_message: string | null
           telegram_channel_link: string | null
+          telegram_course_access_via_bot_enabled: boolean
           telegram_only_access: boolean
+          telegram_support_activation_enabled: boolean
           title: string
           updated_at: string
           usd_price: number | null
@@ -1719,8 +1722,11 @@ export type Database = {
           support_activation_required?: boolean | null
           support_link?: string | null
           telegram_activation_required?: boolean | null
+          telegram_bot_welcome_message?: string | null
           telegram_channel_link?: string | null
+          telegram_course_access_via_bot_enabled?: boolean
           telegram_only_access?: boolean
+          telegram_support_activation_enabled?: boolean
           title: string
           updated_at?: string
           usd_price?: number | null
@@ -1761,8 +1767,11 @@ export type Database = {
           support_activation_required?: boolean | null
           support_link?: string | null
           telegram_activation_required?: boolean | null
+          telegram_bot_welcome_message?: string | null
           telegram_channel_link?: string | null
+          telegram_course_access_via_bot_enabled?: boolean
           telegram_only_access?: boolean
+          telegram_support_activation_enabled?: boolean
           title?: string
           updated_at?: string
           usd_price?: number | null
@@ -4414,6 +4423,137 @@ export type Database = {
           },
         ]
       }
+      support_activation_events: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          payload_json: Json
+          support_activation_id: string
+          user_id: number | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          payload_json?: Json
+          support_activation_id: string
+          user_id?: number | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload_json?: Json
+          support_activation_id?: string
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_activation_events_support_activation_id_fkey"
+            columns: ["support_activation_id"]
+            isOneToOne: false
+            referencedRelation: "support_activations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_activations: {
+        Row: {
+          activated_at: string | null
+          activated_by_admin_id: number | null
+          activation_token: string
+          admin_note: string | null
+          assigned_agent_id: number | null
+          bot_deep_link: string
+          clicked_support_button_at: string | null
+          course_id: string
+          created_at: string
+          enrollment_id: string | null
+          followup_count: number
+          id: string
+          last_followup_at: string | null
+          metadata_json: Json
+          opened_bot_at: string | null
+          status: Database["public"]["Enums"]["support_activation_status"]
+          support_prefilled_link: string | null
+          telegram_first_name: string | null
+          telegram_id: number | null
+          telegram_last_name: string | null
+          telegram_username: string | null
+          updated_at: string
+          user_id: number
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by_admin_id?: number | null
+          activation_token: string
+          admin_note?: string | null
+          assigned_agent_id?: number | null
+          bot_deep_link: string
+          clicked_support_button_at?: string | null
+          course_id: string
+          created_at?: string
+          enrollment_id?: string | null
+          followup_count?: number
+          id?: string
+          last_followup_at?: string | null
+          metadata_json?: Json
+          opened_bot_at?: string | null
+          status?: Database["public"]["Enums"]["support_activation_status"]
+          support_prefilled_link?: string | null
+          telegram_first_name?: string | null
+          telegram_id?: number | null
+          telegram_last_name?: string | null
+          telegram_username?: string | null
+          updated_at?: string
+          user_id: number
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by_admin_id?: number | null
+          activation_token?: string
+          admin_note?: string | null
+          assigned_agent_id?: number | null
+          bot_deep_link?: string
+          clicked_support_button_at?: string | null
+          course_id?: string
+          created_at?: string
+          enrollment_id?: string | null
+          followup_count?: number
+          id?: string
+          last_followup_at?: string | null
+          metadata_json?: Json
+          opened_bot_at?: string | null
+          status?: Database["public"]["Enums"]["support_activation_status"]
+          support_prefilled_link?: string | null
+          telegram_first_name?: string | null
+          telegram_id?: number | null
+          telegram_last_name?: string | null
+          telegram_username?: string | null
+          updated_at?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_activations_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_activations_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_agent_assignments: {
         Row: {
           agent_id: number | null
@@ -6106,6 +6246,44 @@ export type Database = {
         }
         Returns: boolean
       }
+      ensure_support_activation: {
+        Args: {
+          p_course_id: string
+          p_enrollment_id?: string
+          p_user_id: number
+        }
+        Returns: {
+          activated_at: string | null
+          activated_by_admin_id: number | null
+          activation_token: string
+          admin_note: string | null
+          assigned_agent_id: number | null
+          bot_deep_link: string
+          clicked_support_button_at: string | null
+          course_id: string
+          created_at: string
+          enrollment_id: string | null
+          followup_count: number
+          id: string
+          last_followup_at: string | null
+          metadata_json: Json
+          opened_bot_at: string | null
+          status: Database["public"]["Enums"]["support_activation_status"]
+          support_prefilled_link: string | null
+          telegram_first_name: string | null
+          telegram_id: number | null
+          telegram_last_name: string | null
+          telegram_username: string | null
+          updated_at: string
+          user_id: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "support_activations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       fix_payment_status_inconsistencies: {
         Args: never
         Returns: {
@@ -6489,6 +6667,14 @@ export type Database = {
         | "drop_servicing"
         | "digital_goods"
         | "ai"
+      support_activation_status:
+        | "not_started"
+        | "opened_bot"
+        | "clicked_support_button"
+        | "pending_manual_confirmation"
+        | "activated"
+        | "needs_followup"
+        | "failed"
       support_tag:
         | "technical"
         | "billing"
@@ -6694,6 +6880,15 @@ export const Constants = {
         "drop_servicing",
         "digital_goods",
         "ai",
+      ],
+      support_activation_status: [
+        "not_started",
+        "opened_bot",
+        "clicked_support_button",
+        "pending_manual_confirmation",
+        "activated",
+        "needs_followup",
+        "failed",
       ],
       support_tag: [
         "technical",

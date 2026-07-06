@@ -46,6 +46,9 @@ interface Course {
    smart_activation_telegram_link?: string | null;
    rafiei_bot_followup_enabled?: boolean;
    rafiei_bot_activation_required?: boolean;
+   telegram_support_activation_enabled?: boolean;
+   telegram_course_access_via_bot_enabled?: boolean;
+   telegram_bot_welcome_message?: string | null;
     use_enrollments_as_leads?: boolean;
     lead_start_date?: string | null;
     vpn_warning_enabled?: boolean;
@@ -96,6 +99,9 @@ const CourseEdit: React.FC = () => {
     rafiei_bot_followup_enabled: false,
     rafiei_bot_activation_required: false,
     rafiei_bot_followup_config: { lesson_complete: true, course_complete: true, inactivity: true, coaching: true } as { lesson_complete: boolean; course_complete: boolean; inactivity: boolean; coaching: boolean },
+    telegram_support_activation_enabled: false,
+    telegram_course_access_via_bot_enabled: false,
+    telegram_bot_welcome_message: 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال و دوره برات فعال بشه.',
     use_enrollments_as_leads: false,
     lead_start_date: '',
     vpn_warning_enabled: false
@@ -174,7 +180,10 @@ const CourseEdit: React.FC = () => {
              : { lesson_complete: true, course_complete: true, inactivity: true, coaching: true },
         use_enrollments_as_leads: data.use_enrollments_as_leads || false,
         lead_start_date: data.lead_start_date ? new Date(data.lead_start_date).toISOString().slice(0, 16) : '',
-        vpn_warning_enabled: (data as any).vpn_warning_enabled || false
+        vpn_warning_enabled: (data as any).vpn_warning_enabled || false,
+        telegram_support_activation_enabled: (data as any).telegram_support_activation_enabled || false,
+        telegram_course_access_via_bot_enabled: (data as any).telegram_course_access_via_bot_enabled || false,
+        telegram_bot_welcome_message: (data as any).telegram_bot_welcome_message || 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال و دوره برات فعال بشه.'
       });
 
       // If editing a dollar-priced course, fetch the exchange rate
@@ -273,7 +282,10 @@ const CourseEdit: React.FC = () => {
         rafiei_bot_followup_config: formData.rafiei_bot_followup_config,
         use_enrollments_as_leads: formData.use_enrollments_as_leads,
         lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null,
-        vpn_warning_enabled: formData.vpn_warning_enabled
+        vpn_warning_enabled: formData.vpn_warning_enabled,
+        telegram_support_activation_enabled: formData.telegram_support_activation_enabled,
+        telegram_course_access_via_bot_enabled: formData.telegram_course_access_via_bot_enabled,
+        telegram_bot_welcome_message: formData.telegram_bot_welcome_message?.trim() || null
       };
 
       const { error } = await supabase
@@ -804,9 +816,52 @@ mba
                         </p>
                       </div>
                     )}
+
+                    {/* Telegram Bot Support Activation Tracking */}
+                    <div className="border-t pt-4 mt-4 space-y-3">
+                      <h4 className="text-sm font-semibold text-foreground">فعال‌سازی پشتیبانی از طریق ربات تلگرام (رهگیری کامل)</h4>
+
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="telegram_support_activation_enabled"
+                          checked={formData.telegram_support_activation_enabled}
+                          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, telegram_support_activation_enabled: checked }))}
+                        />
+                        <Label htmlFor="telegram_support_activation_enabled">فعال‌سازی پشتیبانی از طریق ربات تلگرام</Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground pr-8">
+                        در صورت فعال بودن، کارت «فعال‌سازی پشتیبانی» کاربر را به ربات تلگرام هدایت می‌کند و کل مراحل فعال‌سازی رهگیری می‌شود.
+                      </p>
+
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="telegram_course_access_via_bot_enabled"
+                          checked={formData.telegram_course_access_via_bot_enabled}
+                          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, telegram_course_access_via_bot_enabled: checked }))}
+                        />
+                        <Label htmlFor="telegram_course_access_via_bot_enabled">دسترسی دوره از طریق ربات تلگرام</Label>
+                      </div>
+
+                      {formData.telegram_support_activation_enabled && (
+                        <div className="bg-muted/40 p-3 rounded-lg mt-2">
+                          <Label htmlFor="telegram_bot_welcome_message">پیام خوش‌آمدگویی ربات</Label>
+                          <Textarea
+                            id="telegram_bot_welcome_message"
+                            value={formData.telegram_bot_welcome_message}
+                            onChange={(e) => setFormData(prev => ({ ...prev, telegram_bot_welcome_message: e.target.value }))}
+                            rows={7}
+                            className="mt-2"
+                          />
+                          <p className="text-xs text-muted-foreground mt-2">
+                            متغیرهای در دسترس: {"{{name}}"}, {"{{course_title}}"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
+
 
 
               {/* SpotPlayer Section */}
