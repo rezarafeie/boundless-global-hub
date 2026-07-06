@@ -3002,12 +3002,6 @@ async function handleUpdate(update: any) {
         ],
       },
     });
-
-    // Send the /start menu so the user has immediate access to bot features
-    try {
-      const linkedUser = await resolveUser(chat_id);
-      await sendMessage(chat_id, await renderWelcome(chat_id, linkedUser), { keyboard: await buildStartKeyboard(linkedUser) });
-    } catch (e) { console.warn('post-sact start menu failed', e); }
     return;
   }
 
