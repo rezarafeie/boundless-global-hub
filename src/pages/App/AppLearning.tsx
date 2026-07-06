@@ -115,6 +115,68 @@ const AppLearning = () => {
         }
       });
 
+      // Fetch assignments for enrolled courses
+      const courseIds = (enrollments || []).map(e => e.course_id).filter(Boolean);
+      if (courseIds.length) {
+        const { data: assignmentsData } = await supabase
+          .from('assignments')
+          .select('id, title, course_id, lesson_id, required, estimated_minutes, status')
+          .eq('status', 'published')
+          .in('course_id', courseIds);
+
+        const assignmentList = assignmentsData || [];
+        const assignmentIds = assignmentList.map(a => a.id);
+
+        // Fetch user submissions to determine completion
+        let submissionMap: Record<string, string> = {};
+        if (assignmentIds.length) {
+          const { data: subsData } = await supabase
+            .from('assignment_submissions')
+            .select('assignment_id, status, created_at')
+            .eq('student_id', parseInt(user.id))
+            .in('assignment_id', assignmentIds)
+            .order('created_at', { ascending: false });
+          (subsData || []).forEach((s: any) => {
+            if (!submissionMap[s.assignment_id]) submissionMap[s.assignment_id] = s.status;
+          });
+        }
+
+        // Fetch lesson numbers for assignment navigation
+        const lessonIds = assignmentList.map(a => a.lesson_id).filter(Boolean) as string[];
+        let lessonNumberMap: Record<string, number> = {};
+        if (lessonIds.length) {
+          const { data: lessonsData } = await supabase
+            .from('course_lessons')
+            .select('id, lesson_number')
+            .in('id', lessonIds);
+          (lessonsData || []).forEach((l: any) => { lessonNumberMap[l.id] = l.lesson_number; });
+        }
+
+        const courseMap: Record<string, { title: string; slug: string }> = {};
+        (enrollments || []).forEach((e: any) => {
+          if (e.courses) courseMap[e.course_id] = { title: e.courses.title, slug: e.courses.slug };
+        });
+
+        assignmentList.forEach((a: any) => {
+          const status = submissionMap[a.id];
+          const completed = status === 'reviewed' || status === 'completed';
+          const course = courseMap[a.course_id];
+          generatedTasks.push({
+            id: `assignment-${a.id}`,
+            title: `تکلیف: ${a.title}`,
+            type: 'assignment',
+            priority: a.required ? 'high' : 'medium',
+            dueDate: a.estimated_minutes ? `${a.estimated_minutes} دقیقه` : 'در انتظار',
+            completed,
+            course_title: course?.title,
+            course_slug: course?.slug,
+            lesson_id: a.lesson_id,
+            lesson_number: a.lesson_id ? lessonNumberMap[a.lesson_id] : undefined,
+            assignment_id: a.id,
+          });
+        });
+      }
+
       // Add test task if available
       const { data: testsData } = await supabase
         .from('test_enrollments')
@@ -132,6 +194,7 @@ const AppLearning = () => {
           completed: false
         });
       }
+
 
       setTasks(generatedTasks);
 
