@@ -1310,7 +1310,7 @@ const EnrollSuccess: React.FC = () => {
               ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-300 dark:border-green-700 cursor-default shadow-lg'
               : 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 border-green-300 dark:border-green-700 hover:shadow-xl cursor-pointer transform hover:scale-105'
           }`}
-                          onClick={() => {
+                          onClick={async () => {
                             if (!smartActivated) {
                               // Mark smart activation as clicked in localStorage
                               if (result.enrollment?.id) {
@@ -1330,8 +1330,9 @@ const EnrollSuccess: React.FC = () => {
                                 localStorage.setItem(activationKey, JSON.stringify(activations));
                                 setSmartActivated(true);
                                 
-                                // Open the link in current tab and then show success page
-                                window.location.href = replacePlaceholders(result.course.smart_activation_telegram_link, result.enrollment);
+                                const rawUrl = replacePlaceholders(result.course.smart_activation_telegram_link, result.enrollment);
+                                const finalUrl = await resolveTelegramUrl(rawUrl, 'support');
+                                window.location.href = finalUrl;
                               }
                             }
                           }}
