@@ -510,12 +510,14 @@ const StartCourseSection: React.FC<StartCourseSectionProps> = ({
                 course={course}
                 enrollment={enrollment}
                 userEmail={userEmail || enrollment?.email}
+                userId={user?.id ? parseInt(user.id) : null}
                 onSupportActivated={handleActivateSupport}
                 onTelegramActivated={handleActivateTelegram}
                 supportActivated={supportActivated}
                 telegramActivated={telegramActivated}
                 startingStepNumber={enabledAccessTypesCount + 1}
               />
+
             </div>
           ) : null;
         })()}
