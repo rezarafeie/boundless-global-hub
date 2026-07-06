@@ -3000,11 +3000,7 @@ async function handleUpdate(update: any) {
         return;
       }
       const kbd = await buildStartKeyboard(null);
-      await sendMessage(chat_id, [
-        `👋 <b>به ربات آکادمی رفیعی خوش آمدید</b>`, ``,
-        `از فرم‌های زیر استفاده کنید یا با شماره موبایل وارد شوید.`, ``,
-        `Chat ID شما: <code>${chat_id}</code>`,
-      ].join('\n'), { keyboard: kbd });
+      await sendMessage(chat_id, await renderWelcome(chat_id, null), { keyboard: kbd });
       return;
     }
     if (session?.state === 'awaiting_phone' && text) { await handlePhoneInput(chat_id, text); return; }
