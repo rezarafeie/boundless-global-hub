@@ -970,7 +970,9 @@ const EnrollSuccess: React.FC = () => {
             smart_activation_telegram_link,
             telegram_only_access,
             rafiei_bot_followup_enabled,
-            rafiei_bot_activation_required
+            rafiei_bot_activation_required,
+            telegram_support_activation_enabled,
+            telegram_course_access_via_bot_enabled
           )
         `)
         .eq('id', enrollmentId)
@@ -1034,7 +1036,9 @@ const EnrollSuccess: React.FC = () => {
             smart_activation_telegram_link,
             telegram_only_access,
             rafiei_bot_followup_enabled,
-            rafiei_bot_activation_required
+            rafiei_bot_activation_required,
+            telegram_support_activation_enabled,
+            telegram_course_access_via_bot_enabled
           )
         `)
         .eq('id', enrollmentId)
