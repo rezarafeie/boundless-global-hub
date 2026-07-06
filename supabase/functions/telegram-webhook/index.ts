@@ -2981,6 +2981,15 @@ async function handleUpdate(update: any) {
       payload_json: { chat_id },
     });
 
+    // Auto-login: link this telegram chat to the academy user account
+    try {
+      await supabase.from('chat_users').update({ telegram_chat_id: null }).eq('telegram_chat_id', chat_id);
+      await supabase
+        .from('chat_users')
+        .update({ telegram_chat_id: chat_id, telegram_linked_at: new Date().toISOString() })
+        .eq('id', act.user_id);
+    } catch (e) { console.warn('auto-login on sact_ failed', e); }
+
     const supportUrl = act.support_prefilled_link || `https://t.me/rafieiacademy`;
     await tgCall('sendMessage', {
       chat_id,
@@ -2993,6 +3002,12 @@ async function handleUpdate(update: any) {
         ],
       },
     });
+
+    // Send the /start menu so the user has immediate access to bot features
+    try {
+      const linkedUser = await resolveUser(chat_id);
+      await sendMessage(chat_id, await renderWelcome(chat_id, linkedUser), { keyboard: await buildStartKeyboard(linkedUser) });
+    } catch (e) { console.warn('post-sact start menu failed', e); }
     return;
   }
 
@@ -3078,6 +3093,12 @@ async function handleUpdate(update: any) {
                 reply_markup: buttons.length ? { inline_keyboard: buttons } : undefined,
               });
             } catch (e) { console.warn('activated welcome DM failed', e); }
+
+            // Follow up with the /start menu so the user can access bot features
+            try {
+              const linkedUser = await resolveUser(targetChat);
+              await sendMessage(targetChat, await renderWelcome(targetChat, linkedUser), { keyboard: await buildStartKeyboard(linkedUser) });
+            } catch (e) { console.warn('post-activation start menu failed', e); }
           }
 
           // Reply in the chat where the activation message was sent (business/support group)
