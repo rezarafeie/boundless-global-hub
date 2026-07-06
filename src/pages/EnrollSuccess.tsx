@@ -1133,6 +1133,30 @@ const EnrollSuccess: React.FC = () => {
     }
   };
 
+  // Route to Telegram bot deep link when bot activation is enabled for this course.
+  const resolveTelegramUrl = async (originalUrl: string, kind: 'support' | 'telegram'): Promise<string> => {
+    const c: any = result?.course;
+    const enrollment: any = result?.enrollment;
+    if (!c || !enrollment) return originalUrl;
+    const useBot = kind === 'support'
+      ? !!c.telegram_support_activation_enabled
+      : !!c.telegram_course_access_via_bot_enabled;
+    if (!useBot) return originalUrl;
+    const uid = user?.id ? Number(user.id) : (enrollment.chat_user_id ?? null);
+    if (!uid) return originalUrl;
+    try {
+      const { data, error } = await supabase.functions.invoke('support-activation-create', {
+        body: { user_id: uid, course_id: c.id, enrollment_id: enrollment.id },
+      });
+      if (error) throw error;
+      const link = (data as any)?.activation?.bot_deep_link as string | undefined;
+      return link || originalUrl;
+    } catch (e) {
+      console.error('bot deep link fetch failed', e);
+      return originalUrl;
+    }
+  };
+
   const handleRetry = () => {
     setVerifying(true);
     verifyPayment();
