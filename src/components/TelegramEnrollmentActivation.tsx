@@ -151,7 +151,7 @@ export function TelegramEnrollmentActivation({
 
   const openBot = async () => {
     const url = await ensureActivation();
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    if (url) openInNewTab(url);
   };
 
   // ==== Rendering ====
