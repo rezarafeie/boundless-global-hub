@@ -38,8 +38,11 @@ import SalesDashboard from '@/components/Admin/SalesDashboard';
 import TestManagement from '@/components/Admin/TestManagement';
 import AnalyticsReports from '@/components/Admin/AnalyticsReports';
 import WebinarManagement from '@/components/Admin/WebinarManagement';
+import SupportActivations from '@/pages/Admin/SupportActivations';
+import AssignmentsList from '@/pages/Admin/Assignments/AssignmentsList';
 import { useUserRole } from '@/hooks/useUserRole';
 import { AdminSidebar } from '@/components/Admin/AdminSidebar';
+
 
 interface Enrollment {
   id: string;
