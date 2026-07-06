@@ -304,7 +304,7 @@ const AppCourseDetail = () => {
             <CardContent className="p-4">
               <div className="space-y-4">
                 <div>
-                  <h2 className="text-xl font-bold mb-2 text-right dir="rtl" w-full">{course.title}</h2>
+                  <h2 className="text-xl font-bold mb-2 text-right w-full" dir="rtl">{course.title}</h2>
                   <p className="text-muted-foreground text-sm">{course.description}</p>
                 </div>
                 
