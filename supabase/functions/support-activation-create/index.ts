@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
 
     // Build support prefilled link + persist if empty
     const [{ data: course }, { data: user }] = await Promise.all([
-      supabase.from('courses').select('title, support_link, smart_activation_telegram_link').eq('id', course_id).maybeSingle(),
+      supabase.from('courses').select('title, support_link, smart_activation_telegram_link, telegram_activation_keyword, slug').eq('id', course_id).maybeSingle(),
       supabase.from('chat_users').select('name, first_name, last_name, phone, email').eq('id', user_id).maybeSingle(),
     ]);
 
@@ -45,6 +45,7 @@ Deno.serve(async (req) => {
     const phone = (user as any)?.phone || '';
     const email = (user as any)?.email || '';
     const courseTitle = (course as any)?.title || '';
+    const keyword = String((course as any)?.telegram_activation_keyword || (course as any)?.slug || 'sact').trim();
 
     const applyPlaceholders = (s: string) =>
       s
@@ -58,6 +59,7 @@ Deno.serve(async (req) => {
         .replace(/\{course_title\}/gi, courseTitle)
         .replace(/\{user_id\}/gi, String(user_id))
         .replace(/\{course_id\}/gi, course_id)
+        .replace(/\{keyword\}/gi, keyword)
         .replace(/\{activation_token\}/gi, row.activation_token ?? '');
 
     // Prefer the course's smart activation telegram link if configured.
@@ -79,17 +81,26 @@ Deno.serve(async (req) => {
       }
     } else {
       const raw = [
-        `درود وقت بخیر، برای فعال‌سازی پشتیبانی ${courseTitle} پیام میدم خدمتتون.sact`,
-        `نام: ${name}`,
-        `نام خانوادگی: ${lastname}`,
-        `شماره همراه: ${phone}`,
-        `ایمیل: ${email}`,
-        `شناسه کاربر: ${user_id}`,
-        `شناسه دوره: ${course_id}`,
-        `کد فعال‌سازی: ${row.activation_token}`,
+        `🌟 ${keyword} 🌟`,
+        ``,
+        `درود و وقت بخیر 🌱`,
+        `برای فعال‌سازی پشتیبانی دوره «${courseTitle}» در خدمتتون هستم 🙌`,
+        ``,
+        `━━━━━━━━━━━━━━━`,
+        `👤 نام: ${name} ${lastname}`.trim(),
+        `📱 موبایل: ${phone}`,
+        `📧 ایمیل: ${email}`,
+        `━━━━━━━━━━━━━━━`,
+        ``,
+        `🆔 شناسه کاربر: ${user_id}`,
+        `📚 شناسه دوره: ${course_id}`,
+        `🔑 کد فعال‌سازی: ${row.activation_token}`,
+        ``,
+        `🙏 ممنون از همراهی شما`,
       ].join('\n');
       supportLink = `https://t.me/rafieiacademy?text=${encodeURIComponent(raw)}`;
     }
+
 
     if (!row.support_prefilled_link || row.support_prefilled_link !== supportLink) {
       await supabase
