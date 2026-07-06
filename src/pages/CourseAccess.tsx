@@ -1397,7 +1397,9 @@ const CourseAccess: React.FC = () => {
                              gifts_link: course.gifts_link,
                              support_activation_required: course.support_activation_required || false,
                              telegram_activation_required: course.telegram_activation_required || false,
-                             smart_activation_enabled: false
+                             smart_activation_enabled: false,
+                             telegram_support_activation_enabled: course.telegram_support_activation_enabled || false,
+                             telegram_course_access_via_bot_enabled: course.telegram_course_access_via_bot_enabled || false
                            }}
                            enrollment={{
                              id: enrollment.id,
@@ -1405,11 +1407,13 @@ const CourseAccess: React.FC = () => {
                              email: user?.email || ''
                            }}
                            userEmail={user?.email || ''}
+                           userId={user?.id ? parseInt(user.id) : null}
                            onSupportActivated={() => {}}
                            onTelegramActivated={() => {}}
                          />
                        </div>
                      )}
+
                    </div>
                  </div>
                </div>
