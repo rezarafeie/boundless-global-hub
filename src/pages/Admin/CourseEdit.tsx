@@ -323,7 +323,17 @@ const CourseEdit: React.FC = () => {
         telegram_bot_activated_message: formData.telegram_bot_activated_message?.trim() || null,
         telegram_bot_activation_buttons: (formData.telegram_bot_activation_buttons || []).filter((b: any) => b?.text?.trim() && b?.url?.trim()),
         telegram_activation_keyword: formData.telegram_activation_keyword?.trim() || null,
-        support_prefilled_message_template: formData.support_prefilled_message_template?.trim() || null
+        support_prefilled_message_template: formData.support_prefilled_message_template?.trim() || null,
+        support_followup_enabled: formData.support_followup_enabled,
+        support_followup_stage1_delay_minutes: Number(formData.support_followup_stage1_delay_minutes) || 60,
+        support_followup_stage2_delay_minutes: Number(formData.support_followup_stage2_delay_minutes) || 60,
+        support_followup_stage3_delay_minutes: Number(formData.support_followup_stage3_delay_minutes) || 180,
+        support_followup_max_repeats: Number(formData.support_followup_max_repeats) || 2,
+        support_followup_stage1_email_subject: formData.support_followup_stage1_email_subject?.trim() || null,
+        support_followup_stage1_email_body: formData.support_followup_stage1_email_body?.trim() || null,
+        support_followup_stage1_sms_text: formData.support_followup_stage1_sms_text?.trim() || null,
+        support_followup_stage2_bot_text: formData.support_followup_stage2_bot_text?.trim() || null,
+        support_followup_stage3_business_text: formData.support_followup_stage3_business_text?.trim() || null,
 
       };
 
