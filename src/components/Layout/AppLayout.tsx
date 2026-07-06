@@ -58,8 +58,8 @@ const AppLayout = ({ children, title, showBackButton = true, rightAction }: AppL
     if (currentPath === "/app/dashboard") {
       navigate("/dashboard");
     } else if (currentPath.startsWith("/app/course/")) {
-      const slug = currentPath.split("/app/course/")[1].split("/")[0];
-      navigate(`/courses/${slug}`);
+      const rest = currentPath.split("/app/course/")[1];
+      navigate(`/course/${rest}`);
     } else if (currentPath === "/app/tests") {
       navigate("/tests");
     } else if (currentPath === "/app/profile") {
