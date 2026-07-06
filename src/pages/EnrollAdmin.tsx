@@ -452,8 +452,6 @@ const EnrollAdmin: React.FC = () => {
       <AdminSidebar 
         activeView={activeView}
         onViewChange={(view) => {
-          if (view === 'assignments') { window.location.href = '/admin/assignments'; return; }
-          if (view === 'support-activations') { window.location.href = '/admin/support-activations'; return; }
           setActiveView(view);
         }}
         isOpen={isSidebarOpen}
@@ -473,7 +471,10 @@ const EnrollAdmin: React.FC = () => {
         {activeView === 'tests' && <TestManagement />}
         {activeView === 'analytics' && <AnalyticsReports />}
         {activeView === 'sales' && canViewSales && <SalesDashboard />}
-        {(activeView === 'enrollments' || (!['webinars', 'tests', 'analytics', 'sales'].includes(activeView))) && (
+        {activeView === 'assignments' && <AssignmentsList />}
+        {activeView === 'support-activations' && <SupportActivations />}
+        {(activeView === 'enrollments' || (!['webinars', 'tests', 'analytics', 'sales', 'assignments', 'support-activations'].includes(activeView))) && (
+
           <Card>
             <CardHeader className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
