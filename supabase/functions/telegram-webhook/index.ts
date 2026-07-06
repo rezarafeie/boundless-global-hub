@@ -3096,19 +3096,9 @@ async function handleUpdate(update: any) {
 
         return;
       }
-      if (act && act.status === 'activated' && (business_connection_id || (msg?.chat?.type && msg.chat.type !== 'private'))) {
-        try {
-          await tgCall('sendMessage', {
-            chat_id,
-            text: 'ℹ️ این پشتیبانی قبلاً فعال شده است.',
-            reply_to_message_id: msg.message_id,
-            ...(business_connection_id ? { business_connection_id } : {}),
-          });
-        } catch {}
-        return;
-      }
     }
   }
+
 
 
 
