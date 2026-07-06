@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
 
     // Build support prefilled link + persist if empty
     const [{ data: course }, { data: user }] = await Promise.all([
-      supabase.from('courses').select('title, support_link, smart_activation_telegram_link, telegram_activation_keyword, slug').eq('id', course_id).maybeSingle(),
+      supabase.from('courses').select('title, support_link, smart_activation_telegram_link, telegram_activation_keyword, support_prefilled_message_template, slug').eq('id', course_id).maybeSingle(),
       supabase.from('chat_users').select('name, first_name, last_name, phone, email').eq('id', user_id).maybeSingle(),
     ]);
 
