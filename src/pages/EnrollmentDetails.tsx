@@ -67,6 +67,8 @@ interface EnrollmentData {
     smart_activation_enabled?: boolean;
     smart_activation_telegram_link?: string;
     telegram_only_access?: boolean;
+    telegram_support_activation_enabled?: boolean;
+    telegram_course_access_via_bot_enabled?: boolean;
   };
 }
 
