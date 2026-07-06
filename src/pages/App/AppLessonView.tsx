@@ -45,7 +45,7 @@ interface LessonData {
 const AppLessonView = () => {
   const { courseSlug: paramCourseSlug, lessonNumber } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { getLessonByNumber } = useLessonNumber();
   const isIranianIP = useIsIranianIP();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -56,14 +56,16 @@ const AppLessonView = () => {
   const [courseSlug, setCourseSlug] = useState<string>("");
 
   useEffect(() => {
+    if (authLoading) return;
     if (!isAuthenticated) {
-      navigate('/auth');
+      const current = window.location.pathname + window.location.search;
+      navigate(`/auth?redirect=${encodeURIComponent(current)}`, { replace: true });
       return;
     }
     if (lessonNumber) {
       fetchLessonData();
     }
-  }, [lessonNumber, isAuthenticated, navigate]);
+  }, [lessonNumber, isAuthenticated, authLoading, navigate]);
 
   const fetchLessonData = async () => {
     if (!lessonNumber || !user?.id) return;

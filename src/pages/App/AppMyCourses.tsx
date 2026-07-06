@@ -32,17 +32,19 @@ interface EnrolledCourse {
 
 const AppMyCourses = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!isAuthenticated) {
-      navigate('/auth');
+      const current = window.location.pathname + window.location.search;
+      navigate(`/auth?redirect=${encodeURIComponent(current)}`, { replace: true });
       return;
     }
     fetchEnrolledCourses();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   const fetchEnrolledCourses = async () => {
     if (!user?.id) return;

@@ -26,17 +26,19 @@ interface UserProfile {
 
 const AppProfile = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!isAuthenticated) {
-      navigate('/auth');
+      const current = window.location.pathname + window.location.search;
+      navigate(`/auth?redirect=${encodeURIComponent(current)}`, { replace: true });
       return;
     }
     fetchUserProfile();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   const fetchUserProfile = async () => {
     if (!user?.id) return;
