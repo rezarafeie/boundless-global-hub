@@ -2832,6 +2832,7 @@ async function handleUpdate(update: any) {
   // Parse /start payload (deep link, e.g. /start enroll_<id>)
   const startMatch = text.match(/^\/start(?:\s+(\S+))?$/);
   const startPayload = startMatch?.[1] ?? null;
+  console.log('📥 msg chat_id=', chat_id, 'text=', JSON.stringify(text), 'startPayload=', startPayload, 'user_linked=', !!user);
 
   // ===== Website login deep-link: /start login_<token> =====
   if (startPayload?.startsWith('login_')) {
