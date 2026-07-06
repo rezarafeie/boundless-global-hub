@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
 
     // Build support prefilled link + persist if empty
     const [{ data: course }, { data: user }] = await Promise.all([
-      supabase.from('courses').select('title, support_link, smart_activation_telegram_link, telegram_activation_keyword, slug').eq('id', course_id).maybeSingle(),
+      supabase.from('courses').select('title, support_link, smart_activation_telegram_link, telegram_activation_keyword, support_prefilled_message_template, slug').eq('id', course_id).maybeSingle(),
       supabase.from('chat_users').select('name, first_name, last_name, phone, email').eq('id', user_id).maybeSingle(),
     ]);
 
@@ -80,24 +80,26 @@ Deno.serve(async (req) => {
         supportLink = applyPlaceholders(smartLink.trim());
       }
     } else {
-      const raw = [
-        `🌟 ${keyword} 🌟`,
+      const customTemplate: string = String((course as any)?.support_prefilled_message_template || '').trim();
+      const defaultTemplate = [
+        `🌟 {keyword} 🌟`,
         ``,
         `درود و وقت بخیر 🌱`,
-        `برای فعال‌سازی پشتیبانی دوره «${courseTitle}» در خدمتتون هستم 🙌`,
+        `برای فعال‌سازی پشتیبانی دوره «{course}» در خدمتتون هستم 🙌`,
         ``,
         `━━━━━━━━━━━━━━━`,
-        `👤 نام: ${name} ${lastname}`.trim(),
-        `📱 موبایل: ${phone}`,
-        `📧 ایمیل: ${email}`,
+        `👤 نام: {name} {lastname}`,
+        `📱 موبایل: {phone}`,
+        `📧 ایمیل: {email}`,
         `━━━━━━━━━━━━━━━`,
         ``,
-        `🏷 کلمه کلیدی: ${keyword}`,
-        `🔑 کد فعال‌سازی: ${row.activation_token}`,
+        `🏷 کلمه کلیدی: {keyword}`,
+        `🔑 کد فعال‌سازی: {activation_token}`,
         ``,
         `🙏 ممنون از همراهی شما`,
       ].join('\n');
 
+      const raw = applyPlaceholders(customTemplate || defaultTemplate);
       supportLink = `https://t.me/rafieiacademy?text=${encodeURIComponent(raw)}`;
     }
 

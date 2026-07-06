@@ -52,6 +52,7 @@ interface Course {
    telegram_bot_activated_message?: string | null;
    telegram_bot_activation_buttons?: any;
    telegram_activation_keyword?: string | null;
+   support_prefilled_message_template?: string | null;
 
     use_enrollments_as_leads?: boolean;
     lead_start_date?: string | null;
@@ -109,6 +110,7 @@ const CourseEdit: React.FC = () => {
     telegram_bot_activated_message: 'درود بر شما {{name}} 🌱\nپشتیبانی اختصاصی شما با موفقیت فعال شد ✅\n\nدسترسی به دوره «{{course_title}}» از دکمه‌های زیر برای شما فعال است.\n\nبا آرزوی موفقیت\nتیم پشتیبانی آکادمی رفیعی',
     telegram_bot_activation_buttons: [] as { text: string; url: string }[],
     telegram_activation_keyword: '',
+    support_prefilled_message_template: '',
 
     use_enrollments_as_leads: false,
     lead_start_date: '',
@@ -195,6 +197,7 @@ const CourseEdit: React.FC = () => {
         telegram_bot_activated_message: (data as any).telegram_bot_activated_message || 'درود بر شما {{name}} 🌱\nپشتیبانی اختصاصی شما با موفقیت فعال شد ✅\n\nدسترسی به دوره «{{course_title}}» از دکمه‌های زیر برای شما فعال است.\n\nبا آرزوی موفقیت\nتیم پشتیبانی آکادمی رفیعی',
         telegram_bot_activation_buttons: Array.isArray((data as any).telegram_bot_activation_buttons) ? (data as any).telegram_bot_activation_buttons : [],
         telegram_activation_keyword: (data as any).telegram_activation_keyword || '',
+        support_prefilled_message_template: (data as any).support_prefilled_message_template || '',
 
       });
 
@@ -300,7 +303,8 @@ const CourseEdit: React.FC = () => {
         telegram_bot_welcome_message: formData.telegram_bot_welcome_message?.trim() || null,
         telegram_bot_activated_message: formData.telegram_bot_activated_message?.trim() || null,
         telegram_bot_activation_buttons: (formData.telegram_bot_activation_buttons || []).filter((b: any) => b?.text?.trim() && b?.url?.trim()),
-        telegram_activation_keyword: formData.telegram_activation_keyword?.trim() || null
+        telegram_activation_keyword: formData.telegram_activation_keyword?.trim() || null,
+        support_prefilled_message_template: formData.support_prefilled_message_template?.trim() || null
 
       };
 
@@ -860,6 +864,22 @@ mba
                         />
                         <p className="text-xs text-muted-foreground mt-2">
                           این کلمه در ابتدای پیام پیش‌فرض پشتیبانی قرار می‌گیرد تا تیم پشتیبانی سریع دوره را شناسایی کند. در صورت خالی بودن از slug دوره استفاده می‌شود.
+                        </p>
+                      </div>
+
+                      <div className="bg-muted/40 p-3 rounded-lg mt-2">
+                        <Label htmlFor="support_prefilled_message_template">قالب پیام پیش‌فرض پشتیبانی</Label>
+                        <Textarea
+                          id="support_prefilled_message_template"
+                          value={formData.support_prefilled_message_template}
+                          onChange={(e) => setFormData(prev => ({ ...prev, support_prefilled_message_template: e.target.value }))}
+                          placeholder={`🌟 {keyword} 🌟\n\nدرود و وقت بخیر 🌱\nبرای فعال‌سازی دوره «{course}» در خدمتتون هستم 🙌\n\n👤 نام: {name} {lastname}\n📱 موبایل: {phone}\n📧 ایمیل: {email}\n\n🏷 کلمه کلیدی: {keyword}\n🔑 کد فعال‌سازی: {activation_token}`}
+                          rows={10}
+                          className="mt-2 font-mono text-sm"
+                          dir="rtl"
+                        />
+                        <p className="text-xs text-muted-foreground mt-2">
+                          این پیام هنگام کلیک کاربر روی «فعال‌سازی پشتیبانی» به تلگرام ارسال می‌شود. متغیرهای قابل استفاده: <code>{'{keyword}'}</code>، <code>{'{course}'}</code>، <code>{'{name}'}</code>، <code>{'{lastname}'}</code>، <code>{'{phone}'}</code>، <code>{'{email}'}</code>، <code>{'{activation_token}'}</code>. در صورت خالی بودن، قالب پیش‌فرض استفاده می‌شود.
                         </p>
                       </div>
 
