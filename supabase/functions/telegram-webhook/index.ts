@@ -3005,19 +3005,30 @@ async function handleUpdate(update: any) {
         .select('id, user_id, course_id, status, telegram_id, clicked_support_button_at')
         .eq('activation_token', token)
         .maybeSingle();
-      if (act && act.status !== 'activated') {
-        await supabase.from('support_activations').update({
-          status: 'activated',
-          activated_at: new Date().toISOString(),
-          clicked_support_button_at: (act as any).clicked_support_button_at ?? new Date().toISOString(),
-        }).eq('id', act.id);
-        await supabase.from('support_activation_events').insert({
-          support_activation_id: act.id,
-          user_id: act.user_id,
-          course_id: act.course_id,
-          event_type: 'auto_activated_in_support_chat',
-          payload_json: { detected_in_chat: chat_id, chat_type: msg?.chat?.type ?? null },
-        });
+      if (act) {
+        if (act.status !== 'activated') {
+          await supabase.from('support_activations').update({
+            status: 'activated',
+            activated_at: new Date().toISOString(),
+            clicked_support_button_at: (act as any).clicked_support_button_at ?? new Date().toISOString(),
+          }).eq('id', act.id);
+          await supabase.from('support_activation_events').insert({
+            support_activation_id: act.id,
+            user_id: act.user_id,
+            course_id: act.course_id,
+            event_type: 'auto_activated_in_support_chat',
+            payload_json: { detected_in_chat: chat_id, chat_type: msg?.chat?.type ?? null },
+          });
+        } else {
+          await supabase.from('support_activation_events').insert({
+            support_activation_id: act.id,
+            user_id: act.user_id,
+            course_id: act.course_id,
+            event_type: 'reactivated_in_support_chat',
+            payload_json: { detected_in_chat: chat_id, chat_type: msg?.chat?.type ?? null },
+          });
+        }
+
 
         const targetChat = (act as any).telegram_id;
         if (targetChat) {
@@ -3085,19 +3096,9 @@ async function handleUpdate(update: any) {
 
         return;
       }
-      if (act && act.status === 'activated' && (business_connection_id || (msg?.chat?.type && msg.chat.type !== 'private'))) {
-        try {
-          await tgCall('sendMessage', {
-            chat_id,
-            text: 'ℹ️ این پشتیبانی قبلاً فعال شده است.',
-            reply_to_message_id: msg.message_id,
-            ...(business_connection_id ? { business_connection_id } : {}),
-          });
-        } catch {}
-        return;
-      }
     }
   }
+
 
 
 
