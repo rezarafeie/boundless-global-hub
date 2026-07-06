@@ -122,6 +122,7 @@ const SimplifiedLeadManagement: React.FC = () => {
   const [dateTo, setDateTo] = useState(() => localStorage.getItem('leads_dateTo') || '');
   const [excludeCourseFilter, setExcludeCourseFilter] = useState<string>(() => localStorage.getItem('leads_excludeCourse') || '');
   const [crmStatusFilter, setCrmStatusFilter] = useState<string>(() => localStorage.getItem('leads_crmStatusFilter') || 'all');
+  const [supportActivationFilter, setSupportActivationFilter] = useState<string>(() => localStorage.getItem('leads_supportActivationFilter') || 'all');
   
   // Selection states
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
