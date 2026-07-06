@@ -1411,7 +1411,7 @@ async function endAiChat(chat_id: number, _message_id: number | null, user: BotU
   await clearSession(chat_id);
   await sendMessage(chat_id, '✅ گفت‌وگو پایان یافت.', { removeKeyboard: true });
   const homeKbd = await buildStartKeyboard(user);
-  await sendMessage(chat_id, user ? welcomeText(user) : '👋 منوی اصلی', { keyboard: homeKbd });
+  await sendMessage(chat_id, await renderWelcome(chat_id, user), { keyboard: homeKbd });
 }
 
 const AI_SYSTEM_PROMPT = `شما دستیار هوشمند فارسی‌زبان آکادمی رفیعی هستید. به سوالات کاربران به صورت دقیق، دوستانه و کاربردی پاسخ دهید. اگر کاربر عکس، فایل صوتی یا سند ارسال کرد، محتوای آن را تحلیل و توضیح دهید. پاسخ‌ها را به فارسی، با لحن گرم و در صورت لزوم با استفاده از ایموجی و بولد (**متن مهم**) ارائه کنید. از فهرست‌بندی با خط تیره (-) برای موارد چندتایی استفاده کنید.`;
@@ -1759,7 +1759,7 @@ async function endSalesChat(chat_id: number, _message_id: number | null) {
   await sendMessage(chat_id, '✅ گفت‌وگو پایان یافت. ممنون از وقتی که گذاشتید 🙏', { removeKeyboard: true });
   const u = await resolveUser(chat_id);
   const homeKbd = await buildStartKeyboard(u);
-  await sendMessage(chat_id, u ? welcomeText(u) : '👋 منوی اصلی', { keyboard: homeKbd });
+  await sendMessage(chat_id, await renderWelcome(chat_id, u), { keyboard: homeKbd });
 }
 
 async function showSalesPaymentOptions(chat_id: number, _message_id: number | null) {
@@ -2435,8 +2435,9 @@ async function handleUpdate(update: any) {
       await clearSession(chat_id);
       const u = await resolveUser(chat_id);
       const kbd = await buildStartKeyboard(u);
-      const txt = u ? welcomeText(u) : '👋 منوی اصلی';
+      const txt = await renderWelcome(chat_id, u);
       await editMessage(chat_id, message_id, txt, kbd);
+
       return;
     }
     if (data === 'ai:start') {
@@ -2597,7 +2598,7 @@ async function handleUpdate(update: any) {
         if (sub === 'home') {
           await clearSession(chat_id);
           const homeKbd = await buildStartKeyboard(user);
-          await editMessage(chat_id, message_id, welcomeText(user), homeKbd);
+          await editMessage(chat_id, message_id, await renderWelcome(chat_id, user), homeKbd);
         } else if (sub === 'my_leads') {
           await renderLeadsList(chat_id, message_id, user, 'my', 0);
         } else if (sub === 'all_leads') {
