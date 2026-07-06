@@ -122,6 +122,7 @@ const SimplifiedLeadManagement: React.FC = () => {
   const [dateTo, setDateTo] = useState(() => localStorage.getItem('leads_dateTo') || '');
   const [excludeCourseFilter, setExcludeCourseFilter] = useState<string>(() => localStorage.getItem('leads_excludeCourse') || '');
   const [crmStatusFilter, setCrmStatusFilter] = useState<string>(() => localStorage.getItem('leads_crmStatusFilter') || 'all');
+  const [supportActivationFilter, setSupportActivationFilter] = useState<string>(() => localStorage.getItem('leads_supportActivationFilter') || 'all');
   
   // Selection states
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
@@ -216,6 +217,11 @@ const SimplifiedLeadManagement: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('leads_crmStatusFilter', crmStatusFilter);
   }, [crmStatusFilter]);
+
+  useEffect(() => {
+    localStorage.setItem('leads_supportActivationFilter', supportActivationFilter);
+  }, [supportActivationFilter]);
+
 
   useEffect(() => {
     fetchInitialData();
@@ -430,6 +436,32 @@ const SimplifiedLeadManagement: React.FC = () => {
           );
         }
       }
+
+      // Apply support activation filter
+      if (supportActivationFilter !== 'all' && chatUserIds.length > 0) {
+        const { data: sActs } = await supabase
+          .from('support_activations' as any)
+          .select('user_id, status')
+          .eq('course_id', selectedCourse)
+          .in('user_id', chatUserIds);
+        const saMap = new Map<number, string>();
+        (sActs as any[] | null)?.forEach((s) => { if (!saMap.has(s.user_id)) saMap.set(s.user_id, s.status); });
+        processedLeads = processedLeads.filter((l) => {
+          if (!l.chat_user_id) return supportActivationFilter === 'none';
+          const st = saMap.get(l.chat_user_id);
+          switch (supportActivationFilter) {
+            case 'none': return !st;
+            case 'not_activated': return !st || st !== 'activated';
+            case 'activated': return st === 'activated';
+            case 'opened_bot': return st === 'opened_bot';
+            case 'clicked_unconfirmed': return st === 'clicked_support_button' || st === 'pending_manual_confirmation';
+            case 'needs_followup': return st === 'needs_followup';
+            default: return true;
+          }
+        });
+      }
+
+
 
       // Apply assignment status filter
       if (statusFilter === 'assigned') {
@@ -1587,6 +1619,27 @@ const SimplifiedLeadManagement: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Support Activation Filter */}
+            <div className="w-[180px]">
+              <Label className="text-xs text-muted-foreground mb-1 block">فعال‌سازی پشتیبانی</Label>
+              <Select value={supportActivationFilter} onValueChange={setSupportActivationFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="همه" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه</SelectItem>
+                  <SelectItem value="none">بدون رکورد</SelectItem>
+                  <SelectItem value="not_activated">فعال نشده</SelectItem>
+                  <SelectItem value="opened_bot">وارد ربات، بدون کلیک</SelectItem>
+                  <SelectItem value="clicked_unconfirmed">کلیک کرده، تایید نشده</SelectItem>
+                  <SelectItem value="activated">فعال شده</SelectItem>
+                  <SelectItem value="needs_followup">نیاز به پیگیری</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+
 
             {/* Exclude Course Filter */}
             <div className="w-[180px]">
