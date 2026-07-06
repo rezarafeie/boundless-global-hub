@@ -3054,23 +3054,25 @@ async function handleUpdate(update: any) {
           } catch (e) { console.warn('activated welcome send failed', e); }
         }
 
-        if (msg?.chat?.type && msg.chat.type !== 'private') {
+        if (business_connection_id || (msg?.chat?.type && msg.chat.type !== 'private')) {
           try {
             await tgCall('sendMessage', {
               chat_id,
               text: '✅ پشتیبانی برای این کاربر با موفقیت فعال شد.',
               reply_to_message_id: msg.message_id,
+              ...(business_connection_id ? { business_connection_id } : {}),
             });
           } catch {}
         }
         return;
       }
-      if (act && act.status === 'activated' && msg?.chat?.type && msg.chat.type !== 'private') {
+      if (act && act.status === 'activated' && (business_connection_id || (msg?.chat?.type && msg.chat.type !== 'private'))) {
         try {
           await tgCall('sendMessage', {
             chat_id,
             text: 'ℹ️ این پشتیبانی قبلاً فعال شده است.',
             reply_to_message_id: msg.message_id,
+            ...(business_connection_id ? { business_connection_id } : {}),
           });
         } catch {}
         return;
