@@ -50,7 +50,10 @@ interface StartCourseSectionProps {
     support_activation_required?: boolean;
     telegram_activation_required?: boolean;
     smart_activation_enabled?: boolean;
+    telegram_support_activation_enabled?: boolean;
+    telegram_course_access_via_bot_enabled?: boolean;
   } | undefined;
+
   onEnterCourse: () => void;
   userEmail?: string;
 }
