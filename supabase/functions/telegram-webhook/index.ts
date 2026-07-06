@@ -2944,6 +2944,97 @@ async function handleUpdate(update: any) {
     return;
   }
 
+  // ===== Auto-detect support-activation message anywhere (e.g. support group where bot is a member) =====
+  if (text) {
+    const tokenMatch = text.match(/(?:کد\s*فعال[‌\s]*سازی|activation[_\s-]*token|activation[_\s-]*code)\s*[:：]\s*([a-f0-9]{16,64})/i);
+    if (tokenMatch) {
+      const token = tokenMatch[1].toLowerCase();
+      const { data: act } = await supabase
+        .from('support_activations')
+        .select('id, user_id, course_id, status, telegram_id, clicked_support_button_at')
+        .eq('activation_token', token)
+        .maybeSingle();
+      if (act && act.status !== 'activated') {
+        await supabase.from('support_activations').update({
+          status: 'activated',
+          activated_at: new Date().toISOString(),
+          clicked_support_button_at: (act as any).clicked_support_button_at ?? new Date().toISOString(),
+        }).eq('id', act.id);
+        await supabase.from('support_activation_events').insert({
+          support_activation_id: act.id,
+          user_id: act.user_id,
+          course_id: act.course_id,
+          event_type: 'auto_activated_in_support_chat',
+          payload_json: { detected_in_chat: chat_id, chat_type: msg?.chat?.type ?? null },
+        });
+
+        const targetChat = (act as any).telegram_id;
+        if (targetChat) {
+          const [{ data: course }, { data: cu }] = await Promise.all([
+            supabase.from('courses').select('title, telegram_bot_activated_message, telegram_channel_link, redirect_url, support_link, slug').eq('id', act.course_id).maybeSingle(),
+            supabase.from('chat_users').select('name, first_name').eq('id', act.user_id).maybeSingle(),
+          ]);
+          const displayName = (cu as any)?.first_name || (cu as any)?.name || 'دوست عزیز';
+          const courseTitle = (course as any)?.title || 'دوره';
+          const defaultTpl = [
+            'درود بر شما {{name}} 🌱',
+            'پشتیبانی اختصاصی شما با موفقیت فعال شد ✅',
+            '',
+            'دسترسی به دوره «{{course_title}}» از دکمه‌های زیر برای شما فعال است.',
+            '',
+            'با آرزوی موفقیت',
+            'تیم پشتیبانی آکادمی رفیعی',
+          ].join('\n');
+          const tpl = ((course as any)?.telegram_bot_activated_message as string | null) || defaultTpl;
+          const welcome = tpl
+            .replace(/\{\{name\}\}/g, escapeHtml(displayName))
+            .replace(/\{\{course_title\}\}/g, escapeHtml(courseTitle));
+
+          const buttons: { text: string; url: string }[][] = [];
+          const slug = (course as any)?.slug;
+          const accessUrl = (course as any)?.redirect_url || (slug ? `https://academy.rafiei.co/access?course=${slug}` : null);
+          if (accessUrl) buttons.push([{ text: '🚀 شروع و دسترسی به دوره', url: accessUrl }]);
+          const channel = (course as any)?.telegram_channel_link;
+          if (channel) buttons.push([{ text: '📢 کانال دوره', url: channel }]);
+          const support = (course as any)?.support_link;
+          if (support) buttons.push([{ text: '💬 ارتباط با پشتیبان', url: support }]);
+
+          try {
+            await tgCall('sendMessage', {
+              chat_id: targetChat,
+              text: welcome,
+              parse_mode: 'HTML',
+              reply_markup: buttons.length ? { inline_keyboard: buttons } : undefined,
+            });
+          } catch (e) { console.warn('activated welcome send failed', e); }
+        }
+
+        if (msg?.chat?.type && msg.chat.type !== 'private') {
+          try {
+            await tgCall('sendMessage', {
+              chat_id,
+              text: '✅ پشتیبانی برای این کاربر با موفقیت فعال شد.',
+              reply_to_message_id: msg.message_id,
+            });
+          } catch {}
+        }
+        return;
+      }
+      if (act && act.status === 'activated' && msg?.chat?.type && msg.chat.type !== 'private') {
+        try {
+          await tgCall('sendMessage', {
+            chat_id,
+            text: 'ℹ️ این پشتیبانی قبلاً فعال شده است.',
+            reply_to_message_id: msg.message_id,
+          });
+        } catch {}
+        return;
+      }
+    }
+  }
+
+
+
 
 
   // ===== Contact share (from "Share my phone" button after login deep-link) =====
