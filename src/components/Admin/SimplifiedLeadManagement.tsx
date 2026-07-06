@@ -1620,6 +1620,27 @@ const SimplifiedLeadManagement: React.FC = () => {
               </Select>
             </div>
 
+            {/* Support Activation Filter */}
+            <div className="w-[180px]">
+              <Label className="text-xs text-muted-foreground mb-1 block">فعال‌سازی پشتیبانی</Label>
+              <Select value={supportActivationFilter} onValueChange={setSupportActivationFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="همه" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه</SelectItem>
+                  <SelectItem value="none">بدون رکورد</SelectItem>
+                  <SelectItem value="not_activated">فعال نشده</SelectItem>
+                  <SelectItem value="opened_bot">وارد ربات، بدون کلیک</SelectItem>
+                  <SelectItem value="clicked_unconfirmed">کلیک کرده، تایید نشده</SelectItem>
+                  <SelectItem value="activated">فعال شده</SelectItem>
+                  <SelectItem value="needs_followup">نیاز به پیگیری</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+
+
             {/* Exclude Course Filter */}
             <div className="w-[180px]">
               <Label className="text-xs text-muted-foreground mb-1 block">حذف خریداران دوره</Label>
