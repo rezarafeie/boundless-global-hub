@@ -2818,10 +2818,11 @@ async function handleUpdate(update: any) {
     return;
   }
 
-  // Messages
-  const msg = update.message ?? update.edited_message;
+  // Messages (including Telegram Business messages)
+  const msg = update.message ?? update.edited_message ?? update.business_message ?? update.edited_business_message;
   if (!msg?.chat?.id) return;
   const chat_id = msg.chat.id;
+  const business_connection_id: string | undefined = msg?.business_connection_id ?? update.business_message?.business_connection_id ?? update.edited_business_message?.business_connection_id;
   const text: string = msg.text ?? '';
 
   // Personalized coach: refresh activity + capture coaching answers (best-effort)
@@ -3053,23 +3054,25 @@ async function handleUpdate(update: any) {
           } catch (e) { console.warn('activated welcome send failed', e); }
         }
 
-        if (msg?.chat?.type && msg.chat.type !== 'private') {
+        if (business_connection_id || (msg?.chat?.type && msg.chat.type !== 'private')) {
           try {
             await tgCall('sendMessage', {
               chat_id,
               text: '✅ پشتیبانی برای این کاربر با موفقیت فعال شد.',
               reply_to_message_id: msg.message_id,
+              ...(business_connection_id ? { business_connection_id } : {}),
             });
           } catch {}
         }
         return;
       }
-      if (act && act.status === 'activated' && msg?.chat?.type && msg.chat.type !== 'private') {
+      if (act && act.status === 'activated' && (business_connection_id || (msg?.chat?.type && msg.chat.type !== 'private'))) {
         try {
           await tgCall('sendMessage', {
             chat_id,
             text: 'ℹ️ این پشتیبانی قبلاً فعال شده است.',
             reply_to_message_id: msg.message_id,
+            ...(business_connection_id ? { business_connection_id } : {}),
           });
         } catch {}
         return;
