@@ -21,6 +21,8 @@ import {
   User
 } from "lucide-react";
 import { TelegramEnrollmentActivation } from "@/components/TelegramEnrollmentActivation";
+import { CourseHomeworkTab } from "@/components/Course/CourseHomeworkTab";
+import { CourseNotesTab } from "@/components/Course/CourseNotesTab";
 
 interface CourseData {
   id: string;
