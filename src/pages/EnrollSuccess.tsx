@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { enrollmentAuthService, EnrollmentAuthData } from '@/lib/enrollmentAuthService';
 import { esanjService } from '@/lib/esanjService';
+import { openInNewTab } from '@/lib/utils';
 import { toast } from 'sonner';
 import MainLayout from '@/components/Layout/MainLayout';
 import StartCourseSection from '@/components/StartCourseSection';
@@ -1315,7 +1316,7 @@ const EnrollSuccess: React.FC = () => {
                           type="button"
                           onClick={async () => {
                             const finalUrl = await resolveTelegramUrl('', 'support');
-                            if (finalUrl) window.open(finalUrl, '_blank', 'noopener,noreferrer');
+                            if (finalUrl) openInNewTab(finalUrl);
                           }}
                           className="flex items-center gap-3 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 border-2 border-green-300 dark:border-green-700 hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] cursor-pointer text-right w-full group"
                         >
@@ -1440,7 +1441,7 @@ const EnrollSuccess: React.FC = () => {
                           type="button"
                           onClick={async () => {
                             const finalUrl = await resolveTelegramUrl(result.course.telegram_channel_link!, 'telegram');
-                            if (finalUrl) window.open(finalUrl, '_blank', 'noopener,noreferrer');
+                            if (finalUrl) openInNewTab(finalUrl);
                           }}
                           className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900/30 dark:hover:to-cyan-900/30 transition-all duration-200 border border-blue-200 dark:border-blue-800 hover:shadow-md group text-right w-full"
                         >

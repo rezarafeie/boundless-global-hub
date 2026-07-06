@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { openInNewTab } from '@/lib/utils';
 
 interface CourseActionLinksProps {
   course: {
@@ -115,7 +116,7 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
         return;
       }
     }
-    window.open(target, '_blank', 'noopener,noreferrer');
+    openInNewTab(target);
     
     if (!clickedActions.has(actionType)) {
       logClick(actionType);
