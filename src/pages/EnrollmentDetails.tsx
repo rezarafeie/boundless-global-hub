@@ -685,7 +685,10 @@ const EnrollmentDetails: React.FC = () => {
                     <Button
                       variant="outline"
                       className="h-auto p-4 flex flex-col items-center gap-2"
-                      onClick={() => window.open(enrollment.courses.telegram_channel_link!, '_blank')}
+                      onClick={async () => {
+                        const finalUrl = await resolveTelegramUrl(enrollment.courses.telegram_channel_link!, 'telegram');
+                        window.open(finalUrl, '_blank');
+                      }}
                     >
                       <Send className="h-5 w-5 text-blue-500" />
                       <span className="text-sm">کانال تلگرام</span>
