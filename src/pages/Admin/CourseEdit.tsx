@@ -1006,9 +1006,131 @@ mba
                         </div>
                       )}
                     </div>
+
+                    {/* ---- Support Activation Followup ---- */}
+                    <div className="border-t pt-4 mt-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold text-foreground">پیگیری خودکار فعال‌سازی پشتیبانی</h4>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            id="support_followup_enabled"
+                            checked={formData.support_followup_enabled}
+                            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, support_followup_enabled: checked }))}
+                          />
+                          <Label htmlFor="support_followup_enabled">فعال</Label>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        پیگیری در سه مرحله به کاربرانی که هنوز پشتیبانی را فعال نکرده‌اند ارسال می‌شود. متغیرهای مجاز: <code>{'{{name}}'}</code>, <code>{'{{course_title}}'}</code>. حداکثر تکرار در هر مرحله: 
+                        <Input
+                          type="number"
+                          min={1}
+                          max={5}
+                          className="inline-block w-16 h-7 mx-2"
+                          value={formData.support_followup_max_repeats}
+                          onChange={(e) => setFormData(prev => ({ ...prev, support_followup_max_repeats: Number(e.target.value) }))}
+                        />
+                      </p>
+
+                      {/* Stage 1: Email + SMS */}
+                      <div className="bg-muted/40 p-3 rounded-lg space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h5 className="text-sm font-semibold">مرحله ۱ — کاربر خرید کرده ولی وارد ربات نشده (ایمیل + پیامک)</h5>
+                          <div className="flex items-center gap-2 text-xs">
+                            <Label>تأخیر (دقیقه):</Label>
+                            <Input
+                              type="number"
+                              min={5}
+                              className="w-20 h-8"
+                              value={formData.support_followup_stage1_delay_minutes}
+                              onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_delay_minutes: Number(e.target.value) }))}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label>موضوع ایمیل</Label>
+                          <Input
+                            value={formData.support_followup_stage1_email_subject}
+                            onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_email_subject: e.target.value }))}
+                            className="mt-1"
+                            dir="rtl"
+                          />
+                        </div>
+                        <div>
+                          <Label>متن ایمیل</Label>
+                          <Textarea
+                            rows={5}
+                            value={formData.support_followup_stage1_email_body}
+                            onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_email_body: e.target.value }))}
+                            className="mt-1"
+                            dir="rtl"
+                          />
+                        </div>
+                        <div>
+                          <Label>متن پیامک (کاوه‌نگار)</Label>
+                          <Textarea
+                            rows={2}
+                            value={formData.support_followup_stage1_sms_text}
+                            onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_sms_text: e.target.value }))}
+                            className="mt-1"
+                            dir="rtl"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Stage 2: Bot */}
+                      <div className="bg-muted/40 p-3 rounded-lg space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h5 className="text-sm font-semibold">مرحله ۲ — وارد ربات شده ولی روی «فعال‌سازی پشتیبانی» نزده (پیام از ربات)</h5>
+                          <div className="flex items-center gap-2 text-xs">
+                            <Label>تأخیر (دقیقه):</Label>
+                            <Input
+                              type="number"
+                              min={5}
+                              className="w-20 h-8"
+                              value={formData.support_followup_stage2_delay_minutes}
+                              onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage2_delay_minutes: Number(e.target.value) }))}
+                            />
+                          </div>
+                        </div>
+                        <Textarea
+                          rows={4}
+                          value={formData.support_followup_stage2_bot_text}
+                          onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage2_bot_text: e.target.value }))}
+                          dir="rtl"
+                        />
+                      </div>
+
+                      {/* Stage 3: Business chat */}
+                      <div className="bg-muted/40 p-3 rounded-lg space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h5 className="text-sm font-semibold">مرحله ۳ — پیام پشتیبانی ارسال شده ولی فعال‌سازی نهایی نشده (چت پشتیبانی)</h5>
+                          <div className="flex items-center gap-2 text-xs">
+                            <Label>تأخیر (دقیقه):</Label>
+                            <Input
+                              type="number"
+                              min={5}
+                              className="w-20 h-8"
+                              value={formData.support_followup_stage3_delay_minutes}
+                              onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage3_delay_minutes: Number(e.target.value) }))}
+                            />
+                          </div>
+                        </div>
+                        <Textarea
+                          rows={4}
+                          value={formData.support_followup_stage3_business_text}
+                          onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage3_business_text: e.target.value }))}
+                          dir="rtl"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          در صورت تنظیم <code>telegram_business_connection_id</code> در تنظیمات ادمین، پیام به صورت چت بیزینسی از حساب @rafieiacademy ارسال می‌شود؛ در غیر این صورت از طریق ربات به کاربر ارسال می‌گردد.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
+
 
 
 
