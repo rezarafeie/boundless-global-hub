@@ -52,6 +52,9 @@ interface Course {
   support_activation_required?: boolean;
   telegram_activation_required?: boolean;
   vpn_warning_enabled?: boolean;
+  telegram_support_activation_enabled?: boolean;
+  telegram_course_access_via_bot_enabled?: boolean;
+
 }
 
 interface TitleGroup {
