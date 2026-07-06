@@ -1411,7 +1411,7 @@ async function endAiChat(chat_id: number, _message_id: number | null, user: BotU
   await clearSession(chat_id);
   await sendMessage(chat_id, '✅ گفت‌وگو پایان یافت.', { removeKeyboard: true });
   const homeKbd = await buildStartKeyboard(user);
-  await sendMessage(chat_id, user ? welcomeText(user) : '👋 منوی اصلی', { keyboard: homeKbd });
+  await sendMessage(chat_id, await renderWelcome(chat_id, user), { keyboard: homeKbd });
 }
 
 const AI_SYSTEM_PROMPT = `شما دستیار هوشمند فارسی‌زبان آکادمی رفیعی هستید. به سوالات کاربران به صورت دقیق، دوستانه و کاربردی پاسخ دهید. اگر کاربر عکس، فایل صوتی یا سند ارسال کرد، محتوای آن را تحلیل و توضیح دهید. پاسخ‌ها را به فارسی، با لحن گرم و در صورت لزوم با استفاده از ایموجی و بولد (**متن مهم**) ارائه کنید. از فهرست‌بندی با خط تیره (-) برای موارد چندتایی استفاده کنید.`;
