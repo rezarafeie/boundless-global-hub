@@ -92,12 +92,12 @@ Deno.serve(async (req) => {
         `📧 ایمیل: ${email}`,
         `━━━━━━━━━━━━━━━`,
         ``,
-        `🆔 شناسه کاربر: ${user_id}`,
-        `📚 شناسه دوره: ${course_id}`,
+        `🏷 کلمه کلیدی: ${keyword}`,
         `🔑 کد فعال‌سازی: ${row.activation_token}`,
         ``,
         `🙏 ممنون از همراهی شما`,
       ].join('\n');
+
       supportLink = `https://t.me/rafieiacademy?text=${encodeURIComponent(raw)}`;
     }
 
