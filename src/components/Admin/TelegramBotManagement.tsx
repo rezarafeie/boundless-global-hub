@@ -309,6 +309,49 @@ export const TelegramBotManagement = () => {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Send className="w-4 h-4" /> پیام خوش‌آمدگویی ربات
+          </CardTitle>
+          <CardDescription>
+            پیام اولی که ربات هنگام /start ارسال می‌کند. متغیرهای قابل استفاده:
+            <br />
+            <code dir="ltr">{'{name}'}</code>, <code dir="ltr">{'{first_name}'}</code>, <code dir="ltr">{'{last_name}'}</code>,{' '}
+            <code dir="ltr">{'{phone}'}</code>, <code dir="ltr">{'{email}'}</code>, <code dir="ltr">{'{role}'}</code>,{' '}
+            <code dir="ltr">{'{courses}'}</code>, <code dir="ltr">{'{chat_id}'}</code>,{' '}
+            <code dir="ltr">{'{date}'}</code>, <code dir="ltr">{'{time}'}</code>, <code dir="ltr">{'{datetime}'}</code>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-sm">پیام برای کاربران وارد شده (لینک شده)</Label>
+            <Textarea
+              dir="rtl"
+              rows={8}
+              className="text-sm"
+              value={welcomeSettings.telegram_bot_welcome_logged_in}
+              onChange={(e) => setWelcomeSettings(s => ({ ...s, telegram_bot_welcome_logged_in: e.target.value }))}
+              placeholder={'سلام {name} 👋\nنقش شما: {role}\nدوره‌های شما: {courses}\n\nاز منوی زیر استفاده کنید:'}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm">پیام برای کاربران وارد نشده (لینک نشده)</Label>
+            <Textarea
+              dir="rtl"
+              rows={8}
+              className="text-sm"
+              value={welcomeSettings.telegram_bot_welcome_logged_out}
+              onChange={(e) => setWelcomeSettings(s => ({ ...s, telegram_bot_welcome_logged_out: e.target.value }))}
+              placeholder={'👋 به ربات آکادمی رفیعی خوش آمدید\n\nبرای ورود روی دکمه زیر بزنید یا از فرم‌های زیر استفاده کنید.\n\nChat ID شما: {chat_id}\nتاریخ: {date}'}
+            />
+          </div>
+          <Button onClick={saveWelcomeSettings} disabled={savingWelcome} size="sm" className="w-full sm:w-auto">
+            <Save className="w-4 h-4 ml-2" />
+            {savingWelcome ? 'در حال ذخیره...' : 'ذخیره پیام‌های خوش‌آمدگویی'}
+          </Button>
+        </CardContent>
+      </Card>
 
 
       <Card>
