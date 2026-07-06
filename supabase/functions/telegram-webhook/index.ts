@@ -811,6 +811,52 @@ async function renderReports(chat_id: number, message_id: number | null, user: B
 
 // ============ Student / Login flow ============
 const ACADEMY_BASE = 'https://academy.rafiei.co';
+const ACADEMY_HOSTS = new Set(['academy.rafiei.co', 'www.academy.rafiei.co']);
+
+/**
+ * Wrap a URL in an SSO redirect so the user lands auto-logged-in.
+ * - If the URL points to the academy site (or is a relative path), generate
+ *   an sso_tokens row for `userEmail` and return `/sso-access?token=...&redirect=...`.
+ * - Otherwise (t.me links, other domains) return the URL as-is.
+ * Falls back to the original URL on any error / missing email.
+ */
+async function wrapWithSso(
+  url: string,
+  userEmail: string | null,
+  opts?: { courseSlug?: string | null; enrollmentId?: string | null }
+): Promise<string> {
+  if (!url) return url;
+  if (!userEmail) return url;
+  try {
+    let path: string;
+    if (url.startsWith('/')) {
+      path = url;
+    } else {
+      const u = new URL(url);
+      if (!ACADEMY_HOSTS.has(u.hostname)) return url;
+      // Already an SSO url — leave alone
+      if (u.pathname === '/sso-access') return url;
+      path = `${u.pathname}${u.search}${u.hash}`;
+    }
+    const token = `sso_${crypto.randomUUID().replace(/-/g, '')}_${Date.now()}`;
+    const { error } = await supabase.from('sso_tokens').insert({
+      token,
+      user_email: userEmail,
+      type: 'academy',
+      course_slug: opts?.courseSlug ?? 'general',
+      enrollment_id: opts?.enrollmentId ?? null,
+    });
+    if (error) {
+      console.warn('wrapWithSso insert failed', error);
+      return url;
+    }
+    return `${ACADEMY_BASE}/sso-access?token=${token}&redirect=${encodeURIComponent(path)}`;
+  } catch (e) {
+    console.warn('wrapWithSso failed for url', url, e);
+    return url;
+  }
+}
+
 
 function normalizePhoneIR(input: string): { local: string; formatted: string } | null {
   // local: 9XXXXXXXXX (no leading 0)  formatted: +989XXXXXXXXX
@@ -2494,10 +2540,11 @@ async function handleUpdate(update: any) {
         // Load course + user, build welcome + buttons
         const [{ data: course }, { data: cu }] = await Promise.all([
           supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', cur.course_id).maybeSingle(),
-          supabase.from('chat_users').select('name, first_name').eq('id', cur.user_id).maybeSingle(),
+          supabase.from('chat_users').select('name, first_name, email').eq('id', cur.user_id).maybeSingle(),
         ]);
         const displayName = (cu as any)?.first_name || (cu as any)?.name || 'دوست عزیز';
         const courseTitle = (course as any)?.title || 'دوره';
+        const userEmail: string | null = (cu as any)?.email ?? null;
         const defaultTpl = [
           'درود بر شما {{name}} 🌱',
           'پشتیبانی اختصاصی شما با موفقیت فعال شد ✅',
@@ -2514,17 +2561,18 @@ async function handleUpdate(update: any) {
 
         const buttons: { text: string; url: string }[][] = [];
         const slug = (course as any)?.slug;
+        const ssoOpts = { courseSlug: slug ?? null };
         const accessUrl = (course as any)?.redirect_url || (slug ? `https://academy.rafiei.co/access?course=${slug}` : null);
-        if (accessUrl) buttons.push([{ text: '🚀 شروع و دسترسی به دوره', url: accessUrl }]);
+        if (accessUrl) buttons.push([{ text: '🚀 شروع و دسترسی به دوره', url: await wrapWithSso(accessUrl, userEmail, ssoOpts) }]);
         const channel = (course as any)?.telegram_channel_link;
-        if (channel) buttons.push([{ text: '📢 کانال دوره', url: channel }]);
+        if (channel) buttons.push([{ text: '📢 کانال دوره', url: await wrapWithSso(channel, userEmail, ssoOpts) }]);
         const support = (course as any)?.support_link;
-        if (support) buttons.push([{ text: '💬 ارتباط با پشتیبان', url: support }]);
+        if (support) buttons.push([{ text: '💬 ارتباط با پشتیبان', url: await wrapWithSso(support, userEmail, ssoOpts) }]);
         const customButtons = Array.isArray((course as any)?.telegram_bot_activation_buttons)
           ? ((course as any).telegram_bot_activation_buttons as any[])
           : [];
         for (const b of customButtons) {
-          if (b?.text && b?.url) buttons.push([{ text: String(b.text), url: String(b.url) }]);
+          if (b?.text && b?.url) buttons.push([{ text: String(b.text), url: await wrapWithSso(String(b.url), userEmail, ssoOpts) }]);
         }
 
         try {
@@ -3044,10 +3092,11 @@ async function handleUpdate(update: any) {
         if (targetChat) {
           const [{ data: course }, { data: cu }] = await Promise.all([
             supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', act.course_id).maybeSingle(),
-            supabase.from('chat_users').select('name, first_name').eq('id', act.user_id).maybeSingle(),
+            supabase.from('chat_users').select('name, first_name, email').eq('id', act.user_id).maybeSingle(),
           ]);
           const displayName = (cu as any)?.first_name || (cu as any)?.name || 'دوست عزیز';
           const courseTitle = (course as any)?.title || 'دوره';
+          const userEmail: string | null = (cu as any)?.email ?? null;
           const defaultTpl = [
             'درود بر شما {{name}} 🌱',
             'پشتیبانی اختصاصی شما با موفقیت فعال شد ✅',
@@ -3064,17 +3113,18 @@ async function handleUpdate(update: any) {
 
           const buttons: { text: string; url: string }[][] = [];
           const slug = (course as any)?.slug;
+          const ssoOpts = { courseSlug: slug ?? null };
           const accessUrl = (course as any)?.redirect_url || (slug ? `https://academy.rafiei.co/access?course=${slug}` : null);
-          if (accessUrl) buttons.push([{ text: '🚀 شروع و دسترسی به دوره', url: accessUrl }]);
+          if (accessUrl) buttons.push([{ text: '🚀 شروع و دسترسی به دوره', url: await wrapWithSso(accessUrl, userEmail, ssoOpts) }]);
           const channel = (course as any)?.telegram_channel_link;
-          if (channel) buttons.push([{ text: '📢 کانال دوره', url: channel }]);
+          if (channel) buttons.push([{ text: '📢 کانال دوره', url: await wrapWithSso(channel, userEmail, ssoOpts) }]);
           const support = (course as any)?.support_link;
-          if (support) buttons.push([{ text: '💬 ارتباط با پشتیبان', url: support }]);
+          if (support) buttons.push([{ text: '💬 ارتباط با پشتیبان', url: await wrapWithSso(support, userEmail, ssoOpts) }]);
           const customButtons = Array.isArray((course as any)?.telegram_bot_activation_buttons)
             ? ((course as any).telegram_bot_activation_buttons as any[])
             : [];
           for (const b of customButtons) {
-            if (b?.text && b?.url) buttons.push([{ text: String(b.text), url: String(b.url) }]);
+            if (b?.text && b?.url) buttons.push([{ text: String(b.text), url: await wrapWithSso(String(b.url), userEmail, ssoOpts) }]);
           }
 
           // Send welcome DM to the user's private chat with bot (if known)
