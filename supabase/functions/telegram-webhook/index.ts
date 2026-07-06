@@ -2820,15 +2820,15 @@ async function handleUpdate(update: any) {
       text: welcome,
       parse_mode: 'HTML',
       reply_markup: {
-        inline_keyboard: [[
-          { text: 'فعال‌سازی پشتیبانی دوره', url: supportUrl, callback_data: `sact:click:${act.id}` } as any,
-        ], [
-          { text: 'ثبت کلیک روی دکمه پشتیبانی', callback_data: `sact:click:${act.id}` },
-        ]],
+        inline_keyboard: [
+          [{ text: '🚀 فعال‌سازی پشتیبانی دوره', url: supportUrl }],
+          [{ text: '✅ پیام را ارسال کردم', callback_data: `sact:sent:${act.id}` }],
+        ],
       },
     });
     return;
   }
+
 
 
   // ===== Contact share (from "Share my phone" button after login deep-link) =====
