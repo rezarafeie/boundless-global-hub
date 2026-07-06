@@ -219,6 +219,11 @@ const SimplifiedLeadManagement: React.FC = () => {
   }, [crmStatusFilter]);
 
   useEffect(() => {
+    localStorage.setItem('leads_supportActivationFilter', supportActivationFilter);
+  }, [supportActivationFilter]);
+
+
+  useEffect(() => {
     fetchInitialData();
   }, []);
 
