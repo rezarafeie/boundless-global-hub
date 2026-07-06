@@ -849,6 +849,21 @@ mba
                         در صورت فعال بودن، کارت «فعال‌سازی پشتیبانی» کاربر را به ربات تلگرام هدایت می‌کند و کل مراحل فعال‌سازی رهگیری می‌شود.
                       </p>
 
+                      <div className="bg-muted/40 p-3 rounded-lg mt-2">
+                        <Label htmlFor="telegram_activation_keyword">کلمه کلیدی فعال‌سازی</Label>
+                        <Input
+                          id="telegram_activation_keyword"
+                          value={formData.telegram_activation_keyword}
+                          onChange={(e) => setFormData(prev => ({ ...prev, telegram_activation_keyword: e.target.value }))}
+                          placeholder="مثال: mba, sba, bt"
+                          className="mt-2"
+                        />
+                        <p className="text-xs text-muted-foreground mt-2">
+                          این کلمه در ابتدای پیام پیش‌فرض پشتیبانی قرار می‌گیرد تا تیم پشتیبانی سریع دوره را شناسایی کند. در صورت خالی بودن از slug دوره استفاده می‌شود.
+                        </p>
+                      </div>
+
+
                       <div className="flex items-center space-x-2">
                         <Switch
                           id="telegram_course_access_via_bot_enabled"
