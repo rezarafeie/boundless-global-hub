@@ -48,8 +48,22 @@ const SupportActivations: React.FC = () => {
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [q, setQ] = useState('');
   const [segment, setSegment] = useState<string>('all');
+  const [logRow, setLogRow] = useState<Row | null>(null);
+  const [logs, setLogs] = useState<any[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const openLogs = async (r: Row) => {
+    setLogRow(r);
+    setLogs([]);
+    const { data } = await supabase
+      .from('support_activation_followup_log' as any)
+      .select('*')
+      .eq('support_activation_id', r.id)
+      .order('created_at', { ascending: false })
+      .limit(100);
+    setLogs((data as any) || []);
+  };
 
   const load = async () => {
     setLoading(true);
