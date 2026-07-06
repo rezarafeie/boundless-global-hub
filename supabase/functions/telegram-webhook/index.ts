@@ -911,7 +911,7 @@ async function handleOtpInput(chat_id: number, text: string) {
   await clearSession(chat_id);
   const user = await resolveUser(chat_id);
   if (user) {
-    await sendMessage(chat_id, `✅ <b>ورود موفق!</b>\n\n${welcomeText(user)}`, { keyboard: await buildStartKeyboard(user) });
+    await sendMessage(chat_id, `✅ <b>ورود موفق!</b>\n\n${await renderWelcome(chat_id, user)}`, { keyboard: await buildStartKeyboard(user) });
     if (pending_enroll) await tryLinkEnrollment(chat_id, pending_enroll, user);
   }
 }
