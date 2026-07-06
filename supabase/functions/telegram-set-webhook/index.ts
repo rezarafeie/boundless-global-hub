@@ -42,8 +42,9 @@ Deno.serve(async (req) => {
 
   // Also fetch webhook info for confirmation
   const info = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getWebhookInfo`).then(r => r.json());
+  const me = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getMe`).then(r => r.json());
 
-  return new Response(JSON.stringify({ setWebhook: data, info, webhookUrl }, null, 2), {
+  return new Response(JSON.stringify({ setWebhook: data, info, me, webhookUrl }, null, 2), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 });
