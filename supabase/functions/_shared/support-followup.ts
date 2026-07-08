@@ -157,14 +157,50 @@ export async function sendEmail(
   return { ok: true };
 }
 
+// Build the full template variable map for a support_activations row.
+// All keys are exposed to templates as {key} / {{key}} for both email, SMS and telegram.
+export function buildVars(row: Row): Record<string, string> {
+  const user = row.chat_users ?? {};
+  const course = row.courses ?? {};
+  const fullName = user.name ?? user.full_name ?? row.telegram_first_name ?? "";
+  const firstName = user.first_name ?? (fullName ? String(fullName).split(" ")[0] : "");
+  const lastName = user.last_name ?? (fullName ? String(fullName).split(" ").slice(1).join(" ") : "");
+  const activationLink = row.support_prefilled_link || row.bot_deep_link || "";
+  return {
+    // user
+    name: fullName,
+    user_name: fullName,
+    first_name: firstName,
+    user_first_name: firstName,
+    last_name: lastName,
+    user_last_name: lastName,
+    full_name: fullName,
+    email: user.email ?? "",
+    user_email: user.email ?? "",
+    phone: user.phone ?? "",
+    user_phone: user.phone ?? "",
+    user_phone_number: user.phone ?? "",
+    user_id: String(row.user_id ?? user.id ?? ""),
+    // course
+    course_title: course.title ?? "",
+    course_slug: course.slug ?? "",
+    course_id: String(course.id ?? row.course_id ?? ""),
+    // enrollment / activation
+    enrollment_id: String(row.enrollment_id ?? ""),
+    activation_id: String(row.id ?? ""),
+    activation_token: row.activation_token ?? "",
+    activation_link: activationLink,
+    activationlink: activationLink,
+    support_link: activationLink,
+    bot_deep_link: row.bot_deep_link ?? "",
+  };
+}
+
 // ---------- Stage processors (return debug info; do NOT bump counter here) ----------
 export async function runStage1(row: Row, opts: { isTest?: boolean } = {}) {
   const course = row.courses;
   const user = row.chat_users;
-  const vars = {
-    name: user?.name ?? user?.first_name ?? "",
-    course_title: course?.title ?? "",
-  };
+  const vars = buildVars(row);
   const email = user?.email;
   const phone = user?.phone;
   const emailSubject = render(course.support_followup_stage1_email_subject, vars);
@@ -196,13 +232,10 @@ export async function runStage2(row: Row, opts: { isTest?: boolean } = {}) {
     await logSend(row, 2, "telegram_bot", "failed", "no telegram_id", { is_test: !!opts.isTest });
     return [{ ok: false, error: "no telegram_id" }];
   }
-  const vars = {
-    name: row.chat_users?.name ?? row.telegram_first_name ?? "",
-    course_title: row.courses?.title ?? "",
-  };
+  const vars = buildVars(row);
   const text = render(row.courses.support_followup_stage2_bot_text, vars) || "[TEST] followup";
   const res = await sendMessage(row.telegram_id, text, {
-    keyboard: [[{ text: "✅ فعال‌سازی پشتیبانی", url: row.support_prefilled_link || row.bot_deep_link }]],
+    keyboard: [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]],
     parse_mode: "HTML",
   });
   const ok = (res as any)?.ok !== false;
@@ -215,10 +248,7 @@ export async function runStage3(row: Row, opts: { isTest?: boolean } = {}) {
     await logSend(row, 3, "telegram_bot_dm", "failed", "no telegram_id", { is_test: !!opts.isTest });
     return [{ ok: false, error: "no telegram_id" }];
   }
-  const vars = {
-    name: row.chat_users?.name ?? row.telegram_first_name ?? "",
-    course_title: row.courses?.title ?? "",
-  };
+  const vars = buildVars(row);
   const text = render(row.courses.support_followup_stage3_business_text, vars) || "[TEST] followup";
   const { data: settings } = await supabase.from("admin_settings").select("telegram_business_connection_id" as any).eq("id", 1).maybeSingle();
   const bcid = (settings as any)?.telegram_business_connection_id;
