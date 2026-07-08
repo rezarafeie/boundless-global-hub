@@ -33,8 +33,10 @@ const TestStageButton: React.FC<Props> = ({ stage, courseId, customFollowupId, l
     setLoading(true);
     setResult(null);
     try {
+      const body: any = { activation_id: activationId, stage };
+      if (stage === 'custom' && customFollowupId) body.custom_followup_id = customFollowupId;
       const { data, error } = await supabase.functions.invoke('support-activation-followup-test', {
-        body: { activation_id: activationId, stage },
+        body,
       });
       if (error) throw error;
       setResult(data);
