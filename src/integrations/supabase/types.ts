@@ -4492,6 +4492,71 @@ export type Database = {
           },
         ]
       }
+      support_activation_custom_followups: {
+        Row: {
+          bot_text: string | null
+          channel: string
+          course_id: string
+          created_at: string
+          delay_minutes: number
+          email_body: string | null
+          email_subject: string | null
+          enabled: boolean
+          id: string
+          max_repeats: number
+          name: string
+          repeat_delay_minutes: number
+          skip_if_activated: boolean
+          sms_template_url: string | null
+          sms_text: string | null
+          updated_at: string
+        }
+        Insert: {
+          bot_text?: string | null
+          channel: string
+          course_id: string
+          created_at?: string
+          delay_minutes?: number
+          email_body?: string | null
+          email_subject?: string | null
+          enabled?: boolean
+          id?: string
+          max_repeats?: number
+          name?: string
+          repeat_delay_minutes?: number
+          skip_if_activated?: boolean
+          sms_template_url?: string | null
+          sms_text?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bot_text?: string | null
+          channel?: string
+          course_id?: string
+          created_at?: string
+          delay_minutes?: number
+          email_body?: string | null
+          email_subject?: string | null
+          enabled?: boolean
+          id?: string
+          max_repeats?: number
+          name?: string
+          repeat_delay_minutes?: number
+          skip_if_activated?: boolean
+          sms_template_url?: string | null
+          sms_text?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_activation_custom_followups_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_activation_events: {
         Row: {
           course_id: string | null
@@ -4535,6 +4600,7 @@ export type Database = {
           channel: string
           course_id: string | null
           created_at: string
+          custom_followup_id: string | null
           error_message: string | null
           id: string
           payload: Json | null
@@ -4547,6 +4613,7 @@ export type Database = {
           channel: string
           course_id?: string | null
           created_at?: string
+          custom_followup_id?: string | null
           error_message?: string | null
           id?: string
           payload?: Json | null
@@ -4559,6 +4626,7 @@ export type Database = {
           channel?: string
           course_id?: string | null
           created_at?: string
+          custom_followup_id?: string | null
           error_message?: string | null
           id?: string
           payload?: Json | null
@@ -4568,6 +4636,13 @@ export type Database = {
           user_id?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "support_activation_followup_log_custom_followup_id_fkey"
+            columns: ["custom_followup_id"]
+            isOneToOne: false
+            referencedRelation: "support_activation_custom_followups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "support_activation_followup_log_support_activation_id_fkey"
             columns: ["support_activation_id"]
@@ -4588,6 +4663,7 @@ export type Database = {
           clicked_support_button_at: string | null
           course_id: string
           created_at: string
+          custom_followup_sent_counts: Json
           enrollment_id: string | null
           followup_count: number
           followup_stage1_sent_count: number
@@ -4618,6 +4694,7 @@ export type Database = {
           clicked_support_button_at?: string | null
           course_id: string
           created_at?: string
+          custom_followup_sent_counts?: Json
           enrollment_id?: string | null
           followup_count?: number
           followup_stage1_sent_count?: number
@@ -4648,6 +4725,7 @@ export type Database = {
           clicked_support_button_at?: string | null
           course_id?: string
           created_at?: string
+          custom_followup_sent_counts?: Json
           enrollment_id?: string | null
           followup_count?: number
           followup_stage1_sent_count?: number
@@ -6400,6 +6478,7 @@ export type Database = {
           clicked_support_button_at: string | null
           course_id: string
           created_at: string
+          custom_followup_sent_counts: Json
           enrollment_id: string | null
           followup_count: number
           followup_stage1_sent_count: number
