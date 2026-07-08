@@ -5,9 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { PlayCircle, Loader2 } from 'lucide-react';
 
-interface Props { stage: 1 | 2 | 3; courseId: string }
+interface Props { stage: 1 | 2 | 3 | 'custom'; courseId: string; customFollowupId?: string; label?: string }
 
-const TestStageButton: React.FC<Props> = ({ stage, courseId }) => {
+const TestStageButton: React.FC<Props> = ({ stage, courseId, customFollowupId, label }) => {
   const [activations, setActivations] = useState<any[]>([]);
   const [activationId, setActivationId] = useState<string>('');
   const [loading, setLoading] = useState(false);
