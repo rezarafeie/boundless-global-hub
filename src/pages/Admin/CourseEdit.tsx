@@ -1091,6 +1091,9 @@ mba
                           <Textarea rows={5} value={formData.support_followup_stage1_email_body}
                             onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_email_body: e.target.value }))}
                             className="mt-1" dir="rtl" />
+                          <p className="text-xs text-muted-foreground mt-1" dir="rtl">
+                            متغیرهای مجاز: <code dir="ltr">{'{user_name}'}</code>, <code dir="ltr">{'{first_name}'}</code>, <code dir="ltr">{'{last_name}'}</code>, <code dir="ltr">{'{email}'}</code>, <code dir="ltr">{'{phone}'}</code>, <code dir="ltr">{'{course_title}'}</code>, <code dir="ltr">{'{enrollment_id}'}</code>, <code dir="ltr">{'{activation_id}'}</code>, <code dir="ltr">{'{activation_link}'}</code>, <code dir="ltr">{'{activation_token}'}</code>.
+                          </p>
                         </div>
                         <div>
                           <Label>متن پیامک (fallback در صورت خالی بودن آدرس تمپلیت)</Label>
