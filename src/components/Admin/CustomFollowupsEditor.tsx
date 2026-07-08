@@ -156,8 +156,8 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
               <Textarea rows={2} value={r.sms_template_url || ''} onChange={(e) => patch(r.id, { sms_template_url: e.target.value })} placeholder="آدرس قالب Kavenegar (اختیاری)" dir="ltr" className="font-mono text-xs" />
             </div>
           )}
-          {r.channel === 'bot' && (
-            <Textarea rows={4} value={r.bot_text || ''} onChange={(e) => patch(r.id, { bot_text: e.target.value })} placeholder="متن پیام تلگرام" dir="rtl" />
+          {(r.channel === 'bot' || r.channel === 'business') && (
+            <Textarea rows={4} value={r.bot_text || ''} onChange={(e) => patch(r.id, { bot_text: e.target.value })} placeholder={r.channel === 'business' ? 'متن پیام از چت پشتیبانی (Telegram Business)' : 'متن پیام تلگرام'} dir="rtl" />
           )}
 
           <p className="text-[10px] text-muted-foreground">
