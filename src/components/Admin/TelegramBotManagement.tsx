@@ -203,6 +203,12 @@ export const TelegramBotManagement = () => {
               <Link2 className="w-4 h-4 mr-2" />
               {registering ? 'در حال ثبت...' : 'ثبت وب‌هوک ربات'}
             </Button>
+            <Button asChild size="sm" variant="secondary">
+              <Link to="/enroll/admin/telegram-users">
+                <Users className="w-4 h-4 mr-2" />
+                مدیریت کاربران تلگرام
+              </Link>
+            </Button>
           </div>
           {webhookInfo && (
             <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-48" dir="ltr">
