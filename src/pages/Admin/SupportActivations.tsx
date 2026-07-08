@@ -355,6 +355,18 @@ const SupportActivations: React.FC = () => {
             </TableBody>
           </Table>
         </CardContent>
+        {filtered.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between p-3 border-t">
+            <div className="text-xs text-muted-foreground">
+              نمایش {((currentPage - 1) * PAGE_SIZE + 1).toLocaleString('fa-IR')}–{Math.min(currentPage * PAGE_SIZE, filtered.length).toLocaleString('fa-IR')} از {filtered.length.toLocaleString('fa-IR')}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" disabled={currentPage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>قبلی</Button>
+              <span className="text-xs">صفحه {currentPage.toLocaleString('fa-IR')} / {totalPages.toLocaleString('fa-IR')}</span>
+              <Button size="sm" variant="outline" disabled={currentPage >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>بعدی</Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       <AllFollowupLogs />
