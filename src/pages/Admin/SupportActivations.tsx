@@ -51,6 +51,8 @@ const SupportActivations: React.FC = () => {
   const [segment, setSegment] = useState<string>('all');
   const [logRow, setLogRow] = useState<Row | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -121,6 +123,11 @@ const SupportActivations: React.FC = () => {
       r.activation_token.toLowerCase().includes(s)
     );
   }, [rows, q, segment]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paged = useMemo(() => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE), [filtered, currentPage]);
+  useEffect(() => { setPage(1); }, [q, segment, status, courseId]);
 
   const stats = useMemo(() => {
     const total = rows.length;
@@ -301,7 +308,7 @@ const SupportActivations: React.FC = () => {
             <TableBody>
               {loading && (<TableRow><TableCell colSpan={6} className="text-center py-6">در حال بارگذاری…</TableCell></TableRow>)}
               {!loading && filtered.length === 0 && (<TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">موردی یافت نشد</TableCell></TableRow>)}
-              {filtered.map((r) => {
+              {paged.map((r) => {
                 const meta = STATUS_LABELS[r.status] || { label: r.status, variant: 'outline' as const };
                 return (
                   <TableRow key={r.id}>
@@ -348,6 +355,18 @@ const SupportActivations: React.FC = () => {
             </TableBody>
           </Table>
         </CardContent>
+        {filtered.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between p-3 border-t">
+            <div className="text-xs text-muted-foreground">
+              نمایش {((currentPage - 1) * PAGE_SIZE + 1).toLocaleString('fa-IR')}–{Math.min(currentPage * PAGE_SIZE, filtered.length).toLocaleString('fa-IR')} از {filtered.length.toLocaleString('fa-IR')}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" disabled={currentPage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>قبلی</Button>
+              <span className="text-xs">صفحه {currentPage.toLocaleString('fa-IR')} / {totalPages.toLocaleString('fa-IR')}</span>
+              <Button size="sm" variant="outline" disabled={currentPage >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>بعدی</Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       <AllFollowupLogs />
