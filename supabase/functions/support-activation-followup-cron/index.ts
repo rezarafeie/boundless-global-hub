@@ -31,6 +31,10 @@ serve(async (req) => {
 
     if (error) throw error;
 
+    const courseIds = Array.from(new Set(((rows as any[]) ?? []).map((r) => r.course_id).filter(Boolean)));
+    const customByCourse = await fetchCustomFollowups(courseIds);
+
+
     const summary: any[] = [];
     for (const row of (rows as any[]) ?? []) {
       const course = row.courses;
