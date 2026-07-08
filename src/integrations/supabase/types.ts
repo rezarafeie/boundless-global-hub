@@ -211,6 +211,8 @@ export type Database = {
           telegram_bot_username: string | null
           telegram_bot_welcome_logged_in: string | null
           telegram_bot_welcome_logged_out: string | null
+          telegram_business_connection_id: string | null
+          telegram_business_connection_updated_at: string | null
           telegram_followup_ai_prompt: string | null
           telegram_miniapp_base_url: string | null
           telegram_notify_consultation: boolean
@@ -238,6 +240,8 @@ export type Database = {
           telegram_bot_username?: string | null
           telegram_bot_welcome_logged_in?: string | null
           telegram_bot_welcome_logged_out?: string | null
+          telegram_business_connection_id?: string | null
+          telegram_business_connection_updated_at?: string | null
           telegram_followup_ai_prompt?: string | null
           telegram_miniapp_base_url?: string | null
           telegram_notify_consultation?: boolean
@@ -265,6 +269,8 @@ export type Database = {
           telegram_bot_username?: string | null
           telegram_bot_welcome_logged_in?: string | null
           telegram_bot_welcome_logged_out?: string | null
+          telegram_business_connection_id?: string | null
+          telegram_business_connection_updated_at?: string | null
           telegram_followup_ai_prompt?: string | null
           telegram_miniapp_base_url?: string | null
           telegram_notify_consultation?: boolean

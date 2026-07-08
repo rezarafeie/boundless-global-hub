@@ -245,23 +245,22 @@ export async function runStage2(row: Row, opts: { isTest?: boolean } = {}) {
 
 export async function runStage3(row: Row, opts: { isTest?: boolean } = {}) {
   if (!row.telegram_id) {
-    await logSend(row, 3, "telegram_bot_dm", "failed", "no telegram_id", { is_test: !!opts.isTest });
+    await logSend(row, 3, "telegram_business", "failed", "no telegram_id", { is_test: !!opts.isTest });
     return [{ ok: false, error: "no telegram_id" }];
   }
   const vars = buildVars(row);
   const text = render(row.courses.support_followup_stage3_business_text, vars) || "[TEST] followup";
   const { data: settings } = await supabase.from("admin_settings").select("telegram_business_connection_id" as any).eq("id", 1).maybeSingle();
   const bcid = (settings as any)?.telegram_business_connection_id;
-  let res: any;
-  if (bcid) {
-    res = await tgCall("sendMessage", { chat_id: row.telegram_id, text, business_connection_id: bcid });
-  } else {
-    res = await sendMessage(row.telegram_id, text, { parse_mode: "HTML" });
+  if (!bcid) {
+    const error = "telegram_business_connection_id is not configured";
+    await logSend(row, 3, "telegram_business", "failed", error, { chat_id: row.telegram_id, text, business: false, is_test: !!opts.isTest });
+    return [{ ok: false, chat_id: row.telegram_id, text, business: false, error }];
   }
+  const res = await tgCall("sendMessage", { chat_id: row.telegram_id, text, business_connection_id: bcid, parse_mode: "HTML" });
   const ok = (res as any)?.ok !== false;
-  const channel = bcid ? "telegram_business" : "telegram_bot_dm";
-  await logSend(row, 3, channel, ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { chat_id: row.telegram_id, text, business: !!bcid, response: res, is_test: !!opts.isTest });
-  return [{ ok, chat_id: row.telegram_id, text, business: !!bcid, response: res }];
+  await logSend(row, 3, "telegram_business", ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { chat_id: row.telegram_id, text, business: true, business_connection_id: bcid, response: res, is_test: !!opts.isTest });
+  return [{ ok, chat_id: row.telegram_id, text, business: true, business_connection_id: bcid, response: res }];
 }
 
 // Custom (time-based, any channel) followup — independent of stage.
@@ -312,16 +311,16 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
     const text = render(cf.bot_text, vars) || "[TEST] followup";
     const { data: settings } = await supabase.from("admin_settings").select("telegram_business_connection_id" as any).eq("id", 1).maybeSingle();
     const bcid = (settings as any)?.telegram_business_connection_id;
-    let res: any;
-    if (bcid) {
-      res = await tgCall("sendMessage", { chat_id: row.telegram_id, text, business_connection_id: bcid });
-    } else {
-      res = await sendMessage(row.telegram_id, text, { parse_mode: "HTML" });
+    if (!bcid) {
+      const error = "telegram_business_connection_id is not configured";
+      await logSendCustom(row, cf, "telegram_business", "failed", error, { ...logExtra, chat_id: row.telegram_id, text, business: false });
+      results.push({ channel: "business", ok: false, chat_id: row.telegram_id, text, business: false, error });
+      return results;
     }
+    const res = await tgCall("sendMessage", { chat_id: row.telegram_id, text, business_connection_id: bcid, parse_mode: "HTML" });
     const ok = (res as any)?.ok !== false;
-    const channel = bcid ? "telegram_business" : "telegram_bot_dm";
-    await logSendCustom(row, cf, channel, ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { ...logExtra, chat_id: row.telegram_id, text, business: !!bcid, response: res });
-    results.push({ channel: "business", ok, chat_id: row.telegram_id, text, business: !!bcid, response: res });
+    await logSendCustom(row, cf, "telegram_business", ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { ...logExtra, chat_id: row.telegram_id, text, business: true, business_connection_id: bcid, response: res });
+    results.push({ channel: "business", ok, chat_id: row.telegram_id, text, business: true, business_connection_id: bcid, response: res });
   }
   return results;
 }

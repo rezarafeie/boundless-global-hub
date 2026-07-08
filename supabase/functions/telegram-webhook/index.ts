@@ -25,6 +25,20 @@ const supabase = createClient(
 const WEBHOOK_SECRET = (Deno.env.get('TELEGRAM_WEBHOOK_SECRET') ?? '').replace(/[^A-Za-z0-9_-]/g, '');
 const PAGE_SIZE = 5;
 
+async function saveBusinessConnectionId(connectionId: string | null | undefined) {
+  if (!connectionId) return;
+  const { error } = await supabase
+    .from('admin_settings')
+    .update({
+      telegram_business_connection_id: connectionId,
+      telegram_business_connection_updated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as any)
+    .eq('id', 1);
+  if (error) console.error('failed to save telegram business connection id:', error);
+  else console.log('saved telegram business connection id:', connectionId);
+}
+
 // ============ Types ============
 type Role = 'admin' | 'sales_manager' | 'sales_agent' | 'student' | null;
 interface BotUser {
@@ -2467,6 +2481,13 @@ async function handleFormMessage(chat_id: number, user_id: number | null, msg: a
 
 
 async function handleUpdate(update: any) {
+  if (update.business_connection?.id) {
+    if (update.business_connection.is_enabled !== false) {
+      await saveBusinessConnectionId(update.business_connection.id);
+    }
+    return;
+  }
+
   if (update.callback_query) {
     const cq = update.callback_query;
     const chat_id = cq.message.chat.id;
@@ -2878,6 +2899,7 @@ async function handleUpdate(update: any) {
   if (!msg?.chat?.id) return;
   const chat_id = msg.chat.id;
   const business_connection_id: string | undefined = msg?.business_connection_id ?? update.business_message?.business_connection_id ?? update.edited_business_message?.business_connection_id;
+  if (business_connection_id) await saveBusinessConnectionId(business_connection_id);
   const text: string = msg.text ?? '';
 
   // Personalized coach: refresh activity + capture coaching answers (best-effort)
