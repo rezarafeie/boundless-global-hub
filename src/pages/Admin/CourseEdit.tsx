@@ -1179,6 +1179,7 @@ mba
                           در صورت تنظیم <code>telegram_business_connection_id</code> در تنظیمات ادمین، پیام به صورت چت بیزینسی از حساب @rafieiacademy ارسال می‌شود؛ در غیر این صورت از طریق ربات به کاربر ارسال می‌گردد.
                         </p>
                         <TestStageButton stage={3} courseId={courseId!} />
+                      </div>
                     </div>
 
                     {/* Custom time-based followups */}
