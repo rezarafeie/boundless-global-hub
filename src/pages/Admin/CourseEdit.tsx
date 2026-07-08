@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { TetherlandService } from '@/lib/tetherlandService';
 import MainLayout from '@/components/Layout/MainLayout';
 import TestStageButton from '@/components/Admin/TestStageButton';
+import CustomFollowupsEditor from '@/components/Admin/CustomFollowupsEditor';
 
 interface Course {
   id: string;
