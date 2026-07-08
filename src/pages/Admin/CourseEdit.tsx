@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { TetherlandService } from '@/lib/tetherlandService';
 import MainLayout from '@/components/Layout/MainLayout';
 import TestStageButton from '@/components/Admin/TestStageButton';
+import CustomFollowupsEditor from '@/components/Admin/CustomFollowupsEditor';
 
 interface Course {
   id: string;
@@ -1179,6 +1180,11 @@ mba
                         </p>
                         <TestStageButton stage={3} courseId={courseId!} />
                       </div>
+                    </div>
+
+                    {/* Custom time-based followups */}
+                    <div className="border rounded-lg p-4 space-y-3 mt-4 bg-background">
+                      <CustomFollowupsEditor courseId={courseId!} />
                     </div>
                   </div>
                 </div>

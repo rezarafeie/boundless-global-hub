@@ -4,7 +4,10 @@ import { supabase } from "../_shared/supabase.ts";
 import {
   SUPPORT_ACTIVATION_SELECT,
   bumpCounter,
+  bumpCustomCounter,
+  fetchCustomFollowups,
   minutesSince,
+  runCustom,
   runStage1,
   runStage2,
   runStage3,
@@ -27,6 +30,10 @@ serve(async (req) => {
       .limit(200);
 
     if (error) throw error;
+
+    const courseIds = Array.from(new Set(((rows as any[]) ?? []).map((r) => r.course_id).filter(Boolean)));
+    const customByCourse = await fetchCustomFollowups(courseIds);
+
 
     const summary: any[] = [];
     for (const row of (rows as any[]) ?? []) {
@@ -82,7 +89,29 @@ serve(async (req) => {
         console.error("followup send failed", row.id, e);
         summary.push({ id: row.id, stage, error: String(e) });
       }
+
+      // Custom (time-based) followups — independent of stage
+      const customs = customByCourse[row.course_id] ?? [];
+      const counts = (row.custom_followup_sent_counts ?? {}) as Record<string, number>;
+      const purchaseElapsed = minutesSince(row.created_at);
+      for (const cf of customs) {
+        if (cf.skip_if_activated && row.status === "activated") continue;
+        const sent = counts[cf.id] ?? 0;
+        if (sent >= (cf.max_repeats ?? 1)) continue;
+        const required = (cf.delay_minutes ?? 0) + sent * (cf.repeat_delay_minutes ?? cf.delay_minutes ?? 0);
+        if (purchaseElapsed < required) continue;
+        try {
+          const result = await runCustom(row, cf);
+          await bumpCustomCounter(row, cf);
+          summary.push({ id: row.id, custom_followup_id: cf.id, channel: cf.channel, result });
+        } catch (e) {
+          console.error("custom followup failed", row.id, cf.id, e);
+          summary.push({ id: row.id, custom_followup_id: cf.id, error: String(e) });
+        }
+      }
     }
+
+
 
     return new Response(JSON.stringify({ ok: true, processed: summary.length, summary }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

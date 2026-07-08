@@ -5,9 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { PlayCircle, Loader2 } from 'lucide-react';
 
-interface Props { stage: 1 | 2 | 3; courseId: string }
+interface Props { stage: 1 | 2 | 3 | 'custom'; courseId: string; customFollowupId?: string; label?: string }
 
-const TestStageButton: React.FC<Props> = ({ stage, courseId }) => {
+const TestStageButton: React.FC<Props> = ({ stage, courseId, customFollowupId, label }) => {
   const [activations, setActivations] = useState<any[]>([]);
   const [activationId, setActivationId] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -33,8 +33,10 @@ const TestStageButton: React.FC<Props> = ({ stage, courseId }) => {
     setLoading(true);
     setResult(null);
     try {
+      const body: any = { activation_id: activationId, stage };
+      if (stage === 'custom' && customFollowupId) body.custom_followup_id = customFollowupId;
       const { data, error } = await supabase.functions.invoke('support-activation-followup-test', {
-        body: { activation_id: activationId, stage },
+        body,
       });
       if (error) throw error;
       setResult(data);
@@ -63,7 +65,7 @@ const TestStageButton: React.FC<Props> = ({ stage, courseId }) => {
         </Select>
         <Button type="button" size="sm" onClick={run} disabled={loading || !activationId}>
           {loading ? <Loader2 className="h-3 w-3 animate-spin ml-1" /> : <PlayCircle className="h-3 w-3 ml-1" />}
-          ارسال تستی مرحله {stage}
+          {label || `ارسال تستی مرحله ${stage}`}
         </Button>
       </div>
       {result && (
