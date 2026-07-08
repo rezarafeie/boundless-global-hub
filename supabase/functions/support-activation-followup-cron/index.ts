@@ -71,23 +71,22 @@ serve(async (req) => {
         stageEnabled = course.support_followup_stage3_enabled !== false;
       }
 
-      if (!stage || !stageEnabled) continue;
-      if (sentCount >= maxRepeats) continue;
-
-      // sent 0 → wait firstDelay; sent N → wait firstDelay + N * repeatDelay
-      const required = firstDelay + sentCount * repeatDelay;
-      if (elapsedMin < required) continue;
-
-      try {
-        let result: any[] = [];
-        if (stage === 1) result = await runStage1(row);
-        else if (stage === 2) result = await runStage2(row);
-        else if (stage === 3) result = await runStage3(row);
-        await bumpCounter(row, stage);
-        summary.push({ id: row.id, stage, result });
-      } catch (e) {
-        console.error("followup send failed", row.id, e);
-        summary.push({ id: row.id, stage, error: String(e) });
+      // Run stage followup if eligible (do NOT skip custom followups when stage caps out)
+      if (stage && stageEnabled && sentCount < maxRepeats) {
+        const required = firstDelay + sentCount * repeatDelay;
+        if (elapsedMin >= required) {
+          try {
+            let result: any[] = [];
+            if (stage === 1) result = await runStage1(row);
+            else if (stage === 2) result = await runStage2(row);
+            else if (stage === 3) result = await runStage3(row);
+            await bumpCounter(row, stage);
+            summary.push({ id: row.id, stage, result });
+          } catch (e) {
+            console.error("followup send failed", row.id, e);
+            summary.push({ id: row.id, stage, error: String(e) });
+          }
+        }
       }
 
       // Custom (time-based) followups — independent of stage
