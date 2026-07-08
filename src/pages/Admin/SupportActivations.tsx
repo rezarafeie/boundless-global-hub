@@ -308,7 +308,7 @@ const SupportActivations: React.FC = () => {
             <TableBody>
               {loading && (<TableRow><TableCell colSpan={6} className="text-center py-6">در حال بارگذاری…</TableCell></TableRow>)}
               {!loading && filtered.length === 0 && (<TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">موردی یافت نشد</TableCell></TableRow>)}
-              {filtered.map((r) => {
+              {paged.map((r) => {
                 const meta = STATUS_LABELS[r.status] || { label: r.status, variant: 'outline' as const };
                 return (
                   <TableRow key={r.id}>
