@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { supabase } from "../_shared/supabase.ts";
 import {
   SUPPORT_ACTIVATION_SELECT,
+  runCustom,
   runStage1,
   runStage2,
   runStage3,
