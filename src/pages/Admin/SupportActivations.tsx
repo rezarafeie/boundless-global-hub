@@ -124,6 +124,11 @@ const SupportActivations: React.FC = () => {
     );
   }, [rows, q, segment]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paged = useMemo(() => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE), [filtered, currentPage]);
+  useEffect(() => { setPage(1); }, [q, segment, status, courseId]);
+
   const stats = useMemo(() => {
     const total = rows.length;
     const opened = rows.filter((r) => !!r.opened_bot_at).length;
