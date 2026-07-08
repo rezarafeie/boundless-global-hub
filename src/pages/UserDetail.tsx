@@ -271,6 +271,11 @@ const UserDetail: React.FC = () => {
             <TabsContent value="financial" className="space-y-4">
               <UserFinancialHistory userId={user.id} />
             </TabsContent>
+
+            <TabsContent value="telegram" className="space-y-4">
+              <UserTelegramDetails userId={user.id} />
+            </TabsContent>
+            
             
             <TabsContent value="role" className="space-y-4">
               <div dir="rtl" className="text-right">
