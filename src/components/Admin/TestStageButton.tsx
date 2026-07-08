@@ -65,7 +65,7 @@ const TestStageButton: React.FC<Props> = ({ stage, courseId, customFollowupId, l
         </Select>
         <Button type="button" size="sm" onClick={run} disabled={loading || !activationId}>
           {loading ? <Loader2 className="h-3 w-3 animate-spin ml-1" /> : <PlayCircle className="h-3 w-3 ml-1" />}
-          ارسال تستی مرحله {stage}
+          {label || `ارسال تستی مرحله ${stage}`}
         </Button>
       </div>
       {result && (
