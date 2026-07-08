@@ -51,6 +51,8 @@ const SupportActivations: React.FC = () => {
   const [segment, setSegment] = useState<string>('all');
   const [logRow, setLogRow] = useState<Row | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
   const { toast } = useToast();
   const navigate = useNavigate();
 
