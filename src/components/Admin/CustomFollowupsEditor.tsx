@@ -15,7 +15,7 @@ interface CustomFollowup {
   course_id: string;
   name: string;
   enabled: boolean;
-  channel: 'bot' | 'email' | 'sms';
+  channel: 'bot' | 'email' | 'sms' | 'business';
   delay_minutes: number;
   max_repeats: number;
   repeat_delay_minutes: number;
@@ -112,9 +112,10 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
             <Switch checked={r.enabled} onCheckedChange={(v) => patch(r.id, { enabled: v })} />
             <Input value={r.name} onChange={(e) => patch(r.id, { name: e.target.value })} className="h-8 w-48" placeholder="نام" />
             <Select value={r.channel} onValueChange={(v) => patch(r.id, { channel: v as any })}>
-              <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="bot">ربات تلگرام</SelectItem>
+                <SelectItem value="business">چت پشتیبانی (Business)</SelectItem>
                 <SelectItem value="email">ایمیل</SelectItem>
                 <SelectItem value="sms">پیامک</SelectItem>
               </SelectContent>
@@ -155,8 +156,8 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
               <Textarea rows={2} value={r.sms_template_url || ''} onChange={(e) => patch(r.id, { sms_template_url: e.target.value })} placeholder="آدرس قالب Kavenegar (اختیاری)" dir="ltr" className="font-mono text-xs" />
             </div>
           )}
-          {r.channel === 'bot' && (
-            <Textarea rows={4} value={r.bot_text || ''} onChange={(e) => patch(r.id, { bot_text: e.target.value })} placeholder="متن پیام تلگرام" dir="rtl" />
+          {(r.channel === 'bot' || r.channel === 'business') && (
+            <Textarea rows={4} value={r.bot_text || ''} onChange={(e) => patch(r.id, { bot_text: e.target.value })} placeholder={r.channel === 'business' ? 'متن پیام از چت پشتیبانی (Telegram Business)' : 'متن پیام تلگرام'} dir="rtl" />
           )}
 
           <p className="text-[10px] text-muted-foreground">
