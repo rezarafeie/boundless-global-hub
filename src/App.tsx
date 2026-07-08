@@ -286,6 +286,7 @@ const App = () => {
                    <Route path="/admin/assignments/:id" element={<AssignmentEditor />} />
                    <Route path="/admin/assignments/:id/submissions" element={<AssignmentSubmissions />} />
                    <Route path="/admin/support-activations" element={<SupportActivations />} />
+                   <Route path="/enroll/admin/telegram-users" element={<TelegramUsers />} />
                     <Route path="/enroll/admin/course/:courseId" element={<CourseManagement />} />
                     <Route path="/enroll/admin/course/:courseId/lessons" element={<CourseContentManagement />} />
                     <Route path="/enroll/reject" element={<EnrollReject />} />
