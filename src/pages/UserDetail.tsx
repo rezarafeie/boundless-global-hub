@@ -16,6 +16,7 @@ import { UserLicenses } from '@/components/Admin/UserProfile/UserLicenses';
 import LearningProgress from '@/components/Admin/UserProfile/LearningProgress';
 import UserCRM from '@/components/Admin/UserProfile/UserCRM';
 import UserFinancialHistory from '@/components/Admin/UserProfile/UserFinancialHistory';
+import UserTelegramDetails from '@/components/Admin/UserProfile/UserTelegramDetails';
 import UserEditModal from '@/components/Admin/UserEditModal';
 
 interface UserData {
