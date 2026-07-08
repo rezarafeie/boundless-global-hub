@@ -7,7 +7,8 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Send, Link2, RefreshCw, Trash2, Bell, BellOff, ShoppingCart, Save } from 'lucide-react';
+import { Send, Link2, RefreshCw, Trash2, Bell, BellOff, ShoppingCart, Save, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -201,6 +202,12 @@ export const TelegramBotManagement = () => {
             <Button onClick={registerWebhook} disabled={registering} size="sm">
               <Link2 className="w-4 h-4 mr-2" />
               {registering ? 'در حال ثبت...' : 'ثبت وب‌هوک ربات'}
+            </Button>
+            <Button asChild size="sm" variant="secondary">
+              <Link to="/enroll/admin/telegram-users">
+                <Users className="w-4 h-4 mr-2" />
+                مدیریت کاربران تلگرام
+              </Link>
             </Button>
           </div>
           {webhookInfo && (
