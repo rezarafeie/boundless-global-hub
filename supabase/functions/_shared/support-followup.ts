@@ -286,5 +286,5 @@ export const SUPPORT_ACTIVATION_SELECT = `
     support_followup_stage2_bot_text,
     support_followup_stage3_business_text
   ),
-  chat_users:user_id (id, name, first_name, email, phone)
+  chat_users:user_id (id, name, first_name, last_name, full_name, email, phone)
 `;
