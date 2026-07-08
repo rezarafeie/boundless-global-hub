@@ -4683,6 +4683,13 @@ export type Database = {
             referencedRelation: "enrollments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "support_activations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       support_agent_assignments: {
