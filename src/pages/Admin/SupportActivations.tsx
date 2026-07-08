@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle2, Copy, RefreshCw, ArrowRight, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import AllFollowupLogs from '@/components/Admin/AllFollowupLogs';
 
 type Row = {
   id: string;
@@ -348,6 +349,10 @@ const SupportActivations: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <AllFollowupLogs />
+
+
 
       <Dialog open={!!logRow} onOpenChange={(o) => !o && setLogRow(null)}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto" dir="rtl">
