@@ -304,6 +304,24 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
     const ok = (res as any)?.ok !== false;
     await logSendCustom(row, cf, "telegram_bot", ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { ...logExtra, chat_id: row.telegram_id, text, response: res });
     results.push({ channel: "bot", ok, chat_id: row.telegram_id, text, response: res });
+  } else if (cf.channel === "business") {
+    if (!row.telegram_id) {
+      await logSendCustom(row, cf, "telegram_business", "failed", "no telegram_id", logExtra);
+      return [{ channel: "business", ok: false, error: "no telegram_id" }];
+    }
+    const text = render(cf.bot_text, vars) || "[TEST] followup";
+    const { data: settings } = await supabase.from("admin_settings").select("telegram_business_connection_id" as any).eq("id", 1).maybeSingle();
+    const bcid = (settings as any)?.telegram_business_connection_id;
+    let res: any;
+    if (bcid) {
+      res = await tgCall("sendMessage", { chat_id: row.telegram_id, text, business_connection_id: bcid });
+    } else {
+      res = await sendMessage(row.telegram_id, text, { parse_mode: "HTML" });
+    }
+    const ok = (res as any)?.ok !== false;
+    const channel = bcid ? "telegram_business" : "telegram_bot_dm";
+    await logSendCustom(row, cf, channel, ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { ...logExtra, chat_id: row.telegram_id, text, business: !!bcid, response: res });
+    results.push({ channel: "business", ok, chat_id: row.telegram_id, text, business: !!bcid, response: res });
   }
   return results;
 }
