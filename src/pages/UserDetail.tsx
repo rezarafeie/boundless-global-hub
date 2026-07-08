@@ -227,6 +227,11 @@ const UserDetail: React.FC = () => {
                 <span className="hidden sm:inline">تاریخچه مالی</span>
                 <span className="sm:hidden">مالی</span>
               </TabsTrigger>
+              <TabsTrigger value="telegram" className="flex items-center gap-1 text-xs md:text-sm">
+                <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
+                <span className="hidden sm:inline">تلگرام</span>
+                <span className="sm:hidden">تلگرام</span>
+              </TabsTrigger>
               <TabsTrigger value="role" className="flex items-center gap-1 text-xs md:text-sm">
                 <Settings className="w-3 h-3 md:w-4 md:h-4" />
                 <span className="hidden sm:inline">مدیریت نقش</span>
