@@ -15,7 +15,7 @@ interface CustomFollowup {
   course_id: string;
   name: string;
   enabled: boolean;
-  channel: 'bot' | 'email' | 'sms';
+  channel: 'bot' | 'email' | 'sms' | 'business';
   delay_minutes: number;
   max_repeats: number;
   repeat_delay_minutes: number;
