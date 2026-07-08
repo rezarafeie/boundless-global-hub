@@ -264,6 +264,88 @@ export async function runStage3(row: Row, opts: { isTest?: boolean } = {}) {
   return [{ ok, chat_id: row.telegram_id, text, business: !!bcid, response: res }];
 }
 
+// Custom (time-based, any channel) followup — independent of stage.
+export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = {}) {
+  const vars = buildVars(row);
+  const user = row.chat_users ?? {};
+  const results: any[] = [];
+  const logExtra = { custom_followup_id: cf.id, name: cf.name, is_test: !!opts.isTest };
+
+  if (cf.channel === "email") {
+    const email = user.email;
+    if (!email) {
+      await logSendCustom(row, cf, "email", "skipped", "no email", logExtra);
+      return [{ channel: "email", skipped: true, reason: "no email" }];
+    }
+    const subject = render(cf.email_subject, vars) || "[TEST] followup";
+    const bodyText = render(cf.email_body, vars) || "[TEST] body";
+    const html = `<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;line-height:1.9">${bodyText.replace(/\n/g, "<br/>")}</div>`;
+    const r = await sendEmail(email, subject, html);
+    await logSendCustom(row, cf, "email", r.ok ? "sent" : "failed", r.error, { ...logExtra, to: email, subject });
+    results.push({ channel: "email", to: email, subject, ...r });
+  } else if (cf.channel === "sms") {
+    const phone = user.phone;
+    if (!phone) {
+      await logSendCustom(row, cf, "sms", "skipped", "no phone", logExtra);
+      return [{ channel: "sms", skipped: true, reason: "no phone" }];
+    }
+    const smsText = render(cf.sms_text, vars);
+    const r = await sendSms(phone, smsText, vars, cf.sms_template_url);
+    await logSendCustom(row, cf, "sms", r.ok ? "sent" : "failed", r.error, { ...logExtra, to: phone, resolved_url: r.url, response: r.body });
+    results.push({ channel: "sms", to: phone, resolved_url: r.url, ...r });
+  } else if (cf.channel === "bot") {
+    if (!row.telegram_id) {
+      await logSendCustom(row, cf, "telegram_bot", "failed", "no telegram_id", logExtra);
+      return [{ channel: "bot", ok: false, error: "no telegram_id" }];
+    }
+    const text = render(cf.bot_text, vars) || "[TEST] followup";
+    const kb = vars.activation_link ? { keyboard: [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]] } : {};
+    const res = await sendMessage(row.telegram_id, text, { ...(kb as any), parse_mode: "HTML" });
+    const ok = (res as any)?.ok !== false;
+    await logSendCustom(row, cf, "telegram_bot", ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { ...logExtra, chat_id: row.telegram_id, text, response: res });
+    results.push({ channel: "bot", ok, chat_id: row.telegram_id, text, response: res });
+  }
+  return results;
+}
+
+async function logSendCustom(row: Row, cf: any, channel: string, status: string, error?: string, payload?: any) {
+  await supabase.from("support_activation_followup_log").insert({
+    support_activation_id: row.id,
+    course_id: row.course_id,
+    user_id: row.user_id,
+    stage: 0,
+    channel,
+    status,
+    error_message: error ?? null,
+    payload: payload ?? null,
+    custom_followup_id: cf.id,
+  });
+}
+
+export async function bumpCustomCounter(row: Row, cf: any) {
+  const counts = (row.custom_followup_sent_counts ?? {}) as Record<string, number>;
+  counts[cf.id] = (counts[cf.id] ?? 0) + 1;
+  await supabase.from("support_activations").update({
+    custom_followup_sent_counts: counts,
+    last_followup_sent_at: new Date().toISOString(),
+  }).eq("id", row.id);
+}
+
+// Fetch custom followups for a course (cached in-memory per invocation)
+export async function fetchCustomFollowups(courseIds: string[]) {
+  if (!courseIds.length) return {} as Record<string, any[]>;
+  const { data } = await supabase
+    .from("support_activation_custom_followups")
+    .select("*")
+    .in("course_id", courseIds)
+    .eq("enabled", true);
+  const out: Record<string, any[]> = {};
+  for (const r of (data ?? []) as any[]) {
+    (out[r.course_id] ||= []).push(r);
+  }
+  return out;
+}
+
 export const SUPPORT_ACTIVATION_SELECT = `
   *,
   courses:course_id (
