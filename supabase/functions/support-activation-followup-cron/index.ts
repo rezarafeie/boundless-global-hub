@@ -5,7 +5,6 @@ import {
   SUPPORT_ACTIVATION_SELECT,
   bumpCounter,
   bumpCustomCounter,
-  fetchCustomFollowups,
   minutesSince,
   runCustom,
   runStage1,
