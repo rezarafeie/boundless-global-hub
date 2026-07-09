@@ -22,17 +22,31 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const { data: customRows, error: customErr } = await supabase
+      .from("support_activation_custom_followups")
+      .select("*")
+      .eq("enabled", true);
+    if (customErr) throw customErr;
+
+    const customByCourse: Record<string, any[]> = {};
+    const customCourseIds = Array.from(new Set(((customRows as any[]) ?? []).map((r) => r.course_id).filter(Boolean)));
+    for (const cf of ((customRows as any[]) ?? [])) {
+      (customByCourse[cf.course_id] ||= []).push(cf);
+    }
+
+    const shouldIncludeCustomCourses = customCourseIds.length > 0;
     const { data: rows, error } = await supabase
       .from("support_activations")
       .select(SUPPORT_ACTIVATION_SELECT)
-      .neq("status", "activated")
-      .order("created_at", { ascending: true })
-      .limit(200);
+      .or(
+        shouldIncludeCustomCourses
+          ? `status.neq.activated,course_id.in.(${customCourseIds.join(",")})`
+          : "status.neq.activated",
+      )
+      .order("created_at", { ascending: false })
+      .limit(500);
 
     if (error) throw error;
-
-    const courseIds = Array.from(new Set(((rows as any[]) ?? []).map((r) => r.course_id).filter(Boolean)));
-    const customByCourse = await fetchCustomFollowups(courseIds);
 
 
     const summary: any[] = [];
@@ -72,7 +86,7 @@ serve(async (req) => {
       }
 
       // Run stage followup if eligible (do NOT skip custom followups when stage caps out)
-      if (stage && stageEnabled && sentCount < maxRepeats) {
+      if (row.status !== "activated" && stage && stageEnabled && sentCount < maxRepeats) {
         const required = firstDelay + sentCount * repeatDelay;
         if (elapsedMin >= required) {
           try {
@@ -101,7 +115,8 @@ serve(async (req) => {
         if (purchaseElapsed < required) continue;
         try {
           const result = await runCustom(row, cf);
-          await bumpCustomCounter(row, cf);
+          const delivered = result.some((item: any) => item?.ok === true);
+          if (delivered) await bumpCustomCounter(row, cf);
           summary.push({ id: row.id, custom_followup_id: cf.id, channel: cf.channel, result });
         } catch (e) {
           console.error("custom followup failed", row.id, cf.id, e);
