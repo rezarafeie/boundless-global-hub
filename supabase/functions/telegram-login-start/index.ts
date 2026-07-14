@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       .eq('id', 1)
       .maybeSingle();
     const botUsername = ((s as any)?.telegram_bot_username ?? 'rafiei_bot').replace(/^@/, '');
-    const bot_url = `https://t.me/${botUsername}?start=login_${token}`;
+    const bot_url = `https://telegram.me/${botUsername}?start=login_${token}`;
 
     return new Response(JSON.stringify({ token, bot_url, bot_username: botUsername }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
