@@ -3060,7 +3060,7 @@ async function handleUpdate(update: any) {
         .eq('id', act.user_id);
     } catch (e) { console.warn('auto-login on sact_ failed', e); }
 
-    const supportUrl = act.support_prefilled_link || `https://t.me/rafieiacademy`;
+    const supportUrl = act.support_prefilled_link || `https://telegram.me/rafieiacademy`;
     await tgCall('sendMessage', {
       chat_id,
       text: welcome,
