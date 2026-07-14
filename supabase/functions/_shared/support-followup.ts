@@ -165,7 +165,9 @@ export function buildVars(row: Row): Record<string, string> {
   const fullName = user.name ?? user.full_name ?? row.telegram_first_name ?? "";
   const firstName = user.first_name ?? (fullName ? String(fullName).split(" ")[0] : "");
   const lastName = user.last_name ?? (fullName ? String(fullName).split(" ").slice(1).join(" ") : "");
-  const activationLink = row.support_prefilled_link || row.bot_deep_link || "";
+  const botDeepLink = row.bot_deep_link ?? "";
+  const supportPrefilledLink = row.support_prefilled_link ?? "";
+  const activationLink = botDeepLink || supportPrefilledLink;
   return {
     // user
     name: fullName,
@@ -192,7 +194,8 @@ export function buildVars(row: Row): Record<string, string> {
     activation_link: activationLink,
     activationlink: activationLink,
     support_link: activationLink,
-    bot_deep_link: row.bot_deep_link ?? "",
+    bot_deep_link: botDeepLink,
+    support_prefilled_link: supportPrefilledLink,
   };
 }
 
