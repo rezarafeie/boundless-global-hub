@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
       ].join('\n');
 
       const raw = applyPlaceholders(customTemplate || defaultTemplate);
-      supportLink = `https://t.me/rafieiacademy?text=${encodeURIComponent(raw)}`;
+      supportLink = `https://telegram.me/rafieiacademy?text=${encodeURIComponent(raw)}`;
     }
 
 
