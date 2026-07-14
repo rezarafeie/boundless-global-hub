@@ -168,7 +168,7 @@ const SupportActivations: React.FC = () => {
     const newToken = crypto.randomUUID().replace(/-/g, '');
     const { data: settings } = await supabase.from('admin_settings').select('telegram_bot_username' as any).eq('id', 1).maybeSingle();
     const bot = ((settings as any)?.telegram_bot_username || 'rafiei_bot').replace(/^@/, '');
-    const bot_deep_link = `https://t.me/${bot}?start=sact_${newToken}`;
+    const bot_deep_link = `https://telegram.me/${bot}?start=sact_${newToken}`;
     const { error } = await supabase.from('support_activations' as any).update({
       activation_token: newToken,
       bot_deep_link,

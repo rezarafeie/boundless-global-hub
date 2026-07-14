@@ -122,7 +122,7 @@ export function TelegramCoachWizard({
   }, [step, linked, supportLink]);
 
   const telegramUrl = useMemo(
-    () => `https://t.me/${botUsername}?start=enroll_${enrollmentId}`,
+    () => `https://telegram.me/${botUsername}?start=enroll_${enrollmentId}`,
     [botUsername, enrollmentId],
   );
 

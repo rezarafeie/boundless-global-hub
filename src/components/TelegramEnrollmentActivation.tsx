@@ -220,7 +220,7 @@ export function TelegramEnrollmentActivation({
   // ==== Legacy direct-telegram flow (unchanged) ====
   if (!enabled || !enrollmentId) return null;
 
-  const url = `https://t.me/${bot}?start=enroll_${enrollmentId}`;
+  const url = `https://telegram.me/${bot}?start=enroll_${enrollmentId}`;
 
   if (linked && badgeWhenLinked) {
     return (
