@@ -27,8 +27,10 @@ const SocialPlanner: React.FC = () => {
 
   const [form, setForm] = useState({
     account_id: '', post_type: 'post', caption: '',
-    media_url: '', scheduled_at: '',
+    media_urls: [] as string[], scheduled_at: '',
   });
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const load = async () => {
     setLoading(true);
