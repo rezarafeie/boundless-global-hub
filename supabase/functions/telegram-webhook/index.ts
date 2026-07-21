@@ -3214,6 +3214,24 @@ async function handleUpdate(update: any) {
           [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]]);
         return;
       }
+
+      if (action === 'report') {
+        const sub = rest[0];
+        if (sub === 'start') {
+          const role = (rest[1] === 'support' ? 'support' : 'sales') as ReportRole;
+          await startReportFlow(chat_id, user, role, message_id);
+          return;
+        }
+        if (sub === 'sum') {
+          if (!['admin', 'sales_manager'].includes(user.role ?? '')) {
+            await answerCallback(cq.id, '🚫 دسترسی ندارید');
+            return;
+          }
+          const period = (rest[1] === 'week' ? 'week' : rest[1] === 'month' ? 'month' : 'today') as 'today' | 'week' | 'month';
+          await renderAdminSummary(chat_id, message_id, period);
+          return;
+        }
+      }
     } catch (e: any) {
       console.error('callback error:', e, 'data:', data);
       try {
