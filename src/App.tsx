@@ -288,6 +288,9 @@ const App = () => {
                       <Route index element={<SocialDashboard />} />
                       <Route path="inbox" element={<SocialInbox />} />
                       <Route path="accounts" element={<SocialAccounts />} />
+                      <Route path="comments" element={<SocialComments />} />
+                      <Route path="leads" element={<SocialLeads />} />
+                      <Route path="posts" element={<SocialPosts />} />
                       <Route path="settings" element={<SocialSettings />} />
                     </Route>
                     <Route path="/enroll/admin/tests" element={<EnrollAdminTests />} />
