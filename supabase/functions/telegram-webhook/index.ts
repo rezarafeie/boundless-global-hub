@@ -3527,14 +3527,15 @@ async function uploadSocialMediaFile(user_id: number, file_id: string, kind: 'ph
 }
 
 async function listSocialAccountsForUser(user: BotUser): Promise<Array<{ id: string; label: string }>> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('social_accounts')
-    .select('id, username, platform, novinhub_account_id')
+    .select('id, username, provider, novinhub_account_id')
     .eq('is_active', true)
     .limit(50);
+  if (error) console.error('listSocialAccountsForUser error:', error);
   return (data ?? []).map((a: any) => ({
     id: a.id,
-    label: `${a.platform === 'instagram' ? '📷' : '🌐'} @${a.username ?? a.novinhub_account_id ?? a.id.slice(0, 6)}`,
+    label: `${a.provider === 'instagram' ? '📷' : '🌐'} @${a.username ?? a.novinhub_account_id ?? a.id.slice(0, 6)}`,
   }));
 }
 
