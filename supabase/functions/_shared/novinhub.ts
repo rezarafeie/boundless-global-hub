@@ -92,6 +92,32 @@ const EXT_MIME: Record<string, string> = {
   mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', m4v: 'video/mp4',
 };
 
+const MIME_EXT: Record<string, string> = {
+  'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp',
+  'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm',
+};
+
+function sniffMime(bytes: Uint8Array): string | null {
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
+  if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png';
+  if (bytes.length >= 6) {
+    const head = new TextDecoder().decode(bytes.slice(0, 6));
+    if (head === 'GIF87a' || head === 'GIF89a') return 'image/gif';
+  }
+  if (bytes.length >= 12) {
+    const riff = new TextDecoder().decode(bytes.slice(0, 4));
+    const webp = new TextDecoder().decode(bytes.slice(8, 12));
+    if (riff === 'RIFF' && webp === 'WEBP') return 'image/webp';
+    const ftyp = new TextDecoder().decode(bytes.slice(4, 8));
+    if (ftyp === 'ftyp') return 'video/mp4';
+  }
+  if (bytes.length >= 4) {
+    const ebml = [0x1a, 0x45, 0xdf, 0xa3];
+    if (ebml.every((b, i) => bytes[i] === b)) return 'video/webm';
+  }
+  return null;
+}
+
 /** Download a URL then upload to NovinHub /file, return the new file id. */
 export async function nhUploadFromUrl(url: string): Promise<{ id: number | string; mime: string; }> {
   const r = await fetch(url);
@@ -100,14 +126,17 @@ export async function nhUploadFromUrl(url: string): Promise<{ id: number | strin
   const extRaw = clean.substring(clean.lastIndexOf('.') + 1).toLowerCase();
   const ext = EXT_MIME[extRaw] ? extRaw : '';
   const hdrMime = r.headers.get('content-type') || '';
-  let mime = hdrMime && hdrMime !== 'application/octet-stream' ? hdrMime : (ext ? EXT_MIME[ext] : '');
-  if (!mime) mime = 'image/jpeg';
-  const blob = await r.blob();
+  const bytes = new Uint8Array(await r.arrayBuffer());
+  let mime = hdrMime && hdrMime !== 'application/octet-stream' ? hdrMime.split(';')[0] : (ext ? EXT_MIME[ext] : '');
+  if (!mime || !MIME_EXT[mime]) mime = sniffMime(bytes) || (ext ? EXT_MIME[ext] : '') || 'image/jpeg';
+  const finalExt = MIME_EXT[mime] || ext || 'jpg';
   const baseName = clean.substring(clean.lastIndexOf('/') + 1) || `upload-${Date.now()}`;
-  const finalName = /\.[a-z0-9]+$/i.test(baseName)
+  const hasAllowedExt = !!ext && /\.[a-z0-9]+$/i.test(baseName);
+  const stem = baseName.replace(/\.[a-z0-9]+$/i, '').replace(/[^a-z0-9_-]/gi, '-') || `upload-${Date.now()}`;
+  const finalName = hasAllowedExt
     ? baseName
-    : `${baseName}.${(Object.entries(EXT_MIME).find(([, m]) => m === mime)?.[0]) || 'jpg'}`;
-  const file = await nhUploadFile(new Blob([blob], { type: mime }), finalName);
+    : `${stem}.${finalExt}`;
+  const file = await nhUploadFile(new Blob([bytes], { type: mime }), finalName);
   const id = file?.id ?? file?.data?.id;
   if (!id) throw new Error(`NovinHub upload: missing file id in response ${JSON.stringify(file).slice(0, 200)}`);
   return { id, mime };
@@ -188,11 +217,10 @@ export const novinhub = {
       account_ids: [payload.account_id],
       media_ids,
       is_scheduled: payload.is_scheduled ? 1 : 0,
+      schedule_date: payload.schedule_date || Math.floor(Date.now() / 1000),
+      is_draft: 0,
       ...extra,
     };
-    if (payload.is_scheduled && payload.schedule_date) {
-      body.schedule_date = payload.schedule_date;
-    }
 
     return nhForm('/post', body);
   },

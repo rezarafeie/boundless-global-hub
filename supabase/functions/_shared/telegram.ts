@@ -115,14 +115,47 @@ export async function getFileUrl(file_id: string): Promise<string | null> {
   return `https://api.telegram.org/file/bot${BOT_TOKEN}/${path}`;
 }
 
-export async function downloadFile(file_id: string): Promise<{ bytes: Uint8Array; mime: string } | null> {
-  const url = await getFileUrl(file_id);
-  if (!url) return null;
+const EXT_MIME: Record<string, string> = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
+  mp4: 'video/mp4', m4v: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm',
+};
+
+function sniffMime(bytes: Uint8Array): string | null {
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
+  if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png';
+  if (bytes.length >= 6) {
+    const head = new TextDecoder().decode(bytes.slice(0, 6));
+    if (head === 'GIF87a' || head === 'GIF89a') return 'image/gif';
+  }
+  if (bytes.length >= 12) {
+    const riff = new TextDecoder().decode(bytes.slice(0, 4));
+    const webp = new TextDecoder().decode(bytes.slice(8, 12));
+    if (riff === 'RIFF' && webp === 'WEBP') return 'image/webp';
+    const ftyp = new TextDecoder().decode(bytes.slice(4, 8));
+    if (ftyp === 'ftyp') return 'video/mp4';
+  }
+  if (bytes.length >= 4) {
+    const ebml = [0x1a, 0x45, 0xdf, 0xa3];
+    if (ebml.every((b, i) => bytes[i] === b)) return 'video/webm';
+  }
+  return null;
+}
+
+export async function downloadFile(file_id: string): Promise<{ bytes: Uint8Array; mime: string; filename?: string; ext?: string } | null> {
+  const res = await tgCall('getFile', { file_id });
+  const path = res?.result?.file_path;
+  if (!path) return null;
+  const url = `https://api.telegram.org/file/bot${BOT_TOKEN}/${path}`;
   const r = await fetch(url);
   if (!r.ok) return null;
-  const mime = r.headers.get('content-type') ?? 'application/octet-stream';
   const bytes = new Uint8Array(await r.arrayBuffer());
-  return { bytes, mime };
+  const filename = path.split('/').pop() || undefined;
+  const ext = filename?.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || undefined;
+  const headerMime = r.headers.get('content-type') ?? '';
+  const mime = headerMime && headerMime !== 'application/octet-stream'
+    ? headerMime.split(';')[0]
+    : (ext && EXT_MIME[ext]) || sniffMime(bytes) || 'application/octet-stream';
+  return { bytes, mime, filename, ext };
 }
 
 export function escapeHtml(s: string | null | undefined): string {
