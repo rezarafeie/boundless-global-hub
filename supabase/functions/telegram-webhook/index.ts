@@ -164,6 +164,7 @@ function welcomeText(user: BotUser): string {
     admin: 'مدیر کل',
     sales_manager: 'مدیر فروش',
     sales_agent: 'کارشناس فروش',
+    social_admin: 'مدیر شبکه‌های اجتماعی',
     student: 'دانشجو',
   };
   return [
@@ -176,7 +177,8 @@ function welcomeText(user: BotUser): string {
 
 function roleLabel(role: string | null | undefined): string {
   const roleNames: Record<string, string> = {
-    admin: 'مدیر کل', sales_manager: 'مدیر فروش', sales_agent: 'کارشناس فروش', student: 'دانشجو',
+    admin: 'مدیر کل', sales_manager: 'مدیر فروش', sales_agent: 'کارشناس فروش',
+    social_admin: 'مدیر شبکه‌های اجتماعی', student: 'دانشجو',
   };
   return roleNames[role ?? 'student'] ?? 'کاربر';
 }
