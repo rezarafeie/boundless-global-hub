@@ -107,6 +107,16 @@ const SocialAccounts: React.FC = () => {
                 <div className="text-xs text-muted-foreground">
                   آخرین همگام‌سازی: {a.last_sync_at ? new Date(a.last_sync_at).toLocaleString('fa-IR') : '—'}
                 </div>
+                <div className="flex items-center justify-between p-2 rounded-md border bg-muted/40">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Bot className="w-4 h-4" />
+                    پاسخ خودکار AI
+                  </div>
+                  <Switch
+                    checked={!!a.auto_reply_enabled}
+                    onCheckedChange={(v) => toggleAutoReply(a.id, v)}
+                  />
+                </div>
                 <Button size="sm" variant="outline" className="w-full" onClick={() => syncInbox(a.id)} disabled={syncing}>
                   <RefreshCw className={`w-3 h-3 ml-2 ${syncing ? 'animate-spin' : ''}`} />
                   به‌روزرسانی پیام‌های این اکانت
