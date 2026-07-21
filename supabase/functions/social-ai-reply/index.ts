@@ -30,17 +30,23 @@ Deno.serve(async (req) => {
 
     const { data: settings } = await supabase.from('social_settings').select('*').eq('id', 1).single();
 
-    const { data: msgs } = await supabase
-      .from('social_messages')
-      .select('direction, sender_type, text, sent_at')
-      .eq('conversation_id', conversation_id)
-      .order('sent_at', { ascending: true })
-      .limit(30);
+    // Fetch recent messages live from NovinHub (not stored locally).
+    const { novinhub } = await import('../_shared/novinhub.ts');
+    const ownId = (conv as any).social_accounts?.meta?.social_user_id;
+    let history: { role: string; content: string }[] = [];
+    try {
+      const res: any = await novinhub.listMessages(conv.provider_thread_id, { limit: 30 });
+      const rows = res?.data || (Array.isArray(res) ? res : []);
+      history = rows
+        .map((m: any) => {
+          const isOut = ownId != null && String(m.social_user_id) === String(ownId);
+          return { role: isOut ? 'assistant' : 'user', content: m.text || '' };
+        })
+        .filter((m: any) => m.content);
+    } catch (e) {
+      console.warn('history fetch failed:', (e as Error).message);
+    }
 
-    const history = (msgs || []).map(m => ({
-      role: m.direction === 'out' ? 'assistant' : 'user',
-      content: m.text || '',
-    })).filter(m => m.content);
 
     const toneMap: Record<string, string> = {
       friendly: 'صمیمی و دوستانه',

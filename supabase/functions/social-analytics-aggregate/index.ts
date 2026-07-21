@@ -32,19 +32,11 @@ Deno.serve(async (req) => {
         const dayStr = day.toISOString().slice(0, 10);
         const nextDay = new Date(day); nextDay.setUTCDate(nextDay.getUTCDate() + 1);
 
-        const [{ count: dmCount }, { count: replyCount }, { count: aiCount }, { count: commentCount }, { count: leadCount }, { count: publishedCount }] = await Promise.all([
-          supabase.from('social_messages').select('social_conversations!inner(account_id)', { count: 'exact', head: true })
-            .eq('social_conversations.account_id', acc.id).eq('direction', 'in')
-            .gte('sent_at', day.toISOString()).lt('sent_at', nextDay.toISOString()),
-          supabase.from('social_messages').select('social_conversations!inner(account_id)', { count: 'exact', head: true })
-            .eq('social_conversations.account_id', acc.id).eq('direction', 'out')
-            .gte('sent_at', day.toISOString()).lt('sent_at', nextDay.toISOString()),
-          supabase.from('social_messages').select('social_conversations!inner(account_id)', { count: 'exact', head: true })
-            .eq('social_conversations.account_id', acc.id).eq('sender_type', 'ai')
-            .gte('sent_at', day.toISOString()).lt('sent_at', nextDay.toISOString()),
-          supabase.from('social_comments').select('*', { count: 'exact', head: true })
+        // DM/comment counts are no longer stored locally. Use lightweight conversation activity as a proxy.
+        const [{ count: convChangedCount }, { count: leadCount }, { count: publishedCount }] = await Promise.all([
+          supabase.from('social_conversations').select('id', { count: 'exact', head: true })
             .eq('account_id', acc.id)
-            .gte('created_at', day.toISOString()).lt('created_at', nextDay.toISOString()),
+            .gte('last_message_at', day.toISOString()).lt('last_message_at', nextDay.toISOString()),
           supabase.from('social_leads').select('*', { count: 'exact', head: true })
             .eq('account_id', acc.id)
             .gte('created_at', day.toISOString()).lt('created_at', nextDay.toISOString()),
@@ -52,6 +44,11 @@ Deno.serve(async (req) => {
             .eq('account_id', acc.id).eq('status', 'published')
             .gte('published_at', day.toISOString()).lt('published_at', nextDay.toISOString()),
         ]);
+        const dmCount = convChangedCount || 0;
+        const replyCount = 0;
+        const aiCount = 0;
+        const commentCount = 0;
+
 
         await supabase.from('social_analytics_daily').upsert({
           account_id: acc.id,

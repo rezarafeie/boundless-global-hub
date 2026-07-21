@@ -1,3 +1,4 @@
+// Send a DM via NovinHub. Does NOT persist to a message store — the UI re-fetches live.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import { novinhub } from '../_shared/novinhub.ts';
 
@@ -11,7 +12,7 @@ Deno.serve(async (req) => {
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
     const { conversation_id, text, sender_type = 'human' } = await req.json();
     if (!conversation_id || !text) {
@@ -22,37 +23,12 @@ Deno.serve(async (req) => {
 
     const { data: conv, error: convErr } = await supabase
       .from('social_conversations')
-      .select('id, provider_thread_id, account_id')
+      .select('id, provider_thread_id')
       .eq('id', conversation_id)
       .single();
     if (convErr || !conv) throw convErr || new Error('Conversation not found');
 
-    let providerMessageId: string | null = null;
-    try {
-      const res = await novinhub.reply(conv.provider_thread_id, text);
-      providerMessageId = String(res?.id ?? res?.data?.id ?? '');
-    } catch (e: any) {
-      console.error('NovinHub reply failed:', e.message);
-      // still record the outbound intent, but mark meta
-      await supabase.from('social_messages').insert({
-        conversation_id: conv.id,
-        direction: 'out',
-        sender_type,
-        text,
-        meta: { error: e.message },
-      });
-      throw e;
-    }
-
-    const { data: inserted, error: insErr } = await supabase.from('social_messages').insert({
-      conversation_id: conv.id,
-      provider_message_id: providerMessageId || null,
-      direction: 'out',
-      sender_type,
-      text,
-      sent_at: new Date().toISOString(),
-    }).select().single();
-    if (insErr) throw insErr;
+    await novinhub.reply(conv.provider_thread_id, text);
 
     await supabase.from('social_conversations').update({
       last_message_at: new Date().toISOString(),
@@ -63,11 +39,11 @@ Deno.serve(async (req) => {
       updated_at: new Date().toISOString(),
     }).eq('id', conv.id);
 
-    return new Response(JSON.stringify({ ok: true, message: inserted }), {
+    return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e: any) {
-    console.error('send error:', e);
+    console.error('send:', e);
     return new Response(JSON.stringify({ error: e.message }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

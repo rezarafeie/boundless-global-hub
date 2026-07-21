@@ -4617,74 +4617,6 @@ export type Database = {
           },
         ]
       }
-      social_comments: {
-        Row: {
-          account_id: string
-          author_name: string | null
-          author_pic_url: string | null
-          author_username: string | null
-          created_at: string
-          id: string
-          is_reply: boolean
-          meta: Json
-          parent_comment_id: string | null
-          provider_comment_id: string
-          provider_post_id: string | null
-          replied_at: string | null
-          reply_text: string | null
-          sent_at: string | null
-          status: string
-          text: string | null
-          updated_at: string
-        }
-        Insert: {
-          account_id: string
-          author_name?: string | null
-          author_pic_url?: string | null
-          author_username?: string | null
-          created_at?: string
-          id?: string
-          is_reply?: boolean
-          meta?: Json
-          parent_comment_id?: string | null
-          provider_comment_id: string
-          provider_post_id?: string | null
-          replied_at?: string | null
-          reply_text?: string | null
-          sent_at?: string | null
-          status?: string
-          text?: string | null
-          updated_at?: string
-        }
-        Update: {
-          account_id?: string
-          author_name?: string | null
-          author_pic_url?: string | null
-          author_username?: string | null
-          created_at?: string
-          id?: string
-          is_reply?: boolean
-          meta?: Json
-          parent_comment_id?: string | null
-          provider_comment_id?: string
-          provider_post_id?: string | null
-          replied_at?: string | null
-          reply_text?: string | null
-          sent_at?: string | null
-          status?: string
-          text?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "social_comments_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "social_accounts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       social_conversation_notes: {
         Row: {
           author_name: string | null
@@ -4921,73 +4853,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "social_leads_comment_id_fkey"
-            columns: ["comment_id"]
-            isOneToOne: false
-            referencedRelation: "social_comments"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "social_leads_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "social_conversations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      social_messages: {
-        Row: {
-          attachments: Json
-          conversation_id: string
-          created_at: string
-          direction: string
-          id: string
-          is_read: boolean
-          media_type: string | null
-          media_url: string | null
-          meta: Json
-          provider_message_id: string | null
-          sender_type: string
-          sender_user_id: number | null
-          sent_at: string
-          text: string | null
-        }
-        Insert: {
-          attachments?: Json
-          conversation_id: string
-          created_at?: string
-          direction: string
-          id?: string
-          is_read?: boolean
-          media_type?: string | null
-          media_url?: string | null
-          meta?: Json
-          provider_message_id?: string | null
-          sender_type?: string
-          sender_user_id?: number | null
-          sent_at?: string
-          text?: string | null
-        }
-        Update: {
-          attachments?: Json
-          conversation_id?: string
-          created_at?: string
-          direction?: string
-          id?: string
-          is_read?: boolean
-          media_type?: string | null
-          media_url?: string | null
-          meta?: Json
-          provider_message_id?: string | null
-          sender_type?: string
-          sender_user_id?: number | null
-          sent_at?: string
-          text?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "social_messages_conversation_id_fkey"
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "social_conversations"
@@ -7574,6 +7440,7 @@ export type Database = {
         Args: { session_token: string }
         Returns: undefined
       }
+      social_cleanup_stale_data: { Args: never; Returns: undefined }
       text_to_bytea: { Args: { data: string }; Returns: string }
       update_user_presence: {
         Args: { p_is_online?: boolean; p_user_id: number }

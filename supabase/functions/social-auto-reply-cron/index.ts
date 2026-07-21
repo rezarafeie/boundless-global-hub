@@ -1,12 +1,14 @@
+// AI auto-reply cron. Fetches the last inbound DM live from NovinHub — no message store.
+// Only checks conversations updated in the last 15 minutes to minimize cost.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
-import { nhFetch } from '../_shared/novinhub.ts';
+import { nhFetch, novinhub } from '../_shared/novinhub.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const DEFAULT_PROMPT = `شما یک دستیار پشتیبانی برای «آکادمی رفیعی» هستید. به فارسی، مؤدبانه و کوتاه پاسخ دهید. اگر سوال درباره خرید دوره، قیمت یا مشاوره است، کاربر را به لینک academy.rafiei.co راهنمایی کنید. از اشتراک اطلاعات نامطمئن خودداری کنید.`;
+const DEFAULT_PROMPT = `شما یک دستیار پشتیبانی برای «آکادمی رفیعی» هستید. به فارسی، مؤدبانه و کوتاه پاسخ دهید. اگر سوال درباره خرید دوره، قیمت یا مشاوره است، کاربر را به لینک academy.rafiei.co راهنمایی کنید.`;
 
 async function callAI(system: string, user: string): Promise<string> {
   const key = Deno.env.get('LOVABLE_API_KEY');
@@ -32,51 +34,52 @@ Deno.serve(async (req) => {
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
 
     const { data: accounts } = await supabase
       .from('social_accounts').select('*').eq('is_active', true).eq('auto_reply_enabled', true);
 
+    const cutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString();
     let replied = 0;
     const results: any[] = [];
 
     for (const acc of accounts || []) {
       const { data: convos } = await supabase
-        .from('social_conversations').select('*').eq('account_id', acc.id)
-        .order('last_message_at', { ascending: false }).limit(20);
+        .from('social_conversations').select('*')
+        .eq('account_id', acc.id)
+        .gt('last_message_at', cutoff)
+        .eq('last_message_direction', 'in')
+        .order('last_message_at', { ascending: false })
+        .limit(20);
+
+      const ownId = (acc as any).meta?.social_user_id;
 
       for (const c of convos || []) {
-        const { data: msgs } = await supabase
-          .from('social_messages').select('*').eq('conversation_id', c.id)
-          .order('sent_at', { ascending: false }).limit(1);
-        const last = msgs?.[0];
-        if (!last || last.direction !== 'in') continue;
-        // Don't reply twice within 10 min
         if (c.last_auto_reply_at && (Date.now() - new Date(c.last_auto_reply_at).getTime()) < 10 * 60 * 1000) continue;
 
         try {
-          const reply = await callAI(acc.ai_system_prompt || DEFAULT_PROMPT, last.text || '');
+          // Fetch just the latest message live.
+          const msgRes: any = await novinhub.listMessages(c.provider_thread_id, { limit: 1 }).catch(() => null);
+          const rows = msgRes?.data || (Array.isArray(msgRes) ? msgRes : []);
+          const last = rows[rows.length - 1] || rows[0];
+          if (!last) continue;
+          const isOut = ownId != null && String(last.social_user_id) === String(ownId);
+          if (isOut || !last.text) continue;
+
+          const reply = await callAI(acc.ai_system_prompt || DEFAULT_PROMPT, String(last.text));
           if (!reply) continue;
 
           await nhFetch(`/conversation/${c.provider_thread_id}/reply`, {
             method: 'POST', body: JSON.stringify({ text: reply }),
           });
 
-          await supabase.from('social_messages').insert({
-            conversation_id: c.id,
-            provider_message_id: `auto_${Date.now()}`,
-            direction: 'out',
-            sender_type: 'ai',
-            text: reply,
-            sent_at: new Date().toISOString(),
-            meta: { auto: true },
-          });
-
           await supabase.from('social_conversations').update({
             last_auto_reply_at: new Date().toISOString(),
             last_message_at: new Date().toISOString(),
             last_message_preview: reply.slice(0, 200),
+            last_message_direction: 'out',
+            last_responder: 'ai',
             needs_reply: false,
           }).eq('id', c.id);
 
@@ -91,8 +94,8 @@ Deno.serve(async (req) => {
 
           replied++;
           results.push({ conversation: c.id, ok: true });
-        } catch (e) {
-          results.push({ conversation: c.id, error: String((e as Error).message) });
+        } catch (e: any) {
+          results.push({ conversation: c.id, error: e.message });
         }
       }
     }
@@ -100,8 +103,8 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: true, replied, results }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (e) {
-    return new Response(JSON.stringify({ error: String((e as Error).message) }), {
+  } catch (e: any) {
+    return new Response(JSON.stringify({ error: e.message }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
