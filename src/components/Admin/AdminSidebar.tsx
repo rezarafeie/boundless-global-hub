@@ -61,6 +61,7 @@ const menuItems = [
   { id: 'users', label: 'کاربران', icon: Users },
   { id: 'analytics', label: 'آنالیتیکس', icon: TrendingUp },
   { id: 'crm', label: 'CRM', icon: MessageSquare },
+  { id: 'social', label: 'Social CRM', icon: Instagram },
   { id: 'forms', label: 'فرم‌ها', icon: FileText },
   { id: 'settings', label: 'تنظیمات', icon: Settings },
 ];
