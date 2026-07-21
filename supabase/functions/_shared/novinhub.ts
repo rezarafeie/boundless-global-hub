@@ -187,11 +187,11 @@ export const novinhub = {
       type: nhType,
       account_ids: [payload.account_id],
       media_ids,
+      is_scheduled: payload.is_scheduled ? 1 : 0,
       ...extra,
     };
-    if (payload.is_scheduled) {
-      body.is_scheduled = 1;
-      if (payload.schedule_date) body.schedule_date = payload.schedule_date;
+    if (payload.is_scheduled && payload.schedule_date) {
+      body.schedule_date = payload.schedule_date;
     }
 
     return nhForm('/post', body);
