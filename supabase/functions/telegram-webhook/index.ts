@@ -903,13 +903,61 @@ async function startLogin(chat_id: number, message_id?: number) {
   await setSession(chat_id, null, 'awaiting_phone', existing?.context ?? {});
   const txt = [
     `🔐 <b>ورود به حساب</b>`, ``,
-    `لطفاً شماره موبایل خود را ارسال کنید (مثال: <code>09120000000</code>)`, ``,
+    `برای ورود سریع، دکمه <b>📱 ارسال شماره من</b> را بزنید تا با همان شماره تلگرام وارد شوید.`,
+    `یا شماره موبایل خود را دستی ارسال کنید (مثال: <code>09120000000</code>)`, ``,
     `/cancel برای انصراف`,
   ].join('\n');
   const kbd: InlineKeyboard = [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]];
   if (message_id) await editMessage(chat_id, message_id, txt, kbd);
   else await sendMessage(chat_id, txt, { keyboard: kbd });
+  // Follow-up message with a reply keyboard offering the request_contact button.
+  await sendMessage(chat_id, '👇 برای ورود سریع، دکمه زیر را بزنید:', {
+    replyKeyboard: [[{ text: '📱 ارسال شماره من', request_contact: true }]],
+    one_time_keyboard: true,
+  });
 }
+
+async function handleContactLogin(chat_id: number, phoneRaw: string) {
+  const norm = normalizePhoneIR(phoneRaw);
+  if (!norm) {
+    await sendMessage(chat_id, '❌ شماره ارسال‌شده معتبر نیست. لطفاً به‌صورت دستی ارسال کنید یا از سایت ثبت‌نام کنید.', { keyboard: BACK_HOME_KBD, removeKeyboard: false });
+    return;
+  }
+  const existing = await findChatUserByPhone(norm.local);
+  if (existing) {
+    // Auto-login: link telegram_chat_id to this account
+    await supabase.from('chat_users').update({ telegram_chat_id: null }).eq('telegram_chat_id', chat_id);
+    const { error } = await supabase.from('chat_users')
+      .update({ telegram_chat_id: chat_id, telegram_linked_at: new Date().toISOString() })
+      .eq('id', existing.id);
+    if (error) {
+      await sendMessage(chat_id, `❌ خطا در ورود: ${escapeHtml(error.message)}`, { removeKeyboard: true });
+      return;
+    }
+    const prior = await getSession(chat_id);
+    const pending_enroll = prior?.context?.pending_enroll as string | undefined;
+    await clearSession(chat_id);
+    await sendMessage(chat_id, '✅ شماره شما تایید شد. در حال ورود...', { removeKeyboard: true });
+    const user = await resolveUser(chat_id);
+    if (user) {
+      await sendMessage(chat_id, `✅ <b>ورود موفق!</b>\n\n${await renderWelcome(chat_id, user)}`, { keyboard: await buildStartKeyboard(user) });
+      if (pending_enroll) await tryLinkEnrollment(chat_id, pending_enroll, user);
+    }
+    return;
+  }
+  // Not registered — instruct signup on website
+  await sendMessage(chat_id,
+    [
+      '👤 حسابی با این شماره در آکادمی پیدا نشد.',
+      '',
+      `شماره تلگرام شما: <code>${escapeHtml(norm.formatted)}</code>`,
+      '',
+      'برای ساخت حساب، لطفاً از طریق سایت ثبت‌نام کنید و سپس دوباره وارد ربات شوید:',
+      'https://academy.rafiei.co/auth',
+    ].join('\n'),
+    { removeKeyboard: true, keyboard: [[{ text: '🌐 ثبت‌نام در سایت', url: 'https://academy.rafiei.co/auth' }, { text: '🏠 منوی اصلی', callback_data: 'menu:home' }]] });
+}
+
 
 const BACK_HOME_KBD: InlineKeyboard = [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]];
 
