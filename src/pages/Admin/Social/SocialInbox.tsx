@@ -173,7 +173,7 @@ const SocialInbox: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="p-3 border-b bg-card flex items-center justify-between">
+            <div className="p-3 border-b bg-card flex items-center justify-between gap-2">
               <div>
                 <div className="font-semibold">{selected.participant_username || 'ناشناس'}</div>
                 <div className="text-xs text-muted-foreground">
@@ -181,6 +181,19 @@ const SocialInbox: React.FC = () => {
                   {selected.lead_score > 0 && <> · امتیاز lead: {selected.lead_score}</>}
                 </div>
               </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  const { error } = await supabase.functions.invoke('social-lead-from-conversation', {
+                    body: { conversation_id: selected.id },
+                  });
+                  if (error) toast({ title: 'خطا', description: error.message, variant: 'destructive' });
+                  else toast({ title: 'لید ایجاد شد' });
+                }}
+              >
+                <UserPlus className="w-3 h-3 ml-1" /> ثبت به عنوان لید
+              </Button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
