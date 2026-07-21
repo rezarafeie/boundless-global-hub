@@ -86,11 +86,24 @@ Deno.serve(async (req) => {
         }).filter((r: any) => r.provider_message_id);
 
         if (msgRows.length) {
-          const { error: msgErr } = await supabase
+          const { data: inserted, error: msgErr } = await supabase
             .from('social_messages')
-            .upsert(msgRows, { onConflict: 'conversation_id,provider_message_id' });
+            .upsert(msgRows, { onConflict: 'conversation_id,provider_message_id', ignoreDuplicates: true })
+            .select('id, direction, text');
           if (msgErr) console.error('upsert msgs:', msgErr);
-          else msgCount += msgRows.length;
+          else {
+            msgCount += msgRows.length;
+            const newInbound = (inserted || []).filter((r: any) => r.direction === 'in');
+            if (newInbound.length) {
+              await supabase.from('social_notifications').insert({
+                account_id: acc.id,
+                kind: 'new_dm',
+                title: `${newInbound.length} پیام جدید از ${participant.username || participant.name || 'کاربر'}`,
+                body: (newInbound[0].text || '').slice(0, 160),
+                link: '/enroll/admin/social/inbox',
+              });
+            }
+          }
         }
       }
 

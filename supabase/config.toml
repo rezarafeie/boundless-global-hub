@@ -185,3 +185,9 @@ verify_jwt = false
 
 [functions.social-lead-from-conversation]
 verify_jwt = false
+
+[functions.social-publish-cron]
+verify_jwt = false
+
+[functions.social-analytics-aggregate]
+verify_jwt = false

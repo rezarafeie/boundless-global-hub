@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Inbox, Users, Settings, ArrowLeft, MessageCircle, UserPlus, Image } from 'lucide-react';
+import { LayoutDashboard, Inbox, Users, Settings, ArrowLeft, MessageCircle, UserPlus, Image, Calendar, BarChart3, BookOpen, Bell } from 'lucide-react';
 
 const nav = [
   { to: '/enroll/admin/social', label: 'داشبورد', icon: LayoutDashboard, end: true },
@@ -8,6 +8,10 @@ const nav = [
   { to: '/enroll/admin/social/comments', label: 'کامنت‌ها', icon: MessageCircle },
   { to: '/enroll/admin/social/leads', label: 'لیدها', icon: UserPlus },
   { to: '/enroll/admin/social/posts', label: 'پست‌ها', icon: Image },
+  { to: '/enroll/admin/social/planner', label: 'برنامه‌ریز', icon: Calendar },
+  { to: '/enroll/admin/social/analytics', label: 'آمار', icon: BarChart3 },
+  { to: '/enroll/admin/social/knowledge', label: 'دانش AI', icon: BookOpen },
+  { to: '/enroll/admin/social/notifications', label: 'اعلان‌ها', icon: Bell },
   { to: '/enroll/admin/social/accounts', label: 'اکانت‌ها', icon: Users },
   { to: '/enroll/admin/social/settings', label: 'تنظیمات', icon: Settings },
 ];

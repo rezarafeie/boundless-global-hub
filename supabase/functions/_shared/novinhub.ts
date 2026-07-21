@@ -51,4 +51,14 @@ export const novinhub = {
       method: 'POST',
       body: JSON.stringify({ text }),
     }),
+
+  publishPost: (payload: {
+    account_id: string | number;
+    caption?: string;
+    media_urls?: string[];
+    type?: string; // post / reel / story
+  }) => nhFetch('/post', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }),
 };

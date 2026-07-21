@@ -39,6 +39,10 @@ import SocialComments from "./pages/Admin/Social/SocialComments";
 import SocialLeads from "./pages/Admin/Social/SocialLeads";
 import SocialPosts from "./pages/Admin/Social/SocialPosts";
 import SocialSettings from "./pages/Admin/Social/SocialSettings";
+import SocialPlanner from "./pages/Admin/Social/SocialPlanner";
+import SocialAnalytics from "./pages/Admin/Social/SocialAnalytics";
+import SocialKnowledge from "./pages/Admin/Social/SocialKnowledge";
+import SocialNotifications from "./pages/Admin/Social/SocialNotifications";
 import EnrollmentEmailAdmin from "./pages/EnrollmentEmailAdmin";
 import EnrollmentDetails from "./pages/EnrollmentDetails";
 import AdminEnrollmentDetails from "./pages/AdminEnrollmentDetails";
@@ -291,6 +295,10 @@ const App = () => {
                       <Route path="comments" element={<SocialComments />} />
                       <Route path="leads" element={<SocialLeads />} />
                       <Route path="posts" element={<SocialPosts />} />
+                      <Route path="planner" element={<SocialPlanner />} />
+                      <Route path="analytics" element={<SocialAnalytics />} />
+                      <Route path="knowledge" element={<SocialKnowledge />} />
+                      <Route path="notifications" element={<SocialNotifications />} />
                       <Route path="settings" element={<SocialSettings />} />
                     </Route>
                     <Route path="/enroll/admin/tests" element={<EnrollAdminTests />} />
