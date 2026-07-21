@@ -47,6 +47,12 @@ const SocialAccounts: React.FC = () => {
       toast({ title: 'خطا', description: e.message, variant: 'destructive' });
     } finally { setSyncing(false); }
   };
+  const toggleAutoReply = async (id: string, enabled: boolean) => {
+    const { error } = await supabase.from('social_accounts').update({ auto_reply_enabled: enabled }).eq('id', id);
+    if (error) return toast({ title: 'خطا', description: error.message, variant: 'destructive' });
+    setAccounts(as => as.map(a => a.id === id ? { ...a, auto_reply_enabled: enabled } : a));
+    toast({ title: enabled ? 'پاسخ خودکار فعال شد' : 'پاسخ خودکار غیرفعال شد' });
+  };
 
   return (
     <div className="p-6 space-y-6" dir="rtl">
