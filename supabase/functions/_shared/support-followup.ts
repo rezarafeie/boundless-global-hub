@@ -297,33 +297,58 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
     results.push({ channel: "sms", to: phone, resolved_url: r.url, ...r });
   } else if (cf.channel === "bot") {
     if (!row.telegram_id) {
-      await logSendCustom(row, cf, "telegram_bot", "failed", "no telegram_id", logExtra);
-      return [{ channel: "bot", ok: false, error: "no telegram_id" }];
+      await logSendCustom(row, cf, "telegram_bot", "unreachable", "no telegram_id", logExtra);
+      results.push({ channel: "bot", ok: true, skipped: true, reason: "no telegram_id", unreachable: true });
+      return results;
     }
     const text = render(cf.bot_text, vars) || "[TEST] followup";
     const kb = vars.activation_link ? { keyboard: [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]] } : {};
     const res = await sendMessage(row.telegram_id, text, { ...(kb as any), parse_mode: "HTML" });
     const ok = (res as any)?.ok !== false;
-    await logSendCustom(row, cf, "telegram_bot", ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { ...logExtra, chat_id: row.telegram_id, text, response: res });
-    results.push({ channel: "bot", ok, chat_id: row.telegram_id, text, response: res });
+    const errStr = ok ? "" : JSON.stringify(res);
+    const permanent = !ok && /chat not found|bot was blocked|user is deactivated|PEER_ID_INVALID|Forbidden/i.test(errStr);
+    const effectiveOk = ok || permanent;
+    await logSendCustom(row, cf, "telegram_bot", ok ? "sent" : (permanent ? "unreachable" : "failed"), ok ? undefined : errStr, { ...logExtra, chat_id: row.telegram_id, text, response: res });
+    results.push({ channel: "bot", ok: effectiveOk, unreachable: permanent, chat_id: row.telegram_id, text, response: res });
   } else if (cf.channel === "business") {
     if (!row.telegram_id) {
-      await logSendCustom(row, cf, "telegram_business", "failed", "no telegram_id", logExtra);
-      return [{ channel: "business", ok: false, error: "no telegram_id" }];
+      await logSendCustom(row, cf, "telegram_business", "unreachable", "no telegram_id", logExtra);
+      // Return ok:true so counter bumps and we stop retrying rows that will never receive anything.
+      results.push({ channel: "business", ok: true, skipped: true, reason: "no telegram_id", unreachable: true });
+      return results;
     }
     const text = render(cf.bot_text, vars) || "[TEST] followup";
     const { data: settings } = await supabase.from("admin_settings").select("telegram_business_connection_id" as any).eq("id", 1).maybeSingle();
     const bcid = (settings as any)?.telegram_business_connection_id;
-    if (!bcid) {
-      const error = "telegram_business_connection_id is not configured";
-      await logSendCustom(row, cf, "telegram_business", "failed", error, { ...logExtra, chat_id: row.telegram_id, text, business: false });
-      results.push({ channel: "business", ok: false, chat_id: row.telegram_id, text, business: false, error });
+
+    let businessOk = false;
+    let businessRes: any = null;
+    if (bcid) {
+      businessRes = await tgCall("sendMessage", { chat_id: row.telegram_id, text, business_connection_id: bcid, parse_mode: "HTML" });
+      businessOk = (businessRes as any)?.ok === true;
+    }
+
+    if (businessOk) {
+      await logSendCustom(row, cf, "telegram_business", "sent", undefined, { ...logExtra, chat_id: row.telegram_id, text, business: true, business_connection_id: bcid, response: businessRes });
+      results.push({ channel: "business", ok: true, chat_id: row.telegram_id, text, business: true, business_connection_id: bcid, response: businessRes });
       return results;
     }
-    const res = await tgCall("sendMessage", { chat_id: row.telegram_id, text, business_connection_id: bcid, parse_mode: "HTML" });
-    const ok = (res as any)?.ok !== false;
-    await logSendCustom(row, cf, "telegram_business", ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { ...logExtra, chat_id: row.telegram_id, text, business: true, business_connection_id: bcid, response: res });
-    results.push({ channel: "business", ok, chat_id: row.telegram_id, text, business: true, business_connection_id: bcid, response: res });
+
+    // Business failed (or not configured) — fall back to regular bot so the message still reaches the user.
+    const businessErr = bcid ? JSON.stringify(businessRes) : "telegram_business_connection_id is not configured";
+    await logSendCustom(row, cf, "telegram_business", "failed", businessErr, { ...logExtra, chat_id: row.telegram_id, text, business: !!bcid, business_connection_id: bcid, response: businessRes, will_fallback_to_bot: true });
+
+    const kb = vars.activation_link ? { keyboard: [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]] } : {};
+    const botRes = await sendMessage(row.telegram_id, text, { ...(kb as any), parse_mode: "HTML" });
+    const botOk = (botRes as any)?.ok !== false;
+    const botErrStr = botOk ? undefined : JSON.stringify(botRes);
+    const errStr = botErrStr ?? "";
+    // Bot errors that are permanent for this chat (blocked bot / bad user id / never started bot) — mark as delivered so we don't loop.
+    const permanent = /chat not found|bot was blocked|user is deactivated|PEER_ID_INVALID|Forbidden/i.test(errStr);
+    const effectiveOk = botOk || permanent;
+    await logSendCustom(row, cf, "telegram_bot", botOk ? "sent" : (permanent ? "unreachable" : "failed"), botErrStr, { ...logExtra, chat_id: row.telegram_id, text, response: botRes, fallback_from_business: true });
+    results.push({ channel: "business", ok: effectiveOk, fallback: "bot", bot_ok: botOk, unreachable: permanent, chat_id: row.telegram_id, text, response: botRes });
+    return results;
   }
   return results;
 }
