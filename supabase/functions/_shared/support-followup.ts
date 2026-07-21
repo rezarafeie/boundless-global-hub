@@ -297,15 +297,19 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
     results.push({ channel: "sms", to: phone, resolved_url: r.url, ...r });
   } else if (cf.channel === "bot") {
     if (!row.telegram_id) {
-      await logSendCustom(row, cf, "telegram_bot", "failed", "no telegram_id", logExtra);
-      return [{ channel: "bot", ok: false, error: "no telegram_id" }];
+      await logSendCustom(row, cf, "telegram_bot", "unreachable", "no telegram_id", logExtra);
+      results.push({ channel: "bot", ok: true, skipped: true, reason: "no telegram_id", unreachable: true });
+      return results;
     }
     const text = render(cf.bot_text, vars) || "[TEST] followup";
     const kb = vars.activation_link ? { keyboard: [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]] } : {};
     const res = await sendMessage(row.telegram_id, text, { ...(kb as any), parse_mode: "HTML" });
     const ok = (res as any)?.ok !== false;
-    await logSendCustom(row, cf, "telegram_bot", ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { ...logExtra, chat_id: row.telegram_id, text, response: res });
-    results.push({ channel: "bot", ok, chat_id: row.telegram_id, text, response: res });
+    const errStr = ok ? "" : JSON.stringify(res);
+    const permanent = !ok && /chat not found|bot was blocked|user is deactivated|PEER_ID_INVALID|Forbidden/i.test(errStr);
+    const effectiveOk = ok || permanent;
+    await logSendCustom(row, cf, "telegram_bot", ok ? "sent" : (permanent ? "unreachable" : "failed"), ok ? undefined : errStr, { ...logExtra, chat_id: row.telegram_id, text, response: res });
+    results.push({ channel: "bot", ok: effectiveOk, unreachable: permanent, chat_id: row.telegram_id, text, response: res });
   } else if (cf.channel === "business") {
     if (!row.telegram_id) {
       await logSendCustom(row, cf, "telegram_business", "unreachable", "no telegram_id", logExtra);
