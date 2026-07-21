@@ -3515,7 +3515,14 @@ async function handleUpdate(update: any) {
 async function uploadSocialMediaFile(user_id: number, file_id: string, kind: 'photo' | 'video' | 'document'): Promise<{ url: string; mime: string } | null> {
   const f = await downloadFile(file_id);
   if (!f) return null;
-  const ext = (f.mime.split('/')[1] || 'bin').split(';')[0].replace(/[^a-z0-9]/gi, '') || 'bin';
+  const mimeExt: Record<string, string> = {
+    'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp',
+    'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm',
+  };
+  const fallbackExt = kind === 'video' ? 'mp4' : 'jpg';
+  const ext = (f.ext && ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'webm', 'm4v'].includes(f.ext))
+    ? f.ext
+    : (mimeExt[f.mime.split(';')[0]] || fallbackExt);
   const path = `telegram/${user_id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error } = await supabase.storage.from('social-media').upload(path, f.bytes, {
     contentType: f.mime, upsert: true,
@@ -3658,7 +3665,7 @@ async function publishOrSchedule(chat_id: number, user: BotUser, ctx: any, sched
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
         },
-        body: JSON.stringify({ post_id: data?.id, force: true }),
+        body: JSON.stringify({ scheduled_post_id: data?.id, publish_now: true }),
       });
     } catch (e) { console.warn('publish trigger failed', e); }
     await sendMessage(chat_id, '✅ پست برای انتشار فوری ارسال شد.',

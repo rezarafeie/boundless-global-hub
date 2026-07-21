@@ -58,11 +58,14 @@ Deno.serve(async (req) => {
           }
         }
 
+        const scheduleDate = Math.floor((specificId ? Date.now() : Date.parse(p.scheduled_at || new Date().toISOString())) / 1000);
         const res = await novinhub.publishPost({
           account_id: acc.novinhub_account_id,
           caption: p.caption || '',
           media_urls: signed,
           type: p.post_type || 'post',
+          is_scheduled: 0,
+          schedule_date: scheduleDate,
         });
 
         const providerId = String(res?.id || res?.data?.id || res?.data?.post_group_id || '');
