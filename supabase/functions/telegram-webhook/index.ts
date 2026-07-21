@@ -11,6 +11,16 @@ import {
   tgCall,
   type InlineKeyboard,
 } from '../_shared/telegram.ts';
+import {
+  getFields as getReportFields,
+  saveDailyReport,
+  fetchPreviousReports,
+  renderReportCardHtml,
+  generateUserAnalysis,
+  generateAdminPeriodSummary,
+  getAdminChatIds,
+  type ReportRole,
+} from '../_shared/daily-report.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
