@@ -4561,6 +4561,62 @@ export type Database = {
           },
         ]
       }
+      social_analytics_daily: {
+        Row: {
+          account_id: string | null
+          ai_reply_count: number
+          avg_response_seconds: number | null
+          comment_count: number
+          created_at: string
+          day: string
+          dm_count: number
+          id: string
+          lead_count: number
+          meta: Json | null
+          posts_published: number
+          reply_count: number
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          ai_reply_count?: number
+          avg_response_seconds?: number | null
+          comment_count?: number
+          created_at?: string
+          day: string
+          dm_count?: number
+          id?: string
+          lead_count?: number
+          meta?: Json | null
+          posts_published?: number
+          reply_count?: number
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          ai_reply_count?: number
+          avg_response_seconds?: number | null
+          comment_count?: number
+          created_at?: string
+          day?: string
+          dm_count?: number
+          id?: string
+          lead_count?: number
+          meta?: Json | null
+          posts_published?: number
+          reply_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_analytics_daily_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_comments: {
         Row: {
           account_id: string
@@ -4753,6 +4809,45 @@ export type Database = {
           },
         ]
       }
+      social_knowledge_base: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          kind: string
+          priority: number
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          priority?: number
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          priority?: number
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       social_leads: {
         Row: {
           account_id: string
@@ -4900,6 +4995,50 @@ export type Database = {
           },
         ]
       }
+      social_notifications: {
+        Row: {
+          account_id: string | null
+          body: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          kind: string
+          link: string | null
+          meta: Json | null
+          title: string
+        }
+        Insert: {
+          account_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          kind: string
+          link?: string | null
+          meta?: Json | null
+          title: string
+        }
+        Update: {
+          account_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          kind?: string
+          link?: string | null
+          meta?: Json | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_notifications_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_posts: {
         Row: {
           account_id: string
@@ -4958,6 +5097,68 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "social_posts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_scheduled_posts: {
+        Row: {
+          account_id: string
+          caption: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          last_error: string | null
+          media_urls: Json | null
+          meta: Json | null
+          post_type: string
+          provider_post_id: string | null
+          publish_attempts: number
+          published_at: string | null
+          scheduled_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_error?: string | null
+          media_urls?: Json | null
+          meta?: Json | null
+          post_type?: string
+          provider_post_id?: string | null
+          publish_attempts?: number
+          published_at?: string | null
+          scheduled_at: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_error?: string | null
+          media_urls?: Json | null
+          meta?: Json | null
+          post_type?: string
+          provider_post_id?: string | null
+          publish_attempts?: number
+          published_at?: string | null
+          scheduled_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_scheduled_posts_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "social_accounts"
