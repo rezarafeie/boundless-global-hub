@@ -2102,7 +2102,8 @@ async function streamSalesAiToTelegram(chat_id: number, messages: AiMsg[], model
   const messageId: number | null = (placeholder as any)?.result?.message_id ?? null;
   let full = '', lastEdit = '', lastAt = 0;
   const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
-  const displayText = () => mdToTelegramHtml((full.replace(SALES_PAY_MARKER, '') || '⏳ ...').slice(0, 3900));
+  const stripMarkers = (s: string) => s.replace(SALES_PAY_MARKER, '').replace(/<COURSE:[^>\s]+>/g, '');
+  const displayText = () => mdToTelegramHtml((stripMarkers(full) || '⏳ ...').slice(0, 3900));
   const tryEdit = async (force = false) => {
     if (!messageId) return;
     const now = Date.now();
