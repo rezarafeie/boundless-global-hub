@@ -1831,14 +1831,14 @@ async function getSalesSettings() {
 async function getActiveSalesCoursesText(): Promise<string> {
   const { data } = await supabase
     .from('courses')
-    .select('title, slug, price, description')
+    .select('id, title, slug, price, description')
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(30);
   if (!data?.length) return '(فهرست دوره موجود نیست)';
   return data.map((c: any) => {
     const price = c.price ? `${Number(c.price).toLocaleString('fa-IR')} تومان` : 'رایگان';
-    return `• ${c.title} (slug: ${c.slug}) — ${price}${c.description ? `\n  ${String(c.description).slice(0, 120)}` : ''}`;
+    return `• ${c.title} — ${price} — slug: ${c.slug}${c.description ? `\n  ${String(c.description).slice(0, 120)}` : ''}`;
   }).join('\n');
 }
 
@@ -1997,6 +1997,47 @@ function userWantsPayment(text: string): boolean {
 
 const SALES_PAY_MARKER = '[SHOW_PAY]';
 
+function extractCourseSlugs(text: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const re = /<COURSE:([a-zA-Z0-9_\-]+)>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    const slug = m[1];
+    if (!seen.has(slug)) { seen.add(slug); out.push(slug); }
+  }
+  return out.slice(0, 6);
+}
+
+async function sendSuggestedCourseButtons(chat_id: number, slugs: string[]) {
+  const { data: courses } = await supabase
+    .from('courses')
+    .select('id, slug, title, price, redirect_url')
+    .in('slug', slugs)
+    .eq('is_active', true);
+  if (!courses?.length) return;
+  // Preserve the order the AI mentioned them
+  const bySlug = new Map(courses.map((c: any) => [c.slug, c]));
+  const ordered = slugs.map((s) => bySlug.get(s)).filter(Boolean) as any[];
+
+  const kbd: InlineKeyboard = [];
+  const lines: string[] = ['🎯 <b>دوره‌های پیشنهادی برای شما:</b>', ''];
+  for (const c of ordered) {
+    const isFree = !c.price || Number(c.price) === 0;
+    const priceTxt = isFree ? 'رایگان' : `${Number(c.price).toLocaleString('fa-IR')} تومان`;
+    const url = c.redirect_url || `${ACADEMY_BASE}/course/${c.slug}`;
+    lines.push(`📚 <b><a href="${url}">${escapeHtml(c.title)}</a></b> — ${priceTxt}`);
+    if (isFree) {
+      kbd.push([{ text: `🎁 ثبت‌نام رایگان: ${c.title}`, callback_data: `student:enroll:${c.id.slice(0, 8)}` }]);
+    } else {
+      kbd.push([{ text: `💳 ${c.title} — ${priceTxt}`, url }]);
+    }
+  }
+  await sendMessage(chat_id, lines.join('\n'), { keyboard: kbd });
+}
+
+
+
 async function handleSalesChat(chat_id: number, msg: any, session: any) {
   const settings = await getSalesSettings();
   if (!settings.enabled) {
@@ -2033,13 +2074,15 @@ async function handleSalesChat(chat_id: number, msg: any, session: any) {
     courseList,
     ``,
     `قوانین مهم پاسخگویی:`,
-    `1) از فرمت تلگرام استفاده کنید: **متن مهم** برای بولد، ایموجی مناسب در ابتدای پاراگراف‌های کلیدی، و خط تیره (-) برای فهرست‌ها. از عناوین #/## یا کد بلاک استفاده نکنید.`,
+    `1) از فرمت تلگرام استفاده کنید: **متن مهم** برای بولد و ایموجی مناسب. از عناوین #/## یا کد بلاک استفاده نکنید.`,
     `2) پاسخ‌ها کوتاه و خوانا باشد (حداکثر ۳-۴ پاراگراف کوتاه).`,
-    `3) **هرگز** خودتان لینک پرداخت یا قیمت‌گذاری اضافه نزنید مگر اینکه کاربر صریحاً درخواست خرید/پرداخت/قیمت کند یا با خرید موافقت کند.`,
-    `4) فقط زمانی که کاربر صریحاً آماده خرید است یا درخواست پرداخت/قیمت/ثبت‌نام کرد، در انتهای پیام (در یک خط جدا) دقیقاً این علامت را بنویسید: ${SALES_PAY_MARKER}`,
-    `   با این علامت سیستم دکمه‌های پرداخت را به کاربر نمایش می‌دهد. در غیر این صورت **این علامت را به هیچ عنوان ننویسید**.`,
-    `5) اگر کاربر شماره موبایل یا نام داد، تشکر کنید و ادامه دهید.`,
+    `3) قبل از پیشنهاد دوره، **حداکثر ۲ سوال کوتاه** بپرسید، سپس مستقیماً دوره مناسب را پیشنهاد بدهید. سوال سوم نپرسید.`,
+    `4) وقتی دوره‌ای پیشنهاد می‌دهید، **هرگز** خودتان لینک URL یا فرمت \`[متن](لینک)\` ننویسید و از نوشتن \`slug: xxx\` در متن خودداری کنید. فقط نام دوره را بولد کنید و بلافاصله در یک خط جدا این نشانه را قرار دهید: <COURSE:slug-دوره>. سیستم به‌طور خودکار لینک و دکمه ثبت‌نام را اضافه می‌کند.`,
+    `   مثال درست:\n   **زندگی هوشمند | شروع با هوش مصنوعی** — رایگان\n   <COURSE:smart-life>`,
+    `5) **هرگز** خودتان لینک پرداخت یا قیمت اضافه ننویسید مگر اینکه کاربر صریحاً درخواست خرید/پرداخت/قیمت کند. فقط زمانی که کاربر آماده خرید است، در انتهای پیام (در یک خط جدا) دقیقاً این علامت را بنویسید: ${SALES_PAY_MARKER}`,
+    `6) اگر کاربر شماره موبایل یا نام داد، تشکر کنید و ادامه دهید.`,
   ].join('\n');
+
 
   const userContent = await buildUserContentFromMessage(msg);
   const history: AiMsg[] = Array.isArray(session?.context?.messages) ? session.context.messages : [];
@@ -2052,11 +2095,21 @@ async function handleSalesChat(chat_id: number, msg: any, session: any) {
   // Use the same fast model as the smart assistant for speed
   const rawReply = await streamSalesAiToTelegram(chat_id, messages, 'google/gemini-2.5-flash');
   const showPay = userAskedPay || rawReply.includes(SALES_PAY_MARKER);
-  const cleanReply = rawReply.replace(SALES_PAY_MARKER, '').trim();
+  const suggestedSlugs = extractCourseSlugs(rawReply);
+  const cleanReply = rawReply
+    .replace(SALES_PAY_MARKER, '')
+    .replace(/<COURSE:[^>\s]+>/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 
+  if (suggestedSlugs.length) {
+    await sendSuggestedCourseButtons(chat_id, suggestedSlugs);
+  }
   if (showPay) {
     await showSalesPaymentOptions(chat_id, null);
   }
+
+
 
   const userTextOnly = Array.isArray(userContent)
     ? userContent.filter((p: any) => p.type === 'text').map((p: any) => p.text).join(' ').slice(0, 2000) || '[رسانه]'
@@ -2090,7 +2143,8 @@ async function streamSalesAiToTelegram(chat_id: number, messages: AiMsg[], model
   const messageId: number | null = (placeholder as any)?.result?.message_id ?? null;
   let full = '', lastEdit = '', lastAt = 0;
   const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = '';
-  const displayText = () => mdToTelegramHtml((full.replace(SALES_PAY_MARKER, '') || '⏳ ...').slice(0, 3900));
+  const stripMarkers = (s: string) => s.replace(SALES_PAY_MARKER, '').replace(/<COURSE:[^>\s]+>/g, '');
+  const displayText = () => mdToTelegramHtml((stripMarkers(full) || '⏳ ...').slice(0, 3900));
   const tryEdit = async (force = false) => {
     if (!messageId) return;
     const now = Date.now();
@@ -2120,7 +2174,7 @@ async function streamSalesAiToTelegram(chat_id: number, messages: AiMsg[], model
   } catch (e) { console.error('sales stream error', e); }
   await tryEdit(true);
   if (messageId && full) {
-    try { await editMessage(chat_id, messageId, mdToTelegramHtml(full.replace(SALES_PAY_MARKER, '')).slice(0, 4000)); } catch { /* ignore */ }
+    try { await editMessage(chat_id, messageId, mdToTelegramHtml(stripMarkers(full)).slice(0, 4000)); } catch { /* ignore */ }
   } else if (!full) {
     await sendMessage(chat_id, '❌ پاسخی دریافت نشد.');
   }
