@@ -268,6 +268,10 @@ const EnrollmentAdmin: React.FC = () => {
   }
 
   const handleViewChange = (view: string) => {
+    if (view === 'social') {
+      navigate('/enroll/admin/social');
+      return;
+    }
     setActiveView(view as typeof activeView);
   };
 
