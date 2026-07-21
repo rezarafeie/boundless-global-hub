@@ -40,7 +40,7 @@ async function saveBusinessConnectionId(connectionId: string | null | undefined)
 }
 
 // ============ Types ============
-type Role = 'admin' | 'sales_manager' | 'sales_agent' | 'student' | null;
+type Role = 'admin' | 'sales_manager' | 'sales_agent' | 'social_admin' | 'student' | null;
 interface BotUser {
   id: number;
   name: string;
