@@ -25,7 +25,8 @@ export async function tgCall(method: string, payload: Record<string, unknown>) {
   return data;
 }
 
-export type ReplyKeyboardLayout = (string | { text: string })[][];
+export type ReplyKeyboardButton = string | { text: string; request_contact?: boolean; request_location?: boolean };
+export type ReplyKeyboardLayout = ReplyKeyboardButton[][];
 
 export function sendMessage(
   chat_id: number | string,
@@ -36,6 +37,7 @@ export function sendMessage(
     removeKeyboard?: boolean;
     parse_mode?: 'HTML' | 'MarkdownV2';
     disable_web_page_preview?: boolean;
+    one_time_keyboard?: boolean;
   } = {},
 ) {
   const payload: Record<string, unknown> = {
@@ -50,13 +52,15 @@ export function sendMessage(
     payload.reply_markup = {
       keyboard: opts.replyKeyboard.map(row => row.map(b => (typeof b === 'string' ? { text: b } : b))),
       resize_keyboard: true,
-      is_persistent: true,
+      is_persistent: !opts.one_time_keyboard,
+      one_time_keyboard: !!opts.one_time_keyboard,
     };
   } else if (opts.removeKeyboard) {
     payload.reply_markup = { remove_keyboard: true };
   }
   return tgCall('sendMessage', payload);
 }
+
 
 export function sendPhoto(
   chat_id: number | string,
