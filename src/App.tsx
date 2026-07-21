@@ -295,6 +295,10 @@ const App = () => {
                       <Route path="comments" element={<SocialComments />} />
                       <Route path="leads" element={<SocialLeads />} />
                       <Route path="posts" element={<SocialPosts />} />
+                      <Route path="planner" element={<SocialPlanner />} />
+                      <Route path="analytics" element={<SocialAnalytics />} />
+                      <Route path="knowledge" element={<SocialKnowledge />} />
+                      <Route path="notifications" element={<SocialNotifications />} />
                       <Route path="settings" element={<SocialSettings />} />
                     </Route>
                     <Route path="/enroll/admin/tests" element={<EnrollAdminTests />} />
