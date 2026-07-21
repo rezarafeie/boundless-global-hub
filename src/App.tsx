@@ -281,6 +281,12 @@ const App = () => {
                     <Route path="/enroll/admin/enrollment/:id" element={<AdminEnrollmentDetails />} />
                     <Route path="/enroll/pending" element={<EnrollPending />} />
                     <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
+                    <Route path="/enroll/admin/social" element={<SocialLayout />}>
+                      <Route index element={<SocialDashboard />} />
+                      <Route path="inbox" element={<SocialInbox />} />
+                      <Route path="accounts" element={<SocialAccounts />} />
+                      <Route path="settings" element={<SocialSettings />} />
+                    </Route>
                     <Route path="/enroll/admin/tests" element={<EnrollAdminTests />} />
                     <Route path="/enroll/admin/boundless-smart-test" element={<BoundlessSmartTestSubmissions />} />
                     <Route path="/test-enrollment/admin/:id" element={<TestEnrollmentAdminDetails />} />
