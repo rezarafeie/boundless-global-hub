@@ -1,4 +1,6 @@
+// Create a lead from a conversation. Transcript is fetched live from NovinHub (no message store).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { novinhub } from '../_shared/novinhub.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,11 +39,13 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
 
     const { data: conv, error } = await supabase
-      .from('social_conversations').select('*').eq('id', conversation_id).single();
+      .from('social_conversations')
+      .select('*, social_accounts(meta)')
+      .eq('id', conversation_id).single();
     if (error || !conv) throw new Error('conversation not found');
 
     const { data: existing } = await supabase
@@ -52,11 +56,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: msgs } = await supabase
-      .from('social_messages').select('direction,text,sent_at')
-      .eq('conversation_id', conversation_id)
-      .order('sent_at', { ascending: true }).limit(50);
-    const transcript = (msgs || []).map((m: any) => `${m.direction === 'in' ? 'کاربر' : 'ما'}: ${m.text || ''}`).join('\n');
+    const ownId = (conv as any).social_accounts?.meta?.social_user_id;
+    const res: any = await novinhub.listMessages(conv.provider_thread_id, { limit: 50 }).catch(() => null);
+    const rows = res?.data || (Array.isArray(res) ? res : []);
+    const transcript = rows
+      .map((m: any) => {
+        const isOut = ownId != null && String(m.social_user_id) === String(ownId);
+        return `${isOut ? 'ما' : 'کاربر'}: ${m.text || ''}`;
+      })
+      .join('\n');
 
     const { summary, score } = await summarize(transcript);
 
@@ -75,8 +83,8 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: true, lead_id: lead.id, summary, score }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (e) {
-    return new Response(JSON.stringify({ error: String((e as Error).message) }), {
+  } catch (e: any) {
+    return new Response(JSON.stringify({ error: e.message }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
