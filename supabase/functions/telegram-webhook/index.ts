@@ -11,6 +11,16 @@ import {
   tgCall,
   type InlineKeyboard,
 } from '../_shared/telegram.ts';
+import {
+  getFields as getReportFields,
+  saveDailyReport,
+  fetchPreviousReports,
+  renderReportCardHtml,
+  generateUserAnalysis,
+  generateAdminPeriodSummary,
+  getAdminChatIds,
+  type ReportRole,
+} from '../_shared/daily-report.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -895,9 +905,140 @@ async function renderReports(chat_id: number, message_id: number | null, user: B
     ].join('\n');
   }
 
-  const keyboard: InlineKeyboard = [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]];
+  const keyboard: InlineKeyboard = [];
+  const canSales = ['admin', 'sales_manager', 'sales_agent'].includes(user.role ?? '');
+  const canSupport = ['admin', 'sales_manager'].includes(user.role ?? '') || await userIsSupport(user.id);
+  if (canSales) keyboard.push([{ text: '📝 ثبت گزارش فروش', callback_data: 'report:start:sales' }]);
+  if (canSupport) keyboard.push([{ text: '📝 ثبت گزارش پشتیبانی', callback_data: 'report:start:support' }]);
+  if (user.role === 'admin' || user.role === 'sales_manager') {
+    keyboard.push([
+      { text: '📈 خلاصه امروز', callback_data: 'report:sum:today' },
+      { text: '📈 هفتگی', callback_data: 'report:sum:week' },
+      { text: '📈 ماهانه', callback_data: 'report:sum:month' },
+    ]);
+  }
+  keyboard.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
   if (message_id) await editMessage(chat_id, message_id, text, keyboard);
   else await sendMessage(chat_id, text, { keyboard });
+}
+
+async function userIsSupport(user_id: number): Promise<boolean> {
+  const { data } = await supabase
+    .from('user_roles')
+    .select('role_name')
+    .eq('user_id', user_id)
+    .eq('is_active', true);
+  const names = (data ?? []).map((r: any) => r.role_name);
+  return names.some((n: string) => ['support_agent', 'enrollment_admin', 'support_admin'].includes(n));
+}
+
+// ============ Daily Report flow ============
+async function startReportFlow(chat_id: number, user: BotUser, role: ReportRole, message_id: number | null) {
+  const fields = getReportFields(role);
+  await setSession(chat_id, user.id, 'awaiting_report_field', {
+    report_role: role,
+    field_index: 0,
+    values: {},
+    notes: null,
+  });
+  const first = fields[0];
+  const intro = [
+    `📋 <b>ثبت گزارش روزانه — ${role === 'sales' ? 'فروش' : 'پشتیبانی'}</b>`,
+    `در هر مرحله فقط یک عدد ارسال کنید. /cancel برای انصراف.`,
+    '',
+    `مرحله ۱ از ${fields.length + 1}`,
+    `${first.emoji} <b>${first.label}</b>`,
+    `عدد را ارسال کنید:`,
+  ].join('\n');
+  const kbd: InlineKeyboard = [[{ text: '❌ انصراف', callback_data: 'menu:reports' }]];
+  if (message_id) await editMessage(chat_id, message_id, intro, kbd);
+  else await sendMessage(chat_id, intro, { keyboard: kbd });
+}
+
+async function handleReportFieldInput(chat_id: number, user: BotUser, text: string, session: any) {
+  const ctx = session.context ?? {};
+  const role: ReportRole = ctx.report_role;
+  const fields = getReportFields(role);
+  const idx: number = ctx.field_index ?? 0;
+  const values: Record<string, number> = { ...(ctx.values ?? {}) };
+
+  // Notes step (last, after all fields)
+  if (idx >= fields.length) {
+    const notes = text.trim().toLowerCase() === '/skip' || text.trim() === '-' ? null : text.trim();
+    await finalizeReport(chat_id, user, role, values, notes);
+    return;
+  }
+
+  const trimmed = text.trim().replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
+  const num = parseInt(trimmed, 10);
+  if (!Number.isFinite(num) || num < 0) {
+    await sendMessage(chat_id, '⚠️ لطفاً یک عدد صحیح غیرمنفی ارسال کنید.');
+    return;
+  }
+  values[fields[idx].key] = num;
+  const nextIdx = idx + 1;
+  await setSession(chat_id, user.id, 'awaiting_report_field', {
+    ...ctx, field_index: nextIdx, values,
+  });
+
+  if (nextIdx < fields.length) {
+    const f = fields[nextIdx];
+    await sendMessage(chat_id, [
+      `✅ ثبت شد.`,
+      '',
+      `مرحله ${nextIdx + 1} از ${fields.length + 1}`,
+      `${f.emoji} <b>${f.label}</b>`,
+      `عدد را ارسال کنید:`,
+    ].join('\n'));
+  } else {
+    await sendMessage(chat_id, [
+      `مرحله آخر — 📝 <b>یادداشت (اختیاری)</b>`,
+      `توضیحی برای امروز بنویسید یا برای رد شدن /skip ارسال کنید.`,
+    ].join('\n'));
+  }
+}
+
+async function finalizeReport(
+  chat_id: number,
+  user: BotUser,
+  role: ReportRole,
+  values: Record<string, number>,
+  notes: string | null,
+) {
+  await clearSession(chat_id);
+  await sendMessage(chat_id, '⏳ در حال ثبت گزارش و تحلیل AI...');
+  try {
+    await saveDailyReport(user.id, role, values, notes);
+    const history = await fetchPreviousReports(user.id, role, 7);
+    const previous = history.filter((h) => h.report_date !== new Date().toISOString().split('T')[0]);
+    const analysis = await generateUserAnalysis(user.name, role, values, notes, previous);
+    const card = renderReportCardHtml(user.name, role, values, notes);
+    const userText = `✅ <b>گزارش با موفقیت ثبت شد.</b>\n\n${card}\n\n🤖 <b>تحلیل AI:</b>\n${escapeHtml(analysis)}`;
+    await sendMessage(chat_id, userText, {
+      keyboard: [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]],
+    });
+
+    // Forward to admins
+    const adminIds = await getAdminChatIds();
+    const adminText = `📥 <b>گزارش جدید دریافت شد</b>\n\n${card}\n\n🤖 ${escapeHtml(analysis)}`;
+    for (const aid of adminIds) {
+      if (aid === chat_id) continue;
+      await sendMessage(aid, adminText).catch(() => {});
+    }
+  } catch (e: any) {
+    console.error('finalizeReport error', e);
+    await sendMessage(chat_id, `❌ خطا در ثبت گزارش: ${escapeHtml(String(e?.message ?? e))}`, {
+      keyboard: [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]],
+    });
+  }
+}
+
+async function renderAdminSummary(chat_id: number, message_id: number, period: 'today' | 'week' | 'month') {
+  await editMessage(chat_id, message_id, '⏳ در حال تحلیل خلاصه...', [[{ text: '🏠', callback_data: 'menu:home' }]]);
+  const { text } = await generateAdminPeriodSummary(period);
+  await editMessage(chat_id, message_id, text, [
+    [{ text: '📊 گزارش‌ها', callback_data: 'menu:reports' }, { text: '🏠 منوی اصلی', callback_data: 'menu:home' }],
+  ]);
 }
 
 // ============ Student / Login flow ============
@@ -3073,6 +3214,24 @@ async function handleUpdate(update: any) {
           [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]]);
         return;
       }
+
+      if (action === 'report') {
+        const sub = rest[0];
+        if (sub === 'start') {
+          const role = (rest[1] === 'support' ? 'support' : 'sales') as ReportRole;
+          await startReportFlow(chat_id, user, role, message_id);
+          return;
+        }
+        if (sub === 'sum') {
+          if (!['admin', 'sales_manager'].includes(user.role ?? '')) {
+            await answerCallback(cq.id, '🚫 دسترسی ندارید');
+            return;
+          }
+          const period = (rest[1] === 'week' ? 'week' : rest[1] === 'month' ? 'month' : 'today') as 'today' | 'week' | 'month';
+          await renderAdminSummary(chat_id, message_id, period);
+          return;
+        }
+      }
     } catch (e: any) {
       console.error('callback error:', e, 'data:', data);
       try {
@@ -3490,6 +3649,12 @@ async function handleUpdate(update: any) {
     await handleFollowupTimeInput(chat_id, text, user);
     return;
   }
+
+  if (session?.state === 'awaiting_report_field' && text) {
+    await handleReportFieldInput(chat_id, user, text, session);
+    return;
+  }
+
 
   if (session?.state === 'awaiting_note' && text) {
     const enrollment_id = session.context.enrollment_id;
