@@ -34,18 +34,28 @@ serve(async (req) => {
     }
 
     const shouldIncludeCustomCourses = customCourseIds.length > 0;
-    const { data: rows, error } = await supabase
-      .from("support_activations")
-      .select(SUPPORT_ACTIVATION_SELECT)
-      .or(
-        shouldIncludeCustomCourses
-          ? `status.neq.activated,course_id.in.(${customCourseIds.join(",")})`
-          : "status.neq.activated",
-      )
-      .order("created_at", { ascending: false })
-      .limit(500);
+    const PAGE = 1000;
+    let from = 0;
+    let rows: any[] = [];
+    while (true) {
+      const { data: page, error } = await supabase
+        .from("support_activations")
+        .select(SUPPORT_ACTIVATION_SELECT)
+        .or(
+          shouldIncludeCustomCourses
+            ? `status.neq.activated,course_id.in.(${customCourseIds.join(",")})`
+            : "status.neq.activated",
+        )
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      const batch = (page as any[]) ?? [];
+      rows = rows.concat(batch);
+      if (batch.length < PAGE) break;
+      from += PAGE;
+      if (from >= 20000) break; // hard safety cap
+    }
 
-    if (error) throw error;
 
 
     const summary: any[] = [];
