@@ -211,6 +211,7 @@ const UserRoleManagement: React.FC<UserRoleManagementProps> = ({
     { value: 'sales_agent', label: 'نماینده فروش' },
     { value: 'support_agent', label: 'پشتیبان' },
     { value: 'moderator', label: 'مدیر محتوا' },
+    { value: 'social_admin', label: 'مدیر شبکه‌های اجتماعی' },
   ];
 
   return (
