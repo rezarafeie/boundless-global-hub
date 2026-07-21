@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Plug, Instagram, CheckCircle2, AlertCircle } from 'lucide-react';
+import { RefreshCw, Plug, Instagram, CheckCircle2, AlertCircle, Bot } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 
 const SocialAccounts: React.FC = () => {
