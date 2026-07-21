@@ -61,7 +61,10 @@ serve(async (req) => {
     const summary: any[] = [];
     for (const row of (rows as any[]) ?? []) {
       const course = row.courses;
-      if (!course?.support_followup_enabled) continue;
+      if (!course) continue;
+      const hasCustom = (customByCourse[row.course_id]?.length ?? 0) > 0;
+      // Stage followups require master toggle; custom followups run independently as long as they are enabled.
+      const stageEligible = !!course.support_followup_enabled;
       const maxRepeats = course.support_followup_max_repeats ?? 2;
 
       let stage: 1 | 2 | 3 | null = null;
