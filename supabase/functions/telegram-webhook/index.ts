@@ -1831,14 +1831,14 @@ async function getSalesSettings() {
 async function getActiveSalesCoursesText(): Promise<string> {
   const { data } = await supabase
     .from('courses')
-    .select('title, slug, price, description')
+    .select('id, title, slug, price, description')
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(30);
   if (!data?.length) return '(فهرست دوره موجود نیست)';
   return data.map((c: any) => {
     const price = c.price ? `${Number(c.price).toLocaleString('fa-IR')} تومان` : 'رایگان';
-    return `• ${c.title} (slug: ${c.slug}) — ${price}${c.description ? `\n  ${String(c.description).slice(0, 120)}` : ''}`;
+    return `• ${c.title} — ${price} — slug: ${c.slug}${c.description ? `\n  ${String(c.description).slice(0, 120)}` : ''}`;
   }).join('\n');
 }
 
