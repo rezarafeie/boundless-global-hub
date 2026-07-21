@@ -3517,14 +3517,17 @@ async function publishOrSchedule(chat_id: number, user: BotUser, ctx: any, sched
   const media_type = media.length === 0 ? 'text' : (media[0].mime.startsWith('video') ? 'video' : 'image');
 
   const payload: any = {
-    social_account_id: account_id,
+    account_id,
     caption,
     media_urls,
-    media_type,
-    status: scheduledAt ? 'scheduled' : 'pending_publish',
+    status: 'scheduled',
     scheduled_at: scheduledAt ? scheduledAt.toISOString() : new Date().toISOString(),
-    created_by: String(user.id),
-    source: 'telegram_bot',
+    meta: {
+      source: 'telegram_bot',
+      created_by_chat_user_id: user.id,
+      created_by_name: user.name,
+      media_type,
+    },
   };
 
   const { data, error } = await supabase.from('social_scheduled_posts').insert(payload).select('id').maybeSingle();
