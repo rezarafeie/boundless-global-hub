@@ -56,6 +56,33 @@ interface Filters {
 }
 
 // ============ User resolution ============
+const ROLE_PRIORITY: Role[] = ['student', 'sales_agent', 'social_admin', 'sales_manager', 'admin'];
+
+function normalizeRole(value: string | null | undefined): Role {
+  if (value === 'admin' || value === 'sales_manager' || value === 'sales_agent' || value === 'social_admin') return value;
+  return 'student';
+}
+
+function pickHigherRole(current: Role, candidate: string | null | undefined): Role {
+  const normalized = normalizeRole(candidate);
+  return ROLE_PRIORITY.indexOf(normalized) > ROLE_PRIORITY.indexOf(current ?? 'student') ? normalized : current;
+}
+
+function phoneVariants(phone: string | null | undefined): string[] {
+  const digits = String(phone ?? '').replace(/\D/g, '');
+  if (!digits) return [];
+  const withoutCountry = digits.startsWith('98') ? digits.slice(2) : digits;
+  const withoutZero = withoutCountry.replace(/^0/, '');
+  return Array.from(new Set([
+    digits,
+    withoutCountry,
+    withoutZero,
+    `0${withoutZero}`,
+    `98${withoutZero}`,
+    `+98${withoutZero}`,
+  ].filter(Boolean)));
+}
+
 async function resolveUser(chat_id: number): Promise<BotUser | null> {
   const { data } = await supabase
     .from('chat_users')
@@ -63,19 +90,43 @@ async function resolveUser(chat_id: number): Promise<BotUser | null> {
     .eq('telegram_chat_id', chat_id)
     .maybeSingle();
   if (!data) return null;
-  let role: Role = (data.role as Role) ?? 'student';
+  let role: Role = normalizeRole(data.role as string | null);
   if (data.is_messenger_admin) role = 'admin';
-  // Also check user_roles table (canonical source) so admin/social_admin roles surface even when chat_users.role is stale
-  const { data: roles } = await supabase
+
+  // Also check user_roles table (canonical source) so admin/social_admin roles surface even when chat_users.role is stale.
+  const { data: directRoles } = await supabase
     .from('user_roles')
     .select('role_name')
     .eq('user_id', data.id)
     .eq('is_active', true);
-  const roleSet = new Set((roles ?? []).map((r: any) => r.role_name));
-  if (roleSet.has('admin')) role = 'admin';
-  else if (roleSet.has('sales_manager') && role !== 'admin') role = 'sales_manager';
-  else if (roleSet.has('social_admin') && role !== 'admin' && role !== 'sales_manager') role = 'social_admin';
-  else if (roleSet.has('sales_agent') && role === 'student') role = 'sales_agent';
+  for (const r of directRoles ?? []) role = pickHigherRole(role, (r as any).role_name);
+
+  // Some users have duplicate chat_users rows with the same normalized phone (e.g. 09... and 9...).
+  // If the linked Telegram row is the non-admin duplicate, inherit the highest active/admin role from the matching phone records.
+  const variants = phoneVariants(data.phone);
+  if (variants.length) {
+    const { data: phoneMatches } = await supabase
+      .from('chat_users')
+      .select('id, role, is_messenger_admin')
+      .in('phone', variants)
+      .limit(20);
+
+    const ids = Array.from(new Set((phoneMatches ?? []).map((u: any) => u.id).filter(Boolean)));
+    for (const u of phoneMatches ?? []) {
+      if ((u as any).is_messenger_admin) role = 'admin';
+      role = pickHigherRole(role, (u as any).role);
+    }
+
+    if (ids.length) {
+      const { data: relatedRoles } = await supabase
+        .from('user_roles')
+        .select('role_name')
+        .in('user_id', ids)
+        .eq('is_active', true);
+      for (const r of relatedRoles ?? []) role = pickHigherRole(role, (r as any).role_name);
+    }
+  }
+
   return { id: data.id, name: data.name, role, telegram_chat_id: chat_id, phone: data.phone };
 }
 
@@ -110,36 +161,43 @@ async function clearSession(chat_id: number) {
 }
 
 // ============ Menus ============
+function twoColumnKeyboard(rows: InlineKeyboard): InlineKeyboard {
+  const buttons = rows.flat();
+  const paired: InlineKeyboard = [];
+  for (let i = 0; i < buttons.length; i += 2) paired.push(buttons.slice(i, i + 2));
+  return paired;
+}
+
 async function mainMenu(user: BotUser | null): Promise<InlineKeyboard> {
   const role = user?.role ?? null;
   if (role === 'admin') {
-    return [
+    return twoColumnKeyboard([
       [{ text: '📋 لیدهای من', callback_data: 'menu:my_leads' }],
       [{ text: '👥 همه لیدها', callback_data: 'menu:all_leads' }],
       [{ text: '🎯 تخصیص دسته‌جمعی', callback_data: 'bulk:start' }],
       [{ text: '📊 گزارش‌ها', callback_data: 'menu:reports' }],
       [{ text: '📱 مدیریت شبکه‌های اجتماعی', callback_data: 'social:menu' }],
       [{ text: '⚙️ مدیریت سیستم', callback_data: 'admin:menu' }],
-    ];
+    ]);
   }
   if (role === 'sales_manager') {
-    return [
+    return twoColumnKeyboard([
       [{ text: '📋 لیدهای من', callback_data: 'menu:my_leads' }],
       [{ text: '👥 همه لیدها', callback_data: 'menu:all_leads' }],
       [{ text: '🎯 تخصیص دسته‌جمعی', callback_data: 'bulk:start' }],
       [{ text: '📊 عملکرد تیم', callback_data: 'menu:reports' }],
-    ];
+    ]);
   }
   if (role === 'sales_agent') {
-    return [
+    return twoColumnKeyboard([
       [{ text: '📋 لیدهای من', callback_data: 'menu:my_leads' }],
       [{ text: '📊 عملکرد امروز', callback_data: 'menu:reports' }],
-    ];
+    ]);
   }
   if (role === 'social_admin') {
-    return [
+    return twoColumnKeyboard([
       [{ text: '📱 مدیریت شبکه‌های اجتماعی', callback_data: 'social:menu' }],
-    ];
+    ]);
   }
   // Default: student — hide my_courses / my_tests when empty
   const rows: InlineKeyboard = [];
@@ -163,7 +221,7 @@ async function mainMenu(user: BotUser | null): Promise<InlineKeyboard> {
   if (testCount > 0) rows.push([{ text: '🧪 آزمون‌های من', callback_data: 'student:my_tests' }]);
   rows.push([{ text: '🛒 ثبت‌نام در دوره جدید', callback_data: 'student:browse:0' }]);
   rows.push([{ text: '👤 پروفایل', callback_data: 'student:profile' }]);
-  return rows;
+  return twoColumnKeyboard(rows);
 }
 
 function loginMenu(): InlineKeyboard {
@@ -2220,7 +2278,7 @@ async function buildStartKeyboard(user: BotUser | null): Promise<InlineKeyboard>
     aiKeyboardRows(authed),
     authed ? mainMenu(user) : Promise.resolve(loginMenu()),
   ]);
-  return [...salesRows, ...aiRows, ...webinarRows, ...formRows, ...base];
+  return twoColumnKeyboard([...salesRows, ...aiRows, ...webinarRows, ...formRows, ...base]);
 }
 
 async function findFormByPrefix(prefix: string) {
