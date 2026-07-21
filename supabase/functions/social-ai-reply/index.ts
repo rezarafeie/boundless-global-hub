@@ -1,0 +1,103 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const AI_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const started = Date.now();
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+    const apiKey = Deno.env.get('LOVABLE_API_KEY');
+    if (!apiKey) throw new Error('LOVABLE_API_KEY not configured');
+
+    const { conversation_id, action = 'suggest', extra_prompt } = await req.json();
+    if (!conversation_id) throw new Error('conversation_id required');
+
+    const { data: conv } = await supabase
+      .from('social_conversations')
+      .select('*, social_accounts(username)')
+      .eq('id', conversation_id)
+      .single();
+    if (!conv) throw new Error('Conversation not found');
+
+    const { data: settings } = await supabase.from('social_settings').select('*').eq('id', 1).single();
+
+    const { data: msgs } = await supabase
+      .from('social_messages')
+      .select('direction, sender_type, text, sent_at')
+      .eq('conversation_id', conversation_id)
+      .order('sent_at', { ascending: true })
+      .limit(30);
+
+    const history = (msgs || []).map(m => ({
+      role: m.direction === 'out' ? 'assistant' : 'user',
+      content: m.text || '',
+    })).filter(m => m.content);
+
+    const toneMap: Record<string, string> = {
+      friendly: 'صمیمی و دوستانه',
+      professional: 'حرفه‌ای و رسمی',
+      casual: 'خودمانی',
+    };
+    const tone = toneMap[settings?.ai_tone || 'friendly'];
+
+    const systemByAction: Record<string, string> = {
+      suggest: `شما دستیار پاسخگویی به پیام‌های اینستاگرام آکادمی رفیعی هستید. لحن ${tone}. کوتاه، مفید و به فارسی. اگر کاربر درباره دوره پرسید، او را راهنمایی کنید. فقط پاسخ پیشنهادی را بنویسید بدون توضیح اضافه.`,
+      translate: `متن آخرین پیام کاربر را به فارسی روان ترجمه کنید. فقط ترجمه را برگردانید.`,
+      summarize: `خلاصه‌ای در ۲-۳ جمله از این مکالمه بنویسید تا اپراتور سریع در جریان قرار گیرد.`,
+      followup: `یک پیام پیگیری کوتاه و ${tone} برای این مکالمه بنویس که کاربر را دوباره درگیر کند.`,
+    };
+
+    const messages = [
+      { role: 'system', content: systemByAction[action] || systemByAction.suggest },
+      ...history,
+    ];
+    if (extra_prompt) messages.push({ role: 'user', content: extra_prompt });
+
+    const res = await fetch(AI_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`AI ${res.status}: ${errText}`);
+    }
+
+    const data = await res.json();
+    const reply = data.choices?.[0]?.message?.content?.trim() || '';
+
+    await supabase.from('social_ai_logs').insert({
+      conversation_id,
+      action,
+      input: { history_len: history.length, extra_prompt },
+      output: { reply },
+      model: 'google/gemini-2.5-flash',
+      latency_ms: Date.now() - started,
+    });
+
+    return new Response(JSON.stringify({ ok: true, reply, action }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (e: any) {
+    console.error('ai-reply error:', e);
+    return new Response(JSON.stringify({ error: e.message }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});
