@@ -49,11 +49,23 @@ Deno.serve(async (req) => {
     };
     const tone = toneMap[settings?.ai_tone || 'friendly'];
 
+    // Load active knowledge base entries (top priority)
+    const { data: kb } = await supabase
+      .from('social_knowledge_base')
+      .select('title, content, kind')
+      .eq('is_active', true)
+      .order('priority', { ascending: false })
+      .limit(20);
+    const kbBlock = (kb && kb.length)
+      ? '\n\nپایگاه دانش (برای پاسخ‌های دقیق‌تر از این استفاده کن):\n' +
+        kb.map((k, i) => `${i + 1}. [${k.kind}] ${k.title}\n${k.content}`).join('\n\n')
+      : '';
+
     const systemByAction: Record<string, string> = {
-      suggest: `شما دستیار پاسخگویی به پیام‌های اینستاگرام آکادمی رفیعی هستید. لحن ${tone}. کوتاه، مفید و به فارسی. اگر کاربر درباره دوره پرسید، او را راهنمایی کنید. فقط پاسخ پیشنهادی را بنویسید بدون توضیح اضافه.`,
+      suggest: `شما دستیار پاسخگویی به پیام‌های اینستاگرام آکادمی رفیعی هستید. لحن ${tone}. کوتاه، مفید و به فارسی. اگر کاربر درباره دوره پرسید، او را راهنمایی کنید. فقط پاسخ پیشنهادی را بنویسید بدون توضیح اضافه.${kbBlock}`,
       translate: `متن آخرین پیام کاربر را به فارسی روان ترجمه کنید. فقط ترجمه را برگردانید.`,
       summarize: `خلاصه‌ای در ۲-۳ جمله از این مکالمه بنویسید تا اپراتور سریع در جریان قرار گیرد.`,
-      followup: `یک پیام پیگیری کوتاه و ${tone} برای این مکالمه بنویس که کاربر را دوباره درگیر کند.`,
+      followup: `یک پیام پیگیری کوتاه و ${tone} برای این مکالمه بنویس که کاربر را دوباره درگیر کند.${kbBlock}`,
     };
 
     const messages = [
@@ -61,6 +73,7 @@ Deno.serve(async (req) => {
       ...history,
     ];
     if (extra_prompt) messages.push({ role: 'user', content: extra_prompt });
+
 
     const res = await fetch(AI_URL, {
       method: 'POST',
