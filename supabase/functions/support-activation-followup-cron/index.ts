@@ -98,7 +98,7 @@ serve(async (req) => {
       }
 
       // Run stage followup if eligible (do NOT skip custom followups when stage caps out)
-      if (row.status !== "activated" && stage && stageEnabled && sentCount < maxRepeats) {
+      if (stageEligible && row.status !== "activated" && stage && stageEnabled && sentCount < maxRepeats) {
         const required = firstDelay + sentCount * repeatDelay;
         if (elapsedMin >= required) {
           try {
