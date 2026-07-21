@@ -1997,6 +1997,47 @@ function userWantsPayment(text: string): boolean {
 
 const SALES_PAY_MARKER = '[SHOW_PAY]';
 
+function extractCourseSlugs(text: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const re = /<COURSE:([a-zA-Z0-9_\-]+)>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    const slug = m[1];
+    if (!seen.has(slug)) { seen.add(slug); out.push(slug); }
+  }
+  return out.slice(0, 6);
+}
+
+async function sendSuggestedCourseButtons(chat_id: number, slugs: string[]) {
+  const { data: courses } = await supabase
+    .from('courses')
+    .select('id, slug, title, price, redirect_url')
+    .in('slug', slugs)
+    .eq('is_active', true);
+  if (!courses?.length) return;
+  // Preserve the order the AI mentioned them
+  const bySlug = new Map(courses.map((c: any) => [c.slug, c]));
+  const ordered = slugs.map((s) => bySlug.get(s)).filter(Boolean) as any[];
+
+  const kbd: InlineKeyboard = [];
+  const lines: string[] = ['🎯 <b>دوره‌های پیشنهادی برای شما:</b>', ''];
+  for (const c of ordered) {
+    const isFree = !c.price || Number(c.price) === 0;
+    const priceTxt = isFree ? 'رایگان' : `${Number(c.price).toLocaleString('fa-IR')} تومان`;
+    const url = c.redirect_url || `${ACADEMY_BASE}/course/${c.slug}`;
+    lines.push(`📚 <b><a href="${url}">${escapeHtml(c.title)}</a></b> — ${priceTxt}`);
+    if (isFree) {
+      kbd.push([{ text: `🎁 ثبت‌نام رایگان: ${c.title}`, callback_data: `student:enroll:${c.id.slice(0, 8)}` }]);
+    } else {
+      kbd.push([{ text: `💳 ${c.title} — ${priceTxt}`, url }]);
+    }
+  }
+  await sendMessage(chat_id, lines.join('\n'), { keyboard: kbd });
+}
+
+
+
 async function handleSalesChat(chat_id: number, msg: any, session: any) {
   const settings = await getSalesSettings();
   if (!settings.enabled) {
