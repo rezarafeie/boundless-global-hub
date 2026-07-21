@@ -40,10 +40,10 @@ const SocialPosts: React.FC = () => {
 
   const sync = async () => {
     setSyncing(true);
-    const { error } = await supabase.functions.invoke('social-comments-sync', { body: {} });
+    const { data, error } = await supabase.functions.invoke('social-posts-sync', { body: {} });
     setSyncing(false);
-    if (error) return toast.error('خطا در همگام‌سازی');
-    toast.success('همگام‌سازی انجام شد');
+    if (error) return toast.error('خطا در همگام‌سازی پست‌ها');
+    toast.success(`همگام‌سازی انجام شد (${data?.upserted ?? 0} پست)`);
     load();
   };
 
