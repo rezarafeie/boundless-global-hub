@@ -27,7 +27,8 @@ import {
   Receipt,
   Video,
   FileText,
-  ClipboardCheck
+  ClipboardCheck,
+  Instagram
 } from 'lucide-react';
 
 interface AdminSidebarProps {
