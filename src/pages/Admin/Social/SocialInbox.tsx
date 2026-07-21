@@ -29,35 +29,28 @@ const SocialInbox: React.FC = () => {
   };
 
   const loadMsgs = async (id: string) => {
-    const { data } = await supabase
-      .from('social_messages')
-      .select('*')
-      .eq('conversation_id', id)
-      .order('sent_at', { ascending: true });
-    setMessages(data || []);
+    const { data, error } = await supabase.functions.invoke('social-fetch-messages', {
+      body: { conversation_id: id },
+    });
+    if (error) {
+      toast({ title: 'خطا در دریافت پیام‌ها', description: error.message, variant: 'destructive' });
+      setMessages([]);
+      return;
+    }
+    setMessages((data as any)?.messages || []);
   };
 
   useEffect(() => { loadConvs(); }, []);
   useEffect(() => {
     if (!selected) return;
     loadMsgs(selected.id);
-    const ch = supabase
-      .channel(`social-msgs-${selected.id}`)
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'social_messages',
-        filter: `conversation_id=eq.${selected.id}`,
-      }, () => loadMsgs(selected.id))
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
   }, [selected?.id]);
 
   useEffect(() => {
-    const ch = supabase
-      .channel('social-convs')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'social_conversations' }, () => loadConvs())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    const t = setInterval(() => { loadConvs(); }, 60000);
+    return () => clearInterval(t);
   }, []);
+
 
   const filtered = useMemo(() => {
     if (!q) return convs;
