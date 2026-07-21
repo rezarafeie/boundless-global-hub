@@ -31,6 +31,11 @@ import EnrollPending from "./pages/EnrollPending";
 import EnrollAdmin from "./pages/EnrollAdmin";
 import EnrollReject from "./pages/EnrollReject";
 import EnrollmentAdmin from "./pages/EnrollmentAdmin";
+import SocialLayout from "./pages/Admin/Social/SocialLayout";
+import SocialDashboard from "./pages/Admin/Social/SocialDashboard";
+import SocialInbox from "./pages/Admin/Social/SocialInbox";
+import SocialAccounts from "./pages/Admin/Social/SocialAccounts";
+import SocialSettings from "./pages/Admin/Social/SocialSettings";
 import EnrollmentEmailAdmin from "./pages/EnrollmentEmailAdmin";
 import EnrollmentDetails from "./pages/EnrollmentDetails";
 import AdminEnrollmentDetails from "./pages/AdminEnrollmentDetails";
@@ -276,6 +281,12 @@ const App = () => {
                     <Route path="/enroll/admin/enrollment/:id" element={<AdminEnrollmentDetails />} />
                     <Route path="/enroll/pending" element={<EnrollPending />} />
                     <Route path="/enroll/admin" element={<EnrollmentAdmin />} />
+                    <Route path="/enroll/admin/social" element={<SocialLayout />}>
+                      <Route index element={<SocialDashboard />} />
+                      <Route path="inbox" element={<SocialInbox />} />
+                      <Route path="accounts" element={<SocialAccounts />} />
+                      <Route path="settings" element={<SocialSettings />} />
+                    </Route>
                     <Route path="/enroll/admin/tests" element={<EnrollAdminTests />} />
                     <Route path="/enroll/admin/boundless-smart-test" element={<BoundlessSmartTestSubmissions />} />
                     <Route path="/test-enrollment/admin/:id" element={<TestEnrollmentAdminDetails />} />

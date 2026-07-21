@@ -161,3 +161,15 @@ verify_jwt = false
 [functions.support-activation-followup-test]
 verify_jwt = false
 
+
+[functions.social-novinhub-connect]
+verify_jwt = false
+
+[functions.social-inbox-sync]
+verify_jwt = false
+
+[functions.social-send-message]
+verify_jwt = false
+
+[functions.social-ai-reply]
+verify_jwt = false

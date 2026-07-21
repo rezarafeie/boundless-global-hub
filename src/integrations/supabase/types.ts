@@ -4451,6 +4451,317 @@ export type Database = {
           },
         ]
       }
+      social_accounts: {
+        Row: {
+          can_send_comment: boolean
+          can_send_direct: boolean
+          can_send_post: boolean
+          created_at: string
+          id: string
+          is_active: boolean
+          last_sync_at: string | null
+          login_required: boolean
+          meta: Json
+          novinhub_account_id: string
+          novinhub_identifier: string | null
+          profile_pic_url: string | null
+          provider: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          can_send_comment?: boolean
+          can_send_direct?: boolean
+          can_send_post?: boolean
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          login_required?: boolean
+          meta?: Json
+          novinhub_account_id: string
+          novinhub_identifier?: string | null
+          profile_pic_url?: string | null
+          provider?: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          can_send_comment?: boolean
+          can_send_direct?: boolean
+          can_send_post?: boolean
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          login_required?: boolean
+          meta?: Json
+          novinhub_account_id?: string
+          novinhub_identifier?: string | null
+          profile_pic_url?: string | null
+          provider?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      social_ai_logs: {
+        Row: {
+          action: string
+          conversation_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          input: Json | null
+          latency_ms: number | null
+          model: string | null
+          output: Json | null
+        }
+        Insert: {
+          action: string
+          conversation_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          input?: Json | null
+          latency_ms?: number | null
+          model?: string | null
+          output?: Json | null
+        }
+        Update: {
+          action?: string
+          conversation_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          input?: Json | null
+          latency_ms?: number | null
+          model?: string | null
+          output?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_ai_logs_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "social_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_conversation_notes: {
+        Row: {
+          author_name: string | null
+          author_user_id: number | null
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          author_name?: string | null
+          author_user_id?: number | null
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          author_name?: string | null
+          author_user_id?: number | null
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_conversation_notes_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "social_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_conversations: {
+        Row: {
+          account_id: string
+          assigned_to: number | null
+          auto_reply_enabled: boolean
+          created_at: string
+          customer_status: string | null
+          id: string
+          is_starred: boolean
+          labels: string[]
+          last_message_at: string | null
+          last_message_direction: string | null
+          last_message_preview: string | null
+          last_responder: string | null
+          lead_score: number
+          meta: Json
+          participant_meta: Json
+          participant_name: string | null
+          participant_pic_url: string | null
+          participant_username: string | null
+          provider_thread_id: string
+          status: string
+          unread_count: number
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          assigned_to?: number | null
+          auto_reply_enabled?: boolean
+          created_at?: string
+          customer_status?: string | null
+          id?: string
+          is_starred?: boolean
+          labels?: string[]
+          last_message_at?: string | null
+          last_message_direction?: string | null
+          last_message_preview?: string | null
+          last_responder?: string | null
+          lead_score?: number
+          meta?: Json
+          participant_meta?: Json
+          participant_name?: string | null
+          participant_pic_url?: string | null
+          participant_username?: string | null
+          provider_thread_id: string
+          status?: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          assigned_to?: number | null
+          auto_reply_enabled?: boolean
+          created_at?: string
+          customer_status?: string | null
+          id?: string
+          is_starred?: boolean
+          labels?: string[]
+          last_message_at?: string | null
+          last_message_direction?: string | null
+          last_message_preview?: string | null
+          last_responder?: string | null
+          lead_score?: number
+          meta?: Json
+          participant_meta?: Json
+          participant_name?: string | null
+          participant_pic_url?: string | null
+          participant_username?: string | null
+          provider_thread_id?: string
+          status?: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_conversations_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_messages: {
+        Row: {
+          attachments: Json
+          conversation_id: string
+          created_at: string
+          direction: string
+          id: string
+          is_read: boolean
+          media_type: string | null
+          media_url: string | null
+          meta: Json
+          provider_message_id: string | null
+          sender_type: string
+          sender_user_id: number | null
+          sent_at: string
+          text: string | null
+        }
+        Insert: {
+          attachments?: Json
+          conversation_id: string
+          created_at?: string
+          direction: string
+          id?: string
+          is_read?: boolean
+          media_type?: string | null
+          media_url?: string | null
+          meta?: Json
+          provider_message_id?: string | null
+          sender_type?: string
+          sender_user_id?: number | null
+          sent_at?: string
+          text?: string | null
+        }
+        Update: {
+          attachments?: Json
+          conversation_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          is_read?: boolean
+          media_type?: string | null
+          media_url?: string | null
+          meta?: Json
+          provider_message_id?: string | null
+          sender_type?: string
+          sender_user_id?: number | null
+          sent_at?: string
+          text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "social_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_settings: {
+        Row: {
+          ai_auto_reply_enabled: boolean
+          ai_confidence_threshold: number
+          ai_language: string
+          ai_tone: string
+          business_hours: Json
+          escalation_rules: Json
+          id: number
+          novinhub_default_account_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_auto_reply_enabled?: boolean
+          ai_confidence_threshold?: number
+          ai_language?: string
+          ai_tone?: string
+          business_hours?: Json
+          escalation_rules?: Json
+          id?: number
+          novinhub_default_account_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_auto_reply_enabled?: boolean
+          ai_confidence_threshold?: number
+          ai_language?: string
+          ai_tone?: string
+          business_hours?: Json
+          escalation_rules?: Json
+          id?: number
+          novinhub_default_account_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sso_tokens: {
         Row: {
           course_slug: string
