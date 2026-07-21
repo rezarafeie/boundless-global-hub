@@ -29,12 +29,13 @@ const SocialComments: React.FC = () => {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('social_comments')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100);
-    setComments(data as Comment[] || []);
+    const { data, error } = await supabase.functions.invoke('social-fetch-comments', { body: {} });
+    if (error) {
+      toast.error('خطا در دریافت کامنت‌ها');
+      setComments([]);
+    } else {
+      setComments(((data as any)?.comments || []) as Comment[]);
+    }
     setLoading(false);
   };
 
@@ -42,11 +43,9 @@ const SocialComments: React.FC = () => {
 
   const sync = async () => {
     setSyncing(true);
-    const { data, error } = await supabase.functions.invoke('social-comments-sync', { body: {} });
+    await load();
     setSyncing(false);
-    if (error) return toast.error('خطا در همگام‌سازی');
-    toast.success(`${data?.comments || 0} کامنت و ${data?.posts || 0} پست همگام شد`);
-    load();
+    toast.success('به‌روزرسانی شد');
   };
 
   const sendReply = async (c: Comment) => {
@@ -54,7 +53,11 @@ const SocialComments: React.FC = () => {
     if (!text) return;
     setSending(c.id);
     const { error } = await supabase.functions.invoke('social-comment-reply', {
-      body: { comment_id: c.id, text },
+      body: {
+        provider_comment_id: c.provider_comment_id || c.id,
+        account_id: c.account_id,
+        text,
+      },
     });
     setSending(null);
     if (error) return toast.error('ارسال پاسخ ناموفق');
@@ -62,6 +65,7 @@ const SocialComments: React.FC = () => {
     setReplyMap(m => ({ ...m, [c.id]: '' }));
     load();
   };
+
 
   const aiSuggest = async (c: Comment) => {
     const { data, error } = await supabase.functions.invoke('social-ai-reply', {
