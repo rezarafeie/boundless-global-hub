@@ -48,12 +48,13 @@ const SocialPlanner: React.FC = () => {
 
   const create = async () => {
     if (!form.account_id || !form.scheduled_at) return toast.error('اکانت و زمان الزامی است');
+    if (form.media_urls.length === 0) return toast.error('حداقل یک فایل رسانه آپلود کنید');
     setSaving(true);
     const { error } = await supabase.from('social_scheduled_posts').insert({
       account_id: form.account_id,
       post_type: form.post_type,
       caption: form.caption || null,
-      media_urls: form.media_url ? [form.media_url] : [],
+      media_urls: form.media_urls,
       scheduled_at: new Date(form.scheduled_at).toISOString(),
       status: 'scheduled',
     });
@@ -61,9 +62,39 @@ const SocialPlanner: React.FC = () => {
     if (error) return toast.error(error.message);
     toast.success('پست زمان‌بندی شد');
     setOpen(false);
-    setForm({ account_id: form.account_id, post_type: 'post', caption: '', media_url: '', scheduled_at: '' });
+    setForm({ account_id: form.account_id, post_type: 'post', caption: '', media_urls: [], scheduled_at: '' });
     load();
   };
+
+  const uploadFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    const uploaded: string[] = [];
+    try {
+      for (const file of Array.from(files)) {
+        const ext = file.name.split('.').pop() || 'bin';
+        const path = `planner/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from('social-media').upload(path, file, {
+          contentType: file.type, upsert: false,
+        });
+        if (upErr) { toast.error(`${file.name}: ${upErr.message}`); continue; }
+        const { data } = await supabase.storage.from('social-media').createSignedUrl(path, 60 * 60 * 24 * 30);
+        if (data?.signedUrl) uploaded.push(data.signedUrl);
+      }
+      if (uploaded.length) {
+        setForm(f => ({ ...f, media_urls: [...f.media_urls, ...uploaded] }));
+        toast.success(`${uploaded.length} فایل آپلود شد`);
+      }
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const removeMedia = (idx: number) => {
+    setForm(f => ({ ...f, media_urls: f.media_urls.filter((_, i) => i !== idx) }));
+  };
+
 
   const publishNow = async (id: string) => {
     const { error } = await supabase.functions.invoke('social-publish-cron', {
