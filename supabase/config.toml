@@ -173,3 +173,15 @@ verify_jwt = false
 
 [functions.social-ai-reply]
 verify_jwt = false
+
+[functions.social-comments-sync]
+verify_jwt = false
+
+[functions.social-comment-reply]
+verify_jwt = false
+
+[functions.social-auto-reply-cron]
+verify_jwt = false
+
+[functions.social-lead-from-conversation]
+verify_jwt = false
