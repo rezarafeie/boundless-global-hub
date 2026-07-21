@@ -3257,16 +3257,10 @@ async function handleUpdate(update: any) {
 
 
 
-  // ===== Contact share (from "Share my phone" button after login deep-link) =====
+  // ===== Contact share =====
   if (msg?.contact?.phone_number) {
     const rawPhone = String(msg.contact.phone_number).replace(/\s|-/g, '');
-    const normalized = rawPhone.startsWith('+') ? rawPhone : `+${rawPhone}`;
-    const countryCode = normalized.startsWith('+98') ? '+98'
-      : normalized.startsWith('+1') ? '+1'
-      : normalized.startsWith('+44') ? '+44'
-      : normalized.startsWith('+49') ? '+49'
-      : `+${normalized.slice(1, 3)}`;
-    // Attach to the most recent unverified login token for this chat
+    // 1) Prefer a pending web-login token if one exists (login deep-link flow)
     const { data: tokRow } = await supabase
       .from('telegram_login_tokens')
       .select('token, expires_at')
@@ -3276,6 +3270,12 @@ async function handleUpdate(update: any) {
       .limit(1)
       .maybeSingle();
     if (tokRow && new Date(tokRow.expires_at) > new Date()) {
+      const normalized = rawPhone.startsWith('+') ? rawPhone : `+${rawPhone}`;
+      const countryCode = normalized.startsWith('+98') ? '+98'
+        : normalized.startsWith('+1') ? '+1'
+        : normalized.startsWith('+44') ? '+44'
+        : normalized.startsWith('+49') ? '+49'
+        : `+${normalized.slice(1, 3)}`;
       await supabase.from('telegram_login_tokens').update({
         pending_phone: normalized,
         pending_country_code: countryCode,
@@ -3287,15 +3287,13 @@ async function handleUpdate(update: any) {
         text: '✅ Phone shared. You can finish on the website now.',
         reply_markup: { remove_keyboard: true },
       });
-    } else {
-      await tgCall('sendMessage', {
-        chat_id,
-        text: 'Thanks! No active login session found, please retry from the website.',
-        reply_markup: { remove_keyboard: true },
-      });
+      return;
     }
+    // 2) Otherwise treat as direct bot-login via shared phone
+    await handleContactLogin(chat_id, rawPhone);
     return;
   }
+
 
   // Unlinked user flow
   if (!user) {
