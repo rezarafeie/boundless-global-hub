@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar, Plus, Send, Trash2 } from 'lucide-react';
+import { Calendar, Plus, Send, Trash2, Upload, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Account { id: string; username: string | null; }
@@ -27,8 +27,10 @@ const SocialPlanner: React.FC = () => {
 
   const [form, setForm] = useState({
     account_id: '', post_type: 'post', caption: '',
-    media_url: '', scheduled_at: '',
+    media_urls: [] as string[], scheduled_at: '',
   });
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const load = async () => {
     setLoading(true);
@@ -46,12 +48,13 @@ const SocialPlanner: React.FC = () => {
 
   const create = async () => {
     if (!form.account_id || !form.scheduled_at) return toast.error('اکانت و زمان الزامی است');
+    if (form.media_urls.length === 0) return toast.error('حداقل یک فایل رسانه آپلود کنید');
     setSaving(true);
     const { error } = await supabase.from('social_scheduled_posts').insert({
       account_id: form.account_id,
       post_type: form.post_type,
       caption: form.caption || null,
-      media_urls: form.media_url ? [form.media_url] : [],
+      media_urls: form.media_urls,
       scheduled_at: new Date(form.scheduled_at).toISOString(),
       status: 'scheduled',
     });
@@ -59,9 +62,39 @@ const SocialPlanner: React.FC = () => {
     if (error) return toast.error(error.message);
     toast.success('پست زمان‌بندی شد');
     setOpen(false);
-    setForm({ account_id: form.account_id, post_type: 'post', caption: '', media_url: '', scheduled_at: '' });
+    setForm({ account_id: form.account_id, post_type: 'post', caption: '', media_urls: [], scheduled_at: '' });
     load();
   };
+
+  const uploadFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    const uploaded: string[] = [];
+    try {
+      for (const file of Array.from(files)) {
+        const ext = file.name.split('.').pop() || 'bin';
+        const path = `planner/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from('social-media').upload(path, file, {
+          contentType: file.type, upsert: false,
+        });
+        if (upErr) { toast.error(`${file.name}: ${upErr.message}`); continue; }
+        const { data } = await supabase.storage.from('social-media').createSignedUrl(path, 60 * 60 * 24 * 30);
+        if (data?.signedUrl) uploaded.push(data.signedUrl);
+      }
+      if (uploaded.length) {
+        setForm(f => ({ ...f, media_urls: [...f.media_urls, ...uploaded] }));
+        toast.success(`${uploaded.length} فایل آپلود شد`);
+      }
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const removeMedia = (idx: number) => {
+    setForm(f => ({ ...f, media_urls: f.media_urls.filter((_, i) => i !== idx) }));
+  };
+
 
   const publishNow = async (id: string) => {
     const { error } = await supabase.functions.invoke('social-publish-cron', {
@@ -124,8 +157,44 @@ const SocialPlanner: React.FC = () => {
                 </Select>
               </div>
               <div>
-                <Label>لینک تصویر / ویدیو</Label>
-                <Input value={form.media_url} onChange={e => setForm(f => ({ ...f, media_url: e.target.value }))} placeholder="https://..." />
+                <Label>فایل‌های رسانه (تصویر / ویدیو — برای کاروسل چند فایل انتخاب کنید)</Label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={e => uploadFiles(e.target.files)}
+                />
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {form.media_urls.map((url, i) => (
+                    <div key={i} className="relative w-20 h-20 rounded overflow-hidden border">
+                      {/\.(mp4|mov|webm)($|\?)/i.test(url) ? (
+                        <video src={url} className="w-full h-full object-cover" />
+                      ) : (
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeMedia(i)}
+                        className="absolute top-0 left-0 bg-black/60 text-white p-0.5 rounded-br"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="w-20 h-20 rounded border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground hover:bg-accent disabled:opacity-50"
+                  >
+                    {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Upload className="w-5 h-5" /><span className="text-[10px] mt-1">آپلود</span></>}
+                  </button>
+                </div>
+                {form.media_urls.length > 1 && (
+                  <p className="text-xs text-muted-foreground mt-1">کاروسل با {form.media_urls.length} فایل</p>
+                )}
               </div>
               <div>
                 <Label>کپشن</Label>
