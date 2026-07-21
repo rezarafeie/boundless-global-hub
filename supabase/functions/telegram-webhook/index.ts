@@ -2133,7 +2133,7 @@ async function streamSalesAiToTelegram(chat_id: number, messages: AiMsg[], model
   } catch (e) { console.error('sales stream error', e); }
   await tryEdit(true);
   if (messageId && full) {
-    try { await editMessage(chat_id, messageId, mdToTelegramHtml(full.replace(SALES_PAY_MARKER, '')).slice(0, 4000)); } catch { /* ignore */ }
+    try { await editMessage(chat_id, messageId, mdToTelegramHtml(stripMarkers(full)).slice(0, 4000)); } catch { /* ignore */ }
   } else if (!full) {
     await sendMessage(chat_id, '❌ پاسخی دریافت نشد.');
   }
