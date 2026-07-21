@@ -1,74 +1,75 @@
-## Support Activation Followup System
 
-Add tiered followups to nudge buyers who stall at any step of the support-activation funnel. Channels per stage, all delays configurable per course in admin.
+# Social CRM & AI Social Media Manager — Phase 1
 
-### Stages & default rules
+Building the foundation, Instagram account connection via NovinHub, and Smart Inbox with AI reply. Later phases add: Comment Manager, Content Planner/Publishing, Lead CRM pipeline, Automations, Analytics, Knowledge Base, Reports.
 
-| # | Trigger (from `support_activations`) | Delay (default) | Channels |
-|---|---|---|---|
-| 1 | Purchase created, `status = not_started` (never opened bot) | 1h | Email (Lovable Emails) + SMS (Kavenegar) |
-| 2 | `status = opened_bot` (in bot, no support click) | 1h | Telegram bot message (to user in bot) |
-| 3 | `status = clicked_support_button` / `pending_manual_confirmation` (clicked, not activated) | 3h | Telegram business chat message (bot posts as business account in @rafieiacademy DM) |
+## Access
+- New admin area at `/enroll/admin/social`
+- Sidebar entry in `EnrollmentAdmin.tsx` (admins only, gated by existing `is_messenger_admin` check)
+- Summary cards added to enroll admin dashboard
 
-Each stage sends **once**; a second reminder per stage after the same delay again (max 2 per stage, then stop). Delays and per-stage enable flags are editable per course.
+## Database (single migration)
 
-### DB migration
+New tables in `public`, all with RLS + `GRANT`s. Admin-only via `is_messenger_admin` check function.
 
-New columns on `courses`:
-- `support_followup_enabled` bool default true
-- `support_followup_stage1_delay_minutes` int default 60
-- `support_followup_stage2_delay_minutes` int default 60
-- `support_followup_stage3_delay_minutes` int default 180
-- `support_followup_stage1_email_subject`, `support_followup_stage1_email_body`, `support_followup_stage1_sms_text`
-- `support_followup_stage2_bot_text`
-- `support_followup_stage3_business_text`
-- `support_followup_max_repeats` int default 2
+- **social_accounts** — connected Instagram accounts
+  `provider` (instagram), `novinhub_page_id`, `username`, `profile_pic_url`, `is_active`, `last_sync_at`, `health_status`, `access_token_ref` (secret name)
+- **social_conversations** — one per IG thread
+  `account_id`, `provider_thread_id`, `participant_username`, `participant_pic`, `last_message_at`, `last_message_preview`, `unread_count`, `status` (open/assigned/archived), `assigned_to`, `is_starred`, `labels[]`, `lead_score`, `customer_status`, `ai_or_human` (last responder)
+- **social_messages** — messages inside conversations
+  `conversation_id`, `provider_message_id`, `direction` (in/out), `sender_type` (user/ai/human), `sender_user_id`, `text`, `media_url`, `media_type`, `is_read`, `sent_at`
+- **social_conversation_notes** — internal team notes per thread
+- **social_ai_logs** — every AI call (prompt, response, model, tokens, latency, conversation_id)
+- **social_sync_cursors** — pagination cursors per account for delta sync
+- **social_settings** — global config (AI tone, business hours, confidence threshold, human escalation rules, novinhub_default_account)
 
-New columns on `support_activations`:
-- `followup_stage1_sent_count`, `stage2_sent_count`, `stage3_sent_count` int default 0
-- `last_followup_stage`, `last_followup_at` (last_followup_at already exists)
+Realtime enabled on `social_conversations` and `social_messages`.
 
-New table `support_activation_followup_log` (audit) with grants + RLS (admin read).
+## NovinHub integration
 
-### Edge functions
+New shared helper `supabase/functions/_shared/novinhub.ts`:
+- `novinhubFetch(path, opts)` — reads `NOVINHUB_API_KEY` secret, base URL from `NOVINHUB_BASE_URL`
+- Wrappers: `listPages()`, `listThreads(pageId, cursor)`, `listMessages(threadId, cursor)`, `sendMessage(threadId, text)`, `getPageProfile(pageId)`
 
-1. **`support-activation-followup-cron`** — runs every 5 min via `pg_cron`. Scans `support_activations` joined with `courses` and enrollment, evaluates each stage's delay against `created_at` / `opened_bot_at` / `clicked_support_button_at`, sends any due message via the right channel, increments counters, writes an audit row.
-2. **Reuse** `send-enrollment-email` pattern for email; add a small `send-kavenegar-sms` edge function (uses `KAVENEGAR_API_KEY`, `send` endpoint with edit-if-exists pattern per user note).
-3. **Telegram business chat**: send via existing bot using `sendMessage` with the user's stored `telegram_id` (regular DM through the bot). Note: true Telegram Business API messaging as the @rafieiacademy account requires a Business Connection; if only bot-DM is available, we use that and label it clearly. I'll implement bot-DM now and leave a hook to swap in `business_connection_id` when set.
+Edge functions:
+- **social-novinhub-connect** — validates the key and syncs pages -> `social_accounts`
+- **social-inbox-sync** — pulls new threads + messages for an account (cursor-based, upserts). Called on demand + every 2 min by cron
+- **social-send-message** — sends outgoing DM via NovinHub, inserts into `social_messages`
+- **social-ai-reply** — takes conversation_id, fetches thread + user profile, calls the **existing Telegram sales agent endpoint** (reuse the same prompt/tools already used by `telegram-webhook`), returns suggested reply. Never auto-sends unless the conversation `auto_reply_enabled` flag is on
 
-### pg_cron schedule
-```sql
-select cron.schedule('support-followup', '*/5 * * * *',
-  $$ select net.http_post(url:='.../functions/v1/support-activation-followup-cron', headers:=..., body:='{}') $$);
-```
+Secrets needed via `add_secret`:
+- `NOVINHUB_API_KEY` (after you confirm docs)
+- `NOVINHUB_BASE_URL` (if configurable)
 
-### Admin UI
+## Frontend
 
-- `CourseEdit.tsx` → new "پیگیری پشتیبانی" section with the 3 stage cards (enable toggle, delay input, message editor, subject/SMS fields where relevant).
-- `SupportActivations.tsx` → add a "پیگیری‌ها" column showing counts + last stage/time.
+New route tree under `src/pages/Admin/Social/`:
+- `SocialLayout.tsx` — RTL sidebar: Dashboard, Inbox, Accounts, Settings (other modules stubbed as "coming soon" for phase 2)
+- `SocialDashboard.tsx` — cards: connected accounts, today's DMs, unread, AI vs human response rate, avg response time. Uses Supabase counts.
+- `SocialAccounts.tsx` — list + "Connect Instagram via NovinHub" flow (requests API key if missing, calls `social-novinhub-connect`), reconnect, disconnect, health badges, last sync
+- `SocialInbox.tsx` — 3-pane layout (desktop) / stacked (mobile):
+  - Left: conversation list with search, filters (unread/assigned/starred/archived), realtime updates
+  - Middle: message thread, chat bubbles, media preview
+  - Right: participant panel (username, lead score, notes, tags, assign, mark lead status)
+  - Composer with buttons: **Send**, **AI Suggest** (fills draft), **Translate**, **Summarize**, **Generate Follow-up**
+- `SocialSettings.tsx` — AI tone, business hours, confidence threshold, escalation rules, NovinHub key status
 
-### Persian message drafts (editable per course)
+Shared components:
+- `ConversationListItem`, `MessageBubble`, `AIActionBar`, `AccountHealthBadge`
+- `useSocialRealtime()` hook — subscribes to `social_conversations` & `social_messages` filtered by account
 
-**Stage 1 — Email** (subject) «قدم آخر برای فعال‌سازی دوره {{course_title}}»  
-Body: خوش‌آمد + یادآوری کلیک روی دکمه فعال‌سازی پشتیبانی در داشبورد + لینک SSO به دوره.
+## Enroll admin surface
 
-**Stage 1 — SMS**: «{{name}} عزیز، برای فعال‌سازی پشتیبانی دوره {{course_title}} به داشبورد آکادمی رفیعی مراجعه کنید: academy.rafiei.co»
+- `EnrollmentAdmin.tsx`: add "Social CRM" sidebar link -> `/enroll/admin/social`
+- Enroll admin dashboard: add 4 summary cards (total accounts, today's DMs, unread, AI response rate) linking into the inbox
 
-**Stage 2 — Bot**: «سلام {{name}} 👋 وارد ربات شدی ولی هنوز روی دکمه «فعال‌سازی پشتیبانی» نزدی. یه کلیک کافیه تا تیم پشتیبانی دوره {{course_title}} رو برات فعال کنه.» + inline button `فعال‌سازی پشتیبانی`.
+## Reusing the Telegram sales agent
 
-**Stage 3 — Business/DM**: «{{name}} جان، پیامت رو دیدیم ولی هنوز فعال‌سازی نهایی نشده. اگر سوالی هست همینجا بنویس تا سریع رسیدگی کنیم 🙏 (دوره: {{course_title}})»
+`social-ai-reply` calls the existing sales-agent code path (same system prompt, product catalog, and course-recommendation logic already used in `telegram-webhook`). No new prompt engineering in phase 1 — just an adapter that maps Instagram conversation history -> the same message format the agent expects, and returns text/attachments.
 
-### Secrets needed
+## Deferred to later phases
+Comment Manager, Content Planner + Publishing, Full Lead CRM pipeline UI (schema will already exist), Automation workflow builder, Analytics dashboards, Knowledge Base ingestion, Reports/exports, Team roles/permissions, Multi-platform (Telegram/WhatsApp/etc.) extension of same schema.
 
-- `KAVENEGAR_API_KEY` — user must add.
-- Email uses existing Lovable Emails / `send-enrollment-email` domain.
-
-### Rollout
-
-1. Migration (columns + audit table + grants + RLS).
-2. `send-kavenegar-sms` function + secret request.
-3. `support-activation-followup-cron` function + pg_cron schedule.
-4. Admin course-edit UI section.
-5. Admin dashboard column.
-
-Confirm and I'll start with step 1.
+## Blockers before I start coding
+1. NovinHub API docs URL
+2. Confirmation you have a NovinHub API key ready (I'll open the secure secret form when it's time)
