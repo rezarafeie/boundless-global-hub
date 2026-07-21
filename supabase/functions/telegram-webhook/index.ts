@@ -65,6 +65,16 @@ async function resolveUser(chat_id: number): Promise<BotUser | null> {
   if (!data) return null;
   let role: Role = (data.role as Role) ?? 'student';
   if (data.is_messenger_admin) role = 'admin';
+  // Also check user_roles table (canonical source) so admin/social_admin roles surface even when chat_users.role is stale
+  const { data: roles } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', data.id);
+  const roleSet = new Set((roles ?? []).map((r: any) => r.role));
+  if (roleSet.has('admin')) role = 'admin';
+  else if (roleSet.has('sales_manager') && role !== 'admin') role = 'sales_manager';
+  else if (roleSet.has('social_admin') && role !== 'admin' && role !== 'sales_manager') role = 'social_admin';
+  else if (roleSet.has('sales_agent') && role === 'student') role = 'sales_agent';
   return { id: data.id, name: data.name, role, telegram_chat_id: chat_id, phone: data.phone };
 }
 
