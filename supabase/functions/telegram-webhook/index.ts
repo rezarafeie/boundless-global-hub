@@ -107,6 +107,7 @@ async function mainMenu(user: BotUser | null): Promise<InlineKeyboard> {
       [{ text: '👥 همه لیدها', callback_data: 'menu:all_leads' }],
       [{ text: '🎯 تخصیص دسته‌جمعی', callback_data: 'bulk:start' }],
       [{ text: '📊 گزارش‌ها', callback_data: 'menu:reports' }],
+      [{ text: '📱 مدیریت شبکه‌های اجتماعی', callback_data: 'social:menu' }],
       [{ text: '⚙️ مدیریت سیستم', callback_data: 'admin:menu' }],
     ];
   }
@@ -122,6 +123,11 @@ async function mainMenu(user: BotUser | null): Promise<InlineKeyboard> {
     return [
       [{ text: '📋 لیدهای من', callback_data: 'menu:my_leads' }],
       [{ text: '📊 عملکرد امروز', callback_data: 'menu:reports' }],
+    ];
+  }
+  if (role === 'social_admin') {
+    return [
+      [{ text: '📱 مدیریت شبکه‌های اجتماعی', callback_data: 'social:menu' }],
     ];
   }
   // Default: student — hide my_courses / my_tests when empty
