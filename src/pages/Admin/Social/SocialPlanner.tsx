@@ -46,24 +46,36 @@ const SocialPlanner: React.FC = () => {
 
   useEffect(() => { load(); }, []);
 
-  const create = async () => {
-    if (!form.account_id || !form.scheduled_at) return toast.error('اکانت و زمان الزامی است');
+  const create = async (publishImmediately = false) => {
+    if (!form.account_id) return toast.error('اکانت الزامی است');
+    if (!publishImmediately && !form.scheduled_at) return toast.error('زمان انتشار الزامی است');
     if (form.media_urls.length === 0) return toast.error('حداقل یک فایل رسانه آپلود کنید');
     setSaving(true);
-    const { error } = await supabase.from('social_scheduled_posts').insert({
+    const scheduledAt = publishImmediately
+      ? new Date(Date.now() - 1000).toISOString()
+      : new Date(form.scheduled_at).toISOString();
+    const { data: inserted, error } = await supabase.from('social_scheduled_posts').insert({
       account_id: form.account_id,
       post_type: form.post_type,
       caption: form.caption || null,
       media_urls: form.media_urls,
-      scheduled_at: new Date(form.scheduled_at).toISOString(),
+      scheduled_at: scheduledAt,
       status: 'scheduled',
-    });
+    }).select('id').single();
+    if (error) { setSaving(false); return toast.error(error.message); }
+    if (publishImmediately && inserted?.id) {
+      const { error: pubErr } = await supabase.functions.invoke('social-publish-cron', {
+        body: { scheduled_post_id: inserted.id },
+      });
+      if (pubErr) toast.error('ذخیره شد ولی انتشار خطا داد');
+      else toast.success('در حال انتشار...');
+    } else {
+      toast.success('پست زمان‌بندی شد');
+    }
     setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success('پست زمان‌بندی شد');
     setOpen(false);
     setForm({ account_id: form.account_id, post_type: 'post', caption: '', media_urls: [], scheduled_at: '' });
-    load();
+    setTimeout(load, 1500);
   };
 
   const uploadFiles = async (files: FileList | null) => {
@@ -204,9 +216,15 @@ const SocialPlanner: React.FC = () => {
                 <Label>زمان انتشار</Label>
                 <Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm(f => ({ ...f, scheduled_at: e.target.value }))} />
               </div>
-              <Button onClick={create} disabled={saving} className="w-full">
-                {saving ? 'در حال ذخیره...' : 'ذخیره'}
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => create(false)} disabled={saving} variant="outline" className="flex-1">
+                  {saving ? '...' : 'زمان‌بندی'}
+                </Button>
+                <Button onClick={() => create(true)} disabled={saving} className="flex-1">
+                  <Send className="w-4 h-4 ml-2" />
+                  {saving ? '...' : 'انتشار فوری'}
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
