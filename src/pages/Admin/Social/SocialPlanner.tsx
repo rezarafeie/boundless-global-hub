@@ -216,9 +216,15 @@ const SocialPlanner: React.FC = () => {
                 <Label>زمان انتشار</Label>
                 <Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm(f => ({ ...f, scheduled_at: e.target.value }))} />
               </div>
-              <Button onClick={create} disabled={saving} className="w-full">
-                {saving ? 'در حال ذخیره...' : 'ذخیره'}
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => create(false)} disabled={saving} variant="outline" className="flex-1">
+                  {saving ? '...' : 'زمان‌بندی'}
+                </Button>
+                <Button onClick={() => create(true)} disabled={saving} className="flex-1">
+                  <Send className="w-4 h-4 ml-2" />
+                  {saving ? '...' : 'انتشار فوری'}
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
