@@ -4453,6 +4453,10 @@ export type Database = {
       }
       social_accounts: {
         Row: {
+          ai_min_confidence: number
+          ai_system_prompt: string | null
+          auto_reply_comment_enabled: boolean
+          auto_reply_enabled: boolean
           can_send_comment: boolean
           can_send_direct: boolean
           can_send_post: boolean
@@ -4470,6 +4474,10 @@ export type Database = {
           username: string
         }
         Insert: {
+          ai_min_confidence?: number
+          ai_system_prompt?: string | null
+          auto_reply_comment_enabled?: boolean
+          auto_reply_enabled?: boolean
           can_send_comment?: boolean
           can_send_direct?: boolean
           can_send_post?: boolean
@@ -4487,6 +4495,10 @@ export type Database = {
           username: string
         }
         Update: {
+          ai_min_confidence?: number
+          ai_system_prompt?: string | null
+          auto_reply_comment_enabled?: boolean
+          auto_reply_enabled?: boolean
           can_send_comment?: boolean
           can_send_direct?: boolean
           can_send_post?: boolean
@@ -4549,6 +4561,74 @@ export type Database = {
           },
         ]
       }
+      social_comments: {
+        Row: {
+          account_id: string
+          author_name: string | null
+          author_pic_url: string | null
+          author_username: string | null
+          created_at: string
+          id: string
+          is_reply: boolean
+          meta: Json
+          parent_comment_id: string | null
+          provider_comment_id: string
+          provider_post_id: string | null
+          replied_at: string | null
+          reply_text: string | null
+          sent_at: string | null
+          status: string
+          text: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          author_name?: string | null
+          author_pic_url?: string | null
+          author_username?: string | null
+          created_at?: string
+          id?: string
+          is_reply?: boolean
+          meta?: Json
+          parent_comment_id?: string | null
+          provider_comment_id: string
+          provider_post_id?: string | null
+          replied_at?: string | null
+          reply_text?: string | null
+          sent_at?: string | null
+          status?: string
+          text?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          author_name?: string | null
+          author_pic_url?: string | null
+          author_username?: string | null
+          created_at?: string
+          id?: string
+          is_reply?: boolean
+          meta?: Json
+          parent_comment_id?: string | null
+          provider_comment_id?: string
+          provider_post_id?: string | null
+          replied_at?: string | null
+          reply_text?: string | null
+          sent_at?: string | null
+          status?: string
+          text?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_comments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_conversation_notes: {
         Row: {
           author_name: string | null
@@ -4594,12 +4674,14 @@ export type Database = {
           id: string
           is_starred: boolean
           labels: string[]
+          last_auto_reply_at: string | null
           last_message_at: string | null
           last_message_direction: string | null
           last_message_preview: string | null
           last_responder: string | null
           lead_score: number
           meta: Json
+          needs_reply: boolean
           participant_meta: Json
           participant_name: string | null
           participant_pic_url: string | null
@@ -4618,12 +4700,14 @@ export type Database = {
           id?: string
           is_starred?: boolean
           labels?: string[]
+          last_auto_reply_at?: string | null
           last_message_at?: string | null
           last_message_direction?: string | null
           last_message_preview?: string | null
           last_responder?: string | null
           lead_score?: number
           meta?: Json
+          needs_reply?: boolean
           participant_meta?: Json
           participant_name?: string | null
           participant_pic_url?: string | null
@@ -4642,12 +4726,14 @@ export type Database = {
           id?: string
           is_starred?: boolean
           labels?: string[]
+          last_auto_reply_at?: string | null
           last_message_at?: string | null
           last_message_direction?: string | null
           last_message_preview?: string | null
           last_responder?: string | null
           lead_score?: number
           meta?: Json
+          needs_reply?: boolean
           participant_meta?: Json
           participant_name?: string | null
           participant_pic_url?: string | null
@@ -4663,6 +4749,94 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_leads: {
+        Row: {
+          account_id: string
+          ai_summary: string | null
+          assigned_to: string | null
+          comment_id: string | null
+          conversation_id: string | null
+          created_at: string
+          crm_note_id: string | null
+          email: string | null
+          id: string
+          meta: Json
+          name: string | null
+          notes: string | null
+          phone: string | null
+          score: number
+          source: string
+          stage: string
+          tags: string[]
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          account_id: string
+          ai_summary?: string | null
+          assigned_to?: string | null
+          comment_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          crm_note_id?: string | null
+          email?: string | null
+          id?: string
+          meta?: Json
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          score?: number
+          source?: string
+          stage?: string
+          tags?: string[]
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          account_id?: string
+          ai_summary?: string | null
+          assigned_to?: string | null
+          comment_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          crm_note_id?: string | null
+          email?: string | null
+          id?: string
+          meta?: Json
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          score?: number
+          source?: string
+          stage?: string
+          tags?: string[]
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_leads_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_leads_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "social_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_leads_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "social_conversations"
             referencedColumns: ["id"]
           },
         ]
@@ -4722,6 +4896,71 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "social_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_posts: {
+        Row: {
+          account_id: string
+          caption: string | null
+          comments_count: number
+          created_at: string
+          id: string
+          likes_count: number
+          media_url: string | null
+          meta: Json
+          permalink: string | null
+          post_type: string | null
+          provider_post_id: string
+          published_at: string | null
+          scheduled_at: string | null
+          status: string
+          thumbnail_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          caption?: string | null
+          comments_count?: number
+          created_at?: string
+          id?: string
+          likes_count?: number
+          media_url?: string | null
+          meta?: Json
+          permalink?: string | null
+          post_type?: string | null
+          provider_post_id: string
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          caption?: string | null
+          comments_count?: number
+          created_at?: string
+          id?: string
+          likes_count?: number
+          media_url?: string | null
+          meta?: Json
+          permalink?: string | null
+          post_type?: string | null
+          provider_post_id?: string
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
             referencedColumns: ["id"]
           },
         ]
