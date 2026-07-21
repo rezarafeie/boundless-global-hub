@@ -157,8 +157,44 @@ const SocialPlanner: React.FC = () => {
                 </Select>
               </div>
               <div>
-                <Label>لینک تصویر / ویدیو</Label>
-                <Input value={form.media_url} onChange={e => setForm(f => ({ ...f, media_url: e.target.value }))} placeholder="https://..." />
+                <Label>فایل‌های رسانه (تصویر / ویدیو — برای کاروسل چند فایل انتخاب کنید)</Label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={e => uploadFiles(e.target.files)}
+                />
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {form.media_urls.map((url, i) => (
+                    <div key={i} className="relative w-20 h-20 rounded overflow-hidden border">
+                      {/\.(mp4|mov|webm)($|\?)/i.test(url) ? (
+                        <video src={url} className="w-full h-full object-cover" />
+                      ) : (
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeMedia(i)}
+                        className="absolute top-0 left-0 bg-black/60 text-white p-0.5 rounded-br"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="w-20 h-20 rounded border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground hover:bg-accent disabled:opacity-50"
+                  >
+                    {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Upload className="w-5 h-5" /><span className="text-[10px] mt-1">آپلود</span></>}
+                  </button>
+                </div>
+                {form.media_urls.length > 1 && (
+                  <p className="text-xs text-muted-foreground mt-1">کاروسل با {form.media_urls.length} فایل</p>
+                )}
               </div>
               <div>
                 <Label>کپشن</Label>
