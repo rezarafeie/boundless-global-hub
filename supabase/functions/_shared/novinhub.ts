@@ -33,18 +33,22 @@ export async function nhFetch(path: string, init: RequestInit = {}): Promise<any
 
 export const novinhub = {
   listAccounts: () => nhFetch('/account'),
+
   listConversations: (params: Record<string, string | number> = {}) => {
     const qs = new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString();
-    return nhFetch(`/conversations${qs ? `?${qs}` : ''}`);
+    return nhFetch(`/conversation${qs ? `?${qs}` : ''}`);
   },
-  getConversation: (id: string) => nhFetch(`/conversations/${id}`),
-  listMessages: (conversationId: string, params: Record<string, string | number> = {}) => {
+
+  getConversation: (id: string | number) => nhFetch(`/conversation/${id}`),
+
+  listMessages: (conversationId: string | number, params: Record<string, string | number> = {}) => {
     const qs = new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString();
-    return nhFetch(`/conversations/${conversationId}/messages${qs ? `?${qs}` : ''}`);
+    return nhFetch(`/conversation/${conversationId}/messages${qs ? `?${qs}` : ''}`);
   },
-  reply: (conversationId: string, content: string) =>
-    nhFetch(`/conversations/${conversationId}/reply`, {
+
+  reply: (conversationId: string | number, text: string) =>
+    nhFetch(`/conversation/${conversationId}/reply`, {
       method: 'POST',
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ text }),
     }),
 };

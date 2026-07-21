@@ -26,31 +26,31 @@ Deno.serve(async (req) => {
     let msgCount = 0;
 
     for (const acc of accounts || []) {
-      // Ask NovinHub for conversations, scoped to this account when supported
-      const convRes = await novinhub.listConversations({ account_id: acc.novinhub_account_id, limit: 30 }).catch((e) => {
-        console.error(`listConversations failed for ${acc.username}:`, e.message);
+      const convRes = await novinhub.listConversations({ limit: 30 }).catch((e) => {
+        console.error(`listConversations failed:`, e.message);
         return null;
       });
       if (!convRes) continue;
 
-      const conversations = Array.isArray(convRes) ? convRes : (convRes.data || []);
+      const allConvs = Array.isArray(convRes) ? convRes : (convRes.data || []);
+      // filter for this account
+      const conversations = allConvs.filter((c: any) =>
+        String(c.account_id) === String(acc.novinhub_account_id)
+      );
 
       for (const c of conversations) {
-        const providerThreadId = String(c.id ?? c.conversation_id ?? '');
-        if (!providerThreadId) continue;
-        const participant = c.user || c.participant || c.from || {};
-        const lastMsg = c.last_message || c.lastMessage || {};
+        const providerThreadId = String(c.id);
+        const participant = (c.participants || []).find((p: any) => p?.socialUser)?.socialUser || {};
 
         const convRow = {
           account_id: acc.id,
           provider_thread_id: providerThreadId,
-          participant_username: participant.username || participant.name || c.name || null,
-          participant_name: participant.name || participant.full_name || null,
-          participant_pic_url: participant.profile_image_url || participant.avatar || null,
+          participant_username: participant.username || participant.name || null,
+          participant_name: participant.name || null,
+          participant_pic_url: participant.image || null,
           participant_meta: participant,
-          last_message_at: c.updated_at || c.last_message_at || lastMsg.created_at || new Date().toISOString(),
-          last_message_preview: (lastMsg.content || lastMsg.text || c.snippet || '').toString().slice(0, 200),
-          last_message_direction: lastMsg.direction || null,
+          last_message_at: c.updated_at || c.last_message_at || new Date().toISOString(),
+          last_message_preview: (c.last_message?.text || c.snippet || '').toString().slice(0, 200),
           unread_count: c.unread_count ?? c.unseen_count ?? 0,
           meta: c,
           updated_at: new Date().toISOString(),
@@ -64,22 +64,26 @@ Deno.serve(async (req) => {
         if (upErr) { console.error('upsert conv:', upErr); continue; }
         convCount++;
 
-        // Fetch messages for this thread
         const msgsRes = await novinhub.listMessages(providerThreadId, { limit: 50 }).catch(() => null);
         if (!msgsRes) continue;
         const msgs = Array.isArray(msgsRes) ? msgsRes : (msgsRes.data || []);
-        const msgRows = msgs.map((m: any) => ({
-          conversation_id: upConv.id,
-          provider_message_id: String(m.id ?? ''),
-          direction: (m.direction || (m.from_me ? 'out' : 'in')),
-          sender_type: m.from_me ? 'human' : 'user',
-          text: m.content || m.text || null,
-          media_url: m.media_url || (m.attachments?.[0]?.url) || null,
-          media_type: m.media_type || (m.attachments?.[0]?.type) || null,
-          attachments: m.attachments || [],
-          sent_at: m.created_at || new Date().toISOString(),
-          meta: m,
-        })).filter((r: any) => r.provider_message_id);
+        const ownSocialUserId = acc.meta?.social_user_id;
+
+        const msgRows = msgs.map((m: any) => {
+          const isOut = ownSocialUserId != null && String(m.social_user_id) === String(ownSocialUserId);
+          return {
+            conversation_id: upConv.id,
+            provider_message_id: String(m.id),
+            direction: isOut ? 'out' : 'in',
+            sender_type: isOut ? (m.is_auto_response ? 'ai' : 'human') : 'user',
+            text: m.text || null,
+            media_url: m.attachment?.url || null,
+            media_type: m.type || null,
+            attachments: m.attachment ? [m.attachment] : [],
+            sent_at: m.date ? new Date(m.date.replace(' ', 'T') + 'Z').toISOString() : new Date().toISOString(),
+            meta: m,
+          };
+        }).filter((r: any) => r.provider_message_id);
 
         if (msgRows.length) {
           const { error: msgErr } = await supabase
