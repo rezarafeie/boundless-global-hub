@@ -1485,6 +1485,7 @@ async function studentBrowse(chat_id: number, message_id: number, page: number) 
 }
 
 async function studentEnroll(chat_id: number, message_id: number, user: BotUser, coursePrefix: string) {
+  await editMessage(chat_id, message_id, '⏳ در حال پردازش ثبت‌نام... لطفاً چند لحظه صبر کنید.', []);
   const { data: courses } = await supabase.from('courses').select('id, slug, title, price, redirect_url').eq('is_active', true).limit(500);
   const course = (courses ?? []).find((c: any) => c.id.startsWith(coursePrefix));
   if (!course) { await editMessage(chat_id, message_id, '❌ دوره یافت نشد.', [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
