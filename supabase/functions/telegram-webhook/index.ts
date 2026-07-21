@@ -3384,6 +3384,17 @@ async function handleUpdate(update: any) {
   const isPrivate = msg?.chat?.type === 'private';
   const isEdited = !!(update.edited_message || update.edited_business_message);
   const isBusiness = !!business_connection_id;
+  if (session?.state?.startsWith('social:') && (user.role === 'admin' || user.role === 'social_admin')) {
+    await handleSocialMessage(chat_id, user, msg, session, text);
+    return;
+  }
+
+  // Only send the fallback hint in private 1:1 chats with actual text input,
+  // and skip edited messages / business messages / group or channel chats.
+  // Otherwise the bot spams "/start" hints in groups and on every media/edit event.
+  const isPrivate = msg?.chat?.type === 'private';
+  const isEdited = !!(update.edited_message || update.edited_business_message);
+  const isBusiness = !!business_connection_id;
   if (isPrivate && !isEdited && !isBusiness && text && text.trim().length > 0) {
     await sendMessage(chat_id, 'برای مشاهده منو /start را ارسال کنید.');
   }
