@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Send, Sparkles, Languages, FileText, Bell, Search, RefreshCw, Loader2 } from 'lucide-react';
+import { Send, Sparkles, Languages, FileText, Bell, Search, RefreshCw, Loader2, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const SocialInbox: React.FC = () => {
