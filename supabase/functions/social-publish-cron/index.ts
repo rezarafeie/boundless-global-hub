@@ -17,42 +17,76 @@ Deno.serve(async (req) => {
     const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
     const specificId: string | undefined = body.scheduled_post_id;
 
-    let q = supabase
+    const selectSpec = '*, social_accounts!inner(id, novinhub_account_id, username, provider)';
+    let query = supabase
       .from('social_scheduled_posts')
-      .select('*, social_accounts!inner(id, novinhub_account_id, username)')
-      .eq('status', 'scheduled')
-      .lte('scheduled_at', new Date().toISOString())
+      .select(selectSpec)
       .limit(20);
-    if (specificId) q = supabase
-      .from('social_scheduled_posts')
-      .select('*, social_accounts!inner(id, novinhub_account_id, username)')
-      .eq('id', specificId);
+    if (specificId) {
+      query = query.eq('id', specificId);
+    } else {
+      query = query.eq('status', 'scheduled').lte('scheduled_at', new Date().toISOString());
+    }
 
-    const { data: posts, error } = await q;
+    const { data: posts, error } = await query;
     if (error) throw error;
 
     const results: any[] = [];
     for (const p of posts || []) {
+      const acc = (p as any).social_accounts;
       try {
         await supabase.from('social_scheduled_posts').update({
           status: 'publishing',
           publish_attempts: (p.publish_attempts || 0) + 1,
+          last_error: null,
         }).eq('id', p.id);
 
-        const acc = (p as any).social_accounts;
+        const mediaUrls = Array.isArray(p.media_urls) ? p.media_urls as string[] : [];
+        console.log('publishing', p.id, 'account', acc.novinhub_account_id, 'media', mediaUrls.length);
+
+        // Sign fresh URLs in case originals are stale (for bucket paths ending in signed URL)
+        const signed: string[] = [];
+        for (const url of mediaUrls) {
+          if (url.includes('/object/sign/social-media/')) {
+            // Extract path after /social-media/
+            const idx = url.indexOf('/social-media/');
+            const path = url.substring(idx + '/social-media/'.length).split('?')[0];
+            const { data: sig } = await supabase.storage.from('social-media').createSignedUrl(path, 60 * 60);
+            signed.push(sig?.signedUrl || url);
+          } else {
+            signed.push(url);
+          }
+        }
+
         const res = await novinhub.publishPost({
           account_id: acc.novinhub_account_id,
           caption: p.caption || '',
-          media_urls: Array.isArray(p.media_urls) ? p.media_urls : [],
+          media_urls: signed,
           type: p.post_type || 'post',
         });
 
+        const providerId = String(res?.id || res?.data?.id || res?.data?.post_group_id || '');
+
         await supabase.from('social_scheduled_posts').update({
           status: 'published',
-          provider_post_id: String(res?.id || res?.data?.id || ''),
+          provider_post_id: providerId,
           published_at: new Date().toISOString(),
           last_error: null,
         }).eq('id', p.id);
+
+        // Insert into social_posts so it shows up in "Posts" tab
+        if (providerId) {
+          await supabase.from('social_posts').upsert({
+            account_id: acc.id,
+            provider_post_id: providerId,
+            post_type: p.post_type || 'post',
+            caption: p.caption || null,
+            media_url: signed[0] || null,
+            status: 'published',
+            published_at: new Date().toISOString(),
+            meta: res,
+          }, { onConflict: 'account_id,provider_post_id' });
+        }
 
         await supabase.from('social_notifications').insert({
           account_id: acc.id,
@@ -62,19 +96,21 @@ Deno.serve(async (req) => {
           link: '/enroll/admin/social/planner',
         });
 
-        results.push({ id: p.id, ok: true });
+        results.push({ id: p.id, ok: true, provider_post_id: providerId });
       } catch (e: any) {
+        const errMsg = e?.message?.slice(0, 500) || String(e);
+        console.error('publish failed', p.id, errMsg);
         await supabase.from('social_scheduled_posts').update({
           status: (p.publish_attempts || 0) >= 2 ? 'failed' : 'scheduled',
-          last_error: e.message?.slice(0, 500) || String(e),
+          last_error: errMsg,
         }).eq('id', p.id);
         await supabase.from('social_notifications').insert({
           account_id: p.account_id,
           kind: 'post_failed',
           title: 'خطا در انتشار پست',
-          body: e.message?.slice(0, 200) || String(e),
+          body: errMsg.slice(0, 200),
         });
-        results.push({ id: p.id, ok: false, error: e.message });
+        results.push({ id: p.id, ok: false, error: errMsg });
       }
     }
 
@@ -82,6 +118,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e: any) {
+    console.error('cron error', e);
     return new Response(JSON.stringify({ error: e.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
