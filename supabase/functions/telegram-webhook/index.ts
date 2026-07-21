@@ -2054,11 +2054,21 @@ async function handleSalesChat(chat_id: number, msg: any, session: any) {
   // Use the same fast model as the smart assistant for speed
   const rawReply = await streamSalesAiToTelegram(chat_id, messages, 'google/gemini-2.5-flash');
   const showPay = userAskedPay || rawReply.includes(SALES_PAY_MARKER);
-  const cleanReply = rawReply.replace(SALES_PAY_MARKER, '').trim();
+  const suggestedSlugs = extractCourseSlugs(rawReply);
+  const cleanReply = rawReply
+    .replace(SALES_PAY_MARKER, '')
+    .replace(/<COURSE:[^>\s]+>/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 
+  if (suggestedSlugs.length) {
+    await sendSuggestedCourseButtons(chat_id, suggestedSlugs);
+  }
   if (showPay) {
     await showSalesPaymentOptions(chat_id, null);
   }
+
+
 
   const userTextOnly = Array.isArray(userContent)
     ? userContent.filter((p: any) => p.type === 'text').map((p: any) => p.text).join(' ').slice(0, 2000) || '[رسانه]'
