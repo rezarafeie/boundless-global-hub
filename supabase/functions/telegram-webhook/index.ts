@@ -2849,6 +2849,15 @@ async function handleUpdate(update: any) {
         if (sub === 'run') { await bulkRun(chat_id, message_id, user, rest[1]); return; }
       }
 
+      if (action === 'social') {
+        if (user.role !== 'admin' && user.role !== 'social_admin') {
+          await editMessage(chat_id, message_id, '❌ دسترسی مجاز نیست.', [[{ text: '🏠', callback_data: 'menu:home' }]]);
+          return;
+        }
+        await handleSocialCallback(chat_id, message_id, user, rest);
+        return;
+      }
+
       if (action === 'admin') {
         if (user.role !== 'admin') return;
         const sub = rest[0];
