@@ -3400,6 +3400,265 @@ async function handleUpdate(update: any) {
   }
 }
 
+// ============ Social Admin: post creation via Telegram ============
+
+async function uploadSocialMediaFile(user_id: number, file_id: string, kind: 'photo' | 'video' | 'document'): Promise<{ url: string; mime: string } | null> {
+  const f = await downloadFile(file_id);
+  if (!f) return null;
+  const ext = (f.mime.split('/')[1] || 'bin').split(';')[0].replace(/[^a-z0-9]/gi, '') || 'bin';
+  const path = `telegram/${user_id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from('social-media').upload(path, f.bytes, {
+    contentType: f.mime, upsert: true,
+  });
+  if (error) { console.error('social upload error:', error); return null; }
+  const { data, error: sErr } = await supabase.storage.from('social-media').createSignedUrl(path, 60 * 60 * 24 * 30);
+  if (sErr || !data?.signedUrl) { console.error('signed url error:', sErr); return null; }
+  return { url: data.signedUrl, mime: f.mime };
+}
+
+async function listSocialAccountsForUser(user: BotUser): Promise<Array<{ id: string; label: string }>> {
+  const { data } = await supabase
+    .from('social_accounts')
+    .select('id, username, platform, novinhub_account_id')
+    .eq('is_active', true)
+    .limit(50);
+  return (data ?? []).map((a: any) => ({
+    id: a.id,
+    label: `${a.platform === 'instagram' ? '📷' : '🌐'} @${a.username ?? a.novinhub_account_id ?? a.id.slice(0, 6)}`,
+  }));
+}
+
+async function showSocialMenu(chat_id: number, message_id: number, user: BotUser) {
+  const accounts = await listSocialAccountsForUser(user);
+  const rows: InlineKeyboard = [];
+  if (accounts.length === 0) {
+    rows.push([{ text: '⚠️ اکانتی متصل نیست', callback_data: 'social:menu' }]);
+  } else {
+    rows.push([{ text: '➕ پست جدید', callback_data: 'social:new' }]);
+    rows.push([{ text: '📅 پست‌های زمان‌بندی‌شده', callback_data: 'social:sched' }]);
+  }
+  rows.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
+  const accList = accounts.length
+    ? accounts.map(a => `• ${a.label}`).join('\n')
+    : 'هیچ اکانت فعالی یافت نشد. ابتدا از پنل «Social CRM» یک اکانت متصل کنید.';
+  await editMessage(chat_id, message_id,
+    `📱 <b>مدیریت شبکه‌های اجتماعی</b>\n\nاکانت‌های شما:\n${accList}`, rows);
+}
+
+async function showSocialAccountPicker(chat_id: number, message_id: number, user: BotUser) {
+  const accounts = await listSocialAccountsForUser(user);
+  if (accounts.length === 0) {
+    await editMessage(chat_id, message_id, '❌ اکانتی برای انتشار یافت نشد.',
+      [[{ text: '⬅️ بازگشت', callback_data: 'social:menu' }]]);
+    return;
+  }
+  const rows: InlineKeyboard = accounts.map(a => [{ text: a.label, callback_data: `social:pick:${a.id}` }]);
+  rows.push([{ text: '⬅️ بازگشت', callback_data: 'social:menu' }]);
+  await editMessage(chat_id, message_id, '📤 یک اکانت را برای انتشار انتخاب کنید:', rows);
+}
+
+async function startSocialPost(chat_id: number, message_id: number, user: BotUser, account_id: string) {
+  await setSession(chat_id, user.id, 'social:awaiting_media', { account_id, media: [] });
+  await editMessage(chat_id, message_id,
+    [
+      '🖼 <b>ارسال رسانه</b>',
+      '',
+      'یک یا چند عکس/ویدیو ارسال کنید.',
+      'پس از اتمام، دکمه «✅ پایان رسانه» را بزنید.',
+      'برای پست فقط-متنی، مستقیم دکمه پایان را بزنید.',
+      '',
+      '/cancel برای انصراف',
+    ].join('\n'),
+    [
+      [{ text: '✅ پایان رسانه — ادامه به کپشن', callback_data: 'social:done_media' }],
+      [{ text: '❌ انصراف', callback_data: 'social:menu' }],
+    ]);
+}
+
+async function showScheduleStep(chat_id: number, user: BotUser) {
+  await sendMessage(chat_id,
+    [
+      '⏰ <b>زمان انتشار</b>',
+      '',
+      'یکی از موارد را انتخاب کنید یا زمان را به فرمت زیر ارسال کنید:',
+      '<code>YYYY-MM-DD HH:MM</code> (به وقت تهران)',
+      'یا نسبی: <code>+30m</code> ، <code>+2h</code> ، <code>+1d</code>',
+    ].join('\n'),
+    { keyboard: [
+      [{ text: '🚀 انتشار فوری', callback_data: 'social:pub:now' }],
+      [{ text: '❌ انصراف', callback_data: 'social:menu' }],
+    ] });
+}
+
+function parseScheduleInput(input: string): Date | null {
+  const t = input.trim();
+  const rel = t.match(/^\+(\d+)\s*(m|h|d)$/i);
+  if (rel) {
+    const n = parseInt(rel[1]);
+    const unit = rel[2].toLowerCase();
+    const ms = unit === 'm' ? n * 60000 : unit === 'h' ? n * 3600000 : n * 86400000;
+    return new Date(Date.now() + ms);
+  }
+  const abs = t.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})$/);
+  if (abs) {
+    // Interpret as Tehran time (UTC+3:30)
+    const [_, y, mo, d, h, mi] = abs;
+    const utcMs = Date.UTC(+y, +mo - 1, +d, +h, +mi) - (3 * 60 + 30) * 60000;
+    return new Date(utcMs);
+  }
+  return null;
+}
+
+async function publishOrSchedule(chat_id: number, user: BotUser, ctx: any, scheduledAt: Date | null) {
+  const account_id: string = ctx.account_id;
+  const media: Array<{ url: string; mime: string }> = ctx.media ?? [];
+  const caption: string = ctx.caption ?? '';
+  const media_urls = media.map(m => m.url);
+  const media_type = media.length === 0 ? 'text' : (media[0].mime.startsWith('video') ? 'video' : 'image');
+
+  const payload: any = {
+    social_account_id: account_id,
+    caption,
+    media_urls,
+    media_type,
+    status: scheduledAt ? 'scheduled' : 'pending_publish',
+    scheduled_at: scheduledAt ? scheduledAt.toISOString() : new Date().toISOString(),
+    created_by: String(user.id),
+    source: 'telegram_bot',
+  };
+
+  const { data, error } = await supabase.from('social_scheduled_posts').insert(payload).select('id').maybeSingle();
+  await clearSession(chat_id);
+  if (error) {
+    await sendMessage(chat_id, `❌ خطا در ثبت پست: <code>${escapeHtml(error.message)}</code>`,
+      { keyboard: [[{ text: '⬅️ بازگشت', callback_data: 'social:menu' }]] });
+    return;
+  }
+
+  if (!scheduledAt) {
+    // Trigger immediate publish edge function
+    try {
+      await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/social-publish-cron`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        },
+        body: JSON.stringify({ post_id: data?.id, force: true }),
+      });
+    } catch (e) { console.warn('publish trigger failed', e); }
+    await sendMessage(chat_id, '✅ پست برای انتشار فوری ارسال شد.',
+      { keyboard: [[{ text: '⬅️ منوی سوشال', callback_data: 'social:menu' }]] });
+  } else {
+    const tehran = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', dateStyle: 'short', timeStyle: 'short' }).format(scheduledAt);
+    await sendMessage(chat_id, `✅ پست زمان‌بندی شد برای <b>${tehran}</b>`,
+      { keyboard: [[{ text: '⬅️ منوی سوشال', callback_data: 'social:menu' }]] });
+  }
+}
+
+async function listScheduledPosts(chat_id: number, message_id: number) {
+  const { data } = await supabase
+    .from('social_scheduled_posts')
+    .select('id, caption, status, scheduled_at, media_type')
+    .in('status', ['scheduled', 'pending_publish'])
+    .order('scheduled_at', { ascending: true })
+    .limit(10);
+  const rows = (data ?? []).map((p: any) => {
+    const t = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', dateStyle: 'short', timeStyle: 'short' }).format(new Date(p.scheduled_at));
+    const short = (p.caption ?? '').slice(0, 40);
+    return `• [${p.status}] ${t} — ${escapeHtml(short)}`;
+  }).join('\n') || '— چیزی یافت نشد —';
+  await editMessage(chat_id, message_id, `📅 <b>پست‌های زمان‌بندی‌شده</b>\n\n${rows}`,
+    [[{ text: '⬅️ بازگشت', callback_data: 'social:menu' }]]);
+}
+
+async function handleSocialCallback(chat_id: number, message_id: number, user: BotUser, rest: string[]) {
+  const sub = rest[0];
+  if (!sub || sub === 'menu') { await showSocialMenu(chat_id, message_id, user); return; }
+  if (sub === 'new') { await showSocialAccountPicker(chat_id, message_id, user); return; }
+  if (sub === 'sched') { await listScheduledPosts(chat_id, message_id); return; }
+  if (sub === 'pick') { await startSocialPost(chat_id, message_id, user, rest[1]); return; }
+  if (sub === 'done_media') {
+    const s = await getSession(chat_id);
+    if (!s || s.state !== 'social:awaiting_media') { await showSocialMenu(chat_id, message_id, user); return; }
+    await setSession(chat_id, user.id, 'social:awaiting_caption', s.context);
+    const count = (s.context.media ?? []).length;
+    await editMessage(chat_id, message_id,
+      `✍️ کپشن پست را ارسال کنید.\n\n📎 تعداد رسانه: <b>${count}</b>\n\nبرای پست بدون کپشن، «-» بفرستید.\n/cancel برای انصراف`,
+      [[{ text: '❌ انصراف', callback_data: 'social:menu' }]]);
+    return;
+  }
+  if (sub === 'pub' && rest[1] === 'now') {
+    const s = await getSession(chat_id);
+    if (!s || s.state !== 'social:awaiting_schedule') { await showSocialMenu(chat_id, message_id, user); return; }
+    await editMessage(chat_id, message_id, '🚀 در حال ارسال...', []);
+    await publishOrSchedule(chat_id, user, s.context, null);
+    return;
+  }
+}
+
+async function handleSocialMessage(chat_id: number, user: BotUser, msg: any, session: any, text: string) {
+  if (text === '/cancel') {
+    await clearSession(chat_id);
+    await sendMessage(chat_id, '❌ عملیات لغو شد.', { keyboard: [[{ text: '📱 منوی سوشال', callback_data: 'social:menu' }]] });
+    return;
+  }
+
+  if (session.state === 'social:awaiting_media') {
+    // Accept photo, video, or document
+    let fileId: string | null = null;
+    let kind: 'photo' | 'video' | 'document' = 'photo';
+    if (msg.photo && Array.isArray(msg.photo) && msg.photo.length > 0) {
+      fileId = msg.photo[msg.photo.length - 1].file_id;
+      kind = 'photo';
+    } else if (msg.video?.file_id) {
+      fileId = msg.video.file_id;
+      kind = 'video';
+    } else if (msg.document?.file_id) {
+      fileId = msg.document.file_id;
+      kind = 'document';
+    }
+    if (!fileId) {
+      await sendMessage(chat_id, 'لطفاً یک عکس یا ویدیو ارسال کنید، یا دکمه «پایان رسانه» را بزنید.');
+      return;
+    }
+    const uploaded = await uploadSocialMediaFile(user.id, fileId, kind);
+    if (!uploaded) {
+      await sendMessage(chat_id, '❌ خطا در آپلود فایل. دوباره تلاش کنید.');
+      return;
+    }
+    const media = [...(session.context.media ?? []), uploaded];
+    await setSession(chat_id, user.id, 'social:awaiting_media', { ...session.context, media });
+    await sendMessage(chat_id, `✅ رسانه ذخیره شد (${media.length} فایل). می‌توانید ادامه دهید یا پایان بزنید.`,
+      { keyboard: [
+        [{ text: '✅ پایان رسانه — ادامه', callback_data: 'social:done_media' }],
+        [{ text: '❌ انصراف', callback_data: 'social:menu' }],
+      ] });
+    return;
+  }
+
+  if (session.state === 'social:awaiting_caption' && text) {
+    const caption = text === '-' ? '' : text;
+    await setSession(chat_id, user.id, 'social:awaiting_schedule', { ...session.context, caption });
+    await showScheduleStep(chat_id, user);
+    return;
+  }
+
+  if (session.state === 'social:awaiting_schedule' && text) {
+    const when = parseScheduleInput(text);
+    if (!when) {
+      await sendMessage(chat_id, '❌ فرمت زمان اشتباه است. مثال: <code>2026-08-01 14:30</code> یا <code>+2h</code>');
+      return;
+    }
+    if (when.getTime() < Date.now() - 60000) {
+      await sendMessage(chat_id, '❌ زمان انتخابی در گذشته است.');
+      return;
+    }
+    await publishOrSchedule(chat_id, user, session.context, when);
+    return;
+  }
+}
+
 // ============ HTTP entry ============
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
