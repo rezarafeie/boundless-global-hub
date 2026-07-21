@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Plug, Instagram, CheckCircle2, AlertCircle } from 'lucide-react';
+import { RefreshCw, Plug, Instagram, CheckCircle2, AlertCircle, Bot } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 
 const SocialAccounts: React.FC = () => {
@@ -45,6 +46,12 @@ const SocialAccounts: React.FC = () => {
     } catch (e: any) {
       toast({ title: 'خطا', description: e.message, variant: 'destructive' });
     } finally { setSyncing(false); }
+  };
+  const toggleAutoReply = async (id: string, enabled: boolean) => {
+    const { error } = await supabase.from('social_accounts').update({ auto_reply_enabled: enabled }).eq('id', id);
+    if (error) return toast({ title: 'خطا', description: error.message, variant: 'destructive' });
+    setAccounts(as => as.map(a => a.id === id ? { ...a, auto_reply_enabled: enabled } : a));
+    toast({ title: enabled ? 'پاسخ خودکار فعال شد' : 'پاسخ خودکار غیرفعال شد' });
   };
 
   return (
@@ -99,6 +106,16 @@ const SocialAccounts: React.FC = () => {
                 </div>
                 <div className="text-xs text-muted-foreground">
                   آخرین همگام‌سازی: {a.last_sync_at ? new Date(a.last_sync_at).toLocaleString('fa-IR') : '—'}
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-md border bg-muted/40">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Bot className="w-4 h-4" />
+                    پاسخ خودکار AI
+                  </div>
+                  <Switch
+                    checked={!!a.auto_reply_enabled}
+                    onCheckedChange={(v) => toggleAutoReply(a.id, v)}
+                  />
                 </div>
                 <Button size="sm" variant="outline" className="w-full" onClick={() => syncInbox(a.id)} disabled={syncing}>
                   <RefreshCw className={`w-3 h-3 ml-2 ${syncing ? 'animate-spin' : ''}`} />

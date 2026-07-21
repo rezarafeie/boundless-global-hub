@@ -1,10 +1,13 @@
 import React from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Inbox, Users, Settings, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Inbox, Users, Settings, ArrowLeft, MessageCircle, UserPlus, Image } from 'lucide-react';
 
 const nav = [
   { to: '/enroll/admin/social', label: 'داشبورد', icon: LayoutDashboard, end: true },
   { to: '/enroll/admin/social/inbox', label: 'صندوق پیام‌ها', icon: Inbox },
+  { to: '/enroll/admin/social/comments', label: 'کامنت‌ها', icon: MessageCircle },
+  { to: '/enroll/admin/social/leads', label: 'لیدها', icon: UserPlus },
+  { to: '/enroll/admin/social/posts', label: 'پست‌ها', icon: Image },
   { to: '/enroll/admin/social/accounts', label: 'اکانت‌ها', icon: Users },
   { to: '/enroll/admin/social/settings', label: 'تنظیمات', icon: Settings },
 ];

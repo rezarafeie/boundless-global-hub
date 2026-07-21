@@ -35,6 +35,9 @@ import SocialLayout from "./pages/Admin/Social/SocialLayout";
 import SocialDashboard from "./pages/Admin/Social/SocialDashboard";
 import SocialInbox from "./pages/Admin/Social/SocialInbox";
 import SocialAccounts from "./pages/Admin/Social/SocialAccounts";
+import SocialComments from "./pages/Admin/Social/SocialComments";
+import SocialLeads from "./pages/Admin/Social/SocialLeads";
+import SocialPosts from "./pages/Admin/Social/SocialPosts";
 import SocialSettings from "./pages/Admin/Social/SocialSettings";
 import EnrollmentEmailAdmin from "./pages/EnrollmentEmailAdmin";
 import EnrollmentDetails from "./pages/EnrollmentDetails";
@@ -285,6 +288,9 @@ const App = () => {
                       <Route index element={<SocialDashboard />} />
                       <Route path="inbox" element={<SocialInbox />} />
                       <Route path="accounts" element={<SocialAccounts />} />
+                      <Route path="comments" element={<SocialComments />} />
+                      <Route path="leads" element={<SocialLeads />} />
+                      <Route path="posts" element={<SocialPosts />} />
                       <Route path="settings" element={<SocialSettings />} />
                     </Route>
                     <Route path="/enroll/admin/tests" element={<EnrollAdminTests />} />
