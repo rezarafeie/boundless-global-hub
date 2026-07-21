@@ -2278,7 +2278,7 @@ async function buildStartKeyboard(user: BotUser | null): Promise<InlineKeyboard>
     aiKeyboardRows(authed),
     authed ? mainMenu(user) : Promise.resolve(loginMenu()),
   ]);
-  return [...salesRows, ...aiRows, ...webinarRows, ...formRows, ...base];
+  return twoColumnKeyboard([...salesRows, ...aiRows, ...webinarRows, ...formRows, ...base]);
 }
 
 async function findFormByPrefix(prefix: string) {
