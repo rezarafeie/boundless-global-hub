@@ -33,15 +33,15 @@ Deno.serve(async (req) => {
         const nextDay = new Date(day); nextDay.setUTCDate(nextDay.getUTCDate() + 1);
 
         const [{ count: dmCount }, { count: replyCount }, { count: aiCount }, { count: commentCount }, { count: leadCount }, { count: publishedCount }] = await Promise.all([
-          supabase.from('social_messages').select('*', { count: 'exact', head: true })
-            .eq('account_id', acc.id).eq('direction', 'inbound')
-            .gte('created_at', day.toISOString()).lt('created_at', nextDay.toISOString()),
-          supabase.from('social_messages').select('*', { count: 'exact', head: true })
-            .eq('account_id', acc.id).eq('direction', 'outbound')
-            .gte('created_at', day.toISOString()).lt('created_at', nextDay.toISOString()),
-          supabase.from('social_messages').select('*', { count: 'exact', head: true })
-            .eq('account_id', acc.id).eq('direction', 'outbound').eq('is_ai', true)
-            .gte('created_at', day.toISOString()).lt('created_at', nextDay.toISOString()),
+          supabase.from('social_messages').select('social_conversations!inner(account_id)', { count: 'exact', head: true })
+            .eq('social_conversations.account_id', acc.id).eq('direction', 'in')
+            .gte('sent_at', day.toISOString()).lt('sent_at', nextDay.toISOString()),
+          supabase.from('social_messages').select('social_conversations!inner(account_id)', { count: 'exact', head: true })
+            .eq('social_conversations.account_id', acc.id).eq('direction', 'out')
+            .gte('sent_at', day.toISOString()).lt('sent_at', nextDay.toISOString()),
+          supabase.from('social_messages').select('social_conversations!inner(account_id)', { count: 'exact', head: true })
+            .eq('social_conversations.account_id', acc.id).eq('sender_type', 'ai')
+            .gte('sent_at', day.toISOString()).lt('sent_at', nextDay.toISOString()),
           supabase.from('social_comments').select('*', { count: 'exact', head: true })
             .eq('account_id', acc.id)
             .gte('created_at', day.toISOString()).lt('created_at', nextDay.toISOString()),
