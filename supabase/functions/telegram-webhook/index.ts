@@ -3954,11 +3954,32 @@ async function handleSocialCallback(chat_id: number, message_id: number, user: B
   if (sub === 'done_media') {
     const s = await getSession(chat_id);
     if (!s || s.state !== 'social:awaiting_media') { await showSocialMenu(chat_id, message_id, user); return; }
-    await setSession(chat_id, user.id, 'social:awaiting_caption', s.context);
-    const count = (s.context.media ?? []).length;
-    await editMessage(chat_id, message_id,
-      `✍️ کپشن پست را ارسال کنید.\n\n📎 تعداد رسانه: <b>${count}</b>\n\nبرای پست بدون کپشن، «-» بفرستید.\n/cancel برای انصراف`,
-      [[{ text: '❌ انصراف', callback_data: 'social:menu' }]]);
+    await setSession(chat_id, user.id, 'social:awaiting_type', s.context);
+    await showPostTypeStep(chat_id);
+    return;
+  }
+  if (sub === 'type') {
+    const s = await getSession(chat_id);
+    if (!s || s.state !== 'social:awaiting_type') { await showSocialMenu(chat_id, message_id, user); return; }
+    const post_type = rest[1] || 'post';
+    await setSession(chat_id, user.id, 'social:awaiting_caption', { ...s.context, post_type });
+    await sendMessage(chat_id,
+      `✍️ کپشن پست را ارسال کنید.\n\nبرای پست بدون کپشن، «-» بفرستید.\n/cancel برای انصراف`,
+      { keyboard: [[{ text: '❌ انصراف', callback_data: 'social:menu' }]] });
+    return;
+  }
+  if (sub === 'cover' && rest[1] === 'skip') {
+    const s = await getSession(chat_id);
+    if (!s || s.state !== 'social:awaiting_cover') return;
+    await setSession(chat_id, user.id, 'social:awaiting_collabs', { ...s.context, cover_url: null });
+    await showCollabStep(chat_id);
+    return;
+  }
+  if (sub === 'collab' && rest[1] === 'skip') {
+    const s = await getSession(chat_id);
+    if (!s || s.state !== 'social:awaiting_collabs') return;
+    await setSession(chat_id, user.id, 'social:awaiting_schedule', { ...s.context, collaborators: [] });
+    await showScheduleStep(chat_id, user);
     return;
   }
   if (sub === 'pub' && rest[1] === 'now') {
