@@ -15,7 +15,7 @@ interface Account { id: string; username: string | null; }
 interface Scheduled {
   id: string; account_id: string; caption: string | null; media_urls: any;
   post_type: string; scheduled_at: string; status: string; last_error: string | null;
-  published_at: string | null;
+  published_at: string | null; meta: any;
 }
 
 const SocialPlanner: React.FC = () => {
@@ -28,9 +28,14 @@ const SocialPlanner: React.FC = () => {
   const [form, setForm] = useState({
     account_id: '', post_type: 'post', caption: '',
     media_urls: [] as string[], scheduled_at: '',
+    cover_url: '' as string,
+    collaborators: '' as string,
+    first_comment: '' as string,
   });
   const [uploading, setUploading] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const coverInputRef = React.useRef<HTMLInputElement>(null);
 
   const load = async () => {
     setLoading(true);
