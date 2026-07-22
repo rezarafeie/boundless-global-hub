@@ -4033,7 +4033,52 @@ async function handleSocialMessage(chat_id: number, user: BotUser, msg: any, ses
 
   if (session.state === 'social:awaiting_caption' && text) {
     const caption = text === '-' ? '' : text;
-    await setSession(chat_id, user.id, 'social:awaiting_schedule', { ...session.context, caption });
+    const ctx = { ...session.context, caption };
+    const post_type = ctx.post_type || 'post';
+    const hasVideo = Array.isArray(ctx.media) && ctx.media.some((m: any) => m.mime?.startsWith('video'));
+    // Cover only meaningful for video/reel
+    if (post_type === 'reel' || hasVideo) {
+      await setSession(chat_id, user.id, 'social:awaiting_cover', ctx);
+      await showCoverStep(chat_id);
+    } else {
+      await setSession(chat_id, user.id, 'social:awaiting_collabs', { ...ctx, cover_url: null });
+      await showCollabStep(chat_id);
+    }
+    return;
+  }
+
+  if (session.state === 'social:awaiting_cover') {
+    if (text === '-') {
+      await setSession(chat_id, user.id, 'social:awaiting_collabs', { ...session.context, cover_url: null });
+      await showCollabStep(chat_id);
+      return;
+    }
+    let fileId: string | null = null;
+    if (msg.photo && Array.isArray(msg.photo) && msg.photo.length > 0) {
+      fileId = msg.photo[msg.photo.length - 1].file_id;
+    } else if (msg.document?.file_id && (msg.document.mime_type || '').startsWith('image/')) {
+      fileId = msg.document.file_id;
+    }
+    if (!fileId) {
+      await sendMessage(chat_id, 'لطفاً یک عکس به‌عنوان کاور بفرستید یا «-» برای رد کردن.');
+      return;
+    }
+    const uploaded = await uploadSocialMediaFile(user.id, fileId, 'photo');
+    if (!uploaded) {
+      await sendMessage(chat_id, '❌ خطا در آپلود کاور.');
+      return;
+    }
+    await setSession(chat_id, user.id, 'social:awaiting_collabs', { ...session.context, cover_url: uploaded.url });
+    await sendMessage(chat_id, '✅ کاور ذخیره شد.');
+    await showCollabStep(chat_id);
+    return;
+  }
+
+  if (session.state === 'social:awaiting_collabs' && text) {
+    const collaborators = text === '-'
+      ? []
+      : text.split(/[,،\s]+/).map(s => s.trim().replace(/^@/, '')).filter(Boolean);
+    await setSession(chat_id, user.id, 'social:awaiting_schedule', { ...session.context, collaborators });
     await showScheduleStep(chat_id, user);
     return;
   }
