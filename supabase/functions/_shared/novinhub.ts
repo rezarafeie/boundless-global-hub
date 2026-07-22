@@ -236,7 +236,10 @@ export const novinhub = {
       .map(u => u.trim().replace(/^@/, ''))
       .filter(Boolean);
     if (collabs.length) {
+      // NovinHub accepts `collaborators` as an array of usernames on image/album/video/reel.
       extra.collaborators = collabs;
+      // Also send `collab_tags` (docs alias observed on some NovinHub responses).
+      extra.collab_tags = collabs.map(username => ({ username }));
       if (nhType === 'video' && extra.reels) {
         extra.reels_tags = collabs.map(username => ({ username }));
       }
