@@ -3812,15 +3812,17 @@ async function startSocialPost(chat_id: number, message_id: number, user: BotUse
     ]);
 }
 
-async function showPostTypeStep(chat_id: number) {
-  await sendMessage(chat_id, '🎬 <b>نوع پست</b> را انتخاب کنید:', {
-    keyboard: [
-      [{ text: '📸 پست عادی', callback_data: 'social:type:post' }],
-      [{ text: '🎞 ریلز', callback_data: 'social:type:reel' }],
-      [{ text: '📱 استوری', callback_data: 'social:type:story' }],
-      [{ text: '❌ انصراف', callback_data: 'social:menu' }],
-    ],
-  });
+async function showPostTypeStep(chat_id: number, mediaCount = 0) {
+  const rows: InlineKeyboard = [
+    [{ text: '📸 پست عادی', callback_data: 'social:type:post' }],
+  ];
+  if (mediaCount > 1) {
+    rows.push([{ text: '🖼 کاروسل (چند تصویری)', callback_data: 'social:type:carousel' }]);
+  }
+  rows.push([{ text: '🎞 ریلز', callback_data: 'social:type:reel' }]);
+  rows.push([{ text: '📱 استوری', callback_data: 'social:type:story' }]);
+  rows.push([{ text: '❌ انصراف', callback_data: 'social:menu' }]);
+  await sendMessage(chat_id, `🎬 <b>نوع پست</b> را انتخاب کنید:\n<i>${mediaCount} فایل رسانه ذخیره شده</i>`, { keyboard: rows });
 }
 
 async function showCoverStep(chat_id: number) {
