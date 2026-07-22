@@ -39,21 +39,7 @@ export async function nhForm(path: string, params: Record<string, any>, method =
   const token = getNovinhubToken();
   const url = `${BASE}${path.startsWith('/') ? path : '/' + path}`;
   const form = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) {
-    if (v === undefined || v === null) continue;
-    if (Array.isArray(v)) {
-      const hasObjectItems = v.some(item => item !== null && typeof item === 'object');
-      if (hasObjectItems) {
-        form.append(k, JSON.stringify(v));
-      } else {
-        for (const item of v) form.append(`${k}[]`, String(item));
-      }
-    } else if (typeof v === 'object') {
-      form.append(k, JSON.stringify(v));
-    } else {
-      form.append(k, String(v));
-    }
-  }
+  appendFormParams(form, params);
   const res = await fetch(url, {
     method,
     headers: {
@@ -69,6 +55,30 @@ export async function nhForm(path: string, params: Record<string, any>, method =
     throw new Error(`NovinHub ${res.status}: ${msg}`);
   }
   return body;
+}
+
+function appendFormParams(form: URLSearchParams, value: any, keyPrefix?: string) {
+  if (value === undefined || value === null) return;
+
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => {
+      if (item === undefined || item === null) return;
+      const isNested = typeof item === 'object';
+      const key = keyPrefix ? `${keyPrefix}[${isNested ? index : ''}]` : String(index);
+      appendFormParams(form, item, key);
+    });
+    return;
+  }
+
+  if (typeof value === 'object') {
+    for (const [childKey, childValue] of Object.entries(value)) {
+      const key = keyPrefix ? `${keyPrefix}[${childKey}]` : childKey;
+      appendFormParams(form, childValue, key);
+    }
+    return;
+  }
+
+  if (keyPrefix) form.append(keyPrefix, String(value));
 }
 
 /** Upload a file to NovinHub. Returns the created File object (with `id`). */
@@ -241,27 +251,26 @@ export const novinhub = {
     const hashtags = extractHashtags(payload.caption || '');
     if (hashtags.length) extra.hashtag = hashtags;
 
-    // Collaboration: Instagram co-authors. NovinHub accepts `collaborators`
-    // as an array of usernames (mirrors reels_tags shape when applicable).
+    // Instagram user tags. NovinHub's documented fields are `photo_tags`
+    // for image/album posts and `reels_tags` for Reels. `collaborators`
+    // is not in the public /post docs and is ignored by NovinHub, so we keep
+    // it only as a best-effort experimental alias after sending real tags.
     const collabs = (payload.collaborators || [])
       .map(u => u.trim().replace(/^@/, ''))
       .filter(Boolean);
     if (collabs.length) {
-      // Resolve Instagram user IDs via /search/people (needed for photo_tags / reels_tags)
       const people = await resolvePeopleTags(payload.account_id, collabs);
 
-      // Official NovinHub field for tagging users on Instagram Reels.
-      if (nhType === 'video' && people.length) {
-        extra.reels_tags = people.map(p => ({ username: p.username, id: p.id }));
+      if (nhType === 'video') {
+        extra.reels_tags = collabs.map(username => ({ username }));
       }
 
-      // NOTE: photo_tags intentionally omitted. NovinHub's form-encoded endpoint
-      // rejects our JSON-serialized photo_tags payload with 400 "photo_tags نامعتبر".
-      // Co-authorship via `collaborators` covers the collaboration use-case; on-image
-      // tagging for feed photos is not reliably supported through this API surface.
+      if ((nhType === 'image' || nhType === 'album') && people.length) {
+        extra.photo_tags = buildPhotoTags(media_ids, people);
+      }
 
-
-      // Collaborators (co-authors) — send only usernames per NovinHub docs.
+      // Best-effort co-author invite for undocumented NovinHub installs that support it.
+      // If their API ignores it, the documented photo/reel tags above still apply.
       if (people.length) {
         extra.collaborators = people.map(p => p.username);
       }
