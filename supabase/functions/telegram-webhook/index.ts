@@ -3956,8 +3956,9 @@ async function handleSocialCallback(chat_id: number, message_id: number, user: B
   if (sub === 'done_media') {
     const s = await getSession(chat_id);
     if (!s || s.state !== 'social:awaiting_media') { await showSocialMenu(chat_id, message_id, user); return; }
+    const mediaCount = Array.isArray(s.context?.media) ? s.context.media.length : 0;
     await setSession(chat_id, user.id, 'social:awaiting_type', s.context);
-    await showPostTypeStep(chat_id);
+    await showPostTypeStep(chat_id, mediaCount);
     return;
   }
   if (sub === 'type') {
