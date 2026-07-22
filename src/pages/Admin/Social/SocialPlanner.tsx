@@ -120,6 +120,28 @@ const SocialPlanner: React.FC = () => {
     setForm(f => ({ ...f, media_urls: f.media_urls.filter((_, i) => i !== idx) }));
   };
 
+  const uploadCover = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+    setUploadingCover(true);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `planner/cover-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('social-media').upload(path, file, {
+        contentType: file.type, upsert: false,
+      });
+      if (upErr) { toast.error(upErr.message); return; }
+      const { data } = await supabase.storage.from('social-media').createSignedUrl(path, 60 * 60 * 24 * 30);
+      if (data?.signedUrl) {
+        setForm(f => ({ ...f, cover_url: data.signedUrl }));
+        toast.success('کاور آپلود شد');
+      }
+    } finally {
+      setUploadingCover(false);
+      if (coverInputRef.current) coverInputRef.current.value = '';
+    }
+  };
+
 
   const publishNow = async (id: string) => {
     const { error } = await supabase.functions.invoke('social-publish-cron', {
