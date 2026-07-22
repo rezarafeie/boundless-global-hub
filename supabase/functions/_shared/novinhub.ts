@@ -247,28 +247,27 @@ export const novinhub = {
       .map(u => u.trim().replace(/^@/, ''))
       .filter(Boolean);
     if (collabs.length) {
-      // NovinHub accepts `collaborators` as an array of usernames on image/album/video/reel.
-      extra.collaborators = collabs;
-      // Also send object-based aliases. nhForm serializes arrays of objects as JSON.
-      const collabObjects = collabs.map(username => ({ username }));
-      extra.collab_tags = collabObjects;
-      extra.instagram_collaborators = collabObjects;
+      // Resolve Instagram user IDs via /search/people (needed for photo_tags / reels_tags)
+      const people = await resolvePeopleTags(payload.account_id, collabs);
 
       // Official NovinHub field for tagging users on Instagram Reels.
-      if (nhType === 'video') {
-        extra.reels_tags = collabObjects;
+      if (nhType === 'video' && people.length) {
+        extra.reels_tags = people.map(p => ({ username: p.username, id: p.id }));
       }
 
       // Official NovinHub field for tagging users on Instagram photo/album posts.
-      // It requires Instagram `pk`, so resolve usernames through /search/people.
       if ((nhType === 'image' || nhType === 'album') && media_ids.length) {
-        const people = await resolvePeopleTags(payload.account_id, collabs);
         const photoTags = buildPhotoTags(media_ids, people);
         if (Object.keys(photoTags).length) {
           extra.photo_tags = photoTags;
         } else {
           console.warn('NovinHub photo_tags skipped: no matching Instagram users found', collabs.join(','));
         }
+      }
+
+      // Collaborators (co-authors) — send only usernames per NovinHub docs.
+      if (people.length) {
+        extra.collaborators = people.map(p => p.username);
       }
     }
 
