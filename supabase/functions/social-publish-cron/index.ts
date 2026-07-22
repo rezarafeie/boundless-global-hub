@@ -59,6 +59,14 @@ Deno.serve(async (req) => {
         }
 
         const scheduleDate = Math.floor((specificId ? Date.now() : Date.parse(p.scheduled_at || new Date().toISOString())) / 1000);
+        const meta = (p as any).meta || {};
+        let coverUrl: string | undefined = meta.cover_url;
+        if (coverUrl && coverUrl.includes('/object/sign/social-media/')) {
+          const idx = coverUrl.indexOf('/social-media/');
+          const path = coverUrl.substring(idx + '/social-media/'.length).split('?')[0];
+          const { data: sig } = await supabase.storage.from('social-media').createSignedUrl(path, 60 * 60);
+          coverUrl = sig?.signedUrl || coverUrl;
+        }
         const res = await novinhub.publishPost({
           account_id: acc.novinhub_account_id,
           caption: p.caption || '',
@@ -66,6 +74,9 @@ Deno.serve(async (req) => {
           type: p.post_type || 'post',
           is_scheduled: 0,
           schedule_date: scheduleDate,
+          cover_url: coverUrl,
+          collaborators: Array.isArray(meta.collaborators) ? meta.collaborators : undefined,
+          first_comment: meta.first_comment || undefined,
         });
 
         const providerId = String(res?.id || res?.data?.id || res?.data?.post_group_id || '');
