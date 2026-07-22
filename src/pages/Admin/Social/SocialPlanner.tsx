@@ -198,6 +198,7 @@ const SocialPlanner: React.FC = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="post">پست عادی</SelectItem>
+                    <SelectItem value="carousel">کاروسل (چند تصویری)</SelectItem>
                     <SelectItem value="reel">ریلز</SelectItem>
                     <SelectItem value="story">استوری</SelectItem>
                   </SelectContent>

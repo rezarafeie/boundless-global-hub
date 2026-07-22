@@ -3812,15 +3812,17 @@ async function startSocialPost(chat_id: number, message_id: number, user: BotUse
     ]);
 }
 
-async function showPostTypeStep(chat_id: number) {
-  await sendMessage(chat_id, '🎬 <b>نوع پست</b> را انتخاب کنید:', {
-    keyboard: [
-      [{ text: '📸 پست عادی', callback_data: 'social:type:post' }],
-      [{ text: '🎞 ریلز', callback_data: 'social:type:reel' }],
-      [{ text: '📱 استوری', callback_data: 'social:type:story' }],
-      [{ text: '❌ انصراف', callback_data: 'social:menu' }],
-    ],
-  });
+async function showPostTypeStep(chat_id: number, mediaCount = 0) {
+  const rows: InlineKeyboard = [
+    [{ text: '📸 پست عادی', callback_data: 'social:type:post' }],
+  ];
+  if (mediaCount > 1) {
+    rows.push([{ text: '🖼 کاروسل (چند تصویری)', callback_data: 'social:type:carousel' }]);
+  }
+  rows.push([{ text: '🎞 ریلز', callback_data: 'social:type:reel' }]);
+  rows.push([{ text: '📱 استوری', callback_data: 'social:type:story' }]);
+  rows.push([{ text: '❌ انصراف', callback_data: 'social:menu' }]);
+  await sendMessage(chat_id, `🎬 <b>نوع پست</b> را انتخاب کنید:\n<i>${mediaCount} فایل رسانه ذخیره شده</i>`, { keyboard: rows });
 }
 
 async function showCoverStep(chat_id: number) {
@@ -3954,8 +3956,9 @@ async function handleSocialCallback(chat_id: number, message_id: number, user: B
   if (sub === 'done_media') {
     const s = await getSession(chat_id);
     if (!s || s.state !== 'social:awaiting_media') { await showSocialMenu(chat_id, message_id, user); return; }
+    const mediaCount = Array.isArray(s.context?.media) ? s.context.media.length : 0;
     await setSession(chat_id, user.id, 'social:awaiting_type', s.context);
-    await showPostTypeStep(chat_id);
+    await showPostTypeStep(chat_id, mediaCount);
     return;
   }
   if (sub === 'type') {
@@ -4021,13 +4024,32 @@ async function handleSocialMessage(chat_id: number, user: BotUser, msg: any, ses
       await sendMessage(chat_id, '❌ خطا در آپلود فایل. دوباره تلاش کنید.');
       return;
     }
-    const media = [...(session.context.media ?? []), uploaded];
-    await setSession(chat_id, user.id, 'social:awaiting_media', { ...session.context, media });
-    await sendMessage(chat_id, `✅ رسانه ذخیره شد (${media.length} فایل). می‌توانید ادامه دهید یا پایان بزنید.`,
-      { keyboard: [
-        [{ text: '✅ پایان رسانه — ادامه', callback_data: 'social:done_media' }],
-        [{ text: '❌ انصراف', callback_data: 'social:menu' }],
-      ] });
+    // Atomic append to session context so parallel album updates don't overwrite each other
+    const { error: appendErr } = await supabase.rpc('tg_append_session_media', {
+      p_chat_id: chat_id,
+      p_media: [uploaded],
+    });
+    if (appendErr) {
+      console.error('tg_append_session_media error:', appendErr);
+      // Fallback to non-atomic write
+      const media = [...(session.context.media ?? []), uploaded];
+      await setSession(chat_id, user.id, 'social:awaiting_media', { ...session.context, media });
+    }
+    // For album (media_group_id), only send one confirmation per group to avoid spam
+    const groupId = msg.media_group_id ? String(msg.media_group_id) : null;
+    const fresh = await getSession(chat_id);
+    const count = Array.isArray(fresh?.context?.media) ? fresh!.context.media.length : 0;
+    const lastAckedGroup = fresh?.context?.last_acked_group ?? null;
+    if (!groupId || lastAckedGroup !== groupId) {
+      if (groupId) {
+        await setSession(chat_id, user.id, 'social:awaiting_media', { ...(fresh?.context ?? {}), last_acked_group: groupId });
+      }
+      await sendMessage(chat_id, `✅ رسانه ذخیره شد (${count} فایل). می‌توانید ادامه دهید یا پایان بزنید.`,
+        { keyboard: [
+          [{ text: '✅ پایان رسانه — ادامه', callback_data: 'social:done_media' }],
+          [{ text: '❌ انصراف', callback_data: 'social:menu' }],
+        ] });
+    }
     return;
   }
 

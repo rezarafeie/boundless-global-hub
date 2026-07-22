@@ -7442,6 +7442,10 @@ export type Database = {
       }
       social_cleanup_stale_data: { Args: never; Returns: undefined }
       text_to_bytea: { Args: { data: string }; Returns: string }
+      tg_append_session_media: {
+        Args: { p_chat_id: number; p_media: Json }
+        Returns: undefined
+      }
       update_user_presence: {
         Args: { p_is_online?: boolean; p_user_id: number }
         Returns: undefined
