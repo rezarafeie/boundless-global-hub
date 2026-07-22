@@ -59,6 +59,13 @@ const SocialPlanner: React.FC = () => {
     const scheduledAt = publishImmediately
       ? new Date(Date.now() - 1000).toISOString()
       : new Date(form.scheduled_at).toISOString();
+    const collaboratorsArr = form.collaborators
+      .split(/[,،\s]+/).map(s => s.trim().replace(/^@/, '')).filter(Boolean);
+    const meta = {
+      cover_url: form.cover_url || null,
+      collaborators: collaboratorsArr,
+      first_comment: form.first_comment || null,
+    };
     const { data: inserted, error } = await supabase.from('social_scheduled_posts').insert({
       account_id: form.account_id,
       post_type: form.post_type,
@@ -66,6 +73,7 @@ const SocialPlanner: React.FC = () => {
       media_urls: form.media_urls,
       scheduled_at: scheduledAt,
       status: 'scheduled',
+      meta,
     }).select('id').single();
     if (error) { setSaving(false); return toast.error(error.message); }
     if (publishImmediately && inserted?.id) {
@@ -79,7 +87,7 @@ const SocialPlanner: React.FC = () => {
     }
     setSaving(false);
     setOpen(false);
-    setForm({ account_id: form.account_id, post_type: 'post', caption: '', media_urls: [], scheduled_at: '' });
+    setForm({ account_id: form.account_id, post_type: 'post', caption: '', media_urls: [], scheduled_at: '', cover_url: '', collaborators: '', first_comment: '' });
     setTimeout(load, 1500);
   };
 
