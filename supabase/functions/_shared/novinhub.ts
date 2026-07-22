@@ -42,7 +42,12 @@ export async function nhForm(path: string, params: Record<string, any>, method =
   for (const [k, v] of Object.entries(params)) {
     if (v === undefined || v === null) continue;
     if (Array.isArray(v)) {
-      for (const item of v) form.append(`${k}[]`, String(item));
+      const hasObjectItems = v.some(item => item !== null && typeof item === 'object');
+      if (hasObjectItems) {
+        form.append(k, JSON.stringify(v));
+      } else {
+        for (const item of v) form.append(`${k}[]`, String(item));
+      }
     } else if (typeof v === 'object') {
       form.append(k, JSON.stringify(v));
     } else {
@@ -170,6 +175,9 @@ export const novinhub = {
   uploadFile: nhUploadFile,
   uploadFromUrl: nhUploadFromUrl,
 
+  searchPeople: (accountId: string | number, query: string) =>
+    nhForm('/search/people', { query, account_ids: String(accountId) }),
+
   /**
    * Create a post on NovinHub.
    * mediaUrls are downloaded then uploaded to /file first; their ids are passed as media_ids.
@@ -230,6 +238,9 @@ export const novinhub = {
     if (video_cover !== undefined) extra.video_cover = video_cover;
     if (payload.first_comment) extra.first_comment = payload.first_comment;
 
+    const hashtags = extractHashtags(payload.caption || '');
+    if (hashtags.length) extra.hashtag = hashtags;
+
     // Collaboration: Instagram co-authors. NovinHub accepts `collaborators`
     // as an array of usernames (mirrors reels_tags shape when applicable).
     const collabs = (payload.collaborators || [])
@@ -238,10 +249,26 @@ export const novinhub = {
     if (collabs.length) {
       // NovinHub accepts `collaborators` as an array of usernames on image/album/video/reel.
       extra.collaborators = collabs;
-      // Also send `collab_tags` (docs alias observed on some NovinHub responses).
-      extra.collab_tags = collabs.map(username => ({ username }));
-      if (nhType === 'video' && extra.reels) {
-        extra.reels_tags = collabs.map(username => ({ username }));
+      // Also send object-based aliases. nhForm serializes arrays of objects as JSON.
+      const collabObjects = collabs.map(username => ({ username }));
+      extra.collab_tags = collabObjects;
+      extra.instagram_collaborators = collabObjects;
+
+      // Official NovinHub field for tagging users on Instagram Reels.
+      if (nhType === 'video') {
+        extra.reels_tags = collabObjects;
+      }
+
+      // Official NovinHub field for tagging users on Instagram photo/album posts.
+      // It requires Instagram `pk`, so resolve usernames through /search/people.
+      if ((nhType === 'image' || nhType === 'album') && media_ids.length) {
+        const people = await resolvePeopleTags(payload.account_id, collabs);
+        const photoTags = buildPhotoTags(media_ids, people);
+        if (Object.keys(photoTags).length) {
+          extra.photo_tags = photoTags;
+        } else {
+          console.warn('NovinHub photo_tags skipped: no matching Instagram users found', collabs.join(','));
+        }
       }
     }
 
@@ -259,3 +286,58 @@ export const novinhub = {
     return nhForm('/post', body);
   },
 };
+
+function extractHashtags(caption: string): string[] {
+  const tags = new Set<string>();
+  const re = /(?:^|\s)#([\p{L}\p{N}_]+)/gu;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(caption))) {
+    const tag = match[1]?.trim();
+    if (tag) tags.add(tag);
+  }
+  return [...tags];
+}
+
+function unwrapArray(body: any): any[] {
+  if (Array.isArray(body)) return body;
+  if (Array.isArray(body?.data)) return body.data;
+  if (Array.isArray(body?.items)) return body.items;
+  if (Array.isArray(body?.result)) return body.result;
+  return [];
+}
+
+async function resolvePeopleTags(accountId: string | number, usernames: string[]): Promise<Array<{ username: string; id: string | number }>> {
+  const resolved: Array<{ username: string; id: string | number }> = [];
+  for (const raw of usernames) {
+    const username = raw.trim().replace(/^@/, '');
+    if (!username) continue;
+    try {
+      const res = await novinhub.searchPeople(accountId, username);
+      const people = unwrapArray(res);
+      const exact = people.find((p: any) => String(p?.username || '').toLowerCase() === username.toLowerCase());
+      const picked = exact || people.find((p: any) => p?.pk || p?.id);
+      const id = picked?.pk ?? picked?.id;
+      if (id) resolved.push({ username: picked?.username || username, id });
+    } catch (e) {
+      console.warn('NovinHub searchPeople failed', username, e instanceof Error ? e.message : String(e));
+    }
+  }
+  return resolved;
+}
+
+function buildPhotoTags(mediaIds: Array<string | number>, people: Array<{ username: string; id: string | number }>): Record<string, any[]> {
+  if (!mediaIds.length || !people.length) return {};
+  const positions = [
+    { locationX: 0.5, locationY: 0.5 },
+    { locationX: 0.35, locationY: 0.5 },
+    { locationX: 0.65, locationY: 0.5 },
+    { locationX: 0.5, locationY: 0.35 },
+    { locationX: 0.5, locationY: 0.65 },
+  ];
+  const tags = people.map((person, index) => ({
+    ...positions[index % positions.length],
+    text: person.username,
+    id: person.id,
+  }));
+  return Object.fromEntries(mediaIds.map(mediaId => [String(mediaId), tags]));
+}
