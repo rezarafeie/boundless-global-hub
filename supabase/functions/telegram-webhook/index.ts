@@ -3800,16 +3800,45 @@ async function startSocialPost(chat_id: number, message_id: number, user: BotUse
     [
       '🖼 <b>ارسال رسانه</b>',
       '',
-      'یک یا چند عکس/ویدیو ارسال کنید.',
+      'یک یا چند عکس/ویدیو ارسال کنید (برای کاروسل چند فایل بفرستید — آلبوم تلگرام هم پشتیبانی می‌شود).',
       'پس از اتمام، دکمه «✅ پایان رسانه» را بزنید.',
       'برای پست فقط-متنی، مستقیم دکمه پایان را بزنید.',
       '',
       '/cancel برای انصراف',
     ].join('\n'),
     [
-      [{ text: '✅ پایان رسانه — ادامه به کپشن', callback_data: 'social:done_media' }],
+      [{ text: '✅ پایان رسانه — ادامه', callback_data: 'social:done_media' }],
       [{ text: '❌ انصراف', callback_data: 'social:menu' }],
     ]);
+}
+
+async function showPostTypeStep(chat_id: number) {
+  await sendMessage(chat_id, '🎬 <b>نوع پست</b> را انتخاب کنید:', {
+    keyboard: [
+      [{ text: '📸 پست عادی', callback_data: 'social:type:post' }],
+      [{ text: '🎞 ریلز', callback_data: 'social:type:reel' }],
+      [{ text: '📱 استوری', callback_data: 'social:type:story' }],
+      [{ text: '❌ انصراف', callback_data: 'social:menu' }],
+    ],
+  });
+}
+
+async function showCoverStep(chat_id: number) {
+  await sendMessage(chat_id,
+    '🖼 <b>کاور ویدیو/ریلز</b> (اختیاری)\n\nیک عکس به‌عنوان کاور ارسال کنید یا «-» بفرستید تا رد شود.',
+    { keyboard: [
+      [{ text: '⏭ رد کردن کاور', callback_data: 'social:cover:skip' }],
+      [{ text: '❌ انصراف', callback_data: 'social:menu' }],
+    ] });
+}
+
+async function showCollabStep(chat_id: number) {
+  await sendMessage(chat_id,
+    '🤝 <b>همکاری (کولب)</b> (اختیاری)\n\nنام کاربری اینستاگرام افراد را جدا با کاما بفرستید (مثلاً <code>user1, user2</code>)، یا «-» برای رد کردن.',
+    { keyboard: [
+      [{ text: '⏭ بدون همکاری', callback_data: 'social:collab:skip' }],
+      [{ text: '❌ انصراف', callback_data: 'social:menu' }],
+    ] });
 }
 
 async function showScheduleStep(chat_id: number, user: BotUser) {
@@ -3838,7 +3867,6 @@ function parseScheduleInput(input: string): Date | null {
   }
   const abs = t.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})$/);
   if (abs) {
-    // Interpret as Tehran time (UTC+3:30)
     const [_, y, mo, d, h, mi] = abs;
     const utcMs = Date.UTC(+y, +mo - 1, +d, +h, +mi) - (3 * 60 + 30) * 60000;
     return new Date(utcMs);
@@ -3850,6 +3878,9 @@ async function publishOrSchedule(chat_id: number, user: BotUser, ctx: any, sched
   const account_id: string = ctx.account_id;
   const media: Array<{ url: string; mime: string }> = ctx.media ?? [];
   const caption: string = ctx.caption ?? '';
+  const post_type: string = ctx.post_type || 'post';
+  const cover_url: string | null = ctx.cover_url ?? null;
+  const collaborators: string[] = Array.isArray(ctx.collaborators) ? ctx.collaborators : [];
   const media_urls = media.map(m => m.url);
   const media_type = media.length === 0 ? 'text' : (media[0].mime.startsWith('video') ? 'video' : 'image');
 
@@ -3857,6 +3888,7 @@ async function publishOrSchedule(chat_id: number, user: BotUser, ctx: any, sched
     account_id,
     caption,
     media_urls,
+    post_type,
     status: 'scheduled',
     scheduled_at: scheduledAt ? scheduledAt.toISOString() : new Date().toISOString(),
     meta: {
@@ -3864,6 +3896,8 @@ async function publishOrSchedule(chat_id: number, user: BotUser, ctx: any, sched
       created_by_chat_user_id: user.id,
       created_by_name: user.name,
       media_type,
+      cover_url,
+      collaborators,
     },
   };
 
@@ -3876,7 +3910,6 @@ async function publishOrSchedule(chat_id: number, user: BotUser, ctx: any, sched
   }
 
   if (!scheduledAt) {
-    // Trigger immediate publish edge function
     try {
       await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/social-publish-cron`, {
         method: 'POST',
