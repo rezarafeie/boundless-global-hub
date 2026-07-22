@@ -182,6 +182,9 @@ export const novinhub = {
     type?: string;
     is_scheduled?: 0 | 1;
     schedule_date?: number; // UTC epoch seconds
+    cover_url?: string;        // optional cover image for videos/reels
+    collaborators?: string[];  // Instagram usernames to invite as co-authors
+    first_comment?: string;
   }) {
     const media_ids: (number | string)[] = [];
     let firstMime = '';
@@ -189,6 +192,17 @@ export const novinhub = {
       const { id, mime } = await nhUploadFromUrl(url);
       media_ids.push(id);
       if (!firstMime) firstMime = mime;
+    }
+
+    // Optional cover upload (video_cover expects a file id)
+    let video_cover: number | string | undefined;
+    if (payload.cover_url) {
+      try {
+        const { id } = await nhUploadFromUrl(payload.cover_url);
+        video_cover = id;
+      } catch (e) {
+        console.error('cover upload failed', e);
+      }
     }
 
     // Map our post_type + media to NovinHub `type`
@@ -209,6 +223,21 @@ export const novinhub = {
       nhType = 'image';
     } else {
       nhType = 'text';
+    }
+
+    if (video_cover !== undefined) extra.video_cover = video_cover;
+    if (payload.first_comment) extra.first_comment = payload.first_comment;
+
+    // Collaboration: Instagram co-authors. NovinHub accepts `collaborators`
+    // as an array of usernames (mirrors reels_tags shape when applicable).
+    const collabs = (payload.collaborators || [])
+      .map(u => u.trim().replace(/^@/, ''))
+      .filter(Boolean);
+    if (collabs.length) {
+      extra.collaborators = collabs;
+      if (nhType === 'video' && extra.reels) {
+        extra.reels_tags = collabs.map(username => ({ username }));
+      }
     }
 
     const body: Record<string, any> = {
