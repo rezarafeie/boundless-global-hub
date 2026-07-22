@@ -15,7 +15,7 @@ interface Account { id: string; username: string | null; }
 interface Scheduled {
   id: string; account_id: string; caption: string | null; media_urls: any;
   post_type: string; scheduled_at: string; status: string; last_error: string | null;
-  published_at: string | null;
+  published_at: string | null; meta: any;
 }
 
 const SocialPlanner: React.FC = () => {
@@ -28,9 +28,14 @@ const SocialPlanner: React.FC = () => {
   const [form, setForm] = useState({
     account_id: '', post_type: 'post', caption: '',
     media_urls: [] as string[], scheduled_at: '',
+    cover_url: '' as string,
+    collaborators: '' as string,
+    first_comment: '' as string,
   });
   const [uploading, setUploading] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const coverInputRef = React.useRef<HTMLInputElement>(null);
 
   const load = async () => {
     setLoading(true);
@@ -54,6 +59,13 @@ const SocialPlanner: React.FC = () => {
     const scheduledAt = publishImmediately
       ? new Date(Date.now() - 1000).toISOString()
       : new Date(form.scheduled_at).toISOString();
+    const collaboratorsArr = form.collaborators
+      .split(/[,،\s]+/).map(s => s.trim().replace(/^@/, '')).filter(Boolean);
+    const meta = {
+      cover_url: form.cover_url || null,
+      collaborators: collaboratorsArr,
+      first_comment: form.first_comment || null,
+    };
     const { data: inserted, error } = await supabase.from('social_scheduled_posts').insert({
       account_id: form.account_id,
       post_type: form.post_type,
@@ -61,6 +73,7 @@ const SocialPlanner: React.FC = () => {
       media_urls: form.media_urls,
       scheduled_at: scheduledAt,
       status: 'scheduled',
+      meta,
     }).select('id').single();
     if (error) { setSaving(false); return toast.error(error.message); }
     if (publishImmediately && inserted?.id) {
@@ -74,7 +87,7 @@ const SocialPlanner: React.FC = () => {
     }
     setSaving(false);
     setOpen(false);
-    setForm({ account_id: form.account_id, post_type: 'post', caption: '', media_urls: [], scheduled_at: '' });
+    setForm({ account_id: form.account_id, post_type: 'post', caption: '', media_urls: [], scheduled_at: '', cover_url: '', collaborators: '', first_comment: '' });
     setTimeout(load, 1500);
   };
 
@@ -105,6 +118,28 @@ const SocialPlanner: React.FC = () => {
 
   const removeMedia = (idx: number) => {
     setForm(f => ({ ...f, media_urls: f.media_urls.filter((_, i) => i !== idx) }));
+  };
+
+  const uploadCover = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+    setUploadingCover(true);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `planner/cover-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('social-media').upload(path, file, {
+        contentType: file.type, upsert: false,
+      });
+      if (upErr) { toast.error(upErr.message); return; }
+      const { data } = await supabase.storage.from('social-media').createSignedUrl(path, 60 * 60 * 24 * 30);
+      if (data?.signedUrl) {
+        setForm(f => ({ ...f, cover_url: data.signedUrl }));
+        toast.success('کاور آپلود شد');
+      }
+    } finally {
+      setUploadingCover(false);
+      if (coverInputRef.current) coverInputRef.current.value = '';
+    }
   };
 
 
@@ -207,6 +242,54 @@ const SocialPlanner: React.FC = () => {
                 {form.media_urls.length > 1 && (
                   <p className="text-xs text-muted-foreground mt-1">کاروسل با {form.media_urls.length} فایل</p>
                 )}
+              </div>
+              {(form.post_type === 'reel' || form.media_urls.some(u => /\.(mp4|mov|webm)($|\?)/i.test(u))) && (
+                <div>
+                  <Label>کاور ویدیو / ریلز (اختیاری)</Label>
+                  <input
+                    ref={coverInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={e => uploadCover(e.target.files)}
+                  />
+                  <div className="flex items-center gap-2 mt-2">
+                    {form.cover_url ? (
+                      <div className="relative w-20 h-20 rounded overflow-hidden border">
+                        <img src={form.cover_url} alt="" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setForm(f => ({ ...f, cover_url: '' }))}
+                          className="absolute top-0 left-0 bg-black/60 text-white p-0.5 rounded-br"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => coverInputRef.current?.click()}
+                        disabled={uploadingCover}
+                        className="w-20 h-20 rounded border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground hover:bg-accent disabled:opacity-50"
+                      >
+                        {uploadingCover ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Upload className="w-5 h-5" /><span className="text-[10px] mt-1">کاور</span></>}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+              <div>
+                <Label>همکاری (کولب) — نام کاربری اینستاگرام، جدا با کاما</Label>
+                <Input
+                  placeholder="username1, username2"
+                  value={form.collaborators}
+                  onChange={e => setForm(f => ({ ...f, collaborators: e.target.value }))}
+                />
+                <p className="text-xs text-muted-foreground mt-1">افراد ذکرشده به‌عنوان هم‌سازنده (Collaborator) دعوت می‌شوند.</p>
+              </div>
+              <div>
+                <Label>کامنت اول (اختیاری)</Label>
+                <Input value={form.first_comment} onChange={e => setForm(f => ({ ...f, first_comment: e.target.value }))} />
               </div>
               <div>
                 <Label>کپشن</Label>
