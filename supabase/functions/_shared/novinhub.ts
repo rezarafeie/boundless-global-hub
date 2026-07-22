@@ -255,15 +255,11 @@ export const novinhub = {
         extra.reels_tags = people.map(p => ({ username: p.username, id: p.id }));
       }
 
-      // Official NovinHub field for tagging users on Instagram photo/album posts.
-      if ((nhType === 'image' || nhType === 'album') && media_ids.length) {
-        const photoTags = buildPhotoTags(media_ids, people);
-        if (Object.keys(photoTags).length) {
-          extra.photo_tags = photoTags;
-        } else {
-          console.warn('NovinHub photo_tags skipped: no matching Instagram users found', collabs.join(','));
-        }
-      }
+      // NOTE: photo_tags intentionally omitted. NovinHub's form-encoded endpoint
+      // rejects our JSON-serialized photo_tags payload with 400 "photo_tags نامعتبر".
+      // Co-authorship via `collaborators` covers the collaboration use-case; on-image
+      // tagging for feed photos is not reliably supported through this API surface.
+
 
       // Collaborators (co-authors) — send only usernames per NovinHub docs.
       if (people.length) {
