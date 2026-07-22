@@ -215,6 +215,8 @@ export const novinhub = {
     } else if (requested === 'reel') {
       nhType = 'video';
       extra.reels = 1;
+    } else if (requested === 'carousel' || requested === 'album') {
+      nhType = 'album';
     } else if (media_ids.length > 1) {
       nhType = 'album';
     } else if (isVideo) {
