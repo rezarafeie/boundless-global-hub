@@ -243,10 +243,59 @@ const SocialPlanner: React.FC = () => {
                   <p className="text-xs text-muted-foreground mt-1">کاروسل با {form.media_urls.length} فایل</p>
                 )}
               </div>
+              {(form.post_type === 'reel' || form.media_urls.some(u => /\.(mp4|mov|webm)($|\?)/i.test(u))) && (
+                <div>
+                  <Label>کاور ویدیو / ریلز (اختیاری)</Label>
+                  <input
+                    ref={coverInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={e => uploadCover(e.target.files)}
+                  />
+                  <div className="flex items-center gap-2 mt-2">
+                    {form.cover_url ? (
+                      <div className="relative w-20 h-20 rounded overflow-hidden border">
+                        <img src={form.cover_url} alt="" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setForm(f => ({ ...f, cover_url: '' }))}
+                          className="absolute top-0 left-0 bg-black/60 text-white p-0.5 rounded-br"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => coverInputRef.current?.click()}
+                        disabled={uploadingCover}
+                        className="w-20 h-20 rounded border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground hover:bg-accent disabled:opacity-50"
+                      >
+                        {uploadingCover ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Upload className="w-5 h-5" /><span className="text-[10px] mt-1">کاور</span></>}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+              <div>
+                <Label>همکاری (کولب) — نام کاربری اینستاگرام، جدا با کاما</Label>
+                <Input
+                  placeholder="username1, username2"
+                  value={form.collaborators}
+                  onChange={e => setForm(f => ({ ...f, collaborators: e.target.value }))}
+                />
+                <p className="text-xs text-muted-foreground mt-1">افراد ذکرشده به‌عنوان هم‌سازنده (Collaborator) دعوت می‌شوند.</p>
+              </div>
+              <div>
+                <Label>کامنت اول (اختیاری)</Label>
+                <Input value={form.first_comment} onChange={e => setForm(f => ({ ...f, first_comment: e.target.value }))} />
+              </div>
               <div>
                 <Label>کپشن</Label>
                 <Textarea rows={4} value={form.caption} onChange={e => setForm(f => ({ ...f, caption: e.target.value }))} />
               </div>
+              <div>
               <div>
                 <Label>زمان انتشار</Label>
                 <Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm(f => ({ ...f, scheduled_at: e.target.value }))} />
