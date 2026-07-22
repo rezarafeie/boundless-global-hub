@@ -186,7 +186,7 @@ export const novinhub = {
   uploadFromUrl: nhUploadFromUrl,
 
   searchPeople: (accountId: string | number, query: string) =>
-    nhForm('/search/people', { query, account_ids: [String(accountId)] }),
+    nhForm('/search/people', { query, account_ids: String(accountId) }),
 
   /**
    * Create a post on NovinHub.
@@ -269,11 +269,9 @@ export const novinhub = {
         extra.photo_tags = buildPhotoTags(media_ids, people);
       }
 
-      // Best-effort co-author invite for undocumented NovinHub installs that support it.
-      // If their API ignores it, the documented photo/reel tags above still apply.
-      if (people.length) {
-        extra.collaborators = people.map(p => p.username);
-      }
+      // NovinHub's public /post docs only support people tags through
+      // `photo_tags` and `reels_tags`. Sending undocumented fields such as
+      // `collaborators` can make the API return a generic 500, so do not send it.
     }
 
     const body: Record<string, any> = {
@@ -294,7 +292,6 @@ export const novinhub = {
       has_photo_tags: !!body.photo_tags,
       photo_tag_media_count: body.photo_tags ? Object.keys(body.photo_tags).length : 0,
       has_reels_tags: Array.isArray(body.reels_tags) && body.reels_tags.length > 0,
-      has_collaborators: Array.isArray(body.collaborators) && body.collaborators.length > 0,
       has_hashtags: Array.isArray(body.hashtag) && body.hashtag.length > 0,
     }));
 
