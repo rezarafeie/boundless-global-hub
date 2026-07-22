@@ -176,7 +176,7 @@ export const novinhub = {
   uploadFromUrl: nhUploadFromUrl,
 
   searchPeople: (accountId: string | number, query: string) =>
-    nhForm('/search/people', { query, account_ids: String(accountId) }),
+    nhForm('/search/people', { query, account_ids: [String(accountId)] }),
 
   /**
    * Create a post on NovinHub.
