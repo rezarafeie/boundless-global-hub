@@ -283,6 +283,17 @@ export const novinhub = {
       ...extra,
     };
 
+    console.log('NovinHub publish payload', JSON.stringify({
+      type: body.type,
+      account_ids: body.account_ids,
+      media_count: media_ids.length,
+      has_photo_tags: !!body.photo_tags,
+      photo_tag_media_count: body.photo_tags ? Object.keys(body.photo_tags).length : 0,
+      has_reels_tags: Array.isArray(body.reels_tags) && body.reels_tags.length > 0,
+      has_collaborators: Array.isArray(body.collaborators) && body.collaborators.length > 0,
+      has_hashtags: Array.isArray(body.hashtag) && body.hashtag.length > 0,
+    }));
+
     return nhForm('/post', body);
   },
 };
