@@ -296,7 +296,6 @@ const SocialPlanner: React.FC = () => {
                 <Textarea rows={4} value={form.caption} onChange={e => setForm(f => ({ ...f, caption: e.target.value }))} />
               </div>
               <div>
-              <div>
                 <Label>زمان انتشار</Label>
                 <Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm(f => ({ ...f, scheduled_at: e.target.value }))} />
               </div>
