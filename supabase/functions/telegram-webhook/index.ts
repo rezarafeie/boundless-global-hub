@@ -4024,13 +4024,32 @@ async function handleSocialMessage(chat_id: number, user: BotUser, msg: any, ses
       await sendMessage(chat_id, '❌ خطا در آپلود فایل. دوباره تلاش کنید.');
       return;
     }
-    const media = [...(session.context.media ?? []), uploaded];
-    await setSession(chat_id, user.id, 'social:awaiting_media', { ...session.context, media });
-    await sendMessage(chat_id, `✅ رسانه ذخیره شد (${media.length} فایل). می‌توانید ادامه دهید یا پایان بزنید.`,
-      { keyboard: [
-        [{ text: '✅ پایان رسانه — ادامه', callback_data: 'social:done_media' }],
-        [{ text: '❌ انصراف', callback_data: 'social:menu' }],
-      ] });
+    // Atomic append to session context so parallel album updates don't overwrite each other
+    const { error: appendErr } = await supabase.rpc('tg_append_session_media', {
+      p_chat_id: chat_id,
+      p_media: [uploaded],
+    });
+    if (appendErr) {
+      console.error('tg_append_session_media error:', appendErr);
+      // Fallback to non-atomic write
+      const media = [...(session.context.media ?? []), uploaded];
+      await setSession(chat_id, user.id, 'social:awaiting_media', { ...session.context, media });
+    }
+    // For album (media_group_id), only send one confirmation per group to avoid spam
+    const groupId = msg.media_group_id ? String(msg.media_group_id) : null;
+    const fresh = await getSession(chat_id);
+    const count = Array.isArray(fresh?.context?.media) ? fresh!.context.media.length : 0;
+    const lastAckedGroup = fresh?.context?.last_acked_group ?? null;
+    if (!groupId || lastAckedGroup !== groupId) {
+      if (groupId) {
+        await setSession(chat_id, user.id, 'social:awaiting_media', { ...(fresh?.context ?? {}), last_acked_group: groupId });
+      }
+      await sendMessage(chat_id, `✅ رسانه ذخیره شد (${count} فایل). می‌توانید ادامه دهید یا پایان بزنید.`,
+        { keyboard: [
+          [{ text: '✅ پایان رسانه — ادامه', callback_data: 'social:done_media' }],
+          [{ text: '❌ انصراف', callback_data: 'social:menu' }],
+        ] });
+    }
     return;
   }
 
