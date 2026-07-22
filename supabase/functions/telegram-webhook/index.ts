@@ -3800,16 +3800,45 @@ async function startSocialPost(chat_id: number, message_id: number, user: BotUse
     [
       '🖼 <b>ارسال رسانه</b>',
       '',
-      'یک یا چند عکس/ویدیو ارسال کنید.',
+      'یک یا چند عکس/ویدیو ارسال کنید (برای کاروسل چند فایل بفرستید — آلبوم تلگرام هم پشتیبانی می‌شود).',
       'پس از اتمام، دکمه «✅ پایان رسانه» را بزنید.',
       'برای پست فقط-متنی، مستقیم دکمه پایان را بزنید.',
       '',
       '/cancel برای انصراف',
     ].join('\n'),
     [
-      [{ text: '✅ پایان رسانه — ادامه به کپشن', callback_data: 'social:done_media' }],
+      [{ text: '✅ پایان رسانه — ادامه', callback_data: 'social:done_media' }],
       [{ text: '❌ انصراف', callback_data: 'social:menu' }],
     ]);
+}
+
+async function showPostTypeStep(chat_id: number) {
+  await sendMessage(chat_id, '🎬 <b>نوع پست</b> را انتخاب کنید:', {
+    keyboard: [
+      [{ text: '📸 پست عادی', callback_data: 'social:type:post' }],
+      [{ text: '🎞 ریلز', callback_data: 'social:type:reel' }],
+      [{ text: '📱 استوری', callback_data: 'social:type:story' }],
+      [{ text: '❌ انصراف', callback_data: 'social:menu' }],
+    ],
+  });
+}
+
+async function showCoverStep(chat_id: number) {
+  await sendMessage(chat_id,
+    '🖼 <b>کاور ویدیو/ریلز</b> (اختیاری)\n\nیک عکس به‌عنوان کاور ارسال کنید یا «-» بفرستید تا رد شود.',
+    { keyboard: [
+      [{ text: '⏭ رد کردن کاور', callback_data: 'social:cover:skip' }],
+      [{ text: '❌ انصراف', callback_data: 'social:menu' }],
+    ] });
+}
+
+async function showCollabStep(chat_id: number) {
+  await sendMessage(chat_id,
+    '🤝 <b>همکاری (کولب)</b> (اختیاری)\n\nنام کاربری اینستاگرام افراد را جدا با کاما بفرستید (مثلاً <code>user1, user2</code>)، یا «-» برای رد کردن.',
+    { keyboard: [
+      [{ text: '⏭ بدون همکاری', callback_data: 'social:collab:skip' }],
+      [{ text: '❌ انصراف', callback_data: 'social:menu' }],
+    ] });
 }
 
 async function showScheduleStep(chat_id: number, user: BotUser) {
@@ -3838,7 +3867,6 @@ function parseScheduleInput(input: string): Date | null {
   }
   const abs = t.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})$/);
   if (abs) {
-    // Interpret as Tehran time (UTC+3:30)
     const [_, y, mo, d, h, mi] = abs;
     const utcMs = Date.UTC(+y, +mo - 1, +d, +h, +mi) - (3 * 60 + 30) * 60000;
     return new Date(utcMs);
@@ -3850,6 +3878,9 @@ async function publishOrSchedule(chat_id: number, user: BotUser, ctx: any, sched
   const account_id: string = ctx.account_id;
   const media: Array<{ url: string; mime: string }> = ctx.media ?? [];
   const caption: string = ctx.caption ?? '';
+  const post_type: string = ctx.post_type || 'post';
+  const cover_url: string | null = ctx.cover_url ?? null;
+  const collaborators: string[] = Array.isArray(ctx.collaborators) ? ctx.collaborators : [];
   const media_urls = media.map(m => m.url);
   const media_type = media.length === 0 ? 'text' : (media[0].mime.startsWith('video') ? 'video' : 'image');
 
@@ -3857,6 +3888,7 @@ async function publishOrSchedule(chat_id: number, user: BotUser, ctx: any, sched
     account_id,
     caption,
     media_urls,
+    post_type,
     status: 'scheduled',
     scheduled_at: scheduledAt ? scheduledAt.toISOString() : new Date().toISOString(),
     meta: {
@@ -3864,6 +3896,8 @@ async function publishOrSchedule(chat_id: number, user: BotUser, ctx: any, sched
       created_by_chat_user_id: user.id,
       created_by_name: user.name,
       media_type,
+      cover_url,
+      collaborators,
     },
   };
 
@@ -3876,7 +3910,6 @@ async function publishOrSchedule(chat_id: number, user: BotUser, ctx: any, sched
   }
 
   if (!scheduledAt) {
-    // Trigger immediate publish edge function
     try {
       await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/social-publish-cron`, {
         method: 'POST',
@@ -3921,11 +3954,32 @@ async function handleSocialCallback(chat_id: number, message_id: number, user: B
   if (sub === 'done_media') {
     const s = await getSession(chat_id);
     if (!s || s.state !== 'social:awaiting_media') { await showSocialMenu(chat_id, message_id, user); return; }
-    await setSession(chat_id, user.id, 'social:awaiting_caption', s.context);
-    const count = (s.context.media ?? []).length;
-    await editMessage(chat_id, message_id,
-      `✍️ کپشن پست را ارسال کنید.\n\n📎 تعداد رسانه: <b>${count}</b>\n\nبرای پست بدون کپشن، «-» بفرستید.\n/cancel برای انصراف`,
-      [[{ text: '❌ انصراف', callback_data: 'social:menu' }]]);
+    await setSession(chat_id, user.id, 'social:awaiting_type', s.context);
+    await showPostTypeStep(chat_id);
+    return;
+  }
+  if (sub === 'type') {
+    const s = await getSession(chat_id);
+    if (!s || s.state !== 'social:awaiting_type') { await showSocialMenu(chat_id, message_id, user); return; }
+    const post_type = rest[1] || 'post';
+    await setSession(chat_id, user.id, 'social:awaiting_caption', { ...s.context, post_type });
+    await sendMessage(chat_id,
+      `✍️ کپشن پست را ارسال کنید.\n\nبرای پست بدون کپشن، «-» بفرستید.\n/cancel برای انصراف`,
+      { keyboard: [[{ text: '❌ انصراف', callback_data: 'social:menu' }]] });
+    return;
+  }
+  if (sub === 'cover' && rest[1] === 'skip') {
+    const s = await getSession(chat_id);
+    if (!s || s.state !== 'social:awaiting_cover') return;
+    await setSession(chat_id, user.id, 'social:awaiting_collabs', { ...s.context, cover_url: null });
+    await showCollabStep(chat_id);
+    return;
+  }
+  if (sub === 'collab' && rest[1] === 'skip') {
+    const s = await getSession(chat_id);
+    if (!s || s.state !== 'social:awaiting_collabs') return;
+    await setSession(chat_id, user.id, 'social:awaiting_schedule', { ...s.context, collaborators: [] });
+    await showScheduleStep(chat_id, user);
     return;
   }
   if (sub === 'pub' && rest[1] === 'now') {
@@ -3979,7 +4033,52 @@ async function handleSocialMessage(chat_id: number, user: BotUser, msg: any, ses
 
   if (session.state === 'social:awaiting_caption' && text) {
     const caption = text === '-' ? '' : text;
-    await setSession(chat_id, user.id, 'social:awaiting_schedule', { ...session.context, caption });
+    const ctx = { ...session.context, caption };
+    const post_type = ctx.post_type || 'post';
+    const hasVideo = Array.isArray(ctx.media) && ctx.media.some((m: any) => m.mime?.startsWith('video'));
+    // Cover only meaningful for video/reel
+    if (post_type === 'reel' || hasVideo) {
+      await setSession(chat_id, user.id, 'social:awaiting_cover', ctx);
+      await showCoverStep(chat_id);
+    } else {
+      await setSession(chat_id, user.id, 'social:awaiting_collabs', { ...ctx, cover_url: null });
+      await showCollabStep(chat_id);
+    }
+    return;
+  }
+
+  if (session.state === 'social:awaiting_cover') {
+    if (text === '-') {
+      await setSession(chat_id, user.id, 'social:awaiting_collabs', { ...session.context, cover_url: null });
+      await showCollabStep(chat_id);
+      return;
+    }
+    let fileId: string | null = null;
+    if (msg.photo && Array.isArray(msg.photo) && msg.photo.length > 0) {
+      fileId = msg.photo[msg.photo.length - 1].file_id;
+    } else if (msg.document?.file_id && (msg.document.mime_type || '').startsWith('image/')) {
+      fileId = msg.document.file_id;
+    }
+    if (!fileId) {
+      await sendMessage(chat_id, 'لطفاً یک عکس به‌عنوان کاور بفرستید یا «-» برای رد کردن.');
+      return;
+    }
+    const uploaded = await uploadSocialMediaFile(user.id, fileId, 'photo');
+    if (!uploaded) {
+      await sendMessage(chat_id, '❌ خطا در آپلود کاور.');
+      return;
+    }
+    await setSession(chat_id, user.id, 'social:awaiting_collabs', { ...session.context, cover_url: uploaded.url });
+    await sendMessage(chat_id, '✅ کاور ذخیره شد.');
+    await showCollabStep(chat_id);
+    return;
+  }
+
+  if (session.state === 'social:awaiting_collabs' && text) {
+    const collaborators = text === '-'
+      ? []
+      : text.split(/[,،\s]+/).map(s => s.trim().replace(/^@/, '')).filter(Boolean);
+    await setSession(chat_id, user.id, 'social:awaiting_schedule', { ...session.context, collaborators });
     await showScheduleStep(chat_id, user);
     return;
   }
