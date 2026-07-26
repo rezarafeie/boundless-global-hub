@@ -83,6 +83,10 @@ const CRM_STATUSES = [
   { value: 'پاسخ نداده', label: 'پاسخ نداده' },
   { value: 'موفق', label: 'موفق' },
   { value: 'کنسل', label: 'کنسل' },
+  { value: 'نیاز به پیگیری', label: 'نیاز به پیگیری' },
+  { value: 'بعد مشاوره خریده نشده', label: 'بعد مشاوره خریده نشده' },
+  { value: 'فروخته شد', label: 'فروخته شد' },
+  { value: 'صف مشاوره', label: 'صف مشاوره' },
 ];
 
 interface Course {
