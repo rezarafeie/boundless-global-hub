@@ -83,6 +83,10 @@ const CRM_STATUSES = [
   { value: 'پاسخ نداده', label: 'پاسخ نداده' },
   { value: 'موفق', label: 'موفق' },
   { value: 'کنسل', label: 'کنسل' },
+  { value: 'نیاز به پیگیری', label: 'نیاز به پیگیری' },
+  { value: 'بعد مشاوره خریده نشده', label: 'بعد مشاوره خریده نشده' },
+  { value: 'فروخته شد', label: 'فروخته شد' },
+  { value: 'صف مشاوره', label: 'صف مشاوره' },
 ];
 
 interface Course {
@@ -775,6 +779,10 @@ const SalesAgentLeads: React.FC = () => {
                   <SelectItem value="پاسخ نداده">پاسخ نداده</SelectItem>
                   <SelectItem value="موفق">موفق</SelectItem>
                   <SelectItem value="کنسل">کنسل</SelectItem>
+                  <SelectItem value="نیاز به پیگیری">نیاز به پیگیری</SelectItem>
+                  <SelectItem value="بعد مشاوره خریده نشده">بعد مشاوره خریده نشده</SelectItem>
+                  <SelectItem value="فروخته شد">فروخته شد</SelectItem>
+                  <SelectItem value="صف مشاوره">صف مشاوره</SelectItem>
                 </SelectContent>
               </Select>
             </div>

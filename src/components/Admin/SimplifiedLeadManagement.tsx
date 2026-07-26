@@ -1612,10 +1612,14 @@ const SimplifiedLeadManagement: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="all">همه</SelectItem>
                   <SelectItem value="no_crm">بدون CRM</SelectItem>
-                  <SelectItem value="در انتظار پرداخت">در انتظار پرداخت</SelectItem>
-                  <SelectItem value="پاسخ نداده">پاسخ نداده</SelectItem>
-                  <SelectItem value="موفق">موفق</SelectItem>
-                  <SelectItem value="کنسل">کنسل</SelectItem>
+                <SelectItem value="در انتظار پرداخت">در انتظار پرداخت</SelectItem>
+                <SelectItem value="پاسخ نداده">پاسخ نداده</SelectItem>
+                <SelectItem value="موفق">موفق</SelectItem>
+                <SelectItem value="کنسل">کنسل</SelectItem>
+                <SelectItem value="نیاز به پیگیری">نیاز به پیگیری</SelectItem>
+                <SelectItem value="بعد مشاوره خریده نشده">بعد مشاوره خریده نشده</SelectItem>
+                <SelectItem value="فروخته شد">فروخته شد</SelectItem>
+                <SelectItem value="صف مشاوره">صف مشاوره</SelectItem>
                 </SelectContent>
               </Select>
             </div>
