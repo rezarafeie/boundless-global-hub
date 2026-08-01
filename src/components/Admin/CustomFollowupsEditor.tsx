@@ -133,8 +133,12 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
               <Input type="number" value={r.repeat_delay_minutes} onChange={(e) => patch(r.id, { repeat_delay_minutes: Number(e.target.value) })} className="h-8 w-24" />
             </div>
             <div className="flex items-center gap-1">
-              <Switch checked={r.skip_if_activated} onCheckedChange={(v) => patch(r.id, { skip_if_activated: v })} />
+              <Switch checked={r.skip_if_activated} onCheckedChange={(v) => patch(r.id, { skip_if_activated: v, ...(v ? { only_if_activated: false } : {}) })} />
               <Label className="text-xs">فقط اگر فعال‌سازی نشده</Label>
+            </div>
+            <div className="flex items-center gap-1">
+              <Switch checked={r.only_if_activated} onCheckedChange={(v) => patch(r.id, { only_if_activated: v, ...(v ? { skip_if_activated: false } : {}) })} />
+              <Label className="text-xs">فقط اگر فعال‌سازی شده</Label>
             </div>
             <div className="mr-auto flex gap-2">
               <Button type="button" size="sm" variant="outline" onClick={() => save(r)} disabled={savingId === r.id}>
