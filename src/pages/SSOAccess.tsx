@@ -42,7 +42,7 @@ const SSOAccess: React.FC = () => {
         .select('*')
         .eq('token', token)
         .eq('type', 'academy')
-        .eq('used', false)
+        .or('used.eq.false,multi_use.eq.true')
         .gte('expires_at', new Date().toISOString())
         .single();
 
