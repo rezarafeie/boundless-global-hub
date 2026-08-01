@@ -1562,6 +1562,8 @@ async function studentCourseDetail(chat_id: number, message_id: number, user: Bo
       token,
       type: 'academy',
       enrollment_id: enrollmentId,
+      multi_use: true,
+      expires_at: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString(),
     });
     if (error) return `${ACADEMY_BASE}${redirectPath}`;
     return `${ACADEMY_BASE}/sso-access?token=${token}&redirect=${encodeURIComponent(redirectPath)}`;
