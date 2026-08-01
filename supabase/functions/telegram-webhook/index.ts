@@ -1077,6 +1077,8 @@ async function wrapWithSso(
       type: 'academy',
       course_slug: opts?.courseSlug ?? 'general',
       enrollment_id: opts?.enrollmentId ?? null,
+      multi_use: true,
+      expires_at: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString(),
     });
     if (error) {
       console.warn('wrapWithSso insert failed', error);
