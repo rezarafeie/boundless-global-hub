@@ -1077,6 +1077,8 @@ async function wrapWithSso(
       type: 'academy',
       course_slug: opts?.courseSlug ?? 'general',
       enrollment_id: opts?.enrollmentId ?? null,
+      multi_use: true,
+      expires_at: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString(),
     });
     if (error) {
       console.warn('wrapWithSso insert failed', error);
@@ -1365,7 +1367,7 @@ async function generateEnrollmentSsoUrl(enrollmentId: string, email: string | nu
     const r = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-sso-tokens`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
-      body: JSON.stringify({ enrollmentId, userEmail: email }),
+      body: JSON.stringify({ enrollmentId, userEmail: email, multiUse: true }),
     });
     const j = await r.json();
     const academy = j?.tokens?.find?.((t: any) => t.type === 'academy');
@@ -1560,6 +1562,8 @@ async function studentCourseDetail(chat_id: number, message_id: number, user: Bo
       token,
       type: 'academy',
       enrollment_id: enrollmentId,
+      multi_use: true,
+      expires_at: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString(),
     });
     if (error) return `${ACADEMY_BASE}${redirectPath}`;
     return `${ACADEMY_BASE}/sso-access?token=${token}&redirect=${encodeURIComponent(redirectPath)}`;

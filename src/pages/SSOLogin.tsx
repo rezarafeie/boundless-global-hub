@@ -45,7 +45,7 @@ const SSOLogin: React.FC = () => {
         `)
         .eq('token', token)
         .eq('type', 'woocommerce')
-        .eq('used', false)
+        .or('used.eq.false,multi_use.eq.true')
         .gte('expires_at', new Date().toISOString())
         .single();
 
@@ -58,12 +58,14 @@ const SSOLogin: React.FC = () => {
 
       console.log('WooCommerce token validated successfully:', tokenData);
 
-      // Mark token as used
+      // Mark token as used (multi-use tokens remain valid)
+      const isMultiUse = (tokenData as any).multi_use === true;
       const { error: updateError } = await supabase
         .from('sso_tokens')
-        .update({ 
-          used: true, 
-          used_at: new Date().toISOString() 
+        .update({
+          used: isMultiUse ? false : true,
+          used_at: new Date().toISOString(),
+          use_count: (((tokenData as any).use_count ?? 0) as number) + 1,
         })
         .eq('id', tokenData.id);
 

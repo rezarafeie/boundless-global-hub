@@ -5075,8 +5075,10 @@ export type Database = {
           enrollment_id: string | null
           expires_at: string
           id: string
+          multi_use: boolean
           token: string
           type: string
+          use_count: number
           used: boolean
           used_at: string | null
           user_email: string
@@ -5087,8 +5089,10 @@ export type Database = {
           enrollment_id?: string | null
           expires_at?: string
           id?: string
+          multi_use?: boolean
           token: string
           type: string
+          use_count?: number
           used?: boolean
           used_at?: string | null
           user_email: string
@@ -5099,8 +5103,10 @@ export type Database = {
           enrollment_id?: string | null
           expires_at?: string
           id?: string
+          multi_use?: boolean
           token?: string
           type?: string
+          use_count?: number
           used?: boolean
           used_at?: string | null
           user_email?: string
