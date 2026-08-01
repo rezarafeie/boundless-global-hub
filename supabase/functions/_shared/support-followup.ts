@@ -334,21 +334,23 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
       return results;
     }
 
-    // Business failed (or not configured) — fall back to regular bot so the message still reaches the user.
+    // Business failed (or not configured). Do NOT fall back to the bot — this followup must only be
+    // delivered from the Telegram Business account's private chat.
     const businessErr = bcid ? JSON.stringify(businessRes) : "telegram_business_connection_id is not configured";
-    await logSendCustom(row, cf, "telegram_business", "failed", businessErr, { ...logExtra, chat_id: row.telegram_id, text, business: !!bcid, business_connection_id: bcid, response: businessRes, will_fallback_to_bot: true });
-
-    const kb = vars.activation_link ? { keyboard: [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]] } : {};
-    const botRes = await sendMessage(row.telegram_id, text, { ...(kb as any), parse_mode: "HTML" });
-    const botOk = (botRes as any)?.ok !== false;
-    const botErrStr = botOk ? undefined : JSON.stringify(botRes);
-    const errStr = botErrStr ?? "";
-    // Bot errors that are permanent for this chat (blocked bot / bad user id / never started bot) — mark as delivered so we don't loop.
-    const permanent = /chat not found|bot was blocked|user is deactivated|PEER_ID_INVALID|Forbidden/i.test(errStr);
-    const effectiveOk = botOk || permanent;
-    await logSendCustom(row, cf, "telegram_bot", botOk ? "sent" : (permanent ? "unreachable" : "failed"), botErrStr, { ...logExtra, chat_id: row.telegram_id, text, response: botRes, fallback_from_business: true });
-    results.push({ channel: "business", ok: effectiveOk, fallback: "bot", bot_ok: botOk, unreachable: permanent, chat_id: row.telegram_id, text, response: botRes });
+    // Permanent per-user conditions: the business account has no private chat with this user yet,
+    // the peer can't be resolved, or it's our own account. Retrying never helps.
+    const permanent = /BUSINESS_PEER_USAGE_MISSING|PEER_ID_INVALID|must not be sent to self|bot was blocked|user is deactivated|chat not found|Forbidden/i.test(businessErr);
+    await logSendCustom(
+      row,
+      cf,
+      "telegram_business",
+      permanent ? "unreachable" : "failed",
+      businessErr,
+      { ...logExtra, chat_id: row.telegram_id, text, business: !!bcid, business_connection_id: bcid, response: businessRes, fallback_to_bot: false },
+    );
+    results.push({ channel: "business", ok: permanent, unreachable: permanent, chat_id: row.telegram_id, text, business: !!bcid, error: businessErr });
     return results;
+
   }
   return results;
 }
