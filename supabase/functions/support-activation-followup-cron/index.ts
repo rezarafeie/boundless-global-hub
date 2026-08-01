@@ -120,7 +120,8 @@ serve(async (req) => {
       const counts = (row.custom_followup_sent_counts ?? {}) as Record<string, number>;
       const purchaseElapsed = minutesSince(row.created_at);
       for (const cf of customs) {
-        if (cf.skip_if_activated && row.status === "activated") continue;
+        if (cf.only_if_activated && row.status !== "activated") continue;
+        if (!cf.only_if_activated && cf.skip_if_activated && row.status === "activated") continue;
         const sent = counts[cf.id] ?? 0;
         if (sent >= (cf.max_repeats ?? 1)) continue;
         const required = (cf.delay_minutes ?? 0) + sent * (cf.repeat_delay_minutes ?? cf.delay_minutes ?? 0);

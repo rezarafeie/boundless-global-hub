@@ -5134,6 +5134,7 @@ export type Database = {
           id: string
           max_repeats: number
           name: string
+          only_if_activated: boolean
           repeat_delay_minutes: number
           skip_if_activated: boolean
           sms_template_url: string | null
@@ -5152,6 +5153,7 @@ export type Database = {
           id?: string
           max_repeats?: number
           name?: string
+          only_if_activated?: boolean
           repeat_delay_minutes?: number
           skip_if_activated?: boolean
           sms_template_url?: string | null
@@ -5170,6 +5172,7 @@ export type Database = {
           id?: string
           max_repeats?: number
           name?: string
+          only_if_activated?: boolean
           repeat_delay_minutes?: number
           skip_if_activated?: boolean
           sms_template_url?: string | null

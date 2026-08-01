@@ -25,6 +25,7 @@ interface CustomFollowup {
   sms_template_url: string | null;
   bot_text: string | null;
   skip_if_activated: boolean;
+  only_if_activated: boolean;
 }
 
 const DEFAULT_KAVENEGAR = 'https://api.kavenegar.com/v1/{api_key}/verify/lookup.json?receptor={user_phone_number}&token={user_name}&token10={course_title}&template=welcomefollowup';
@@ -79,6 +80,7 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
       sms_template_url: r.sms_template_url,
       bot_text: r.bot_text,
       skip_if_activated: r.skip_if_activated,
+      only_if_activated: r.only_if_activated,
     }).eq('id', r.id);
     setSavingId(null);
     if (error) { toast({ title: 'خطا', description: error.message, variant: 'destructive' }); return; }
@@ -133,8 +135,12 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
               <Input type="number" value={r.repeat_delay_minutes} onChange={(e) => patch(r.id, { repeat_delay_minutes: Number(e.target.value) })} className="h-8 w-24" />
             </div>
             <div className="flex items-center gap-1">
-              <Switch checked={r.skip_if_activated} onCheckedChange={(v) => patch(r.id, { skip_if_activated: v })} />
+              <Switch checked={r.skip_if_activated} onCheckedChange={(v) => patch(r.id, { skip_if_activated: v, ...(v ? { only_if_activated: false } : {}) })} />
               <Label className="text-xs">فقط اگر فعال‌سازی نشده</Label>
+            </div>
+            <div className="flex items-center gap-1">
+              <Switch checked={r.only_if_activated} onCheckedChange={(v) => patch(r.id, { only_if_activated: v, ...(v ? { skip_if_activated: false } : {}) })} />
+              <Label className="text-xs">فقط اگر فعال‌سازی شده</Label>
             </div>
             <div className="mr-auto flex gap-2">
               <Button type="button" size="sm" variant="outline" onClick={() => save(r)} disabled={savingId === r.id}>
