@@ -80,6 +80,7 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
       sms_template_url: r.sms_template_url,
       bot_text: r.bot_text,
       skip_if_activated: r.skip_if_activated,
+      only_if_activated: r.only_if_activated,
     }).eq('id', r.id);
     setSavingId(null);
     if (error) { toast({ title: 'خطا', description: error.message, variant: 'destructive' }); return; }
