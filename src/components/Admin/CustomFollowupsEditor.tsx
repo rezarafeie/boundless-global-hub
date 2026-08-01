@@ -25,6 +25,7 @@ interface CustomFollowup {
   sms_template_url: string | null;
   bot_text: string | null;
   skip_if_activated: boolean;
+  only_if_activated: boolean;
 }
 
 const DEFAULT_KAVENEGAR = 'https://api.kavenegar.com/v1/{api_key}/verify/lookup.json?receptor={user_phone_number}&token={user_name}&token10={course_title}&template=welcomefollowup';
