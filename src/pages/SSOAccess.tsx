@@ -99,12 +99,14 @@ const SSOAccess: React.FC = () => {
       // Update auth context
       login(unifiedUser, sessionToken);
 
-      // Mark token as used
+      // Mark token as used (multi-use tokens stay valid, we only count usage)
+      const isMultiUse = (tokenData as any).multi_use === true;
       const { error: updateError } = await supabase
         .from('sso_tokens')
-        .update({ 
-          used: true, 
-          used_at: new Date().toISOString() 
+        .update({
+          used: isMultiUse ? false : true,
+          used_at: new Date().toISOString(),
+          use_count: (((tokenData as any).use_count ?? 0) as number) + 1,
         })
         .eq('id', tokenData.id);
 
