@@ -17,7 +17,10 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { enrollmentId, userEmail } = await req.json()
+    const { enrollmentId, userEmail, multiUse } = await req.json()
+    const ssoExtra = multiUse
+      ? { multi_use: true, expires_at: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString() }
+      : {}
 
     if (!enrollmentId || !userEmail) {
       throw new Error('Missing required parameters: enrollmentId and userEmail')
@@ -69,7 +72,8 @@ Deno.serve(async (req) => {
           course_slug: enrollment.courses.slug,
           token: academyToken,
           type: 'academy',
-          enrollment_id: enrollmentId
+          enrollment_id: enrollmentId,
+          ...ssoExtra
         })
 
       if (academyTokenError) {
@@ -97,7 +101,8 @@ Deno.serve(async (req) => {
           course_slug: enrollment.courses.slug,
           token: woocommerceToken,
           type: 'woocommerce',
-          enrollment_id: enrollmentId
+          enrollment_id: enrollmentId,
+          ...ssoExtra
         })
 
       if (wooTokenError) {
