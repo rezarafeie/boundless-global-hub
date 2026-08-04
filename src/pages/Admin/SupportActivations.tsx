@@ -52,7 +52,7 @@ const SupportActivations: React.FC = () => {
   const [logRow, setLogRow] = useState<Row | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 20;
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -70,21 +70,36 @@ const SupportActivations: React.FC = () => {
 
   const load = async () => {
     setLoading(true);
-    let query = supabase
-      .from('support_activations' as any)
-      .select('*, chat_users!support_activations_user_id_fkey(name,phone,email), courses(title,slug)')
-      .order('created_at', { ascending: false })
-      .limit(500);
-    if (status !== 'all') query = query.eq('status', status);
-    if (courseId !== 'all') query = query.eq('course_id', courseId);
-    const { data, error } = await query;
-    if (error) {
-      // fallback without joins if FK aliases mismatch
-      const { data: d2 } = await supabase.from('support_activations' as any).select('*').order('created_at', { ascending: false }).limit(500);
-      setRows((d2 as any) || []);
-    } else {
-      setRows((data as any) || []);
+    const CHUNK = 1000;
+    const all: any[] = [];
+    let withJoins = true;
+    for (let from = 0; ; from += CHUNK) {
+      let query = supabase
+        .from('support_activations' as any)
+        .select(
+          withJoins
+            ? '*, chat_users!support_activations_user_id_fkey(name,phone,email), courses(title,slug)'
+            : '*',
+        )
+        .order('created_at', { ascending: false })
+        .range(from, from + CHUNK - 1);
+      if (status !== 'all') query = query.eq('status', status);
+      if (courseId !== 'all') query = query.eq('course_id', courseId);
+      const { data, error } = await query;
+      if (error) {
+        if (withJoins && from === 0) {
+          // fallback without joins if FK aliases mismatch
+          withJoins = false;
+          from -= CHUNK;
+          continue;
+        }
+        break;
+      }
+      const batch = (data as any[]) || [];
+      all.push(...batch);
+      if (batch.length < CHUNK) break;
     }
+    setRows(all as any);
     setLoading(false);
   };
 
