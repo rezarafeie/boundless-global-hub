@@ -25,7 +25,7 @@ interface Row {
   last_seen: string | null;
 }
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 20;
 
 const TelegramUsers: React.FC = () => {
   const navigate = useNavigate();
@@ -37,15 +37,23 @@ const TelegramUsers: React.FC = () => {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('chat_users')
-      .select(
-        'id, name, full_name, phone, email, role, is_messenger_admin, telegram_chat_id, telegram_username, telegram_linked_at, last_seen' as any,
-      )
-      .not('telegram_chat_id', 'is', null)
-      .order('telegram_linked_at', { ascending: false })
-      .limit(1000);
-    setUsers((data as any[]) ?? []);
+    const CHUNK = 1000;
+    const all: any[] = [];
+    for (let from = 0; ; from += CHUNK) {
+      const { data, error } = await supabase
+        .from('chat_users')
+        .select(
+          'id, name, full_name, phone, email, role, is_messenger_admin, telegram_chat_id, telegram_username, telegram_linked_at, last_seen' as any,
+        )
+        .not('telegram_chat_id', 'is', null)
+        .order('telegram_linked_at', { ascending: false })
+        .range(from, from + CHUNK - 1);
+      if (error) break;
+      const batch = (data as any[]) || [];
+      all.push(...batch);
+      if (batch.length < CHUNK) break;
+    }
+    setUsers(all as any);
     setLoading(false);
   };
 
