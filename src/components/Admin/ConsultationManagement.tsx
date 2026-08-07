@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -61,6 +62,9 @@ interface ConsultationSettings {
   slot_duration: number;
   webhook_url: string | null;
   default_confirmation_message: string | null;
+  telegram_notify_enabled: boolean;
+  telegram_approve_message: string | null;
+  telegram_reject_message: string | null;
 }
 
 const ConsultationManagement: React.FC = () => {
@@ -73,7 +77,10 @@ const ConsultationManagement: React.FC = () => {
   const [settings, setSettings] = useState<ConsultationSettings>({
     slot_duration: 20,
     webhook_url: null,
-    default_confirmation_message: null
+    default_confirmation_message: null,
+    telegram_notify_enabled: true,
+    telegram_approve_message: null,
+    telegram_reject_message: null
   });
   
   // Add slot dialog
@@ -139,7 +146,10 @@ const ConsultationManagement: React.FC = () => {
       setSettings({
         slot_duration: data.slot_duration,
         webhook_url: data.webhook_url,
-        default_confirmation_message: data.default_confirmation_message
+        default_confirmation_message: data.default_confirmation_message,
+        telegram_notify_enabled: (data as any).telegram_notify_enabled ?? true,
+        telegram_approve_message: (data as any).telegram_approve_message ?? null,
+        telegram_reject_message: (data as any).telegram_reject_message ?? null
       });
       setSlotDuration(data.slot_duration);
     }
@@ -270,6 +280,17 @@ const ConsultationManagement: React.FC = () => {
           }
         });
       }
+
+      // Notify user on Telegram (business account)
+      try {
+        await supabase.functions.invoke('consultation-telegram-notify', {
+          body: { booking_id: selectedBooking.id, action: 'approve' }
+        });
+      } catch (tgError) {
+        console.error('Telegram notify error:', tgError);
+      }
+      
+
       
       toast({ title: 'موفق', description: 'مشاوره تایید شد' });
       setShowApproval(false);
@@ -304,6 +325,17 @@ const ConsultationManagement: React.FC = () => {
           console.error('Webhook error:', webhookError);
         }
       }
+
+      // Notify user on Telegram (business account)
+      try {
+        await supabase.functions.invoke('consultation-telegram-notify', {
+          body: { booking_id: bookingId, action: 'reject' }
+        });
+      } catch (tgError) {
+        console.error('Telegram notify error:', tgError);
+      }
+      
+
       
       toast({ title: 'موفق', description: 'مشاوره لغو شد' });
       fetchBookings();
@@ -350,8 +382,11 @@ const ConsultationManagement: React.FC = () => {
         .update({
           slot_duration: settings.slot_duration,
           webhook_url: settings.webhook_url,
-          default_confirmation_message: settings.default_confirmation_message
-        })
+          default_confirmation_message: settings.default_confirmation_message,
+          telegram_notify_enabled: settings.telegram_notify_enabled,
+          telegram_approve_message: settings.telegram_approve_message,
+          telegram_reject_message: settings.telegram_reject_message
+        } as any)
         .eq('id', 1);
       
       if (error) throw error;
@@ -733,7 +768,8 @@ const ConsultationManagement: React.FC = () => {
 
       {/* Settings Dialog */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+
           <DialogHeader>
             <DialogTitle>تنظیمات مشاوره</DialogTitle>
           </DialogHeader>
@@ -762,6 +798,42 @@ const ConsultationManagement: React.FC = () => {
                 value={settings.default_confirmation_message || ''}
                 onChange={(e) => setSettings(s => ({ ...s, default_confirmation_message: e.target.value || null }))}
               />
+            </div>
+
+            <div className="border-t pt-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>ارسال پیام تلگرام به کاربر</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    هنگام تایید یا لغو مشاوره، پیام از اکانت بیزینس تلگرام به چت خصوصی کاربر ارسال می‌شود
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.telegram_notify_enabled}
+                  onCheckedChange={(v) => setSettings(s => ({ ...s, telegram_notify_enabled: v }))}
+                />
+              </div>
+              <div>
+                <Label>متن پیام تایید (تلگرام)</Label>
+                <Textarea
+                  rows={6}
+                  dir="rtl"
+                  value={settings.telegram_approve_message || ''}
+                  onChange={(e) => setSettings(s => ({ ...s, telegram_approve_message: e.target.value || null }))}
+                />
+              </div>
+              <div>
+                <Label>متن پیام لغو (تلگرام)</Label>
+                <Textarea
+                  rows={6}
+                  dir="rtl"
+                  value={settings.telegram_reject_message || ''}
+                  onChange={(e) => setSettings(s => ({ ...s, telegram_reject_message: e.target.value || null }))}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                متغیرها: {'{full_name}'} {'{phone}'} {'{shamsi_date}'} {'{date}'} {'{start_time}'} {'{end_time}'} {'{consultation_link}'} {'{confirmation_note}'} {'{description}'}
+              </p>
             </div>
           </div>
           <DialogFooter>

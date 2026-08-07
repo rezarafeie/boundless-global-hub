@@ -1362,6 +1362,9 @@ export type Database = {
           default_confirmation_message: string | null
           id: number
           slot_duration: number
+          telegram_approve_message: string | null
+          telegram_notify_enabled: boolean
+          telegram_reject_message: string | null
           updated_at: string
           webhook_url: string | null
         }
@@ -1370,6 +1373,9 @@ export type Database = {
           default_confirmation_message?: string | null
           id?: number
           slot_duration?: number
+          telegram_approve_message?: string | null
+          telegram_notify_enabled?: boolean
+          telegram_reject_message?: string | null
           updated_at?: string
           webhook_url?: string | null
         }
@@ -1378,6 +1384,9 @@ export type Database = {
           default_confirmation_message?: string | null
           id?: number
           slot_duration?: number
+          telegram_approve_message?: string | null
+          telegram_notify_enabled?: boolean
+          telegram_reject_message?: string | null
           updated_at?: string
           webhook_url?: string | null
         }
