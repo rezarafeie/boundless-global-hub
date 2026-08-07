@@ -131,7 +131,21 @@ serve(async (req) => {
         .eq('id', booking.slot_id);
     }
 
-    // Send webhook notification
+    // Notify user on Telegram (business account) with the editable template
+    try {
+      await fetch(`${supabaseUrl}/functions/v1/consultation-telegram-notify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${supabaseServiceKey}`,
+        },
+        body: JSON.stringify({ booking_id: booking.id, action: action === 'approve' ? 'approve' : 'reject' }),
+      });
+    } catch (tgError) {
+      console.error('Telegram notify error:', tgError);
+    }
+
+
     const { data: settings } = await supabase
       .from('consultation_settings')
       .select('webhook_url')
