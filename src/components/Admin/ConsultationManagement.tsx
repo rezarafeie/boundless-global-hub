@@ -768,7 +768,8 @@ const ConsultationManagement: React.FC = () => {
 
       {/* Settings Dialog */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+
           <DialogHeader>
             <DialogTitle>تنظیمات مشاوره</DialogTitle>
           </DialogHeader>
