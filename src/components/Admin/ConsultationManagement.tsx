@@ -324,6 +324,17 @@ const ConsultationManagement: React.FC = () => {
           console.error('Webhook error:', webhookError);
         }
       }
+
+      // Notify user on Telegram (business account)
+      try {
+        await supabase.functions.invoke('consultation-telegram-notify', {
+          body: { booking_id: bookingId, action: 'reject' }
+        });
+      } catch (tgError) {
+        console.error('Telegram notify error:', tgError);
+      }
+      
+
       
       toast({ title: 'موفق', description: 'مشاوره لغو شد' });
       fetchBookings();
