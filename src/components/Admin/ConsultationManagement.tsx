@@ -145,7 +145,10 @@ const ConsultationManagement: React.FC = () => {
       setSettings({
         slot_duration: data.slot_duration,
         webhook_url: data.webhook_url,
-        default_confirmation_message: data.default_confirmation_message
+        default_confirmation_message: data.default_confirmation_message,
+        telegram_notify_enabled: (data as any).telegram_notify_enabled ?? true,
+        telegram_approve_message: (data as any).telegram_approve_message ?? null,
+        telegram_reject_message: (data as any).telegram_reject_message ?? null
       });
       setSlotDuration(data.slot_duration);
     }
