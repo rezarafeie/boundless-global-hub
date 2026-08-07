@@ -188,6 +188,7 @@ async function mainMenu(user: BotUser | null): Promise<InlineKeyboard> {
       [{ text: '📊 گزارش‌ها', callback_data: 'menu:reports' }],
       [{ text: '📱 مدیریت شبکه‌های اجتماعی', callback_data: 'social:menu' }],
       [{ text: '⚙️ مدیریت سیستم', callback_data: 'admin:menu' }],
+      [{ text: '👤 پروفایل', callback_data: 'student:profile' }],
     ]);
   }
   if (role === 'sales_manager') {
@@ -196,17 +197,20 @@ async function mainMenu(user: BotUser | null): Promise<InlineKeyboard> {
       [{ text: '👥 همه لیدها', callback_data: 'menu:all_leads' }],
       [{ text: '🎯 تخصیص دسته‌جمعی', callback_data: 'bulk:start' }],
       [{ text: '📊 عملکرد تیم', callback_data: 'menu:reports' }],
+      [{ text: '👤 پروفایل', callback_data: 'student:profile' }],
     ]);
   }
   if (role === 'sales_agent') {
     return twoColumnKeyboard([
       [{ text: '📋 لیدهای من', callback_data: 'menu:my_leads' }],
       [{ text: '📊 عملکرد امروز', callback_data: 'menu:reports' }],
+      [{ text: '👤 پروفایل', callback_data: 'student:profile' }],
     ]);
   }
   if (role === 'social_admin') {
     return twoColumnKeyboard([
       [{ text: '📱 مدیریت شبکه‌های اجتماعی', callback_data: 'social:menu' }],
+      [{ text: '👤 پروفایل', callback_data: 'student:profile' }],
     ]);
   }
   // Default: student — hide my_courses / my_tests when empty
@@ -1482,25 +1486,71 @@ async function handleFollowupTimeInput(chat_id: number, text: string, user: BotU
 // ----- Student menu actions -----
 async function studentProfile(chat_id: number, message_id: number, user: BotUser) {
   const { data: u } = await supabase.from('chat_users')
-    .select('name, phone, email, country_code, created_at').eq('id', user.id).maybeSingle();
-  if (!u) return;
+    .select('name, phone, email, country_code, created_at, telegram_username, role, user_id')
+    .eq('id', user.id).maybeSingle();
+  if (!u) {
+    await editMessage(chat_id, message_id, '❌ اطلاعات کاربری یافت نشد.', [[{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]]);
+    return;
+  }
+
+  const variants = u.phone ? [u.phone, `0${u.phone}`, u.phone.replace(/^0/, '')] : [];
+  let courseCount = 0, testCount = 0;
+  if (variants.length) {
+    const [{ count: cc }, { count: tc }] = await Promise.all([
+      supabase.from('enrollments').select('id', { count: 'exact', head: true })
+        .in('phone', variants).in('payment_status', ['success', 'completed']),
+      supabase.from('test_enrollments').select('id', { count: 'exact', head: true }).in('phone', variants),
+    ]);
+    courseCount = cc ?? 0;
+    testCount = tc ?? 0;
+  }
+
+  const roleNames: Record<string, string> = {
+    admin: 'مدیر کل',
+    sales_manager: 'مدیر فروش',
+    sales_agent: 'کارشناس فروش',
+    social_admin: 'مدیر شبکه‌های اجتماعی',
+    support: 'پشتیبان',
+  };
+  const roleLabel = roleNames[user.role ?? ''] ?? 'دانشجو';
+
   const text = [
-    `👤 <b>پروفایل</b>`, ``,
+    `👤 <b>پروفایل من</b>`, ``,
     `نام: <b>${escapeHtml(u.name)}</b>`,
-    `موبایل: <code>${escapeHtml(u.phone)}</code>`,
+    `نقش: ${escapeHtml(roleLabel)}`,
+    `موبایل: <code>${escapeHtml((u.country_code ? `${u.country_code} ` : '') + (u.phone ?? '-'))}</code>`,
     `ایمیل: <code>${escapeHtml(u.email ?? '-')}</code>`,
-    `عضو از: ${formatTehran(u.created_at)}`,
+    u.telegram_username ? `تلگرام: @${escapeHtml(u.telegram_username)}` : `تلگرام: متصل ✅`,
+    `شناسه کاربری: <code>${escapeHtml(String(u.user_id ?? user.id))}</code>`,
+    `عضو از: ${formatTehran(u.created_at)}`, ``,
+    `🎓 دوره‌ها: <b>${courseCount}</b>`,
+    `🧪 آزمون‌ها: <b>${testCount}</b>`,
   ].join('\n');
-  await editMessage(chat_id, message_id, text, [
-    [{ text: '🚪 خروج (لغو لینک)', callback_data: 'student:logout' }],
-    [{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }],
+
+  const keyboard: InlineKeyboard = [];
+  if (courseCount > 0) keyboard.push([{ text: '🎓 دوره‌های من', callback_data: 'student:my_courses' }]);
+  if (testCount > 0) keyboard.push([{ text: '🧪 آزمون‌های من', callback_data: 'student:my_tests' }]);
+  keyboard.push([{ text: '🚪 خروج از حساب', callback_data: 'student:logout_confirm' }]);
+  keyboard.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
+  await editMessage(chat_id, message_id, text, keyboard);
+}
+
+async function studentLogoutConfirm(chat_id: number, message_id: number) {
+  await editMessage(chat_id, message_id, [
+    `🚪 <b>خروج از حساب</b>`, ``,
+    `با خروج، اتصال حساب شما از این ربات قطع می‌شود و دیگر پیام‌ها و دسترسی‌های شخصی دریافت نمی‌کنید.`,
+    `هر زمان بخواهید می‌توانید دوباره با /start وارد شوید.`,
+  ].join('\n'), [
+    [{ text: '✅ بله، خارج شو', callback_data: 'student:logout' }],
+    [{ text: '↩️ انصراف', callback_data: 'student:profile' }],
   ]);
 }
 
 async function studentLogout(chat_id: number, message_id: number, user: BotUser) {
   await supabase.from('chat_users').update({ telegram_chat_id: null, telegram_linked_at: null }).eq('id', user.id);
   await clearSession(chat_id);
-  await editMessage(chat_id, message_id, '✅ حساب از تلگرام جدا شد. برای ورود مجدد /start را بزنید.', []);
+  await editMessage(chat_id, message_id,
+    '✅ با موفقیت خارج شدید. حساب شما از این ربات جدا شد.\nبرای ورود مجدد /start را بزنید.', []);
 }
 
 async function studentMyCourses(chat_id: number, message_id: number, user: BotUser) {
@@ -3203,6 +3253,7 @@ async function handleUpdate(update: any) {
         if (sub === 'course') { await studentCourseDetail(chat_id, message_id, user, rest[1]); return; }
         if (sub === 'enroll') { await studentEnroll(chat_id, message_id, user, rest[1]); return; }
         if (sub === 'profile') { await studentProfile(chat_id, message_id, user); return; }
+        if (sub === 'logout_confirm') { await studentLogoutConfirm(chat_id, message_id); return; }
         if (sub === 'logout') { await studentLogout(chat_id, message_id, user); return; }
       }
 
