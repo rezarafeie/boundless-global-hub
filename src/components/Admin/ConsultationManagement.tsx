@@ -61,6 +61,9 @@ interface ConsultationSettings {
   slot_duration: number;
   webhook_url: string | null;
   default_confirmation_message: string | null;
+  telegram_notify_enabled: boolean;
+  telegram_approve_message: string | null;
+  telegram_reject_message: string | null;
 }
 
 const ConsultationManagement: React.FC = () => {
