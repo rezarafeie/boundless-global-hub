@@ -359,8 +359,11 @@ const ConsultationManagement: React.FC = () => {
         .update({
           slot_duration: settings.slot_duration,
           webhook_url: settings.webhook_url,
-          default_confirmation_message: settings.default_confirmation_message
-        })
+          default_confirmation_message: settings.default_confirmation_message,
+          telegram_notify_enabled: settings.telegram_notify_enabled,
+          telegram_approve_message: settings.telegram_approve_message,
+          telegram_reject_message: settings.telegram_reject_message
+        } as any)
         .eq('id', 1);
       
       if (error) throw error;
