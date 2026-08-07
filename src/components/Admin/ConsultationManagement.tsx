@@ -797,6 +797,42 @@ const ConsultationManagement: React.FC = () => {
                 onChange={(e) => setSettings(s => ({ ...s, default_confirmation_message: e.target.value || null }))}
               />
             </div>
+
+            <div className="border-t pt-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>ارسال پیام تلگرام به کاربر</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    هنگام تایید یا لغو مشاوره، پیام از اکانت بیزینس تلگرام به چت خصوصی کاربر ارسال می‌شود
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.telegram_notify_enabled}
+                  onCheckedChange={(v) => setSettings(s => ({ ...s, telegram_notify_enabled: v }))}
+                />
+              </div>
+              <div>
+                <Label>متن پیام تایید (تلگرام)</Label>
+                <Textarea
+                  rows={6}
+                  dir="rtl"
+                  value={settings.telegram_approve_message || ''}
+                  onChange={(e) => setSettings(s => ({ ...s, telegram_approve_message: e.target.value || null }))}
+                />
+              </div>
+              <div>
+                <Label>متن پیام لغو (تلگرام)</Label>
+                <Textarea
+                  rows={6}
+                  dir="rtl"
+                  value={settings.telegram_reject_message || ''}
+                  onChange={(e) => setSettings(s => ({ ...s, telegram_reject_message: e.target.value || null }))}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                متغیرها: {'{full_name}'} {'{phone}'} {'{shamsi_date}'} {'{date}'} {'{start_time}'} {'{end_time}'} {'{consultation_link}'} {'{confirmation_note}'} {'{description}'}
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSettings(false)}>انصراف</Button>
