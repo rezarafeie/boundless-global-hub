@@ -76,7 +76,10 @@ const ConsultationManagement: React.FC = () => {
   const [settings, setSettings] = useState<ConsultationSettings>({
     slot_duration: 20,
     webhook_url: null,
-    default_confirmation_message: null
+    default_confirmation_message: null,
+    telegram_notify_enabled: true,
+    telegram_approve_message: null,
+    telegram_reject_message: null
   });
   
   // Add slot dialog
