@@ -279,6 +279,17 @@ const ConsultationManagement: React.FC = () => {
           }
         });
       }
+
+      // Notify user on Telegram (business account)
+      try {
+        await supabase.functions.invoke('consultation-telegram-notify', {
+          body: { booking_id: selectedBooking.id, action: 'approve' }
+        });
+      } catch (tgError) {
+        console.error('Telegram notify error:', tgError);
+      }
+      
+
       
       toast({ title: 'موفق', description: 'مشاوره تایید شد' });
       setShowApproval(false);
