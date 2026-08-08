@@ -144,17 +144,35 @@ Deno.serve(async (req) => {
 
     let res: any = null;
     let viaBusiness = false;
+    let businessError: string | null = null;
     if (bcid) {
-      res = await tgCall('sendMessage', { chat_id: chatId, text, business_connection_id: bcid, parse_mode: 'HTML' });
-      viaBusiness = res?.ok === true;
+      const bizRes = await tgCall('sendMessage', { chat_id: chatId, text, business_connection_id: bcid, parse_mode: 'HTML' });
+      viaBusiness = bizRes?.ok === true;
+      res = bizRes;
+      if (!viaBusiness) {
+        businessError = bizRes?.description ?? JSON.stringify(bizRes);
+        console.error('Business send failed for chat', chatId, businessError);
+      }
+    } else {
+      businessError = 'telegram_business_connection_id is not configured';
+      console.error(businessError);
     }
     if (!viaBusiness) {
       res = await tgCall('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true });
     }
 
-    return new Response(JSON.stringify({ ok: res?.ok === true, via: viaBusiness ? 'business' : 'bot', chat_id: chatId, text, response: res }), {
+    return new Response(JSON.stringify({
+      ok: res?.ok === true,
+      via: viaBusiness ? 'business' : 'bot',
+      business_error: businessError,
+      business_unreachable: !!businessError && /BUSINESS_PEER_USAGE_MISSING|PEER_ID_INVALID/i.test(businessError),
+      chat_id: chatId,
+      text,
+      response: res,
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+
   } catch (e) {
     console.error('consultation-telegram-notify error:', e);
     return new Response(JSON.stringify({ error: String(e) }), {
