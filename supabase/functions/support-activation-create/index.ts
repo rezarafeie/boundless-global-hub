@@ -1,6 +1,6 @@
 // Creates or returns a support_activations row for (user_id, course_id, enrollment_id).
 // Also returns the encoded support prefilled link so the student card can render/refresh it.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

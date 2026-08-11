@@ -1,5 +1,5 @@
 // Live-fetch DMs for a conversation from NovinHub. We do NOT persist messages.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { novinhub } from '../_shared/novinhub.ts';
 
 const corsHeaders = {

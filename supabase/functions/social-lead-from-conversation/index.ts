@@ -1,5 +1,5 @@
 // Create a lead from a conversation. Transcript is fetched live from NovinHub (no message store).
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { novinhub } from '../_shared/novinhub.ts';
 
 const corsHeaders = {

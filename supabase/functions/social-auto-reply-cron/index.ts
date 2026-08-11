@@ -1,6 +1,6 @@
 // AI auto-reply cron. Fetches the last inbound DM live from NovinHub — no message store.
 // Only checks conversations updated in the last 15 minutes to minimize cost.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { nhFetch, novinhub } from '../_shared/novinhub.ts';
 
 const corsHeaders = {

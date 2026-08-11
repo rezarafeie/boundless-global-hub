@@ -2,7 +2,7 @@
 // Two modes:
 //  - POST with { type, ...data }  -> enqueue and immediately send
 //  - GET (cron)                   -> process pending queue (retry failures)
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { sendMessage, sendPhoto, escapeHtml, formatTehran } from '../_shared/telegram.ts';
 
 const corsHeaders = {

@@ -1,6 +1,6 @@
 // Sends consultation approve/reject messages to the user's private Telegram chat
 // through the Telegram Business connection (falls back to the bot chat).
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { tgCall, escapeHtml } from '../_shared/telegram.ts';
 
 const corsHeaders = {

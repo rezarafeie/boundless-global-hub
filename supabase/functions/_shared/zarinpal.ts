@@ -7,7 +7,7 @@
 // The proxy must accept the same path as Zarinpal (e.g. /pg/v4/payment/request.json)
 // and forward the request body to https://api.zarinpal.com, returning the response unchanged.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const ZARINPAL_BASE = "https://api.zarinpal.com";
 
