@@ -1,5 +1,5 @@
 // Send a DM via NovinHub. Does NOT persist to a message store — the UI re-fetches live.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { novinhub } from '../_shared/novinhub.ts';
 
 const corsHeaders = {

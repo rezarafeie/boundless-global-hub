@@ -3,7 +3,7 @@
 //   already collected a contact (phone_verified=true) we skip OTP and create the user.
 //   Otherwise we generate a 6-digit code and send SMS (Kavenegar for +98) or email (Gmail).
 // mode=verify_otp: validates the code we just sent and creates the user + session.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

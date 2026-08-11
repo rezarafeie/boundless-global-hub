@@ -1,6 +1,6 @@
 // Verify the 6-digit code typed by the user. If account is new, return needs_contact
 // so the frontend can collect phone/email and trigger a second OTP via SMS or email.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

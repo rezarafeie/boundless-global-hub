@@ -1,5 +1,5 @@
 // Live-fetch comments from NovinHub for a given post or account. No persistence.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { nhFetch } from '../_shared/novinhub.ts';
 
 const corsHeaders = {

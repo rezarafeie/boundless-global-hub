@@ -5,7 +5,7 @@
 //      - Send daily-hour reminders (legacy behavior).
 //      - Send tiered inactivity nudges (3/7/14 days).
 //      - Send periodic coaching check-ins.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { sendMessage, escapeHtml, mdToTelegramHtml, type InlineKeyboard } from '../_shared/telegram.ts';
 
 const corsHeaders = {
