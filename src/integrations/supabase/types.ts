@@ -7237,6 +7237,34 @@ export type Database = {
       }
       cleanup_expired_sso_tokens: { Args: never; Returns: undefined }
       cleanup_inactive_sessions: { Args: never; Returns: undefined }
+      create_webinar_followup: {
+        Args: { p_session_token: string; p_webinar_id: string }
+        Returns: {
+          anchor: string
+          audience: string
+          bot_text: string | null
+          channel: string
+          created_at: string
+          delay_minutes: number
+          email_body: string | null
+          email_subject: string | null
+          enabled: boolean
+          id: string
+          max_repeats: number
+          name: string
+          repeat_delay_minutes: number
+          sms_template_url: string | null
+          sms_text: string | null
+          updated_at: string
+          webinar_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "webinar_followups"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       detect_country_code_from_phone: {
         Args: { phone_number: string }
         Returns: string

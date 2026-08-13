@@ -37,6 +37,7 @@ interface Props { webinarId: string }
 const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
   const [rows, setRows] = useState<WebinarFollowup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
   const [testPhone, setTestPhone] = useState<Record<string, string>>({});
@@ -71,19 +72,41 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
   useEffect(() => { if (webinarId) { load(); loadLogs(); } }, [webinarId]);
 
   const addRow = async () => {
-    const { data, error } = await supabase.from('webinar_followups' as any).insert({
-      webinar_id: webinarId,
-      name: 'پیگیری جدید',
-      channel: 'email',
-      audience: 'registered',
-      anchor: 'registration',
-      delay_minutes: 60,
-      max_repeats: 1,
-      repeat_delay_minutes: 1440,
-      sms_template_url: DEFAULT_KAVENEGAR,
-    }).select().single();
-    if (error) { toast({ title: 'خطا', description: error.message, variant: 'destructive' }); return; }
-    setRows(prev => [...prev, data as any]);
+    if (creating) return;
+
+    const cookieToken = document.cookie
+      .split('; ')
+      .find((item) => item.startsWith('session_token='))
+      ?.split('=')
+      .slice(1)
+      .join('=');
+    const sessionToken = localStorage.getItem('messenger_session_token') || cookieToken;
+
+    if (!sessionToken) {
+      toast({ title: 'نشست مدیریت پیدا نشد', description: 'لطفاً دوباره وارد پنل شوید.', variant: 'destructive' });
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)('create_webinar_followup', {
+        p_session_token: decodeURIComponent(sessionToken),
+        p_webinar_id: webinarId,
+      });
+      if (error) throw error;
+      if (!data) throw new Error('پیگیری ایجاد نشد');
+
+      setRows(prev => [...prev, data as WebinarFollowup]);
+      toast({ title: 'پیگیری جدید اضافه شد' });
+    } catch (error: any) {
+      toast({
+        title: 'خطا در افزودن پیگیری',
+        description: error?.message || 'لطفاً دوباره تلاش کنید.',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreating(false);
+    }
   };
 
   const save = async (r: WebinarFollowup) => {
@@ -143,7 +166,10 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
             ارسال پیام پیگیری برای ثبت‌نام‌کننده‌ها یا شرکت‌کننده‌ها از طریق تلگرام (ربات / Business)، ایمیل یا پیامک.
           </p>
         </div>
-        <Button type="button" size="sm" onClick={addRow}><Plus className="h-3 w-3 ml-1" /> افزودن</Button>
+        <Button type="button" size="sm" onClick={addRow} disabled={creating}>
+          {creating ? <Loader2 className="h-3 w-3 ml-1 animate-spin" /> : <Plus className="h-3 w-3 ml-1" />}
+          {creating ? 'در حال افزودن…' : 'افزودن'}
+        </Button>
       </div>
 
       {loading && <div className="text-xs text-muted-foreground">در حال بارگذاری…</div>}
