@@ -51,6 +51,8 @@ const WebinarManagement: React.FC = () => {
   const [isRegistrationsModalOpen, setIsRegistrationsModalOpen] = useState(false);
   const [isEntriesModalOpen, setIsEntriesModalOpen] = useState(false);
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
+  const [isFollowupsModalOpen, setIsFollowupsModalOpen] = useState(false);
+  const [followupsWebinarId, setFollowupsWebinarId] = useState<string | null>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [editingWebinar, setEditingWebinar] = useState<Webinar | null>(null);
   
