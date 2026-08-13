@@ -728,6 +728,16 @@ const WebinarManagement: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Followups Modal */}
+      <Dialog open={isFollowupsModalOpen} onOpenChange={setIsFollowupsModalOpen}>
+        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedWebinarTitle} - پیگیری‌ها</DialogTitle>
+          </DialogHeader>
+          {followupsWebinarId && <WebinarFollowupsEditor webinarId={followupsWebinarId} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
