@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Plus, Edit, Trash2, Users, Download, ExternalLink, Radio, Send } from 'lucide-react';
-import WebinarFollowupsEditor from './WebinarFollowupsEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -51,8 +50,6 @@ const WebinarManagement: React.FC = () => {
   const [isRegistrationsModalOpen, setIsRegistrationsModalOpen] = useState(false);
   const [isEntriesModalOpen, setIsEntriesModalOpen] = useState(false);
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
-  const [isFollowupsModalOpen, setIsFollowupsModalOpen] = useState(false);
-  const [followupsWebinarId, setFollowupsWebinarId] = useState<string | null>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [editingWebinar, setEditingWebinar] = useState<Webinar | null>(null);
   
@@ -89,10 +86,8 @@ const WebinarManagement: React.FC = () => {
     await fetchParticipants(webinarId);
   };
 
-  const openFollowupsModal = (webinarId: string, webinarTitle: string) => {
-    setSelectedWebinarTitle(webinarTitle);
-    setFollowupsWebinarId(webinarId);
-    setIsFollowupsModalOpen(true);
+  const openFollowupsModal = (webinarId: string, _webinarTitle: string) => {
+    navigate(`/enroll/admin/webinar/${webinarId}/followups`);
   };
 
   const fetchWebinars = async () => {
@@ -694,13 +689,18 @@ const WebinarManagement: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Participants Modal */}
       <Dialog open={isParticipantsModalOpen} onOpenChange={setIsParticipantsModalOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedWebinarTitle} - شرکت‌کنندگان زنده</DialogTitle>
           </DialogHeader>
-          
+
           {participants.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
@@ -731,20 +731,6 @@ const WebinarManagement: React.FC = () => {
               </Table>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-    </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Followups Modal */}
-      <Dialog open={isFollowupsModalOpen} onOpenChange={setIsFollowupsModalOpen}>
-        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{selectedWebinarTitle} - پیگیری‌ها</DialogTitle>
-          </DialogHeader>
-          {followupsWebinarId && <WebinarFollowupsEditor webinarId={followupsWebinarId} />}
         </DialogContent>
       </Dialog>
     </div>
