@@ -6639,6 +6639,162 @@ export type Database = {
         }
         Relationships: []
       }
+      webinar_followup_log: {
+        Row: {
+          channel: string | null
+          created_at: string
+          error_message: string | null
+          followup_id: string | null
+          id: string
+          payload: Json | null
+          phone: string | null
+          status: string
+          user_id: number | null
+          webinar_id: string | null
+        }
+        Insert: {
+          channel?: string | null
+          created_at?: string
+          error_message?: string | null
+          followup_id?: string | null
+          id?: string
+          payload?: Json | null
+          phone?: string | null
+          status: string
+          user_id?: number | null
+          webinar_id?: string | null
+        }
+        Update: {
+          channel?: string | null
+          created_at?: string
+          error_message?: string | null
+          followup_id?: string | null
+          id?: string
+          payload?: Json | null
+          phone?: string | null
+          status?: string
+          user_id?: number | null
+          webinar_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_followup_log_followup_id_fkey"
+            columns: ["followup_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_followups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webinar_followup_recipients: {
+        Row: {
+          created_at: string
+          followup_id: string
+          id: string
+          last_sent_at: string | null
+          phone: string
+          sent_count: number
+          updated_at: string
+          webinar_id: string
+        }
+        Insert: {
+          created_at?: string
+          followup_id: string
+          id?: string
+          last_sent_at?: string | null
+          phone: string
+          sent_count?: number
+          updated_at?: string
+          webinar_id: string
+        }
+        Update: {
+          created_at?: string
+          followup_id?: string
+          id?: string
+          last_sent_at?: string | null
+          phone?: string
+          sent_count?: number
+          updated_at?: string
+          webinar_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_followup_recipients_followup_id_fkey"
+            columns: ["followup_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_followups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webinar_followups: {
+        Row: {
+          anchor: string
+          audience: string
+          bot_text: string | null
+          channel: string
+          created_at: string
+          delay_minutes: number
+          email_body: string | null
+          email_subject: string | null
+          enabled: boolean
+          id: string
+          max_repeats: number
+          name: string
+          repeat_delay_minutes: number
+          sms_template_url: string | null
+          sms_text: string | null
+          updated_at: string
+          webinar_id: string
+        }
+        Insert: {
+          anchor?: string
+          audience?: string
+          bot_text?: string | null
+          channel?: string
+          created_at?: string
+          delay_minutes?: number
+          email_body?: string | null
+          email_subject?: string | null
+          enabled?: boolean
+          id?: string
+          max_repeats?: number
+          name?: string
+          repeat_delay_minutes?: number
+          sms_template_url?: string | null
+          sms_text?: string | null
+          updated_at?: string
+          webinar_id: string
+        }
+        Update: {
+          anchor?: string
+          audience?: string
+          bot_text?: string | null
+          channel?: string
+          created_at?: string
+          delay_minutes?: number
+          email_body?: string | null
+          email_subject?: string | null
+          enabled?: boolean
+          id?: string
+          max_repeats?: number
+          name?: string
+          repeat_delay_minutes?: number
+          sms_template_url?: string | null
+          sms_text?: string | null
+          updated_at?: string
+          webinar_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_followups_webinar_id_fkey"
+            columns: ["webinar_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webinar_interactions: {
         Row: {
           activated_at: string | null

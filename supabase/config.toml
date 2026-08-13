@@ -161,6 +161,13 @@ verify_jwt = false
 [functions.support-activation-followup-test]
 verify_jwt = false
 
+[functions.webinar-followup-cron]
+verify_jwt = false
+
+[functions.webinar-followup-test]
+verify_jwt = false
+
+
 
 [functions.social-novinhub-connect]
 verify_jwt = false

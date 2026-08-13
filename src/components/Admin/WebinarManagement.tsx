@@ -6,7 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Plus, Edit, Trash2, Users, Download, ExternalLink, Radio } from 'lucide-react';
+import { Calendar, Plus, Edit, Trash2, Users, Download, ExternalLink, Radio, Send } from 'lucide-react';
+import WebinarFollowupsEditor from './WebinarFollowupsEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -50,6 +51,8 @@ const WebinarManagement: React.FC = () => {
   const [isRegistrationsModalOpen, setIsRegistrationsModalOpen] = useState(false);
   const [isEntriesModalOpen, setIsEntriesModalOpen] = useState(false);
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
+  const [isFollowupsModalOpen, setIsFollowupsModalOpen] = useState(false);
+  const [followupsWebinarId, setFollowupsWebinarId] = useState<string | null>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [editingWebinar, setEditingWebinar] = useState<Webinar | null>(null);
   
@@ -84,6 +87,12 @@ const WebinarManagement: React.FC = () => {
     setSelectedWebinarTitle(webinarTitle);
     setIsParticipantsModalOpen(true);
     await fetchParticipants(webinarId);
+  };
+
+  const openFollowupsModal = (webinarId: string, webinarTitle: string) => {
+    setSelectedWebinarTitle(webinarTitle);
+    setFollowupsWebinarId(webinarId);
+    setIsFollowupsModalOpen(true);
   };
 
   const fetchWebinars = async () => {
@@ -558,6 +567,14 @@ const WebinarManagement: React.FC = () => {
                               <Radio className="h-4 w-4 ml-1" />
                               شرکت‌کنندگان زنده
                             </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => openFollowupsModal(webinar.id, webinar.title)}
+                            >
+                              <Send className="h-4 w-4 ml-1" />
+                              پیگیری‌ها
+                            </Button>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -718,6 +735,16 @@ const WebinarManagement: React.FC = () => {
       </Dialog>
     </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Followups Modal */}
+      <Dialog open={isFollowupsModalOpen} onOpenChange={setIsFollowupsModalOpen}>
+        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedWebinarTitle} - پیگیری‌ها</DialogTitle>
+          </DialogHeader>
+          {followupsWebinarId && <WebinarFollowupsEditor webinarId={followupsWebinarId} />}
         </DialogContent>
       </Dialog>
     </div>
