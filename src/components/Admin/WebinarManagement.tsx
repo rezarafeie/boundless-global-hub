@@ -89,6 +89,12 @@ const WebinarManagement: React.FC = () => {
     await fetchParticipants(webinarId);
   };
 
+  const openFollowupsModal = (webinarId: string, webinarTitle: string) => {
+    setSelectedWebinarTitle(webinarTitle);
+    setFollowupsWebinarId(webinarId);
+    setIsFollowupsModalOpen(true);
+  };
+
   const fetchWebinars = async () => {
     try {
       const { data, error } = await supabase
