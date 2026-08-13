@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Plus, Edit, Trash2, Users, Download, ExternalLink, Radio, Send } from 'lucide-react';
-import WebinarFollowupsEditor from './WebinarFollowupsEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -51,8 +50,6 @@ const WebinarManagement: React.FC = () => {
   const [isRegistrationsModalOpen, setIsRegistrationsModalOpen] = useState(false);
   const [isEntriesModalOpen, setIsEntriesModalOpen] = useState(false);
   const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
-  const [isFollowupsModalOpen, setIsFollowupsModalOpen] = useState(false);
-  const [followupsWebinarId, setFollowupsWebinarId] = useState<string | null>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [editingWebinar, setEditingWebinar] = useState<Webinar | null>(null);
   
