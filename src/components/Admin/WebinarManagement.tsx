@@ -89,10 +89,8 @@ const WebinarManagement: React.FC = () => {
     await fetchParticipants(webinarId);
   };
 
-  const openFollowupsModal = (webinarId: string, webinarTitle: string) => {
-    setSelectedWebinarTitle(webinarTitle);
-    setFollowupsWebinarId(webinarId);
-    setIsFollowupsModalOpen(true);
+  const openFollowupsModal = (webinarId: string, _webinarTitle: string) => {
+    navigate(`/enroll/admin/webinar/${webinarId}/followups`);
   };
 
   const fetchWebinars = async () => {
