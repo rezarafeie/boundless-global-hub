@@ -558,6 +558,14 @@ const WebinarManagement: React.FC = () => {
                               <Radio className="h-4 w-4 ml-1" />
                               شرکت‌کنندگان زنده
                             </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => openFollowupsModal(webinar.id, webinar.title)}
+                            >
+                              <Send className="h-4 w-4 ml-1" />
+                              پیگیری‌ها
+                            </Button>
                           </div>
                         </TableCell>
                         <TableCell>
