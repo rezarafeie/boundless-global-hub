@@ -694,13 +694,18 @@ const WebinarManagement: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Participants Modal */}
       <Dialog open={isParticipantsModalOpen} onOpenChange={setIsParticipantsModalOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedWebinarTitle} - شرکت‌کنندگان زنده</DialogTitle>
           </DialogHeader>
-          
+
           {participants.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
@@ -731,20 +736,6 @@ const WebinarManagement: React.FC = () => {
               </Table>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-    </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Followups Modal */}
-      <Dialog open={isFollowupsModalOpen} onOpenChange={setIsFollowupsModalOpen}>
-        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{selectedWebinarTitle} - پیگیری‌ها</DialogTitle>
-          </DialogHeader>
-          {followupsWebinarId && <WebinarFollowupsEditor webinarId={followupsWebinarId} />}
         </DialogContent>
       </Dialog>
     </div>
