@@ -1,0 +1,285 @@
+import React, { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Plus, Trash2, Save, Loader2, Send, RefreshCw } from 'lucide-react';
+
+interface WebinarFollowup {
+  id: string;
+  webinar_id: string;
+  name: string;
+  enabled: boolean;
+  channel: 'bot' | 'business' | 'email' | 'sms';
+  audience: 'registered' | 'attended' | 'registered_not_attended' | 'all';
+  anchor: 'registration' | 'webinar_start' | 'attendance';
+  delay_minutes: number;
+  max_repeats: number;
+  repeat_delay_minutes: number;
+  email_subject: string | null;
+  email_body: string | null;
+  sms_text: string | null;
+  sms_template_url: string | null;
+  bot_text: string | null;
+}
+
+const DEFAULT_KAVENEGAR =
+  'https://api.kavenegar.com/v1/{api_key}/verify/lookup.json?receptor={user_phone_number}&token={user_name}&token10={webinar_title}&template=welcomefollowup';
+
+interface Props { webinarId: string }
+
+const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
+  const [rows, setRows] = useState<WebinarFollowup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [testPhone, setTestPhone] = useState<Record<string, string>>({});
+  const [testResult, setTestResult] = useState<Record<string, any>>({});
+  const [logs, setLogs] = useState<any[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('webinar_followups' as any)
+      .select('*')
+      .eq('webinar_id', webinarId)
+      .order('created_at', { ascending: true });
+    setRows((data as any) || []);
+    setLoading(false);
+  };
+
+  const loadLogs = async () => {
+    setLogsLoading(true);
+    const { data } = await supabase
+      .from('webinar_followup_log' as any)
+      .select('*')
+      .eq('webinar_id', webinarId)
+      .order('created_at', { ascending: false })
+      .limit(100);
+    setLogs((data as any) || []);
+    setLogsLoading(false);
+  };
+
+  useEffect(() => { if (webinarId) { load(); loadLogs(); } }, [webinarId]);
+
+  const addRow = async () => {
+    const { data, error } = await supabase.from('webinar_followups' as any).insert({
+      webinar_id: webinarId,
+      name: 'پیگیری جدید',
+      channel: 'email',
+      audience: 'registered',
+      anchor: 'registration',
+      delay_minutes: 60,
+      max_repeats: 1,
+      repeat_delay_minutes: 1440,
+      sms_template_url: DEFAULT_KAVENEGAR,
+    }).select().single();
+    if (error) { toast({ title: 'خطا', description: error.message, variant: 'destructive' }); return; }
+    setRows(prev => [...prev, data as any]);
+  };
+
+  const save = async (r: WebinarFollowup) => {
+    setSavingId(r.id);
+    const { error } = await supabase.from('webinar_followups' as any).update({
+      name: r.name,
+      enabled: r.enabled,
+      channel: r.channel,
+      audience: r.audience,
+      anchor: r.anchor,
+      delay_minutes: Number(r.delay_minutes) || 0,
+      max_repeats: Number(r.max_repeats) || 1,
+      repeat_delay_minutes: Number(r.repeat_delay_minutes) || 1440,
+      email_subject: r.email_subject,
+      email_body: r.email_body,
+      sms_text: r.sms_text,
+      sms_template_url: r.sms_template_url,
+      bot_text: r.bot_text,
+    }).eq('id', r.id);
+    setSavingId(null);
+    if (error) { toast({ title: 'خطا', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: 'ذخیره شد' });
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm('حذف این پیگیری؟')) return;
+    await supabase.from('webinar_followups' as any).delete().eq('id', id);
+    setRows(prev => prev.filter(x => x.id !== id));
+  };
+
+  const sendTest = async (r: WebinarFollowup) => {
+    setTestingId(r.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('webinar-followup-test', {
+        body: { followup_id: r.id, phone: testPhone[r.id] || undefined },
+      });
+      if (error) throw error;
+      setTestResult(prev => ({ ...prev, [r.id]: data }));
+      toast({ title: (data as any)?.ok ? 'ارسال تستی انجام شد' : 'ارسال ناموفق' });
+      loadLogs();
+    } catch (e: any) {
+      setTestResult(prev => ({ ...prev, [r.id]: { ok: false, error: e.message } }));
+      toast({ title: 'خطا', description: e.message, variant: 'destructive' });
+    }
+    setTestingId(null);
+  };
+
+  const patch = (id: string, p: Partial<WebinarFollowup>) =>
+    setRows(prev => prev.map(r => r.id === id ? { ...r, ...p } : r));
+
+  return (
+    <div className="space-y-4" dir="rtl">
+      <div className="flex items-center justify-between">
+        <div>
+          <h5 className="text-sm font-semibold">پیگیری‌های وبینار</h5>
+          <p className="text-xs text-muted-foreground">
+            ارسال پیام پیگیری برای ثبت‌نام‌کننده‌ها یا شرکت‌کننده‌ها از طریق تلگرام (ربات / Business)، ایمیل یا پیامک.
+          </p>
+        </div>
+        <Button type="button" size="sm" onClick={addRow}><Plus className="h-3 w-3 ml-1" /> افزودن</Button>
+      </div>
+
+      {loading && <div className="text-xs text-muted-foreground">در حال بارگذاری…</div>}
+      {!loading && rows.length === 0 && <div className="text-xs text-muted-foreground">هنوز پیگیری ثبت نشده.</div>}
+
+      {rows.map(r => (
+        <div key={r.id} className="border rounded p-3 space-y-3 bg-muted/20">
+          <div className="flex flex-wrap items-center gap-3">
+            <Switch checked={r.enabled} onCheckedChange={(v) => patch(r.id, { enabled: v })} />
+            <Input value={r.name} onChange={(e) => patch(r.id, { name: e.target.value })} className="h-8 w-44" placeholder="نام" />
+
+            <Select value={r.channel} onValueChange={(v) => patch(r.id, { channel: v as any })}>
+              <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="business">تلگرام Business (چت شخصی)</SelectItem>
+                <SelectItem value="bot">ربات تلگرام</SelectItem>
+                <SelectItem value="email">ایمیل</SelectItem>
+                <SelectItem value="sms">پیامک</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={r.audience} onValueChange={(v) => patch(r.id, { audience: v as any })}>
+              <SelectTrigger className="h-8 w-52"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="registered">ثبت‌نام‌کننده‌ها</SelectItem>
+                <SelectItem value="attended">شرکت‌کننده‌ها (حاضر)</SelectItem>
+                <SelectItem value="registered_not_attended">ثبت‌نام کرده ولی غایب</SelectItem>
+                <SelectItem value="all">همه</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={r.anchor} onValueChange={(v) => patch(r.id, { anchor: v as any })}>
+              <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="registration">بعد از ثبت‌نام</SelectItem>
+                <SelectItem value="webinar_start">بعد از شروع وبینار</SelectItem>
+                <SelectItem value="attendance">بعد از حضور در وبینار</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center gap-1">
+              <Label className="text-xs">تاخیر (دقیقه)</Label>
+              <Input type="number" value={r.delay_minutes} onChange={(e) => patch(r.id, { delay_minutes: Number(e.target.value) })} className="h-8 w-24" />
+            </div>
+            <div className="flex items-center gap-1">
+              <Label className="text-xs">تکرار</Label>
+              <Input type="number" value={r.max_repeats} onChange={(e) => patch(r.id, { max_repeats: Number(e.target.value) })} className="h-8 w-16" />
+            </div>
+            <div className="flex items-center gap-1">
+              <Label className="text-xs">فاصله تکرار (دقیقه)</Label>
+              <Input type="number" value={r.repeat_delay_minutes} onChange={(e) => patch(r.id, { repeat_delay_minutes: Number(e.target.value) })} className="h-8 w-24" />
+            </div>
+
+            <div className="mr-auto flex gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={() => save(r)} disabled={savingId === r.id}>
+                {savingId === r.id ? <Loader2 className="h-3 w-3 animate-spin ml-1" /> : <Save className="h-3 w-3 ml-1" />} ذخیره
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+            </div>
+          </div>
+
+          {r.channel === 'email' && (
+            <div className="space-y-2">
+              <Input value={r.email_subject || ''} onChange={(e) => patch(r.id, { email_subject: e.target.value })} placeholder="موضوع ایمیل" dir="rtl" />
+              <Textarea rows={4} value={r.email_body || ''} onChange={(e) => patch(r.id, { email_body: e.target.value })} placeholder="متن ایمیل" dir="rtl" />
+            </div>
+          )}
+          {r.channel === 'sms' && (
+            <div className="space-y-2">
+              <Textarea rows={2} value={r.sms_text || ''} onChange={(e) => patch(r.id, { sms_text: e.target.value })} placeholder="متن پیامک (در صورت خالی بودن قالب Kavenegar استفاده می‌شود)" dir="rtl" />
+              <Textarea rows={2} value={r.sms_template_url || ''} onChange={(e) => patch(r.id, { sms_template_url: e.target.value })} placeholder="آدرس قالب Kavenegar (اختیاری)" dir="ltr" className="font-mono text-xs" />
+            </div>
+          )}
+          {(r.channel === 'bot' || r.channel === 'business') && (
+            <Textarea rows={4} value={r.bot_text || ''} onChange={(e) => patch(r.id, { bot_text: e.target.value })}
+              placeholder={r.channel === 'business' ? 'متن پیام از چت شخصی (Telegram Business)' : 'متن پیام ربات تلگرام'} dir="rtl" />
+          )}
+
+          <p className="text-[10px] text-muted-foreground">
+            متغیرها: {'{user_name}, {first_name}, {last_name}, {email}, {phone}, {webinar_title}, {webinar_date}, {webinar_time}, {webinar_link}, {webinar_host}, {telegram_channel}'}
+          </p>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Input value={testPhone[r.id] || ''} onChange={(e) => setTestPhone(p => ({ ...p, [r.id]: e.target.value }))}
+              placeholder="شماره تست (اختیاری)" className="h-8 w-44" dir="ltr" />
+            <Button type="button" size="sm" variant="secondary" onClick={() => sendTest(r)} disabled={testingId === r.id}>
+              {testingId === r.id ? <Loader2 className="h-3 w-3 animate-spin ml-1" /> : <Send className="h-3 w-3 ml-1" />} ارسال تستی
+            </Button>
+          </div>
+          {testResult[r.id] && (
+            <pre className="text-[10px] bg-background border rounded p-2 overflow-x-auto max-h-56 whitespace-pre-wrap" dir="ltr">
+{JSON.stringify(testResult[r.id], null, 2)}
+            </pre>
+          )}
+        </div>
+      ))}
+
+      <div className="space-y-2 pt-2">
+        <div className="flex items-center justify-between">
+          <h5 className="text-sm font-semibold">لاگ ارسال‌ها ({logs.length})</h5>
+          <Button size="sm" variant="ghost" onClick={loadLogs} disabled={logsLoading}>
+            <RefreshCw className={`h-4 w-4 ml-1 ${logsLoading ? 'animate-spin' : ''}`} /> بروزرسانی
+          </Button>
+        </div>
+        <div className="overflow-x-auto max-h-80 overflow-y-auto border rounded">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>زمان</TableHead>
+                <TableHead>شماره</TableHead>
+                <TableHead>کانال</TableHead>
+                <TableHead>وضعیت</TableHead>
+                <TableHead>خطا</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {logs.length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center py-4 text-muted-foreground text-xs">لاگی ثبت نشده</TableCell></TableRow>
+              )}
+              {logs.map((l) => (
+                <TableRow key={l.id}>
+                  <TableCell className="text-xs whitespace-nowrap">{new Date(l.created_at).toLocaleString('fa-IR')}</TableCell>
+                  <TableCell className="text-xs" dir="ltr">{l.phone}</TableCell>
+                  <TableCell className="text-xs">{l.channel}</TableCell>
+                  <TableCell>
+                    <Badge variant={l.status === 'sent' ? 'default' : l.status === 'unreachable' ? 'secondary' : 'destructive'}>{l.status}</Badge>
+                  </TableCell>
+                  <TableCell className="text-[10px] max-w-[280px] truncate text-destructive" title={l.error_message || ''}>{l.error_message}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default WebinarFollowupsEditor;
