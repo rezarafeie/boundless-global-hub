@@ -3637,8 +3637,16 @@ async function handleUpdate(update: any) {
         ? ((w as any).telegram_support_activation_buttons as any[])
         : [];
       for (const b of customWButtons) {
-        if (b?.text && b?.url) wButtons.push([{ text: String(b.text), url: String(b.url) }]);
+        if (!b?.text) continue;
+        // Special button type: auto-login into the webinar (no name/phone needed)
+        if (b?.type === 'webinar_login' || String(b?.url || '').trim() === 'webinar_login') {
+          const loginUrl = await buildWebinarLoginUrl(w, targetChat, targetUser);
+          if (loginUrl) wButtons.push([{ text: String(b.text), url: loginUrl }]);
+          continue;
+        }
+        if (b?.url) wButtons.push([{ text: String(b.text), url: String(b.url) }]);
       }
+
 
 
       // Reply in the chat the message came from (business chat / support group)
