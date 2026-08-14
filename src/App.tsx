@@ -149,6 +149,7 @@ import WebinarWatch from "./pages/WebinarWatch";
 import WebinarHostPanel from "./pages/WebinarHostPanel";
 import WebinarEdit from "./pages/WebinarEdit";
 import WebinarFollowups from './pages/WebinarFollowups';
+import WebinarAnalytics from './pages/WebinarAnalytics';
 
 // User Management components
 import UsersOverview from "./pages/UsersOverview";
@@ -444,6 +445,7 @@ const App = () => {
         <Route path="/enroll/admin/webinar" element={<WebinarAdmin />} />
         <Route path="/enroll/admin/webinar/:webinarId/edit" element={<WebinarEdit />} />
         <Route path="/enroll/admin/webinar/:webinarId/followups" element={<WebinarFollowups />} />
+        <Route path="/enroll/admin/webinar/:webinarId/analytics" element={<WebinarAnalytics />} />
         <Route path="/webinar/:slug" element={<WebinarRegistration />} />
         <Route path="/webinar/:slug/login" element={<WebinarLogin />} />
         <Route path="/webinar/:slug/live" element={<WebinarWatch />} />

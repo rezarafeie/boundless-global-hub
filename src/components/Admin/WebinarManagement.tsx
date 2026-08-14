@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Calendar, Plus, Edit, Trash2, Users, Download, ExternalLink, Radio, Send, Copy } from 'lucide-react';
+import { Calendar, Plus, Edit, Trash2, Users, Download, ExternalLink, Radio, Send, Copy, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -638,6 +638,14 @@ const WebinarManagement: React.FC = () => {
                             >
                               <Send className="h-4 w-4 ml-1" />
                               پیگیری‌ها
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => navigate(`/enroll/admin/webinar/${webinar.id}/analytics`)}
+                            >
+                              <BarChart3 className="h-4 w-4 ml-1" />
+                              آنالیتیکس
                             </Button>
                           </div>
                         </TableCell>
