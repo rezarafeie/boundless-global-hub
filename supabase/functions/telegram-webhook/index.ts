@@ -3633,14 +3633,13 @@ async function handleUpdate(update: any) {
       } catch (e) { console.warn('webinar activation upsert failed', e); }
 
       const wButtons: { text: string; url: string }[][] = [];
-      if (w?.webinar_link) wButtons.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
-      if (w?.telegram_channel_link) wButtons.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
       const customWButtons = Array.isArray((w as any)?.telegram_support_activation_buttons)
         ? ((w as any).telegram_support_activation_buttons as any[])
         : [];
       for (const b of customWButtons) {
         if (b?.text && b?.url) wButtons.push([{ text: String(b.text), url: String(b.url) }]);
       }
+
 
       // Reply in the chat the message came from (business chat / support group)
       try {
