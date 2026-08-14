@@ -3362,6 +3362,13 @@ async function handleUpdate(update: any) {
   const startPayload = startMatch?.[1] ?? null;
   console.log('📥 msg chat_id=', chat_id, 'text=', JSON.stringify(text), 'startPayload=', startPayload, 'user_linked=', !!user);
 
+  // ===== Webinar registration deep-link: /start webinar_<id-prefix> =====
+  if (startPayload?.startsWith('webinar_')) {
+    const wPrefix = startPayload.slice('webinar_'.length);
+    await renderWebinar(chat_id, null, wPrefix, user);
+    return;
+  }
+
   // ===== Website login deep-link: /start login_<token> =====
   if (startPayload?.startsWith('login_')) {
     const loginToken = startPayload.slice('login_'.length);
