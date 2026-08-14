@@ -2453,13 +2453,14 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
     return;
   }
   let alreadyRegistered = false;
-  if (user?.phone) {
-    const normPhone = normalizeIntlPhone(user.phone);
+  const knownPhone = user?.phone || opts.phone || null;
+  if (knownPhone) {
+    const normPhone = normalizeIntlPhone(knownPhone);
     const { data: part } = await supabase
       .from('webinar_participants').select('id').eq('webinar_id', w.id).eq('phone', normPhone).maybeSingle();
     alreadyRegistered = !!part;
     if (!alreadyRegistered) {
-      const variants = Array.from(new Set([normPhone, user.phone, user.phone.replace(/^\+/, '')]));
+      const variants = Array.from(new Set([normPhone, knownPhone, knownPhone.replace(/^\+/, '')]));
       const { data: sig } = await supabase
         .from('webinar_signups').select('id').eq('webinar_id', w.id).in('mobile_number', variants).maybeSingle();
       alreadyRegistered = !!sig;
@@ -2471,13 +2472,11 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
     `🗓 ${escapeHtml(formatWebinarDate(w.start_date))}`,
     w.description ? `\n${escapeHtml(w.description)}` : '',
     '',
-    alreadyRegistered ? '✅ شما قبلاً ثبت‌نام کرده‌اید.' : (user ? 'برای ثبت‌نام دکمه زیر را بزنید.' : '🔐 برای ثبت‌نام ابتدا وارد حساب شوید.'),
+    alreadyRegistered ? '✅ شما قبلاً ثبت‌نام کرده‌اید.' : 'برای ثبت‌نام دکمه زیر را بزنید.',
   ].filter(Boolean).join('\n');
   const kbd: InlineKeyboard = [];
-  if (user && !alreadyRegistered) {
-    kbd.push([{ text: '✅ ثبت‌نام در وبینار', callback_data: `webinar:reg:${prefix}` }]);
-  } else if (!user) {
-    kbd.push([{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }]);
+  if (!alreadyRegistered) {
+    kbd.push([{ text: '✅ ثبت‌نام در وبینار', callback_data: user ? `webinar:reg:${prefix}` : `webinar:greg:${prefix}` }]);
   }
   const supportActivated = alreadyRegistered ? await isWebinarSupportActivated(w.id, chat_id) : false;
   if (alreadyRegistered && !supportActivated) {
