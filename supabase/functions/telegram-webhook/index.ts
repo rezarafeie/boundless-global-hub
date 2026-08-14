@@ -2596,7 +2596,7 @@ async function registerWebinar(chat_id: number, message_id: number | null, prefi
     );
   if (partErr) {
     console.error('webinar_participants upsert failed:', partErr);
-    await editMessage(chat_id, message_id, `❌ خطا در ثبت‌نام: ${escapeHtml(partErr.message)}`, [[{ text: '🏠', callback_data: 'menu:home' }]]);
+    await out(`❌ خطا در ثبت‌نام: ${escapeHtml(partErr.message)}`, hideMenu ? [] : [[{ text: '🏠', callback_data: 'menu:home' }]]);
     return;
   }
 
@@ -2638,8 +2638,8 @@ async function registerWebinar(chat_id: number, message_id: number | null, prefi
     if (w.webinar_link) kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
     if (w.telegram_channel_link) kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
   }
-  kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
-  await editMessage(chat_id, message_id,
+  if (!hideMenu) kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
+  await out(
     [
       '✅ <b>ثبت‌نام شما در وبینار ثبت شد</b>',
       '',
