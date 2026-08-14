@@ -528,6 +528,18 @@ const WebinarManagement: React.FC = () => {
                         <TableCell>
                           <Badge variant={status.variant}>{status.label}</Badge>
                         </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Switch
+                              checked={!!webinar.telegram_bot_enabled}
+                              onCheckedChange={(v) => toggleTelegramBot(webinar.id, v)}
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              {webinar.telegram_bot_enabled ? 'فعال' : 'غیرفعال'}
+                            </span>
+                          </div>
+                        </TableCell>
+
                         <TableCell>
                           <Button 
                             variant="ghost" 
