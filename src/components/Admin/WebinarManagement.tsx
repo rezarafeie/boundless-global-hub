@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Calendar, Plus, Edit, Trash2, Users, Download, ExternalLink, Radio, Send } from 'lucide-react';
+import { Calendar, Plus, Edit, Trash2, Users, Download, ExternalLink, Radio, Send, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -66,9 +66,34 @@ const WebinarManagement: React.FC = () => {
     host_name: ''
   });
 
+  const [botUsername, setBotUsername] = useState<string>('rafiei_bot');
+
   useEffect(() => {
     fetchWebinars();
+    (async () => {
+      const { data } = await supabase
+        .from('admin_settings')
+        .select('telegram_bot_username')
+        .limit(1)
+        .maybeSingle();
+      const u = (data as any)?.telegram_bot_username;
+      if (u) setBotUsername(String(u).replace(/^@/, ''));
+    })();
   }, []);
+
+  const botDeepLink = (webinarId: string) =>
+    `https://t.me/${botUsername}?start=webinar_${webinarId.slice(0, 8)}`;
+
+  const copyBotLink = async (webinarId: string) => {
+    const link = botDeepLink(webinarId);
+    try {
+      await navigator.clipboard.writeText(link);
+      toast({ title: 'کپی شد', description: link });
+    } catch {
+      window.prompt('لینک ربات:', link);
+    }
+  };
+
 
   const openRegistrationsModal = async (webinarId: string, webinarTitle: string) => {
     setSelectedWebinarTitle(webinarTitle);
@@ -537,7 +562,18 @@ const WebinarManagement: React.FC = () => {
                             <span className="text-xs text-muted-foreground">
                               {webinar.telegram_bot_enabled ? 'فعال' : 'غیرفعال'}
                             </span>
+                            {webinar.telegram_bot_enabled && (
+                              <>
+                                <Button variant="ghost" size="sm" onClick={() => copyBotLink(webinar.id)} title="کپی لینک ربات">
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => window.open(botDeepLink(webinar.id), '_blank')} title="باز کردن در تلگرام">
+                                  <Send className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
                           </div>
+
                         </TableCell>
 
                         <TableCell>
