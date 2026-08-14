@@ -102,8 +102,12 @@ const WebinarEdit: React.FC = () => {
         telegram_channel_link: formData.telegram_channel_link || null,
         iframe_embed_code: formData.iframe_embed_code || null,
         host_name: formData.host_name || null,
-        login_method: formData.login_method
-      };
+        login_method: formData.login_method,
+        telegram_support_username: formData.telegram_support_username.trim().replace(/^@/, '') || null,
+        telegram_support_prefilled_message: formData.telegram_support_prefilled_message || null,
+        telegram_support_activated_message: formData.telegram_support_activated_message || null
+      } as any;
+
 
       const { error } = await supabase
         .from('webinar_entries')
