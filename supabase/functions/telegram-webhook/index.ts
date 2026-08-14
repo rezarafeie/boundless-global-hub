@@ -2443,7 +2443,8 @@ function formatWebinarDate(d: string | null): string {
   } catch { return d; }
 }
 
-async function renderWebinar(chat_id: number, message_id: number | null, prefix: string, user: BotUser | null) {
+async function renderWebinar(chat_id: number, message_id: number | null, prefix: string, user: BotUser | null, opts: { hideMenu?: boolean; phone?: string | null } = {}) {
+  const hideMenu = !!opts.hideMenu;
   const w = await findWebinarByPrefix(prefix);
   if (!w) {
     const msg = '❌ وبینار یافت نشد.';
