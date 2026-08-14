@@ -29,8 +29,12 @@ const WebinarEdit: React.FC = () => {
     telegram_channel_link: '',
     iframe_embed_code: '',
     host_name: '',
-    login_method: 'redirect'
+    login_method: 'redirect',
+    telegram_support_username: '',
+    telegram_support_prefilled_message: '',
+    telegram_support_activated_message: ''
   });
+
 
   useEffect(() => {
     if (webinarId) fetchWebinar();
@@ -58,8 +62,12 @@ const WebinarEdit: React.FC = () => {
         telegram_channel_link: data.telegram_channel_link || '',
         iframe_embed_code: (data as any).iframe_embed_code || '',
         host_name: (data as any).host_name || '',
-        login_method: (data as any).login_method || 'redirect'
+        login_method: (data as any).login_method || 'redirect',
+        telegram_support_username: (data as any).telegram_support_username || '',
+        telegram_support_prefilled_message: (data as any).telegram_support_prefilled_message || '',
+        telegram_support_activated_message: (data as any).telegram_support_activated_message || ''
       });
+
     } catch (error) {
       console.error('Error fetching webinar:', error);
       toast({ title: "خطا", description: "وبینار یافت نشد", variant: "destructive" });
@@ -94,8 +102,12 @@ const WebinarEdit: React.FC = () => {
         telegram_channel_link: formData.telegram_channel_link || null,
         iframe_embed_code: formData.iframe_embed_code || null,
         host_name: formData.host_name || null,
-        login_method: formData.login_method
-      };
+        login_method: formData.login_method,
+        telegram_support_username: formData.telegram_support_username.trim().replace(/^@/, '') || null,
+        telegram_support_prefilled_message: formData.telegram_support_prefilled_message || null,
+        telegram_support_activated_message: formData.telegram_support_activated_message || null
+      } as any;
+
 
       const { error } = await supabase
         .from('webinar_entries')
@@ -241,6 +253,43 @@ const WebinarEdit: React.FC = () => {
                 dir="ltr"
               />
             </div>
+
+            <div className="rounded-lg border p-4 space-y-4 bg-muted/30">
+              <div>
+                <h3 className="font-semibold">پشتیبانی وبینار در تلگرام</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  متغیرهای قابل استفاده: {'{name}'} ، {'{phone}'} ، {'{webinar_title}'} ، {'{date}'} ، {'{token}'}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">آیدی اکانت پشتیبانی (تلگرام بیزینس)</label>
+                <Input
+                  value={formData.telegram_support_username}
+                  onChange={(e) => setFormData({ ...formData, telegram_support_username: e.target.value })}
+                  placeholder="rafieiacademy"
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">متن آماده‌ی پیام فعال‌سازی (پیام کاربر)</label>
+                <Textarea
+                  value={formData.telegram_support_prefilled_message}
+                  onChange={(e) => setFormData({ ...formData, telegram_support_prefilled_message: e.target.value })}
+                  placeholder="در صورت خالی بودن، متن پیش‌فرض ارسال می‌شود. حتماً {token} را در متن نگه دارید."
+                  rows={8}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">متن پاسخ خودکار بعد از فعال‌سازی</label>
+                <Textarea
+                  value={formData.telegram_support_activated_message}
+                  onChange={(e) => setFormData({ ...formData, telegram_support_activated_message: e.target.value })}
+                  placeholder="در صورت خالی بودن، متن پیش‌فرض ارسال می‌شود."
+                  rows={6}
+                />
+              </div>
+            </div>
+
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => navigate('/enroll/admin/webinar')}>
                 لغو
