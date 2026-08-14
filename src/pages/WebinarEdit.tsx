@@ -300,40 +300,62 @@ const WebinarEdit: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium mb-2">دکمه‌های پیام فعال‌سازی (پاسخ خودکار)</label>
                 <div className="space-y-2">
-                  {(formData.telegram_support_activation_buttons || []).map((btn: { text: string; url: string }, idx: number) => (
-                    <div key={idx} className="flex gap-2">
-                      <Input
-                        value={btn.text}
-                        onChange={(e) => {
-                          const arr = [...(formData.telegram_support_activation_buttons || [])];
-                          arr[idx] = { ...arr[idx], text: e.target.value };
-                          setFormData({ ...formData, telegram_support_activation_buttons: arr });
-                        }}
-                        placeholder="متن دکمه"
-                      />
-                      <Input
-                        value={btn.url}
-                        onChange={(e) => {
-                          const arr = [...(formData.telegram_support_activation_buttons || [])];
-                          arr[idx] = { ...arr[idx], url: e.target.value };
-                          setFormData({ ...formData, telegram_support_activation_buttons: arr });
-                        }}
-                        placeholder="https://..."
-                        dir="ltr"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          const arr = [...(formData.telegram_support_activation_buttons || [])];
-                          arr.splice(idx, 1);
-                          setFormData({ ...formData, telegram_support_activation_buttons: arr });
-                        }}
-                      >
-                        حذف
-                      </Button>
+                  {(formData.telegram_support_activation_buttons || []).map((btn: { text: string; url: string }, idx: number) => {
+                    const isAutoLogin = btn.url === 'webinar_login';
+                    return (
+                    <div key={idx} className="space-y-1 border border-border rounded-md p-2">
+                      <div className="flex gap-2">
+                        <Input
+                          value={btn.text}
+                          onChange={(e) => {
+                            const arr = [...(formData.telegram_support_activation_buttons || [])];
+                            arr[idx] = { ...arr[idx], text: e.target.value };
+                            setFormData({ ...formData, telegram_support_activation_buttons: arr });
+                          }}
+                          placeholder="متن دکمه"
+                        />
+                        <Input
+                          value={isAutoLogin ? '' : btn.url}
+                          disabled={isAutoLogin}
+                          onChange={(e) => {
+                            const arr = [...(formData.telegram_support_activation_buttons || [])];
+                            arr[idx] = { ...arr[idx], url: e.target.value };
+                            setFormData({ ...formData, telegram_support_activation_buttons: arr });
+                          }}
+                          placeholder={isAutoLogin ? 'لینک ورود خودکار ساخته می‌شود' : 'https://...'}
+                          dir="ltr"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const arr = [...(formData.telegram_support_activation_buttons || [])];
+                            arr.splice(idx, 1);
+                            setFormData({ ...formData, telegram_support_activation_buttons: arr });
+                          }}
+                        >
+                          حذف
+                        </Button>
+                      </div>
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          checked={isAutoLogin}
+                          onChange={(e) => {
+                            const arr = [...(formData.telegram_support_activation_buttons || [])];
+                            arr[idx] = {
+                              ...arr[idx],
+                              text: arr[idx].text || (e.target.checked ? '🎥 ورود به وبینار' : ''),
+                              url: e.target.checked ? 'webinar_login' : '',
+                            };
+                            setFormData({ ...formData, telegram_support_activation_buttons: arr });
+                          }}
+                        />
+                        دکمه ورود خودکار به وبینار (بدون نیاز به وارد کردن نام و شماره)
+                      </label>
                     </div>
-                  ))}
+                    );
+                  })}
                   <Button
                     type="button"
                     variant="secondary"
@@ -344,6 +366,7 @@ const WebinarEdit: React.FC = () => {
                   >
                     افزودن دکمه
                   </Button>
+
                 </div>
               </div>
             </div>
