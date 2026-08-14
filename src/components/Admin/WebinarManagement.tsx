@@ -562,7 +562,18 @@ const WebinarManagement: React.FC = () => {
                             <span className="text-xs text-muted-foreground">
                               {webinar.telegram_bot_enabled ? 'فعال' : 'غیرفعال'}
                             </span>
+                            {webinar.telegram_bot_enabled && (
+                              <>
+                                <Button variant="ghost" size="sm" onClick={() => copyBotLink(webinar.id)} title="کپی لینک ربات">
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => window.open(botDeepLink(webinar.id), '_blank')} title="باز کردن در تلگرام">
+                                  <Send className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
                           </div>
+
                         </TableCell>
 
                         <TableCell>
