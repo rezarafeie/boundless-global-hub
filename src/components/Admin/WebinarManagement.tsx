@@ -511,6 +511,7 @@ const WebinarManagement: React.FC = () => {
                     <TableHead>عنوان</TableHead>
                     <TableHead>تاریخ شروع</TableHead>
                     <TableHead>وضعیت</TableHead>
+                    <TableHead className="text-center">ثبت‌نام در ربات تلگرام</TableHead>
                     <TableHead>لینک عمومی</TableHead>
                     <TableHead className="text-center">تعداد ثبت‌نام</TableHead>
                     <TableHead className="text-center">آمار</TableHead>
