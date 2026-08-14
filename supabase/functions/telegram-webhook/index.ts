@@ -2582,23 +2582,41 @@ async function registerWebinar(chat_id: number, message_id: number, prefix: stri
     if (regErr) console.error('webinar_registrations insert failed:', regErr);
   }
 
+  // Track support activation state (pending until the user messages the business account)
+  try {
+    await supabase.from('webinar_support_activations').upsert({
+      webinar_id: w.id,
+      telegram_chat_id: chat_id,
+      phone: normPhone,
+      status: 'pending',
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'webinar_id,telegram_chat_id', ignoreDuplicates: false });
+  } catch (e) { console.warn('webinar_support_activations upsert failed', e); }
+
+  const activated = await isWebinarSupportActivated(w.id, chat_id);
   const kbd: InlineKeyboard = [];
   kbd.push([{ text: '🚀 فعال‌سازی پشتیبانی وبینار', url: webinarSupportLink(w, user, chat_id) }]);
-  if (w.webinar_link) kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
-  if (w.telegram_channel_link) kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
+  if (activated) {
+    if (w.webinar_link) kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
+    if (w.telegram_channel_link) kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
+  }
   kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
   await editMessage(chat_id, message_id,
     [
-      '✅ <b>ثبت‌نام شما در وبینار با موفقیت انجام شد</b>',
+      '✅ <b>ثبت‌نام شما در وبینار ثبت شد</b>',
       '',
       `🎥 ${escapeHtml(w.title)}`,
       `🗓 ${escapeHtml(formatWebinarDate(w.start_date))}`,
       '',
-      '🎯 برای فعال‌سازی پشتیبانی وبینار، روی دکمه زیر بزنید.',
-      'بعد از باز شدن چت پشتیبانی، فقط دکمه ارسال (Send) را بزنید تا پیام آماده ارسال شود.',
+      '⚠️ <b>یک قدم باقی مانده!</b>',
+      'تا زمانی که پشتیبانی وبینار را فعال نکنید، لینک ورود، کانال وبینار و یادآوری‌ها برای شما ارسال نمی‌شود.',
+      '',
+      '⏳ ظرفیت پشتیبانی محدود است — همین حالا فعال کنید 👇',
+      'بعد از باز شدن چت پشتیبانی، فقط دکمه ارسال (Send) را بزنید.',
     ].join('\n'),
     kbd,
   );
+
 }
 
 
