@@ -20,6 +20,7 @@ interface Webinar {
   webinar_link: string;
   description: string | null;
   telegram_channel_link: string | null;
+  telegram_bot_enabled?: boolean;
   created_at: string;
 }
 
