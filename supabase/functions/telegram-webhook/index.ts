@@ -2445,6 +2445,9 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
   } else if (!user) {
     kbd.push([{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }]);
   }
+  if (alreadyRegistered) {
+    kbd.push([{ text: '🚀 فعال‌سازی پشتیبانی وبینار', url: webinarSupportLink(w, user, chat_id) }]);
+  }
   if (w.webinar_link && (alreadyRegistered || (w.status === 'live'))) {
     kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
   }
@@ -2455,6 +2458,32 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
   if (message_id) await editMessage(chat_id, message_id, lines, kbd);
   else await sendMessage(chat_id, lines, { keyboard: kbd });
 }
+
+// ===== Webinar support activation (Telegram Business prefilled message) =====
+function webinarSupportToken(webinarId: string, chat_id: number): string {
+  return `${webinarId.replace(/-/g, '').slice(0, 8)}-${chat_id}`;
+}
+
+function webinarSupportLink(w: any, user: BotUser | null, chat_id: number): string {
+  const token = webinarSupportToken(w.id, chat_id);
+  const raw = [
+    '🌟 فعال‌سازی پشتیبانی وبینار 🌟',
+    '',
+    'درود و وقت بخیر 🌱',
+    `برای فعال‌سازی پشتیبانی وبینار «${w.title}» در خدمتتون هستم 🙌`,
+    '',
+    '━━━━━━━━━━━━━━━',
+    `👤 نام: ${user?.name || '-'}`,
+    `📱 موبایل: ${user?.phone || '-'}`,
+    '━━━━━━━━━━━━━━━',
+    '',
+    `🔑 کد فعال‌سازی وبینار: ${token}`,
+    '',
+    '🙏 ممنون از همراهی شما',
+  ].join('\n');
+  return `https://telegram.me/rafieiacademy?text=${encodeURIComponent(raw)}`;
+}
+
 
 function normalizeIntlPhone(input: string): string {
   let p = (input || '').replace(/[^\d+]/g, '');
