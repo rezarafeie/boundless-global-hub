@@ -2657,6 +2657,110 @@ async function registerWebinar(chat_id: number, message_id: number | null, prefi
 
 }
 
+// ===== Guest webinar registration (no bot login required) =====
+async function startWebinarGuest(chat_id: number, prefix: string) {
+  const w = await findWebinarByPrefix(prefix);
+  if (!w) { await sendMessage(chat_id, '❌ وبینار یافت نشد.'); return; }
+  await setSession(chat_id, null, 'awaiting_webinar_phone', { webinar_prefix: prefix });
+  await sendMessage(chat_id,
+    [
+      `🎥 <b>${escapeHtml(w.title)}</b>`,
+      '',
+      '📱 برای ثبت‌نام، شماره موبایل خود را ارسال کنید.',
+      'می‌توانید دکمه <b>📱 ارسال شماره من</b> را بزنید یا شماره را تایپ کنید (مثال: <code>09120000000</code>)',
+    ].join('\n'),
+    { replyKeyboard: [[{ text: '📱 ارسال شماره من', request_contact: true }]], one_time_keyboard: true },
+  );
+}
+
+async function handleWebinarGuestPhone(chat_id: number, rawPhone: string) {
+  const session = await getSession(chat_id);
+  const prefix = String(session?.context?.webinar_prefix ?? '');
+  if (!prefix) { await clearSession(chat_id); return; }
+  const normPhone = normalizeIntlPhone(rawPhone);
+  if (!/^\+\d{8,15}$/.test(normPhone)) {
+    await sendMessage(chat_id, '❌ شماره معتبر نیست. دوباره ارسال کنید (مثال: <code>09120000000</code>)');
+    return;
+  }
+  const phoneLocal = normPhone.startsWith('+98') ? '0' + normPhone.slice(3) : normPhone;
+  const existing = await findChatUserByPhone(phoneLocal.replace(/^0/, ''));
+  if (existing) {
+    // Link telegram to the existing academy account and register right away
+    await supabase.from('chat_users').update({ telegram_chat_id: null }).eq('telegram_chat_id', chat_id);
+    await supabase.from('chat_users')
+      .update({ telegram_chat_id: chat_id, telegram_linked_at: new Date().toISOString() })
+      .eq('id', existing.id);
+    await clearSession(chat_id);
+    await sendMessage(chat_id, '✅ شماره شما تایید شد.', { removeKeyboard: true });
+    const user = (await resolveUser(chat_id)) ?? ({ id: existing.id, name: existing.name, phone: normPhone } as any);
+    await registerWebinar(chat_id, null, prefix, user, { hideMenu: true });
+    return;
+  }
+  await setSession(chat_id, null, 'awaiting_webinar_name', { webinar_prefix: prefix, phone: normPhone, phone_local: phoneLocal });
+  await sendMessage(chat_id, '👤 نام و نام خانوادگی خود را ارسال کنید:', { removeKeyboard: true });
+}
+
+async function handleWebinarGuestName(chat_id: number, text: string) {
+  const session = await getSession(chat_id);
+  const ctx = session?.context ?? {};
+  const prefix = String(ctx.webinar_prefix ?? '');
+  const phone = String(ctx.phone ?? '');
+  if (!prefix || !phone) { await clearSession(chat_id); return; }
+  const name = (text ?? '').trim();
+  if (name.length < 2 || name.length > 80) {
+    await sendMessage(chat_id, '❌ نام معتبر نیست. دوباره ارسال کنید.');
+    return;
+  }
+  await setSession(chat_id, null, 'awaiting_webinar_email', { ...ctx, name });
+  await sendMessage(chat_id, '✉️ ایمیل خود را ارسال کنید (برای ارسال اطلاعات وبینار) یا /skip بزنید.');
+}
+
+async function handleWebinarGuestEmail(chat_id: number, text: string) {
+  const session = await getSession(chat_id);
+  const ctx = session?.context ?? {};
+  const prefix = String(ctx.webinar_prefix ?? '');
+  const phone = String(ctx.phone ?? '');
+  const phoneLocal = String(ctx.phone_local ?? phone);
+  const name = String(ctx.name ?? '');
+  if (!prefix || !phone) { await clearSession(chat_id); return; }
+  const raw = (text ?? '').trim();
+  let email: string | null = null;
+  if (raw !== '/skip') {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw) || raw.length > 255) {
+      await sendMessage(chat_id, '❌ ایمیل معتبر نیست. دوباره ارسال کنید یا /skip بزنید.');
+      return;
+    }
+    email = raw.toLowerCase();
+  }
+
+  const parts = name.split(/\s+/);
+  const firstName = parts[0] ?? name;
+  const lastName = parts.slice(1).join(' ');
+  let botUser: BotUser | null = null;
+  const { data: uidData } = await supabase.rpc('generate_unique_user_id');
+  const { data: ins, error: insErr } = await supabase.from('chat_users').insert({
+    name,
+    phone: phoneLocal,
+    email,
+    first_name: firstName,
+    last_name: lastName,
+    full_name: name,
+    user_id: uidData,
+    country_code: phone.startsWith('+98') ? '+98' : `+${phone.slice(1, 3)}`,
+    signup_source: 'telegram_webinar',
+    is_approved: true,
+    role: 'user',
+    telegram_chat_id: chat_id,
+    telegram_linked_at: new Date().toISOString(),
+  }).select('id').single();
+  if (insErr) console.error('guest chat_users insert failed:', insErr);
+  await clearSession(chat_id);
+  botUser = (await resolveUser(chat_id)) ?? ({ id: ins?.id, name, phone } as any);
+  await registerWebinar(chat_id, null, prefix, botUser as BotUser, { hideMenu: true });
+}
+
+
+
 
 async function salesAdvisorRows(): Promise<InlineKeyboard> {
   const s = await getSalesSettings();
