@@ -253,6 +253,43 @@ const WebinarEdit: React.FC = () => {
                 dir="ltr"
               />
             </div>
+
+            <div className="rounded-lg border p-4 space-y-4 bg-muted/30">
+              <div>
+                <h3 className="font-semibold">پشتیبانی وبینار در تلگرام</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  متغیرهای قابل استفاده: {'{name}'} ، {'{phone}'} ، {'{webinar_title}'} ، {'{date}'} ، {'{token}'}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">آیدی اکانت پشتیبانی (تلگرام بیزینس)</label>
+                <Input
+                  value={formData.telegram_support_username}
+                  onChange={(e) => setFormData({ ...formData, telegram_support_username: e.target.value })}
+                  placeholder="rafieiacademy"
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">متن آماده‌ی پیام فعال‌سازی (پیام کاربر)</label>
+                <Textarea
+                  value={formData.telegram_support_prefilled_message}
+                  onChange={(e) => setFormData({ ...formData, telegram_support_prefilled_message: e.target.value })}
+                  placeholder="در صورت خالی بودن، متن پیش‌فرض ارسال می‌شود. حتماً {token} را در متن نگه دارید."
+                  rows={8}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">متن پاسخ خودکار بعد از فعال‌سازی</label>
+                <Textarea
+                  value={formData.telegram_support_activated_message}
+                  onChange={(e) => setFormData({ ...formData, telegram_support_activated_message: e.target.value })}
+                  placeholder="در صورت خالی بودن، متن پیش‌فرض ارسال می‌شود."
+                  rows={6}
+                />
+              </div>
+            </div>
+
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => navigate('/enroll/admin/webinar')}>
                 لغو
