@@ -6597,6 +6597,7 @@ export type Database = {
           telegram_bot_enabled: boolean
           telegram_channel_link: string | null
           telegram_support_activated_message: string | null
+          telegram_support_activation_buttons: Json
           telegram_support_prefilled_message: string | null
           telegram_support_username: string | null
           title: string
@@ -6620,6 +6621,7 @@ export type Database = {
           telegram_bot_enabled?: boolean
           telegram_channel_link?: string | null
           telegram_support_activated_message?: string | null
+          telegram_support_activation_buttons?: Json
           telegram_support_prefilled_message?: string | null
           telegram_support_username?: string | null
           title: string
@@ -6643,6 +6645,7 @@ export type Database = {
           telegram_bot_enabled?: boolean
           telegram_channel_link?: string | null
           telegram_support_activated_message?: string | null
+          telegram_support_activation_buttons?: Json
           telegram_support_prefilled_message?: string | null
           telegram_support_username?: string | null
           title?: string
@@ -7186,6 +7189,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      webinar_support_activations: {
+        Row: {
+          activated_at: string | null
+          created_at: string
+          id: string
+          phone: string | null
+          status: string
+          telegram_chat_id: number
+          updated_at: string
+          webinar_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          created_at?: string
+          id?: string
+          phone?: string | null
+          status?: string
+          telegram_chat_id: number
+          updated_at?: string
+          webinar_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          created_at?: string
+          id?: string
+          phone?: string | null
+          status?: string
+          telegram_chat_id?: number
+          updated_at?: string
+          webinar_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
