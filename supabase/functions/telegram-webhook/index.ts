@@ -2536,14 +2536,24 @@ async function registerWebinar(chat_id: number, message_id: number, prefix: stri
   }
 
   const kbd: InlineKeyboard = [];
+  kbd.push([{ text: '🚀 فعال‌سازی پشتیبانی وبینار', url: webinarSupportLink(w, user, chat_id) }]);
   if (w.webinar_link) kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
   if (w.telegram_channel_link) kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
   kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
   await editMessage(chat_id, message_id,
-    `✅ <b>ثبت‌نام شما در وبینار انجام شد</b>\n\n🎥 ${escapeHtml(w.title)}\n🗓 ${escapeHtml(formatWebinarDate(w.start_date))}`,
+    [
+      '✅ <b>ثبت‌نام شما در وبینار با موفقیت انجام شد</b>',
+      '',
+      `🎥 ${escapeHtml(w.title)}`,
+      `🗓 ${escapeHtml(formatWebinarDate(w.start_date))}`,
+      '',
+      '🎯 برای فعال‌سازی پشتیبانی وبینار، روی دکمه زیر بزنید.',
+      'بعد از باز شدن چت پشتیبانی، فقط دکمه ارسال (Send) را بزنید تا پیام آماده ارسال شود.',
+    ].join('\n'),
     kbd,
   );
 }
+
 
 async function salesAdvisorRows(): Promise<InlineKeyboard> {
   const s = await getSalesSettings();
