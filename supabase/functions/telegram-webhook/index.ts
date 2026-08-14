@@ -3243,13 +3243,15 @@ async function handleUpdate(update: any) {
       await renderWebinar(chat_id, message_id, prefix, userEarly);
       return;
     }
+    if (data.startsWith('webinar:greg:')) {
+      const prefix = data.split(':')[2];
+      if (userEarly) { await registerWebinar(chat_id, message_id, prefix, userEarly, { hideMenu: true }); return; }
+      await startWebinarGuest(chat_id, prefix);
+      return;
+    }
     if (data.startsWith('webinar:reg:')) {
       const prefix = data.split(':')[2];
-      if (!userEarly) {
-        await editMessage(chat_id, message_id, '🔐 برای ثبت‌نام ابتدا وارد حساب شوید.',
-          [[{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }], [{ text: '🏠', callback_data: 'menu:home' }]]);
-        return;
-      }
+      if (!userEarly) { await startWebinarGuest(chat_id, prefix); return; }
       await registerWebinar(chat_id, message_id, prefix, userEarly);
       return;
     }
