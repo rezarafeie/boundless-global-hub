@@ -2448,7 +2448,7 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
   if (w.webinar_link && (alreadyRegistered || (w.status === 'live'))) {
     kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
   }
-  if (w.telegram_channel_link) {
+  if (w.telegram_channel_link && alreadyRegistered) {
     kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
   }
   kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
