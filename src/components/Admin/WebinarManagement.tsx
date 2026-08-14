@@ -639,6 +639,14 @@ const WebinarManagement: React.FC = () => {
                               <Send className="h-4 w-4 ml-1" />
                               پیگیری‌ها
                             </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => navigate(`/enroll/admin/webinar/${webinar.id}/analytics`)}
+                            >
+                              <BarChart3 className="h-4 w-4 ml-1" />
+                              آنالیتیکس
+                            </Button>
                           </div>
                         </TableCell>
                         <TableCell>
