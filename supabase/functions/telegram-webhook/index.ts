@@ -2381,12 +2381,11 @@ async function getActiveWebinars() {
   const { data } = await supabase
     .from('webinar_entries')
     .select('id, title, slug, start_date, status, telegram_bot_enabled')
-    .neq('status', 'ended')
     .eq('telegram_bot_enabled', true)
     .order('start_date', { ascending: true, nullsFirst: false })
     .limit(10);
   const now = Date.now();
-  return (data ?? []).filter((w: any) => !w.start_date || new Date(w.start_date).getTime() > now - 2 * 60 * 60 * 1000);
+  return (data ?? []).filter((w: any) => w.status === 'live' || !w.start_date || new Date(w.start_date).getTime() > now - 2 * 60 * 60 * 1000);
 }
 
 async function webinarsKeyboardRows(): Promise<InlineKeyboard> {
@@ -2398,7 +2397,7 @@ async function webinarsKeyboardRows(): Promise<InlineKeyboard> {
 }
 
 async function findWebinarByPrefix(prefix: string) {
-  const { data } = await supabase.from('webinar_entries').select('*').neq('status', 'ended').limit(500);
+  const { data } = await supabase.from('webinar_entries').select('*').limit(500);
   return (data ?? []).find((w: any) => w.id.startsWith(prefix));
 }
 
