@@ -3611,8 +3611,20 @@ async function handleUpdate(update: any) {
   // ===== Webinar registration deep-link: /start webinar_<id-prefix> =====
   if (startPayload?.startsWith('webinar_')) {
     const wPrefix = startPayload.slice('webinar_'.length);
-    await renderWebinar(chat_id, null, wPrefix, user);
+    if (!user) { await startWebinarGuest(chat_id, wPrefix); return; }
+    await renderWebinar(chat_id, null, wPrefix, user, { hideMenu: true });
     return;
+  }
+
+  // ===== Guest webinar registration states (work without bot login) =====
+  {
+    const gs = await getSession(chat_id);
+    if (gs?.state === 'awaiting_webinar_phone' && (msg?.contact?.phone_number || text)) {
+      await handleWebinarGuestPhone(chat_id, String(msg?.contact?.phone_number ?? text));
+      return;
+    }
+    if (gs?.state === 'awaiting_webinar_name' && text) { await handleWebinarGuestName(chat_id, text); return; }
+    if (gs?.state === 'awaiting_webinar_email' && text) { await handleWebinarGuestEmail(chat_id, text); return; }
   }
 
   // ===== Website login deep-link: /start login_<token> =====
