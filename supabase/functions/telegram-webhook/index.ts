@@ -3619,6 +3619,11 @@ async function handleUpdate(update: any) {
   // ===== Guest webinar registration states (work without bot login) =====
   {
     const gs = await getSession(chat_id);
+    if (gs?.state?.startsWith('awaiting_webinar_') && text === '/cancel') {
+      await clearSession(chat_id);
+      await sendMessage(chat_id, '✅ لغو شد.', { removeKeyboard: true });
+      return;
+    }
     if (gs?.state === 'awaiting_webinar_phone' && (msg?.contact?.phone_number || text)) {
       await handleWebinarGuestPhone(chat_id, String(msg?.contact?.phone_number ?? text));
       return;
