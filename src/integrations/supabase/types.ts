@@ -6596,6 +6596,9 @@ export type Database = {
           status: string
           telegram_bot_enabled: boolean
           telegram_channel_link: string | null
+          telegram_support_activated_message: string | null
+          telegram_support_prefilled_message: string | null
+          telegram_support_username: string | null
           title: string
           updated_at: string
           webinar_link: string
@@ -6616,6 +6619,9 @@ export type Database = {
           status?: string
           telegram_bot_enabled?: boolean
           telegram_channel_link?: string | null
+          telegram_support_activated_message?: string | null
+          telegram_support_prefilled_message?: string | null
+          telegram_support_username?: string | null
           title: string
           updated_at?: string
           webinar_link: string
@@ -6636,6 +6642,9 @@ export type Database = {
           status?: string
           telegram_bot_enabled?: boolean
           telegram_channel_link?: string | null
+          telegram_support_activated_message?: string | null
+          telegram_support_prefilled_message?: string | null
+          telegram_support_username?: string | null
           title?: string
           updated_at?: string
           webinar_link?: string
