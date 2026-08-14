@@ -445,6 +445,7 @@ const App = () => {
         <Route path="/enroll/admin/webinar" element={<WebinarAdmin />} />
         <Route path="/enroll/admin/webinar/:webinarId/edit" element={<WebinarEdit />} />
         <Route path="/enroll/admin/webinar/:webinarId/followups" element={<WebinarFollowups />} />
+        <Route path="/enroll/admin/webinar/:webinarId/analytics" element={<WebinarAnalytics />} />
         <Route path="/webinar/:slug" element={<WebinarRegistration />} />
         <Route path="/webinar/:slug/login" element={<WebinarLogin />} />
         <Route path="/webinar/:slug/live" element={<WebinarWatch />} />
