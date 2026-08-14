@@ -2445,8 +2445,30 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
   } else if (!user) {
     kbd.push([{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }]);
   }
-  if (alreadyRegistered) {
-    kbd.push([{ text: '🚀 فعال‌سازی پشتیبانی وبینار', url: webinarSupportLink(w, user, chat_id) }]);
+  const supportActivated = alreadyRegistered ? await isWebinarSupportActivated(w.id, chat_id) : false;
+  if (alreadyRegistered && !supportActivated) {
+    // FOMO-focused single CTA — hide every other link until support is activated.
+    const fomo = [
+      `🎥 <b>${escapeHtml(w.title)}</b>`,
+      `🗓 ${escapeHtml(formatWebinarDate(w.start_date))}`,
+      '',
+      '✅ ثبت‌نام شما ثبت شد، اما هنوز <b>کامل نیست</b>.',
+      '',
+      '🔴 <b>بدون فعال‌سازی پشتیبانی:</b>',
+      '• لینک ورود به وبینار برای شما ارسال نمی‌شود',
+      '• به کانال و منابع وبینار دسترسی ندارید',
+      '• یادآوری قبل از شروع دریافت نمی‌کنید',
+      '',
+      '⏳ ظرفیت پشتیبانی محدود است — همین حالا فعال کنید.',
+      'کافیست دکمه زیر را بزنید و در چت پشتیبانی فقط Send / ارسال را بزنید.',
+    ].join('\n');
+    const only: InlineKeyboard = [
+      [{ text: '🚀 فعال‌سازی پشتیبانی وبینار', url: webinarSupportLink(w, user, chat_id) }],
+      [{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }],
+    ];
+    if (message_id) await editMessage(chat_id, message_id, fomo, only);
+    else await sendMessage(chat_id, fomo, { keyboard: only });
+    return;
   }
   if (w.webinar_link && (alreadyRegistered || (w.status === 'live'))) {
     kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
@@ -2458,6 +2480,17 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
   if (message_id) await editMessage(chat_id, message_id, lines, kbd);
   else await sendMessage(chat_id, lines, { keyboard: kbd });
 }
+
+async function isWebinarSupportActivated(webinar_id: string, chat_id: number): Promise<boolean> {
+  const { data } = await supabase
+    .from('webinar_support_activations')
+    .select('status')
+    .eq('webinar_id', webinar_id)
+    .eq('telegram_chat_id', chat_id)
+    .maybeSingle();
+  return (data as any)?.status === 'activated';
+}
+
 
 // ===== Webinar support activation (Telegram Business prefilled message) =====
 function webinarSupportToken(webinarId: string, chat_id: number): string {
@@ -2549,23 +2582,41 @@ async function registerWebinar(chat_id: number, message_id: number, prefix: stri
     if (regErr) console.error('webinar_registrations insert failed:', regErr);
   }
 
+  // Track support activation state (pending until the user messages the business account)
+  try {
+    await supabase.from('webinar_support_activations').upsert({
+      webinar_id: w.id,
+      telegram_chat_id: chat_id,
+      phone: normPhone,
+      status: 'pending',
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'webinar_id,telegram_chat_id', ignoreDuplicates: false });
+  } catch (e) { console.warn('webinar_support_activations upsert failed', e); }
+
+  const activated = await isWebinarSupportActivated(w.id, chat_id);
   const kbd: InlineKeyboard = [];
   kbd.push([{ text: '🚀 فعال‌سازی پشتیبانی وبینار', url: webinarSupportLink(w, user, chat_id) }]);
-  if (w.webinar_link) kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
-  if (w.telegram_channel_link) kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
+  if (activated) {
+    if (w.webinar_link) kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
+    if (w.telegram_channel_link) kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
+  }
   kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
   await editMessage(chat_id, message_id,
     [
-      '✅ <b>ثبت‌نام شما در وبینار با موفقیت انجام شد</b>',
+      '✅ <b>ثبت‌نام شما در وبینار ثبت شد</b>',
       '',
       `🎥 ${escapeHtml(w.title)}`,
       `🗓 ${escapeHtml(formatWebinarDate(w.start_date))}`,
       '',
-      '🎯 برای فعال‌سازی پشتیبانی وبینار، روی دکمه زیر بزنید.',
-      'بعد از باز شدن چت پشتیبانی، فقط دکمه ارسال (Send) را بزنید تا پیام آماده ارسال شود.',
+      '⚠️ <b>یک قدم باقی مانده!</b>',
+      'تا زمانی که پشتیبانی وبینار را فعال نکنید، لینک ورود، کانال وبینار و یادآوری‌ها برای شما ارسال نمی‌شود.',
+      '',
+      '⏳ ظرفیت پشتیبانی محدود است — همین حالا فعال کنید 👇',
+      'بعد از باز شدن چت پشتیبانی، فقط دکمه ارسال (Send) را بزنید.',
     ].join('\n'),
     kbd,
   );
+
 }
 
 
@@ -3543,12 +3594,16 @@ async function handleUpdate(update: any) {
 
   // ===== Auto-detect webinar support-activation message (Telegram Business / support chat) =====
   if (text) {
-    const wMatch = text.match(/کد\s*فعال[‌\s]*سازی\s*وبینار\s*[:：]\s*([a-f0-9]{8})-(\d{5,})/i);
+    // Robust: match the token pattern anywhere (templates can be edited by admins),
+    // then confirm a real webinar exists with that id prefix.
+    const wMatch = text.match(/([a-f0-9]{8})\s*-\s*(\d{5,})/i);
     if (wMatch) {
       const wPrefixRaw = wMatch[1].toLowerCase();
       const targetChat = Number(wMatch[2]);
       const { data: allW } = await supabase.from('webinar_entries').select('*').limit(500);
-      const w = (allW ?? []).find((x: any) => String(x.id).replace(/-/g, '').startsWith(wPrefixRaw));
+      const w = (allW ?? []).find((x: any) => String(x.id).replace(/-/g, '').toLowerCase().startsWith(wPrefixRaw));
+      console.log('🎥 webinar activation token detected:', wPrefixRaw, 'targetChat=', targetChat, 'matched=', !!w, 'business=', !!business_connection_id);
+      if (w) {
       const defaultConfirmTpl = [
         '✅ پشتیبانی وبینار شما فعال شد',
         '',
@@ -3565,13 +3620,31 @@ async function handleUpdate(update: any) {
         applyWebinarVars(confirmTpl, w, { name: targetUser?.name || '', phone: targetUser?.phone || '' }),
       ).replace(/^(.*)$/m, '<b>$1</b>');
 
+      // Mark activated
+      try {
+        await supabase.from('webinar_support_activations').upsert({
+          webinar_id: w.id,
+          telegram_chat_id: targetChat,
+          phone: targetUser?.phone ?? null,
+          status: 'activated',
+          activated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'webinar_id,telegram_chat_id', ignoreDuplicates: false });
+      } catch (e) { console.warn('webinar activation upsert failed', e); }
+
       const wButtons: { text: string; url: string }[][] = [];
       if (w?.webinar_link) wButtons.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
       if (w?.telegram_channel_link) wButtons.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
+      const customWButtons = Array.isArray((w as any)?.telegram_support_activation_buttons)
+        ? ((w as any).telegram_support_activation_buttons as any[])
+        : [];
+      for (const b of customWButtons) {
+        if (b?.text && b?.url) wButtons.push([{ text: String(b.text), url: String(b.url) }]);
+      }
 
       // Reply in the chat the message came from (business chat / support group)
       try {
-        await tgCall('sendMessage', {
+        const res = await tgCall('sendMessage', {
           chat_id,
           text: confirm,
           parse_mode: 'HTML',
@@ -3579,6 +3652,15 @@ async function handleUpdate(update: any) {
           reply_markup: wButtons.length ? { inline_keyboard: wButtons } : undefined,
           ...(business_connection_id ? { business_connection_id } : {}),
         });
+        if (!res?.ok) {
+          // Retry without reply/buttons (business chats reject some markups)
+          await tgCall('sendMessage', {
+            chat_id,
+            text: confirm,
+            parse_mode: 'HTML',
+            ...(business_connection_id ? { business_connection_id } : {}),
+          });
+        }
       } catch (e) { console.warn('webinar support confirm reply failed', e); }
 
       // Also confirm in the user's private chat with the bot
@@ -3593,6 +3675,8 @@ async function handleUpdate(update: any) {
         } catch (e) { console.warn('webinar support confirm DM failed', e); }
       }
       return;
+      }
+
     }
   }
 

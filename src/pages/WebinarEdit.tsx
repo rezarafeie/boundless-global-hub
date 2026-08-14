@@ -32,7 +32,9 @@ const WebinarEdit: React.FC = () => {
     login_method: 'redirect',
     telegram_support_username: '',
     telegram_support_prefilled_message: '',
-    telegram_support_activated_message: ''
+    telegram_support_activated_message: '',
+    telegram_support_activation_buttons: [] as { text: string; url: string }[]
+
   });
 
 
@@ -65,7 +67,11 @@ const WebinarEdit: React.FC = () => {
         login_method: (data as any).login_method || 'redirect',
         telegram_support_username: (data as any).telegram_support_username || '',
         telegram_support_prefilled_message: (data as any).telegram_support_prefilled_message || '',
-        telegram_support_activated_message: (data as any).telegram_support_activated_message || ''
+        telegram_support_activated_message: (data as any).telegram_support_activated_message || '',
+        telegram_support_activation_buttons: Array.isArray((data as any).telegram_support_activation_buttons)
+          ? (data as any).telegram_support_activation_buttons
+          : []
+
       });
 
     } catch (error) {
@@ -105,7 +111,10 @@ const WebinarEdit: React.FC = () => {
         login_method: formData.login_method,
         telegram_support_username: formData.telegram_support_username.trim().replace(/^@/, '') || null,
         telegram_support_prefilled_message: formData.telegram_support_prefilled_message || null,
-        telegram_support_activated_message: formData.telegram_support_activated_message || null
+        telegram_support_activated_message: formData.telegram_support_activated_message || null,
+        telegram_support_activation_buttons: (formData.telegram_support_activation_buttons || [])
+          .filter((b) => b?.text?.trim() && b?.url?.trim())
+
       } as any;
 
 
@@ -288,7 +297,57 @@ const WebinarEdit: React.FC = () => {
                   rows={6}
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">دکمه‌های پیام فعال‌سازی (پاسخ خودکار)</label>
+                <div className="space-y-2">
+                  {(formData.telegram_support_activation_buttons || []).map((btn: { text: string; url: string }, idx: number) => (
+                    <div key={idx} className="flex gap-2">
+                      <Input
+                        value={btn.text}
+                        onChange={(e) => {
+                          const arr = [...(formData.telegram_support_activation_buttons || [])];
+                          arr[idx] = { ...arr[idx], text: e.target.value };
+                          setFormData({ ...formData, telegram_support_activation_buttons: arr });
+                        }}
+                        placeholder="متن دکمه"
+                      />
+                      <Input
+                        value={btn.url}
+                        onChange={(e) => {
+                          const arr = [...(formData.telegram_support_activation_buttons || [])];
+                          arr[idx] = { ...arr[idx], url: e.target.value };
+                          setFormData({ ...formData, telegram_support_activation_buttons: arr });
+                        }}
+                        placeholder="https://..."
+                        dir="ltr"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const arr = [...(formData.telegram_support_activation_buttons || [])];
+                          arr.splice(idx, 1);
+                          setFormData({ ...formData, telegram_support_activation_buttons: arr });
+                        }}
+                      >
+                        حذف
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setFormData({
+                      ...formData,
+                      telegram_support_activation_buttons: [...(formData.telegram_support_activation_buttons || []), { text: '', url: '' }],
+                    })}
+                  >
+                    افزودن دکمه
+                  </Button>
+                </div>
+              </div>
             </div>
+
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => navigate('/enroll/admin/webinar')}>
