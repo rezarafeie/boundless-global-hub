@@ -2443,7 +2443,8 @@ function formatWebinarDate(d: string | null): string {
   } catch { return d; }
 }
 
-async function renderWebinar(chat_id: number, message_id: number | null, prefix: string, user: BotUser | null) {
+async function renderWebinar(chat_id: number, message_id: number | null, prefix: string, user: BotUser | null, opts: { hideMenu?: boolean; phone?: string | null } = {}) {
+  const hideMenu = !!opts.hideMenu;
   const w = await findWebinarByPrefix(prefix);
   if (!w) {
     const msg = '❌ وبینار یافت نشد.';
@@ -2452,13 +2453,14 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
     return;
   }
   let alreadyRegistered = false;
-  if (user?.phone) {
-    const normPhone = normalizeIntlPhone(user.phone);
+  const knownPhone = user?.phone || opts.phone || null;
+  if (knownPhone) {
+    const normPhone = normalizeIntlPhone(knownPhone);
     const { data: part } = await supabase
       .from('webinar_participants').select('id').eq('webinar_id', w.id).eq('phone', normPhone).maybeSingle();
     alreadyRegistered = !!part;
     if (!alreadyRegistered) {
-      const variants = Array.from(new Set([normPhone, user.phone, user.phone.replace(/^\+/, '')]));
+      const variants = Array.from(new Set([normPhone, knownPhone, knownPhone.replace(/^\+/, '')]));
       const { data: sig } = await supabase
         .from('webinar_signups').select('id').eq('webinar_id', w.id).in('mobile_number', variants).maybeSingle();
       alreadyRegistered = !!sig;
@@ -2470,13 +2472,11 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
     `🗓 ${escapeHtml(formatWebinarDate(w.start_date))}`,
     w.description ? `\n${escapeHtml(w.description)}` : '',
     '',
-    alreadyRegistered ? '✅ شما قبلاً ثبت‌نام کرده‌اید.' : (user ? 'برای ثبت‌نام دکمه زیر را بزنید.' : '🔐 برای ثبت‌نام ابتدا وارد حساب شوید.'),
+    alreadyRegistered ? '✅ شما قبلاً ثبت‌نام کرده‌اید.' : 'برای ثبت‌نام دکمه زیر را بزنید.',
   ].filter(Boolean).join('\n');
   const kbd: InlineKeyboard = [];
-  if (user && !alreadyRegistered) {
-    kbd.push([{ text: '✅ ثبت‌نام در وبینار', callback_data: `webinar:reg:${prefix}` }]);
-  } else if (!user) {
-    kbd.push([{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }]);
+  if (!alreadyRegistered) {
+    kbd.push([{ text: '✅ ثبت‌نام در وبینار', callback_data: user ? `webinar:reg:${prefix}` : `webinar:greg:${prefix}` }]);
   }
   const supportActivated = alreadyRegistered ? await isWebinarSupportActivated(w.id, chat_id) : false;
   if (alreadyRegistered && !supportActivated) {
@@ -2496,9 +2496,9 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
       'کافیست دکمه زیر را بزنید و در چت پشتیبانی فقط Send / ارسال را بزنید.',
     ].join('\n');
     const only: InlineKeyboard = [
-      [{ text: '🚀 فعال‌سازی پشتیبانی وبینار', url: webinarSupportLink(w, user, chat_id) }],
-      [{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }],
+      [{ text: '🚀 فعال‌سازی پشتیبانی وبینار', url: webinarSupportLink(w, { name: user?.name || '', phone: knownPhone || '' } as any, chat_id) }],
     ];
+    if (!hideMenu) only.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
     if (message_id) await editMessage(chat_id, message_id, fomo, only);
     else await sendMessage(chat_id, fomo, { keyboard: only });
     return;
@@ -2509,7 +2509,7 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
   if (w.telegram_channel_link && alreadyRegistered) {
     kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
   }
-  kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
+  if (!hideMenu) kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
   if (message_id) await editMessage(chat_id, message_id, lines, kbd);
   else await sendMessage(chat_id, lines, { keyboard: kbd });
 }
@@ -2575,10 +2575,15 @@ function normalizeIntlPhone(input: string): string {
   return '+' + p;
 }
 
-async function registerWebinar(chat_id: number, message_id: number, prefix: string, user: BotUser) {
+async function registerWebinar(chat_id: number, message_id: number | null, prefix: string, user: BotUser, opts: { hideMenu?: boolean } = {}) {
+  const hideMenu = !!opts.hideMenu;
+  const out = async (text: string, kbd: InlineKeyboard) => {
+    if (message_id) await editMessage(chat_id, message_id, text, kbd);
+    else await sendMessage(chat_id, text, { keyboard: kbd, removeKeyboard: true });
+  };
   const w = await findWebinarByPrefix(prefix);
-  if (!w) { await editMessage(chat_id, message_id, '❌ وبینار یافت نشد.', [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
-  if (!user.phone) { await editMessage(chat_id, message_id, '❌ شماره موبایل شما ثبت نشده. لطفاً مجدداً وارد شوید.', [[{ text: '🔐 ورود', callback_data: 'login:start' }]]); return; }
+  if (!w) { await out('❌ وبینار یافت نشد.', hideMenu ? [] : [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
+  if (!user.phone) { await out('❌ شماره موبایل شما ثبت نشده. لطفاً مجدداً وارد شوید.', [[{ text: '🔐 ورود', callback_data: 'login:start' }]]); return; }
 
   const normPhone = normalizeIntlPhone(user.phone);
 
@@ -2591,7 +2596,7 @@ async function registerWebinar(chat_id: number, message_id: number, prefix: stri
     );
   if (partErr) {
     console.error('webinar_participants upsert failed:', partErr);
-    await editMessage(chat_id, message_id, `❌ خطا در ثبت‌نام: ${escapeHtml(partErr.message)}`, [[{ text: '🏠', callback_data: 'menu:home' }]]);
+    await out(`❌ خطا در ثبت‌نام: ${escapeHtml(partErr.message)}`, hideMenu ? [] : [[{ text: '🏠', callback_data: 'menu:home' }]]);
     return;
   }
 
@@ -2633,8 +2638,8 @@ async function registerWebinar(chat_id: number, message_id: number, prefix: stri
     if (w.webinar_link) kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
     if (w.telegram_channel_link) kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
   }
-  kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
-  await editMessage(chat_id, message_id,
+  if (!hideMenu) kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
+  await out(
     [
       '✅ <b>ثبت‌نام شما در وبینار ثبت شد</b>',
       '',
@@ -2651,6 +2656,110 @@ async function registerWebinar(chat_id: number, message_id: number, prefix: stri
   );
 
 }
+
+// ===== Guest webinar registration (no bot login required) =====
+async function startWebinarGuest(chat_id: number, prefix: string) {
+  const w = await findWebinarByPrefix(prefix);
+  if (!w) { await sendMessage(chat_id, '❌ وبینار یافت نشد.'); return; }
+  await setSession(chat_id, null, 'awaiting_webinar_phone', { webinar_prefix: prefix });
+  await sendMessage(chat_id,
+    [
+      `🎥 <b>${escapeHtml(w.title)}</b>`,
+      '',
+      '📱 برای ثبت‌نام، شماره موبایل خود را ارسال کنید.',
+      'می‌توانید دکمه <b>📱 ارسال شماره من</b> را بزنید یا شماره را تایپ کنید (مثال: <code>09120000000</code>)',
+    ].join('\n'),
+    { replyKeyboard: [[{ text: '📱 ارسال شماره من', request_contact: true }]], one_time_keyboard: true },
+  );
+}
+
+async function handleWebinarGuestPhone(chat_id: number, rawPhone: string) {
+  const session = await getSession(chat_id);
+  const prefix = String(session?.context?.webinar_prefix ?? '');
+  if (!prefix) { await clearSession(chat_id); return; }
+  const normPhone = normalizeIntlPhone(rawPhone);
+  if (!/^\+\d{8,15}$/.test(normPhone)) {
+    await sendMessage(chat_id, '❌ شماره معتبر نیست. دوباره ارسال کنید (مثال: <code>09120000000</code>)');
+    return;
+  }
+  const phoneLocal = normPhone.startsWith('+98') ? '0' + normPhone.slice(3) : normPhone;
+  const existing = await findChatUserByPhone(phoneLocal.replace(/^0/, ''));
+  if (existing) {
+    // Link telegram to the existing academy account and register right away
+    await supabase.from('chat_users').update({ telegram_chat_id: null }).eq('telegram_chat_id', chat_id);
+    await supabase.from('chat_users')
+      .update({ telegram_chat_id: chat_id, telegram_linked_at: new Date().toISOString() })
+      .eq('id', existing.id);
+    await clearSession(chat_id);
+    await sendMessage(chat_id, '✅ شماره شما تایید شد.', { removeKeyboard: true });
+    const user = (await resolveUser(chat_id)) ?? ({ id: existing.id, name: existing.name, phone: normPhone } as any);
+    await registerWebinar(chat_id, null, prefix, user, { hideMenu: true });
+    return;
+  }
+  await setSession(chat_id, null, 'awaiting_webinar_name', { webinar_prefix: prefix, phone: normPhone, phone_local: phoneLocal });
+  await sendMessage(chat_id, '👤 نام و نام خانوادگی خود را ارسال کنید:', { removeKeyboard: true });
+}
+
+async function handleWebinarGuestName(chat_id: number, text: string) {
+  const session = await getSession(chat_id);
+  const ctx = session?.context ?? {};
+  const prefix = String(ctx.webinar_prefix ?? '');
+  const phone = String(ctx.phone ?? '');
+  if (!prefix || !phone) { await clearSession(chat_id); return; }
+  const name = (text ?? '').trim();
+  if (name.length < 2 || name.length > 80) {
+    await sendMessage(chat_id, '❌ نام معتبر نیست. دوباره ارسال کنید.');
+    return;
+  }
+  await setSession(chat_id, null, 'awaiting_webinar_email', { ...ctx, name });
+  await sendMessage(chat_id, '✉️ ایمیل خود را ارسال کنید (برای ارسال اطلاعات وبینار) یا /skip بزنید.');
+}
+
+async function handleWebinarGuestEmail(chat_id: number, text: string) {
+  const session = await getSession(chat_id);
+  const ctx = session?.context ?? {};
+  const prefix = String(ctx.webinar_prefix ?? '');
+  const phone = String(ctx.phone ?? '');
+  const phoneLocal = String(ctx.phone_local ?? phone);
+  const name = String(ctx.name ?? '');
+  if (!prefix || !phone) { await clearSession(chat_id); return; }
+  const raw = (text ?? '').trim();
+  let email: string | null = null;
+  if (raw !== '/skip') {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw) || raw.length > 255) {
+      await sendMessage(chat_id, '❌ ایمیل معتبر نیست. دوباره ارسال کنید یا /skip بزنید.');
+      return;
+    }
+    email = raw.toLowerCase();
+  }
+
+  const parts = name.split(/\s+/);
+  const firstName = parts[0] ?? name;
+  const lastName = parts.slice(1).join(' ');
+  let botUser: BotUser | null = null;
+  const { data: uidData } = await supabase.rpc('generate_unique_user_id');
+  const { data: ins, error: insErr } = await supabase.from('chat_users').insert({
+    name,
+    phone: phoneLocal,
+    email,
+    first_name: firstName,
+    last_name: lastName,
+    full_name: name,
+    user_id: uidData,
+    country_code: phone.startsWith('+98') ? '+98' : `+${phone.slice(1, 3)}`,
+    signup_source: 'telegram_webinar',
+    is_approved: true,
+    role: 'user',
+    telegram_chat_id: chat_id,
+    telegram_linked_at: new Date().toISOString(),
+  }).select('id').single();
+  if (insErr) console.error('guest chat_users insert failed:', insErr);
+  await clearSession(chat_id);
+  botUser = (await resolveUser(chat_id)) ?? ({ id: ins?.id, name, phone } as any);
+  await registerWebinar(chat_id, null, prefix, botUser as BotUser, { hideMenu: true });
+}
+
+
 
 
 async function salesAdvisorRows(): Promise<InlineKeyboard> {
@@ -3134,13 +3243,15 @@ async function handleUpdate(update: any) {
       await renderWebinar(chat_id, message_id, prefix, userEarly);
       return;
     }
+    if (data.startsWith('webinar:greg:')) {
+      const prefix = data.split(':')[2];
+      if (userEarly) { await registerWebinar(chat_id, message_id, prefix, userEarly, { hideMenu: true }); return; }
+      await startWebinarGuest(chat_id, prefix);
+      return;
+    }
     if (data.startsWith('webinar:reg:')) {
       const prefix = data.split(':')[2];
-      if (!userEarly) {
-        await editMessage(chat_id, message_id, '🔐 برای ثبت‌نام ابتدا وارد حساب شوید.',
-          [[{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }], [{ text: '🏠', callback_data: 'menu:home' }]]);
-        return;
-      }
+      if (!userEarly) { await startWebinarGuest(chat_id, prefix); return; }
       await registerWebinar(chat_id, message_id, prefix, userEarly);
       return;
     }
@@ -3502,8 +3613,25 @@ async function handleUpdate(update: any) {
   // ===== Webinar registration deep-link: /start webinar_<id-prefix> =====
   if (startPayload?.startsWith('webinar_')) {
     const wPrefix = startPayload.slice('webinar_'.length);
-    await renderWebinar(chat_id, null, wPrefix, user);
+    if (!user) { await startWebinarGuest(chat_id, wPrefix); return; }
+    await renderWebinar(chat_id, null, wPrefix, user, { hideMenu: true });
     return;
+  }
+
+  // ===== Guest webinar registration states (work without bot login) =====
+  {
+    const gs = await getSession(chat_id);
+    if (gs?.state?.startsWith('awaiting_webinar_') && text === '/cancel') {
+      await clearSession(chat_id);
+      await sendMessage(chat_id, '✅ لغو شد.', { removeKeyboard: true });
+      return;
+    }
+    if (gs?.state === 'awaiting_webinar_phone' && (msg?.contact?.phone_number || text)) {
+      await handleWebinarGuestPhone(chat_id, String(msg?.contact?.phone_number ?? text));
+      return;
+    }
+    if (gs?.state === 'awaiting_webinar_name' && text) { await handleWebinarGuestName(chat_id, text); return; }
+    if (gs?.state === 'awaiting_webinar_email' && text) { await handleWebinarGuestEmail(chat_id, text); return; }
   }
 
   // ===== Website login deep-link: /start login_<token> =====
