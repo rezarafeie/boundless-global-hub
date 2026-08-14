@@ -67,7 +67,11 @@ const WebinarEdit: React.FC = () => {
         login_method: (data as any).login_method || 'redirect',
         telegram_support_username: (data as any).telegram_support_username || '',
         telegram_support_prefilled_message: (data as any).telegram_support_prefilled_message || '',
-        telegram_support_activated_message: (data as any).telegram_support_activated_message || ''
+        telegram_support_activated_message: (data as any).telegram_support_activated_message || '',
+        telegram_support_activation_buttons: Array.isArray((data as any).telegram_support_activation_buttons)
+          ? (data as any).telegram_support_activation_buttons
+          : []
+
       });
 
     } catch (error) {
