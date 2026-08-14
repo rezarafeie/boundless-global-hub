@@ -66,9 +66,34 @@ const WebinarManagement: React.FC = () => {
     host_name: ''
   });
 
+  const [botUsername, setBotUsername] = useState<string>('rafiei_bot');
+
   useEffect(() => {
     fetchWebinars();
+    (async () => {
+      const { data } = await supabase
+        .from('admin_settings')
+        .select('telegram_bot_username')
+        .limit(1)
+        .maybeSingle();
+      const u = (data as any)?.telegram_bot_username;
+      if (u) setBotUsername(String(u).replace(/^@/, ''));
+    })();
   }, []);
+
+  const botDeepLink = (webinarId: string) =>
+    `https://t.me/${botUsername}?start=webinar_${webinarId.slice(0, 8)}`;
+
+  const copyBotLink = async (webinarId: string) => {
+    const link = botDeepLink(webinarId);
+    try {
+      await navigator.clipboard.writeText(link);
+      toast({ title: 'کپی شد', description: link });
+    } catch {
+      window.prompt('لینک ربات:', link);
+    }
+  };
+
 
   const openRegistrationsModal = async (webinarId: string, webinarTitle: string) => {
     setSelectedWebinarTitle(webinarTitle);
