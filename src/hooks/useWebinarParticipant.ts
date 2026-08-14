@@ -123,7 +123,8 @@ export const useWebinarParticipant = (webinarId: string | undefined) => {
     };
 
     loadParticipant();
-  }, [webinarId]);
+  }, [webinarId, joinWebinar]);
+
 
   return { participant, loading, joinWebinar, getStoredPhone };
 };
