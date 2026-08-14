@@ -111,7 +111,10 @@ const WebinarEdit: React.FC = () => {
         login_method: formData.login_method,
         telegram_support_username: formData.telegram_support_username.trim().replace(/^@/, '') || null,
         telegram_support_prefilled_message: formData.telegram_support_prefilled_message || null,
-        telegram_support_activated_message: formData.telegram_support_activated_message || null
+        telegram_support_activated_message: formData.telegram_support_activated_message || null,
+        telegram_support_activation_buttons: (formData.telegram_support_activation_buttons || [])
+          .filter((b) => b?.text?.trim() && b?.url?.trim())
+
       } as any;
 
 
