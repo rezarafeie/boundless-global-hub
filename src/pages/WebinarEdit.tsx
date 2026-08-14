@@ -29,8 +29,12 @@ const WebinarEdit: React.FC = () => {
     telegram_channel_link: '',
     iframe_embed_code: '',
     host_name: '',
-    login_method: 'redirect'
+    login_method: 'redirect',
+    telegram_support_username: '',
+    telegram_support_prefilled_message: '',
+    telegram_support_activated_message: ''
   });
+
 
   useEffect(() => {
     if (webinarId) fetchWebinar();
