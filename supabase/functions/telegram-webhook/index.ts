@@ -2575,10 +2575,15 @@ function normalizeIntlPhone(input: string): string {
   return '+' + p;
 }
 
-async function registerWebinar(chat_id: number, message_id: number, prefix: string, user: BotUser) {
+async function registerWebinar(chat_id: number, message_id: number | null, prefix: string, user: BotUser, opts: { hideMenu?: boolean } = {}) {
+  const hideMenu = !!opts.hideMenu;
+  const out = async (text: string, kbd: InlineKeyboard) => {
+    if (message_id) await editMessage(chat_id, message_id, text, kbd);
+    else await sendMessage(chat_id, text, { keyboard: kbd, removeKeyboard: true });
+  };
   const w = await findWebinarByPrefix(prefix);
-  if (!w) { await editMessage(chat_id, message_id, '❌ وبینار یافت نشد.', [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
-  if (!user.phone) { await editMessage(chat_id, message_id, '❌ شماره موبایل شما ثبت نشده. لطفاً مجدداً وارد شوید.', [[{ text: '🔐 ورود', callback_data: 'login:start' }]]); return; }
+  if (!w) { await out('❌ وبینار یافت نشد.', hideMenu ? [] : [[{ text: '🏠', callback_data: 'menu:home' }]]); return; }
+  if (!user.phone) { await out('❌ شماره موبایل شما ثبت نشده. لطفاً مجدداً وارد شوید.', [[{ text: '🔐 ورود', callback_data: 'login:start' }]]); return; }
 
   const normPhone = normalizeIntlPhone(user.phone);
 
