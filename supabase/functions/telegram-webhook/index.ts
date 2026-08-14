@@ -1095,6 +1095,39 @@ async function wrapWithSso(
   }
 }
 
+/**
+ * Build a one-click webinar auto-login link for a telegram user.
+ * Creates a `webinar_login_tokens` row so the site can log the user into the
+ * webinar (and register them as a participant) without asking name/phone.
+ */
+async function buildWebinarLoginUrl(
+  w: any,
+  targetChat: number | null,
+  targetUser: { name?: string | null; phone?: string | null } | null,
+): Promise<string | null> {
+  try {
+    const phone = (targetUser?.phone || '').trim();
+    if (!w?.slug || !phone) return null;
+    const token = `wl_${crypto.randomUUID().replace(/-/g, '')}`;
+    const { error } = await supabase.from('webinar_login_tokens').insert({
+      token,
+      webinar_id: w.id,
+      phone,
+      display_name: targetUser?.name || null,
+      telegram_chat_id: targetChat ?? null,
+    });
+    if (error) {
+      console.warn('webinar login token insert failed', error);
+      return null;
+    }
+    return `${ACADEMY_BASE}/webinar/${w.slug}/live?wl=${token}`;
+  } catch (e) {
+    console.warn('buildWebinarLoginUrl failed', e);
+    return null;
+  }
+}
+
+
 
 function normalizePhoneIR(input: string): { local: string; formatted: string } | null {
   // local: 9XXXXXXXXX (no leading 0)  formatted: +989XXXXXXXXX
@@ -3637,8 +3670,16 @@ async function handleUpdate(update: any) {
         ? ((w as any).telegram_support_activation_buttons as any[])
         : [];
       for (const b of customWButtons) {
-        if (b?.text && b?.url) wButtons.push([{ text: String(b.text), url: String(b.url) }]);
+        if (!b?.text) continue;
+        // Special button type: auto-login into the webinar (no name/phone needed)
+        if (b?.type === 'webinar_login' || String(b?.url || '').trim() === 'webinar_login') {
+          const loginUrl = await buildWebinarLoginUrl(w, targetChat, targetUser);
+          if (loginUrl) wButtons.push([{ text: String(b.text), url: loginUrl }]);
+          continue;
+        }
+        if (b?.url) wButtons.push([{ text: String(b.text), url: String(b.url) }]);
       }
+
 
 
       // Reply in the chat the message came from (business chat / support group)

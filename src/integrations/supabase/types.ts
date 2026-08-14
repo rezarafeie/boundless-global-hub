@@ -6866,6 +6866,53 @@ export type Database = {
           },
         ]
       }
+      webinar_login_tokens: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          expires_at: string
+          id: string
+          phone: string
+          telegram_chat_id: number | null
+          token: string
+          updated_at: string
+          used_count: number
+          webinar_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          expires_at?: string
+          id?: string
+          phone: string
+          telegram_chat_id?: number | null
+          token: string
+          updated_at?: string
+          used_count?: number
+          webinar_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          expires_at?: string
+          id?: string
+          phone?: string
+          telegram_chat_id?: number | null
+          token?: string
+          updated_at?: string
+          used_count?: number
+          webinar_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_login_tokens_webinar_id_fkey"
+            columns: ["webinar_id"]
+            isOneToOne: false
+            referencedRelation: "webinar_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webinar_messages: {
         Row: {
           created_at: string
