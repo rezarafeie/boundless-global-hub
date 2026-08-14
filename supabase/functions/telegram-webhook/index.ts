@@ -3527,7 +3527,58 @@ async function handleUpdate(update: any) {
     return;
   }
 
+  // ===== Auto-detect webinar support-activation message (Telegram Business / support chat) =====
+  if (text) {
+    const wMatch = text.match(/کد\s*فعال[‌\s]*سازی\s*وبینار\s*[:：]\s*([a-f0-9]{8})-(\d{5,})/i);
+    if (wMatch) {
+      const wPrefixRaw = wMatch[1].toLowerCase();
+      const targetChat = Number(wMatch[2]);
+      const { data: allW } = await supabase.from('webinar_entries').select('id, title, start_date, webinar_link, telegram_channel_link').limit(500);
+      const w = (allW ?? []).find((x: any) => String(x.id).replace(/-/g, '').startsWith(wPrefixRaw));
+      const confirm = w
+        ? [
+            '✅ <b>پشتیبانی وبینار شما فعال شد</b>',
+            '',
+            `🎥 ${escapeHtml(w.title)}`,
+            `🗓 ${escapeHtml(formatWebinarDate(w.start_date))}`,
+            '',
+            'از این پس می‌توانید سوالات خود را همینجا مطرح کنید.',
+            'تیم پشتیبانی آکادمی رفیعی 🌱',
+          ].join('\n')
+        : '✅ پشتیبانی وبینار شما فعال شد. تیم پشتیبانی آکادمی رفیعی 🌱';
+      const wButtons: { text: string; url: string }[][] = [];
+      if (w?.webinar_link) wButtons.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
+      if (w?.telegram_channel_link) wButtons.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
+
+      // Reply in the chat the message came from (business chat / support group)
+      try {
+        await tgCall('sendMessage', {
+          chat_id,
+          text: confirm,
+          parse_mode: 'HTML',
+          reply_to_message_id: msg.message_id,
+          reply_markup: wButtons.length ? { inline_keyboard: wButtons } : undefined,
+          ...(business_connection_id ? { business_connection_id } : {}),
+        });
+      } catch (e) { console.warn('webinar support confirm reply failed', e); }
+
+      // Also confirm in the user's private chat with the bot
+      if (targetChat && targetChat !== chat_id) {
+        try {
+          await tgCall('sendMessage', {
+            chat_id: targetChat,
+            text: confirm,
+            parse_mode: 'HTML',
+            reply_markup: wButtons.length ? { inline_keyboard: wButtons } : undefined,
+          });
+        } catch (e) { console.warn('webinar support confirm DM failed', e); }
+      }
+      return;
+    }
+  }
+
   // ===== Auto-detect support-activation message anywhere (e.g. support group where bot is a member) =====
+
   if (text) {
     const tokenMatch = text.match(/(?:کد\s*فعال[‌\s]*سازی|activation[_\s-]*token|activation[_\s-]*code)\s*[:：]\s*([a-f0-9]{16,64})/i);
     if (tokenMatch) {
