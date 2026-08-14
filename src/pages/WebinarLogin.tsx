@@ -48,6 +48,21 @@ const WebinarLogin: React.FC = () => {
     if (slug) fetchWebinar();
   }, [slug]);
 
+  // One-click auto-login coming from Telegram (?wl=TOKEN)
+  useEffect(() => {
+    const wl = getWlTokenFromUrl();
+    if (!wl) return;
+    let cancelled = false;
+    (async () => {
+      const res = await consumeWebinarLoginToken(wl);
+      clearWlFromUrl();
+      if (cancelled || !res) return;
+      window.location.href = `/webinar/${res.slug || slug}/live`;
+    })();
+    return () => { cancelled = true; };
+  }, [slug]);
+
+
   // Check if already logged in for interactive mode - verify participant exists in DB
   useEffect(() => {
     const checkExistingSession = async () => {
