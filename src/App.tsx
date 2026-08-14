@@ -149,6 +149,7 @@ import WebinarWatch from "./pages/WebinarWatch";
 import WebinarHostPanel from "./pages/WebinarHostPanel";
 import WebinarEdit from "./pages/WebinarEdit";
 import WebinarFollowups from './pages/WebinarFollowups';
+import WebinarAnalytics from './pages/WebinarAnalytics';
 
 // User Management components
 import UsersOverview from "./pages/UsersOverview";
