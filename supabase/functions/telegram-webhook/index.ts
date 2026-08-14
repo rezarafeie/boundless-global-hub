@@ -2445,8 +2445,30 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
   } else if (!user) {
     kbd.push([{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }]);
   }
-  if (alreadyRegistered) {
-    kbd.push([{ text: '🚀 فعال‌سازی پشتیبانی وبینار', url: webinarSupportLink(w, user, chat_id) }]);
+  const supportActivated = alreadyRegistered ? await isWebinarSupportActivated(w.id, chat_id) : false;
+  if (alreadyRegistered && !supportActivated) {
+    // FOMO-focused single CTA — hide every other link until support is activated.
+    const fomo = [
+      `🎥 <b>${escapeHtml(w.title)}</b>`,
+      `🗓 ${escapeHtml(formatWebinarDate(w.start_date))}`,
+      '',
+      '✅ ثبت‌نام شما ثبت شد، اما هنوز <b>کامل نیست</b>.',
+      '',
+      '🔴 <b>بدون فعال‌سازی پشتیبانی:</b>',
+      '• لینک ورود به وبینار برای شما ارسال نمی‌شود',
+      '• به کانال و منابع وبینار دسترسی ندارید',
+      '• یادآوری قبل از شروع دریافت نمی‌کنید',
+      '',
+      '⏳ ظرفیت پشتیبانی محدود است — همین حالا فعال کنید.',
+      'کافیست دکمه زیر را بزنید و در چت پشتیبانی فقط Send / ارسال را بزنید.',
+    ].join('\n');
+    const only: InlineKeyboard = [
+      [{ text: '🚀 فعال‌سازی پشتیبانی وبینار', url: webinarSupportLink(w, user, chat_id) }],
+      [{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }],
+    ];
+    if (message_id) await editMessage(chat_id, message_id, fomo, only);
+    else await sendMessage(chat_id, fomo, { keyboard: only });
+    return;
   }
   if (w.webinar_link && (alreadyRegistered || (w.status === 'live'))) {
     kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
@@ -2458,6 +2480,17 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
   if (message_id) await editMessage(chat_id, message_id, lines, kbd);
   else await sendMessage(chat_id, lines, { keyboard: kbd });
 }
+
+async function isWebinarSupportActivated(webinar_id: string, chat_id: number): Promise<boolean> {
+  const { data } = await supabase
+    .from('webinar_support_activations')
+    .select('status')
+    .eq('webinar_id', webinar_id)
+    .eq('telegram_chat_id', chat_id)
+    .maybeSingle();
+  return (data as any)?.status === 'activated';
+}
+
 
 // ===== Webinar support activation (Telegram Business prefilled message) =====
 function webinarSupportToken(webinarId: string, chat_id: number): string {
