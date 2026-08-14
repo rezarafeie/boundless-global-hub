@@ -47,9 +47,11 @@ const WebinarWatch: React.FC = () => {
 
   useEffect(() => {
     if (!loading && !participantLoading && webinar && !participant) {
-      navigate(`/webinar/${slug}/login?redirect=live`, { replace: true });
+      const wl = new URLSearchParams(window.location.search).get('wl');
+      navigate(`/webinar/${slug}/login?redirect=live${wl ? `&wl=${encodeURIComponent(wl)}` : ''}`, { replace: true });
     }
   }, [loading, participantLoading, webinar, participant, slug, navigate]);
+
 
   const fetchWebinar = async () => {
     try {
