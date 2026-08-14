@@ -61,11 +61,42 @@ export const useWebinarParticipant = (webinarId: string | undefined) => {
         return;
       }
 
+      // Auto-login via one-click token (?wl=...) coming from Telegram buttons
+      const url = new URL(window.location.href);
+      const wlToken = url.searchParams.get('wl');
+      if (wlToken) {
+        try {
+          const { data: tok } = await supabase
+            .from('webinar_login_tokens')
+            .select('*')
+            .eq('token', wlToken)
+            .eq('webinar_id', webinarId)
+            .maybeSingle();
+
+          if (tok) {
+            const joined = await joinWebinar(tok.phone, tok.display_name || undefined);
+            await supabase
+              .from('webinar_login_tokens')
+              .update({ used_count: (tok.used_count || 0) + 1 })
+              .eq('id', tok.id);
+            url.searchParams.delete('wl');
+            window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+            if (joined) {
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (err) {
+          console.error('Webinar auto-login failed:', err);
+        }
+      }
+
       const phone = localStorage.getItem(`webinar_phone_${webinarId}`);
       if (!phone) {
         setLoading(false);
         return;
       }
+
 
       try {
         const { data, error } = await supabase
