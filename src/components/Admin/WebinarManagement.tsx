@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Calendar, Plus, Edit, Trash2, Users, Download, ExternalLink, Radio, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +21,7 @@ interface Webinar {
   webinar_link: string;
   description: string | null;
   telegram_channel_link: string | null;
+  telegram_bot_enabled?: boolean;
   created_at: string;
 }
 
@@ -250,6 +252,24 @@ const WebinarManagement: React.FC = () => {
 
   const handleEdit = (webinar: Webinar) => {
     navigate(`/enroll/admin/webinar/${webinar.id}/edit`);
+  };
+
+  const toggleTelegramBot = async (webinarId: string, enabled: boolean) => {
+    setWebinars((prev) => prev.map((w) => (w.id === webinarId ? { ...w, telegram_bot_enabled: enabled } : w)));
+    const { error } = await supabase
+      .from('webinar_entries')
+      .update({ telegram_bot_enabled: enabled } as any)
+      .eq('id', webinarId);
+    if (error) {
+      console.error('Error toggling telegram bot registration:', error);
+      setWebinars((prev) => prev.map((w) => (w.id === webinarId ? { ...w, telegram_bot_enabled: !enabled } : w)));
+      toast({ title: 'خطا', description: 'خطا در تغییر وضعیت ثبت‌نام تلگرام', variant: 'destructive' });
+      return;
+    }
+    toast({
+      title: 'موفقیت',
+      description: enabled ? 'ثبت‌نام در ربات تلگرام فعال شد' : 'ثبت‌نام در ربات تلگرام غیرفعال شد',
+    });
   };
 
   const handleDelete = async (webinarId: string) => {
@@ -491,6 +511,7 @@ const WebinarManagement: React.FC = () => {
                     <TableHead>عنوان</TableHead>
                     <TableHead>تاریخ شروع</TableHead>
                     <TableHead>وضعیت</TableHead>
+                    <TableHead className="text-center">ثبت‌نام در ربات تلگرام</TableHead>
                     <TableHead>لینک عمومی</TableHead>
                     <TableHead className="text-center">تعداد ثبت‌نام</TableHead>
                     <TableHead className="text-center">آمار</TableHead>
@@ -507,6 +528,18 @@ const WebinarManagement: React.FC = () => {
                         <TableCell>
                           <Badge variant={status.variant}>{status.label}</Badge>
                         </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Switch
+                              checked={!!webinar.telegram_bot_enabled}
+                              onCheckedChange={(v) => toggleTelegramBot(webinar.id, v)}
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              {webinar.telegram_bot_enabled ? 'فعال' : 'غیرفعال'}
+                            </span>
+                          </div>
+                        </TableCell>
+
                         <TableCell>
                           <Button 
                             variant="ghost" 

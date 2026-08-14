@@ -2380,8 +2380,9 @@ async function streamSalesAiToTelegram(chat_id: number, messages: AiMsg[], model
 async function getActiveWebinars() {
   const { data } = await supabase
     .from('webinar_entries')
-    .select('id, title, slug, start_date, status')
+    .select('id, title, slug, start_date, status, telegram_bot_enabled')
     .neq('status', 'ended')
+    .eq('telegram_bot_enabled', true)
     .order('start_date', { ascending: true, nullsFirst: false })
     .limit(10);
   const now = Date.now();
@@ -2390,7 +2391,10 @@ async function getActiveWebinars() {
 
 async function webinarsKeyboardRows(): Promise<InlineKeyboard> {
   const webinars = await getActiveWebinars();
-  return webinars.map((w: any) => [{ text: `🎥 ${w.title}`, callback_data: `webinar:view:${w.id.slice(0, 8)}` }]);
+  return webinars.map((w: any) => [{
+    text: `🟢🔴 ${w.status === 'live' ? 'پخش زنده' : 'ثبت‌نام وبینار'}: ${w.title}`,
+    callback_data: `webinar:view:${w.id.slice(0, 8)}`,
+  }]);
 }
 
 async function findWebinarByPrefix(prefix: string) {
@@ -2528,7 +2532,7 @@ async function buildStartKeyboard(user: BotUser | null): Promise<InlineKeyboard>
     aiKeyboardRows(authed),
     authed ? mainMenu(user) : Promise.resolve(loginMenu()),
   ]);
-  return twoColumnKeyboard([...salesRows, ...aiRows, ...webinarRows, ...formRows, ...base]);
+  return [...webinarRows, ...twoColumnKeyboard([...salesRows, ...aiRows, ...formRows, ...base])];
 }
 
 async function findFormByPrefix(prefix: string) {

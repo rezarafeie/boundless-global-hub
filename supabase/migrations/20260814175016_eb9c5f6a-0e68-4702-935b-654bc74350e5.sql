@@ -1,0 +1,1 @@
+ALTER TABLE public.webinar_entries ADD COLUMN IF NOT EXISTS telegram_bot_enabled boolean NOT NULL DEFAULT false;
