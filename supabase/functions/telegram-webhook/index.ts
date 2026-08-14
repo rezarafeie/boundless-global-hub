@@ -3547,19 +3547,24 @@ async function handleUpdate(update: any) {
     if (wMatch) {
       const wPrefixRaw = wMatch[1].toLowerCase();
       const targetChat = Number(wMatch[2]);
-      const { data: allW } = await supabase.from('webinar_entries').select('id, title, start_date, webinar_link, telegram_channel_link').limit(500);
+      const { data: allW } = await supabase.from('webinar_entries').select('*').limit(500);
       const w = (allW ?? []).find((x: any) => String(x.id).replace(/-/g, '').startsWith(wPrefixRaw));
-      const confirm = w
-        ? [
-            '✅ <b>پشتیبانی وبینار شما فعال شد</b>',
-            '',
-            `🎥 ${escapeHtml(w.title)}`,
-            `🗓 ${escapeHtml(formatWebinarDate(w.start_date))}`,
-            '',
-            'از این پس می‌توانید سوالات خود را همینجا مطرح کنید.',
-            'تیم پشتیبانی آکادمی رفیعی 🌱',
-          ].join('\n')
-        : '✅ پشتیبانی وبینار شما فعال شد. تیم پشتیبانی آکادمی رفیعی 🌱';
+      const defaultConfirmTpl = [
+        '✅ پشتیبانی وبینار شما فعال شد',
+        '',
+        '🎥 {webinar_title}',
+        '🗓 {date}',
+        '',
+        'از این پس می‌توانید سوالات خود را همینجا مطرح کنید.',
+        'تیم پشتیبانی آکادمی رفیعی 🌱',
+      ].join('\n');
+      let targetUser: BotUser | null = null;
+      try { targetUser = await resolveUser(targetChat); } catch { /* ignore */ }
+      const confirmTpl = ((w as any)?.telegram_support_activated_message as string | null)?.trim() || defaultConfirmTpl;
+      const confirm = escapeHtml(
+        applyWebinarVars(confirmTpl, w, { name: targetUser?.name || '', phone: targetUser?.phone || '' }),
+      ).replace(/^(.*)$/m, '<b>$1</b>');
+
       const wButtons: { text: string; url: string }[][] = [];
       if (w?.webinar_link) wButtons.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
       if (w?.telegram_channel_link) wButtons.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
