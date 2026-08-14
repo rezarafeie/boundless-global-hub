@@ -6594,6 +6594,7 @@ export type Database = {
           slug: string
           start_date: string
           status: string
+          telegram_bot_enabled: boolean
           telegram_channel_link: string | null
           title: string
           updated_at: string
@@ -6613,6 +6614,7 @@ export type Database = {
           slug: string
           start_date: string
           status?: string
+          telegram_bot_enabled?: boolean
           telegram_channel_link?: string | null
           title: string
           updated_at?: string
@@ -6632,6 +6634,7 @@ export type Database = {
           slug?: string
           start_date?: string
           status?: string
+          telegram_bot_enabled?: boolean
           telegram_channel_link?: string | null
           title?: string
           updated_at?: string
