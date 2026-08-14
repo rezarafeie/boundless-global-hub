@@ -2464,25 +2464,39 @@ function webinarSupportToken(webinarId: string, chat_id: number): string {
   return `${webinarId.replace(/-/g, '').slice(0, 8)}-${chat_id}`;
 }
 
+function applyWebinarVars(tpl: string, w: any, vars: { name?: string; phone?: string; token?: string }): string {
+  return tpl
+    .replace(/\{name\}|\{\{name\}\}/g, vars.name || '-')
+    .replace(/\{phone\}|\{\{phone\}\}/g, vars.phone || '-')
+    .replace(/\{webinar_title\}|\{\{webinar_title\}\}/g, w?.title || '')
+    .replace(/\{date\}|\{\{date\}\}/g, formatWebinarDate(w?.start_date ?? null))
+    .replace(/\{token\}|\{\{token\}\}/g, vars.token || '');
+}
+
 function webinarSupportLink(w: any, user: BotUser | null, chat_id: number): string {
   const token = webinarSupportToken(w.id, chat_id);
-  const raw = [
+  const defaultTpl = [
     '🌟 فعال‌سازی پشتیبانی وبینار 🌟',
     '',
     'درود و وقت بخیر 🌱',
-    `برای فعال‌سازی پشتیبانی وبینار «${w.title}» در خدمتتون هستم 🙌`,
+    'برای فعال‌سازی پشتیبانی وبینار «{webinar_title}» در خدمتتون هستم 🙌',
     '',
     '━━━━━━━━━━━━━━━',
-    `👤 نام: ${user?.name || '-'}`,
-    `📱 موبایل: ${user?.phone || '-'}`,
+    '👤 نام: {name}',
+    '📱 موبایل: {phone}',
     '━━━━━━━━━━━━━━━',
     '',
-    `🔑 کد فعال‌سازی وبینار: ${token}`,
+    '🔑 کد فعال‌سازی وبینار: {token}',
     '',
     '🙏 ممنون از همراهی شما',
   ].join('\n');
-  return `https://telegram.me/rafieiacademy?text=${encodeURIComponent(raw)}`;
+  const tpl = (w?.telegram_support_prefilled_message as string | null)?.trim() || defaultTpl;
+  let raw = applyWebinarVars(tpl, w, { name: user?.name || '', phone: user?.phone || '', token });
+  if (!raw.includes(token)) raw += `\n\n🔑 کد فعال‌سازی وبینار: ${token}`;
+  const username = String(w?.telegram_support_username || 'rafieiacademy').replace(/^@/, '');
+  return `https://telegram.me/${username}?text=${encodeURIComponent(raw)}`;
 }
+
 
 
 function normalizeIntlPhone(input: string): string {
