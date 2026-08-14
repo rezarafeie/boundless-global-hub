@@ -2496,9 +2496,9 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
       'کافیست دکمه زیر را بزنید و در چت پشتیبانی فقط Send / ارسال را بزنید.',
     ].join('\n');
     const only: InlineKeyboard = [
-      [{ text: '🚀 فعال‌سازی پشتیبانی وبینار', url: webinarSupportLink(w, user, chat_id) }],
-      [{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }],
+      [{ text: '🚀 فعال‌سازی پشتیبانی وبینار', url: webinarSupportLink(w, { name: user?.name || '', phone: knownPhone || '' } as any, chat_id) }],
     ];
+    if (!hideMenu) only.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
     if (message_id) await editMessage(chat_id, message_id, fomo, only);
     else await sendMessage(chat_id, fomo, { keyboard: only });
     return;
@@ -2509,7 +2509,7 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
   if (w.telegram_channel_link && alreadyRegistered) {
     kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
   }
-  kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
+  if (!hideMenu) kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
   if (message_id) await editMessage(chat_id, message_id, lines, kbd);
   else await sendMessage(chat_id, lines, { keyboard: kbd });
 }
