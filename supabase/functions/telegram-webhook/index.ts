@@ -2445,6 +2445,9 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
   } else if (!user) {
     kbd.push([{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }]);
   }
+  if (alreadyRegistered) {
+    kbd.push([{ text: '🚀 فعال‌سازی پشتیبانی وبینار', url: webinarSupportLink(w, user, chat_id) }]);
+  }
   if (w.webinar_link && (alreadyRegistered || (w.status === 'live'))) {
     kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
   }
@@ -2455,6 +2458,32 @@ async function renderWebinar(chat_id: number, message_id: number | null, prefix:
   if (message_id) await editMessage(chat_id, message_id, lines, kbd);
   else await sendMessage(chat_id, lines, { keyboard: kbd });
 }
+
+// ===== Webinar support activation (Telegram Business prefilled message) =====
+function webinarSupportToken(webinarId: string, chat_id: number): string {
+  return `${webinarId.replace(/-/g, '').slice(0, 8)}-${chat_id}`;
+}
+
+function webinarSupportLink(w: any, user: BotUser | null, chat_id: number): string {
+  const token = webinarSupportToken(w.id, chat_id);
+  const raw = [
+    '🌟 فعال‌سازی پشتیبانی وبینار 🌟',
+    '',
+    'درود و وقت بخیر 🌱',
+    `برای فعال‌سازی پشتیبانی وبینار «${w.title}» در خدمتتون هستم 🙌`,
+    '',
+    '━━━━━━━━━━━━━━━',
+    `👤 نام: ${user?.name || '-'}`,
+    `📱 موبایل: ${user?.phone || '-'}`,
+    '━━━━━━━━━━━━━━━',
+    '',
+    `🔑 کد فعال‌سازی وبینار: ${token}`,
+    '',
+    '🙏 ممنون از همراهی شما',
+  ].join('\n');
+  return `https://telegram.me/rafieiacademy?text=${encodeURIComponent(raw)}`;
+}
+
 
 function normalizeIntlPhone(input: string): string {
   let p = (input || '').replace(/[^\d+]/g, '');
@@ -2507,14 +2536,24 @@ async function registerWebinar(chat_id: number, message_id: number, prefix: stri
   }
 
   const kbd: InlineKeyboard = [];
+  kbd.push([{ text: '🚀 فعال‌سازی پشتیبانی وبینار', url: webinarSupportLink(w, user, chat_id) }]);
   if (w.webinar_link) kbd.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
   if (w.telegram_channel_link) kbd.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
   kbd.push([{ text: '🏠 منوی اصلی', callback_data: 'menu:home' }]);
   await editMessage(chat_id, message_id,
-    `✅ <b>ثبت‌نام شما در وبینار انجام شد</b>\n\n🎥 ${escapeHtml(w.title)}\n🗓 ${escapeHtml(formatWebinarDate(w.start_date))}`,
+    [
+      '✅ <b>ثبت‌نام شما در وبینار با موفقیت انجام شد</b>',
+      '',
+      `🎥 ${escapeHtml(w.title)}`,
+      `🗓 ${escapeHtml(formatWebinarDate(w.start_date))}`,
+      '',
+      '🎯 برای فعال‌سازی پشتیبانی وبینار، روی دکمه زیر بزنید.',
+      'بعد از باز شدن چت پشتیبانی، فقط دکمه ارسال (Send) را بزنید تا پیام آماده ارسال شود.',
+    ].join('\n'),
     kbd,
   );
 }
+
 
 async function salesAdvisorRows(): Promise<InlineKeyboard> {
   const s = await getSalesSettings();
@@ -3488,7 +3527,58 @@ async function handleUpdate(update: any) {
     return;
   }
 
+  // ===== Auto-detect webinar support-activation message (Telegram Business / support chat) =====
+  if (text) {
+    const wMatch = text.match(/کد\s*فعال[‌\s]*سازی\s*وبینار\s*[:：]\s*([a-f0-9]{8})-(\d{5,})/i);
+    if (wMatch) {
+      const wPrefixRaw = wMatch[1].toLowerCase();
+      const targetChat = Number(wMatch[2]);
+      const { data: allW } = await supabase.from('webinar_entries').select('id, title, start_date, webinar_link, telegram_channel_link').limit(500);
+      const w = (allW ?? []).find((x: any) => String(x.id).replace(/-/g, '').startsWith(wPrefixRaw));
+      const confirm = w
+        ? [
+            '✅ <b>پشتیبانی وبینار شما فعال شد</b>',
+            '',
+            `🎥 ${escapeHtml(w.title)}`,
+            `🗓 ${escapeHtml(formatWebinarDate(w.start_date))}`,
+            '',
+            'از این پس می‌توانید سوالات خود را همینجا مطرح کنید.',
+            'تیم پشتیبانی آکادمی رفیعی 🌱',
+          ].join('\n')
+        : '✅ پشتیبانی وبینار شما فعال شد. تیم پشتیبانی آکادمی رفیعی 🌱';
+      const wButtons: { text: string; url: string }[][] = [];
+      if (w?.webinar_link) wButtons.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
+      if (w?.telegram_channel_link) wButtons.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
+
+      // Reply in the chat the message came from (business chat / support group)
+      try {
+        await tgCall('sendMessage', {
+          chat_id,
+          text: confirm,
+          parse_mode: 'HTML',
+          reply_to_message_id: msg.message_id,
+          reply_markup: wButtons.length ? { inline_keyboard: wButtons } : undefined,
+          ...(business_connection_id ? { business_connection_id } : {}),
+        });
+      } catch (e) { console.warn('webinar support confirm reply failed', e); }
+
+      // Also confirm in the user's private chat with the bot
+      if (targetChat && targetChat !== chat_id) {
+        try {
+          await tgCall('sendMessage', {
+            chat_id: targetChat,
+            text: confirm,
+            parse_mode: 'HTML',
+            reply_markup: wButtons.length ? { inline_keyboard: wButtons } : undefined,
+          });
+        } catch (e) { console.warn('webinar support confirm DM failed', e); }
+      }
+      return;
+    }
+  }
+
   // ===== Auto-detect support-activation message anywhere (e.g. support group where bot is a member) =====
+
   if (text) {
     const tokenMatch = text.match(/(?:کد\s*فعال[‌\s]*سازی|activation[_\s-]*token|activation[_\s-]*code)\s*[:：]\s*([a-f0-9]{16,64})/i);
     if (tokenMatch) {
