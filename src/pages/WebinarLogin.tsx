@@ -8,6 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { enhancedWebhookManager } from '@/lib/enhancedWebhookManager';
+import { consumeWebinarLoginToken, getWlTokenFromUrl, clearWlFromUrl } from '@/lib/webinarAutoLogin';
+
 
 interface Webinar {
   id: string;
