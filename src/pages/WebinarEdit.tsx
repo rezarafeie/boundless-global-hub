@@ -62,8 +62,12 @@ const WebinarEdit: React.FC = () => {
         telegram_channel_link: data.telegram_channel_link || '',
         iframe_embed_code: (data as any).iframe_embed_code || '',
         host_name: (data as any).host_name || '',
-        login_method: (data as any).login_method || 'redirect'
+        login_method: (data as any).login_method || 'redirect',
+        telegram_support_username: (data as any).telegram_support_username || '',
+        telegram_support_prefilled_message: (data as any).telegram_support_prefilled_message || '',
+        telegram_support_activated_message: (data as any).telegram_support_activated_message || ''
       });
+
     } catch (error) {
       console.error('Error fetching webinar:', error);
       toast({ title: "خطا", description: "وبینار یافت نشد", variant: "destructive" });
