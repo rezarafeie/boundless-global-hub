@@ -254,6 +254,24 @@ const WebinarManagement: React.FC = () => {
     navigate(`/enroll/admin/webinar/${webinar.id}/edit`);
   };
 
+  const toggleTelegramBot = async (webinarId: string, enabled: boolean) => {
+    setWebinars((prev) => prev.map((w) => (w.id === webinarId ? { ...w, telegram_bot_enabled: enabled } : w)));
+    const { error } = await supabase
+      .from('webinar_entries')
+      .update({ telegram_bot_enabled: enabled } as any)
+      .eq('id', webinarId);
+    if (error) {
+      console.error('Error toggling telegram bot registration:', error);
+      setWebinars((prev) => prev.map((w) => (w.id === webinarId ? { ...w, telegram_bot_enabled: !enabled } : w)));
+      toast({ title: 'خطا', description: 'خطا در تغییر وضعیت ثبت‌نام تلگرام', variant: 'destructive' });
+      return;
+    }
+    toast({
+      title: 'موفقیت',
+      description: enabled ? 'ثبت‌نام در ربات تلگرام فعال شد' : 'ثبت‌نام در ربات تلگرام غیرفعال شد',
+    });
+  };
+
   const handleDelete = async (webinarId: string) => {
     if (!confirm('آیا مطمئن هستید که می‌خواهید این وبینار را حذف کنید؟')) {
       return;
