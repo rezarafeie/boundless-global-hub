@@ -3594,12 +3594,16 @@ async function handleUpdate(update: any) {
 
   // ===== Auto-detect webinar support-activation message (Telegram Business / support chat) =====
   if (text) {
-    const wMatch = text.match(/کد\s*فعال[‌\s]*سازی\s*وبینار\s*[:：]\s*([a-f0-9]{8})-(\d{5,})/i);
+    // Robust: match the token pattern anywhere (templates can be edited by admins),
+    // then confirm a real webinar exists with that id prefix.
+    const wMatch = text.match(/([a-f0-9]{8})\s*-\s*(\d{5,})/i);
     if (wMatch) {
       const wPrefixRaw = wMatch[1].toLowerCase();
       const targetChat = Number(wMatch[2]);
       const { data: allW } = await supabase.from('webinar_entries').select('*').limit(500);
-      const w = (allW ?? []).find((x: any) => String(x.id).replace(/-/g, '').startsWith(wPrefixRaw));
+      const w = (allW ?? []).find((x: any) => String(x.id).replace(/-/g, '').toLowerCase().startsWith(wPrefixRaw));
+      console.log('🎥 webinar activation token detected:', wPrefixRaw, 'targetChat=', targetChat, 'matched=', !!w, 'business=', !!business_connection_id);
+      if (w) {
       const defaultConfirmTpl = [
         '✅ پشتیبانی وبینار شما فعال شد',
         '',
@@ -3616,13 +3620,31 @@ async function handleUpdate(update: any) {
         applyWebinarVars(confirmTpl, w, { name: targetUser?.name || '', phone: targetUser?.phone || '' }),
       ).replace(/^(.*)$/m, '<b>$1</b>');
 
+      // Mark activated
+      try {
+        await supabase.from('webinar_support_activations').upsert({
+          webinar_id: w.id,
+          telegram_chat_id: targetChat,
+          phone: targetUser?.phone ?? null,
+          status: 'activated',
+          activated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'webinar_id,telegram_chat_id', ignoreDuplicates: false });
+      } catch (e) { console.warn('webinar activation upsert failed', e); }
+
       const wButtons: { text: string; url: string }[][] = [];
       if (w?.webinar_link) wButtons.push([{ text: '🔗 ورود به وبینار', url: w.webinar_link }]);
       if (w?.telegram_channel_link) wButtons.push([{ text: '📢 کانال تلگرام وبینار', url: w.telegram_channel_link }]);
+      const customWButtons = Array.isArray((w as any)?.telegram_support_activation_buttons)
+        ? ((w as any).telegram_support_activation_buttons as any[])
+        : [];
+      for (const b of customWButtons) {
+        if (b?.text && b?.url) wButtons.push([{ text: String(b.text), url: String(b.url) }]);
+      }
 
       // Reply in the chat the message came from (business chat / support group)
       try {
-        await tgCall('sendMessage', {
+        const res = await tgCall('sendMessage', {
           chat_id,
           text: confirm,
           parse_mode: 'HTML',
@@ -3630,6 +3652,15 @@ async function handleUpdate(update: any) {
           reply_markup: wButtons.length ? { inline_keyboard: wButtons } : undefined,
           ...(business_connection_id ? { business_connection_id } : {}),
         });
+        if (!res?.ok) {
+          // Retry without reply/buttons (business chats reject some markups)
+          await tgCall('sendMessage', {
+            chat_id,
+            text: confirm,
+            parse_mode: 'HTML',
+            ...(business_connection_id ? { business_connection_id } : {}),
+          });
+        }
       } catch (e) { console.warn('webinar support confirm reply failed', e); }
 
       // Also confirm in the user's private chat with the bot
@@ -3644,6 +3675,8 @@ async function handleUpdate(update: any) {
         } catch (e) { console.warn('webinar support confirm DM failed', e); }
       }
       return;
+      }
+
     }
   }
 
