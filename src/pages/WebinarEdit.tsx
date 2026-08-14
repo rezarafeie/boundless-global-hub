@@ -288,7 +288,57 @@ const WebinarEdit: React.FC = () => {
                   rows={6}
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">دکمه‌های پیام فعال‌سازی (پاسخ خودکار)</label>
+                <div className="space-y-2">
+                  {(formData.telegram_support_activation_buttons || []).map((btn: { text: string; url: string }, idx: number) => (
+                    <div key={idx} className="flex gap-2">
+                      <Input
+                        value={btn.text}
+                        onChange={(e) => {
+                          const arr = [...(formData.telegram_support_activation_buttons || [])];
+                          arr[idx] = { ...arr[idx], text: e.target.value };
+                          setFormData({ ...formData, telegram_support_activation_buttons: arr });
+                        }}
+                        placeholder="متن دکمه"
+                      />
+                      <Input
+                        value={btn.url}
+                        onChange={(e) => {
+                          const arr = [...(formData.telegram_support_activation_buttons || [])];
+                          arr[idx] = { ...arr[idx], url: e.target.value };
+                          setFormData({ ...formData, telegram_support_activation_buttons: arr });
+                        }}
+                        placeholder="https://..."
+                        dir="ltr"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const arr = [...(formData.telegram_support_activation_buttons || [])];
+                          arr.splice(idx, 1);
+                          setFormData({ ...formData, telegram_support_activation_buttons: arr });
+                        }}
+                      >
+                        حذف
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setFormData({
+                      ...formData,
+                      telegram_support_activation_buttons: [...(formData.telegram_support_activation_buttons || []), { text: '', url: '' }],
+                    })}
+                  >
+                    افزودن دکمه
+                  </Button>
+                </div>
+              </div>
             </div>
+
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => navigate('/enroll/admin/webinar')}>
