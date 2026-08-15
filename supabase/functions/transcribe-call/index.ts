@@ -3,15 +3,32 @@ import { admin, authenticate, requirePermission, audit, AuthError, getSettings, 
 
 /**
  * Speech-to-text for call recordings (Persian).
- * Provider order: OPENAI_API_KEY (whisper) -> Lovable AI gateway.
+ * Provider order: Lovable AI gateway -> direct OpenAI fallback.
  * Keys live only in edge-function secrets.
  */
 async function transcribeAudio(blob: Blob, filename: string): Promise<{ text: string; provider: string; model: string }> {
-  const openaiKey = Deno.env.get('OPENAI_API_KEY')
-  if (openaiKey) {
+  const lovableKey = Deno.env.get('LOVABLE_API_KEY')?.trim()
+  if (lovableKey) {
     const form = new FormData()
     form.append('file', blob, filename)
-    form.append('model', Deno.env.get('OPENAI_TRANSCRIBE_MODEL') || 'whisper-1')
+    form.append('model', 'openai/gpt-4o-transcribe')
+    form.append('language', 'fa')
+    const res = await fetch('https://ai.gateway.lovable.dev/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${lovableKey}` },
+      body: form,
+    })
+    if (!res.ok) throw new Error(`خطای سرویس تبدیل گفتار (${res.status}): ${await res.text()}`)
+    const data = await res.json()
+    return { text: data.text ?? '', provider: 'lovable', model: 'openai/gpt-4o-transcribe' }
+  }
+
+  const openaiKey = Deno.env.get('OPENAI_API_KEY')?.trim()
+  if (openaiKey && /^[\x20-\x7E]+$/.test(openaiKey)) {
+    const form = new FormData()
+    form.append('file', blob, filename)
+    const model = Deno.env.get('OPENAI_TRANSCRIBE_MODEL')?.trim() || 'gpt-4o-transcribe'
+    form.append('model', model)
     form.append('language', 'fa')
     form.append('response_format', 'json')
 
@@ -22,26 +39,10 @@ async function transcribeAudio(blob: Blob, filename: string): Promise<{ text: st
     })
     if (!res.ok) throw new Error(`خطای سرویس تبدیل گفتار (${res.status}): ${await res.text()}`)
     const data = await res.json()
-    return { text: data.text ?? '', provider: 'openai', model: 'whisper-1' }
+    return { text: data.text ?? '', provider: 'openai', model }
   }
 
-  const lovableKey = Deno.env.get('LOVABLE_API_KEY')
-  if (lovableKey) {
-    const form = new FormData()
-    form.append('file', blob, filename)
-    form.append('model', 'whisper-1')
-    form.append('language', 'fa')
-    const res = await fetch('https://ai.gateway.lovable.dev/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${lovableKey}` },
-      body: form,
-    })
-    if (!res.ok) throw new Error(`خطای سرویس تبدیل گفتار (${res.status}): ${await res.text()}`)
-    const data = await res.json()
-    return { text: data.text ?? '', provider: 'lovable', model: 'whisper-1' }
-  }
-
-  throw new Error('هیچ سرویس تبدیل گفتار به متنی پیکربندی نشده است (OPENAI_API_KEY را تنظیم کنید)')
+  throw new Error('هیچ سرویس معتبر تبدیل گفتار به متن پیکربندی نشده است')
 }
 
 async function run(callId: string) {
