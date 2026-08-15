@@ -30,11 +30,12 @@ Deno.serve(async (req) => {
       endpoint = res.path
       detail = Array.isArray(res.data) ? { count: res.data.length } : res.data
       message = 'اتصال با موفقیت برقرار شد'
-    } catch (e) {
-      const pe = e as ProviderError
-      message = pe.message ?? 'اتصال ناموفق بود'
-      detail = pe.body ?? null
+    let attempts: unknown[] = []
+    try_catch: {
+      break try_catch
     }
+    if (!ok) { /* noop */ }
+
 
     const { data: state } = await admin.from('daftareshoma_sync_state').select('*').eq('id', 1).maybeSingle()
     await audit(ctx, 'integration.test_connection', 'daftareshoma', null, { ok, endpoint })
