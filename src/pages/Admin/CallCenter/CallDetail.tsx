@@ -36,6 +36,7 @@ const CallDetail: React.FC = () => {
   const [dispositions, setDispositions] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
+  const [requestedStage, setRequestedStage] = useState<'auto' | 'recording' | 'transcript' | 'analysis' | null>(null);
   const [fuTitle, setFuTitle] = useState('');
   const [fuDue, setFuDue] = useState('');
   const [fuPriority, setFuPriority] = useState('medium');
@@ -77,12 +78,20 @@ const CallDetail: React.FC = () => {
 
   const reprocess = async (stage: 'auto' | 'recording' | 'transcript' | 'analysis') => {
     setReprocessing(true);
+    setRequestedStage(stage);
     try {
       await callCenter.reprocess(callId!, stage);
       toast({ title: 'پردازش آغاز شد', description: 'نتیجه تا لحظاتی دیگر آماده می‌شود.' });
-      setTimeout(load, 4000);
+      for (let attempt = 0; attempt < 24; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        const res: any = await callCenter.call(callId!);
+        setData(res);
+        const transcript = res.call?.transcript_detail?.[0] ?? res.call?.transcript_detail;
+        if (stage === 'transcript' && ['completed', 'empty', 'failed'].includes(transcript?.processing_status)) break;
+        if (stage !== 'transcript' && !['pending', 'downloading', 'transcribing', 'analyzing'].includes(res.call?.processing_status)) break;
+      }
     } catch (e) { toast({ title: 'خطا', description: (e as Error).message, variant: 'destructive' }); }
-    finally { setReprocessing(false); }
+    finally { setReprocessing(false); setRequestedStage(null); }
   };
 
   if (loading) return <div className="p-8 text-center text-muted-foreground">در حال بارگذاری…</div>;
@@ -90,7 +99,7 @@ const CallDetail: React.FC = () => {
 
   const c = data.call;
   const ai = c.call_ai_analysis?.[0] ?? c.call_ai_analysis ?? null;
-  const tr = c.call_transcripts?.[0] ?? c.call_transcripts ?? null;
+  const tr = c.transcript_detail?.[0] ?? c.transcript_detail ?? c.call_transcripts?.[0] ?? c.call_transcripts ?? null;
   const phone = c.direction === 'outgoing' ? c.destination_number : c.caller_number;
 
   return (
@@ -106,7 +115,7 @@ const CallDetail: React.FC = () => {
               {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} دریافت فایل صوتی
             </Button>
             <Button variant="outline" onClick={() => reprocess('transcript')} disabled={reprocessing} className="gap-1">
-              {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />} تبدیل به متن
+              {reprocessing && requestedStage === 'transcript' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />} تبدیل به متن
             </Button>
             <Button variant="outline" onClick={() => reprocess('analysis')} disabled={reprocessing} className="gap-1">
               {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} تحلیل هوشمند
@@ -204,13 +213,17 @@ const CallDetail: React.FC = () => {
           <CardHeader className="pb-3 flex-row items-center justify-between gap-2 space-y-0">
             <CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" /> متن مکالمه</CardTitle>
             <Button size="sm" variant="outline" onClick={() => reprocess('transcript')} disabled={reprocessing} className="gap-1">
-              {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-              {tr?.text ? 'تبدیل مجدد به متن' : 'تبدیل به متن'}
+              {reprocessing && requestedStage === 'transcript' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+              {tr?.transcript ? 'تبدیل مجدد به متن' : 'تبدیل به متن'}
             </Button>
           </CardHeader>
           <CardContent>
-            {tr?.text ? (
-              <div className="max-h-80 overflow-y-auto text-sm leading-7 whitespace-pre-wrap">{tr.text}</div>
+            {tr?.transcript ? (
+              <div className="max-h-80 overflow-y-auto text-sm leading-7 whitespace-pre-wrap">{tr.transcript}</div>
+            ) : tr?.processing_status === 'failed' ? (
+              <p className="text-sm text-destructive">تبدیل ناموفق بود: {tr.error || 'خطای نامشخص'}</p>
+            ) : ['pending', 'transcribing'].includes(tr?.processing_status) || (reprocessing && requestedStage === 'transcript') ? (
+              <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> در حال تبدیل فایل صوتی به متن…</p>
             ) : (
               <p className="text-sm text-muted-foreground">هنوز متنی برای این تماس ثبت نشده است. برای پیاده‌سازی گفتار به متن دکمهٔ بالا را بزنید (نیازمند فایل ضبط‌شده).</p>
             )}

@@ -20,6 +20,8 @@ Deno.serve(async (req) => {
     const { data: rec } = await admin.from('call_recordings').select('status').eq('call_id', callId).maybeSingle()
     const { data: tr } = await admin.from('call_transcripts').select('processing_status').eq('call_id', callId).maybeSingle()
 
+    await admin.from('calls').update({ processing_status: 'pending' }).eq('id', callId)
+
     let dispatched = 'analysis'
     if (stage === 'recording' || (stage === 'auto' && rec?.status !== 'ready')) {
       dispatched = 'recording'
@@ -31,7 +33,6 @@ Deno.serve(async (req) => {
       invokeFn('analyze-call', { callId, internal: true })
     }
 
-    await admin.from('calls').update({ processing_status: 'pending' }).eq('id', callId)
     await audit(ctx, 'call.reprocess', 'call', callId, { stage: dispatched })
 
     return json({ success: true, stage: dispatched, message: 'پردازش مجدد آغاز شد' }, 200, corsHeaders)
