@@ -201,3 +201,36 @@ verify_jwt = false
 
 [functions.consultation-telegram-notify]
 verify_jwt = false
+
+[functions.daftareshoma-test-connection]
+verify_jwt = false
+
+[functions.daftareshoma-outgoing-call]
+verify_jwt = false
+
+[functions.sync-daftareshoma-calls]
+verify_jwt = false
+
+[functions.daftareshoma-webhook]
+verify_jwt = false
+
+[functions.process-call-recording]
+verify_jwt = false
+
+[functions.transcribe-call]
+verify_jwt = false
+
+[functions.analyze-call]
+verify_jwt = false
+
+[functions.process-call-automations]
+verify_jwt = false
+
+[functions.call-attribution]
+verify_jwt = false
+
+[functions.call-center-data]
+verify_jwt = false
+
+[functions.reprocess-call]
+verify_jwt = false
