@@ -156,7 +156,6 @@ Deno.serve(async (req) => {
     return json({ success: true, analysis: result }, 200, corsHeaders)
   } catch (e) {
     const status = e instanceof AuthError ? e.status : 500
-    await admin.from('calls').update({ processing_status: 'failed' }).eq('id', (await req.clone().json().catch(() => ({}))).callId ?? '00000000-0000-0000-0000-000000000000').then(() => {}, () => {})
     return json({ success: false, error: (e as Error).message }, status, corsHeaders)
   }
 })
