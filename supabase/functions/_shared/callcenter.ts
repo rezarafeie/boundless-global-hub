@@ -534,3 +534,19 @@ export const json = (body: unknown, status = 200, extra: HeadersInit = {}) =>
     status,
     headers: { 'Content-Type': 'application/json', ...extra },
   })
+
+/* ------------------------------------------------------------------ */
+/* Async job dispatch (fire-and-forget between edge functions)         */
+/* ------------------------------------------------------------------ */
+
+export function invokeFn(name: string, body: Record<string, unknown>) {
+  const url = `${Deno.env.get('SUPABASE_URL')}/functions/v1/${name}`
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+    },
+    body: JSON.stringify({ ...body, internal: true }),
+  }).catch((e) => console.error(`invoke ${name} failed`, e))
+}
