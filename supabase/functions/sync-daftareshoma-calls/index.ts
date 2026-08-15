@@ -204,8 +204,18 @@ Deno.serve(async (req) => {
     const result = await runSync(ctx, { full: !!body.full })
     return json({ success: true, ...result }, 200, corsHeaders)
   } catch (e) {
-    const status = e instanceof AuthError ? e.status : e instanceof ProviderError ? 502 : 500
     console.error('sync error', e)
-    return json({ success: false, error: (e as Error).message }, status, corsHeaders)
+    if (e instanceof AuthError) {
+      return json({ success: false, error: e.message }, e.status, corsHeaders)
+    }
+    // provider/runtime failures are reported as 200 so the admin UI can show a
+    // readable diagnostic instead of a 502 that breaks the page
+    return json({
+      success: false,
+      error: (e as Error).message,
+      provider_status: e instanceof ProviderError ? e.status : null,
+      attempts: (e as any).attempts ?? [],
+    }, 200, corsHeaders)
+
   }
 })
