@@ -159,6 +159,7 @@ import UserDetail from "./pages/UserDetail";
 import EnrollAdminTests from "./pages/EnrollAdminTests";
 import BoundlessSmartTestSubmissions from "./pages/Admin/BoundlessSmartTestSubmissions";
 import SupportActivations from "./pages/Admin/SupportActivations";
+import CallDetail from "./pages/Admin/CallCenter/CallDetail";
 import TelegramUsers from "./pages/Admin/TelegramUsers";
 import TestEnrollmentAdminDetails from "./pages/TestEnrollmentAdminDetails";
 
