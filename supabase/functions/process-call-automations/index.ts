@@ -9,11 +9,11 @@ import { admin, authenticate, requirePermission, AuthError, getSettings, json } 
 type Rule = {
   id: string
   name: string
-  trigger: string
+  trigger_type: string
   conditions: Record<string, any>
   actions: Record<string, any>
   is_active: boolean
-  priority: number
+  display_order: number
 }
 
 async function loadRules(trigger: string): Promise<Rule[]> {
@@ -21,8 +21,8 @@ async function loadRules(trigger: string): Promise<Rule[]> {
     .from('call_automation_rules')
     .select('*')
     .eq('is_active', true)
-    .eq('trigger', trigger)
-    .order('priority', { ascending: false })
+    .eq('trigger_type', trigger)
+    .order('display_order', { ascending: true })
   return (data ?? []) as Rule[]
 }
 
