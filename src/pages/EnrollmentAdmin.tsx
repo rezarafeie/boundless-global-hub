@@ -529,6 +529,14 @@ const EnrollmentAdmin: React.FC = () => {
             </Suspense>
           </ErrorBoundary>
         );
+      case 'call-center':
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <CallCenterDashboard />
+            </Suspense>
+          </ErrorBoundary>
+        );
       default:
         // Don't show dashboard summary for enrollment managers or sales agents who are not messenger admins
         if ((userRole === 'enrollments_manager' || isSalesAgent) && !isMessengerAdmin) {
