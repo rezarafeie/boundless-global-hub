@@ -46,6 +46,7 @@ const RequestLeadsTab = React.lazy(() => import('@/components/Admin/RequestLeads
 const FormsManagement = React.lazy(() => import('@/components/Admin/FormsManagement'));
 const AssignmentsList = React.lazy(() => import('@/pages/Admin/Assignments/AssignmentsList'));
 const SupportActivations = React.lazy(() => import('@/pages/Admin/SupportActivations'));
+const CallCenterDashboard = React.lazy(() => import('@/components/Admin/CallCenter/CallCenterDashboard'));
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -100,7 +101,7 @@ const EnrollmentAdmin: React.FC = () => {
   const navigate = useNavigate();
   const [checkingRole, setCheckingRole] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'sales' | 'leads' | 'request-leads' | 'users' | 'analytics' | 'settings' | 'crm' | 'recruitment' | 'internships' | 'tests' | 'webinars' | 'daily-reports' | 'accounting' | 'pipeline' | 'pipeline-builder' | 'agent-financials' | 'consultations' | 'telegram-forms' | 'forms' | 'assignments' | 'support-activations'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'courses' | 'enrollments' | 'sales' | 'leads' | 'request-leads' | 'users' | 'analytics' | 'settings' | 'crm' | 'recruitment' | 'internships' | 'tests' | 'webinars' | 'daily-reports' | 'accounting' | 'pipeline' | 'pipeline-builder' | 'agent-financials' | 'consultations' | 'telegram-forms' | 'forms' | 'assignments' | 'support-activations' | 'call-center'>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isMessengerAdmin, setIsMessengerAdmin] = useState(false);
@@ -525,6 +526,14 @@ const EnrollmentAdmin: React.FC = () => {
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
               <SupportActivations />
+            </Suspense>
+          </ErrorBoundary>
+        );
+      case 'call-center':
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingSpinner />}>
+              <CallCenterDashboard />
             </Suspense>
           </ErrorBoundary>
         );

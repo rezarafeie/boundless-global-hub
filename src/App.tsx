@@ -159,6 +159,7 @@ import UserDetail from "./pages/UserDetail";
 import EnrollAdminTests from "./pages/EnrollAdminTests";
 import BoundlessSmartTestSubmissions from "./pages/Admin/BoundlessSmartTestSubmissions";
 import SupportActivations from "./pages/Admin/SupportActivations";
+import CallDetail from "./pages/Admin/CallCenter/CallDetail";
 import TelegramUsers from "./pages/Admin/TelegramUsers";
 import TestEnrollmentAdminDetails from "./pages/TestEnrollmentAdminDetails";
 
@@ -314,6 +315,7 @@ const App = () => {
                    <Route path="/admin/assignments/:id/submissions" element={<AssignmentSubmissions />} />
                    <Route path="/admin/support-activations" element={<SupportActivations />} />
                    <Route path="/enroll/admin/telegram-users" element={<TelegramUsers />} />
+                   <Route path="/enroll/admin/calls/:callId" element={<CallDetail />} />
                     <Route path="/enroll/admin/course/:courseId" element={<CourseManagement />} />
                     <Route path="/enroll/admin/course/:courseId/lessons" element={<CourseContentManagement />} />
                     <Route path="/enroll/reject" element={<EnrollReject />} />
