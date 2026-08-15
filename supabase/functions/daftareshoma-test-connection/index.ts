@@ -18,6 +18,7 @@ Deno.serve(async (req) => {
     let detail: unknown = null
     let endpoint: string | null = null
     let message = ''
+    let attempts: unknown[] = []
 
     try {
       const res = await dsTryEndpoints([
@@ -28,12 +29,14 @@ Deno.serve(async (req) => {
       ])
       ok = true
       endpoint = res.path
+      attempts = res.attempts
       detail = Array.isArray(res.data) ? { count: res.data.length } : res.data
       message = 'اتصال با موفقیت برقرار شد'
     } catch (e) {
       const pe = e as ProviderError
       message = pe.message ?? 'اتصال ناموفق بود'
       detail = pe.body ?? null
+      attempts = (pe as any).attempts ?? []
     }
 
     const { data: state } = await admin.from('daftareshoma_sync_state').select('*').eq('id', 1).maybeSingle()
@@ -46,8 +49,10 @@ Deno.serve(async (req) => {
       endpoint,
       message,
       detail,
+      attempts,
       syncState: state ?? null,
     }, 200, corsHeaders)
+
   } catch (e) {
     const status = e instanceof AuthError ? e.status : 500
     return json({ success: false, error: (e as Error).message }, status, corsHeaders)

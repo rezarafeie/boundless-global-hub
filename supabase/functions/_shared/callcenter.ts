@@ -282,19 +282,34 @@ export async function dsRequest(
  */
 export async function dsTryEndpoints(
   candidates: { path: string; method?: string; body?: unknown; query?: Record<string, any> }[],
-): Promise<{ path: string; data: any }> {
+): Promise<{ path: string; data: any; attempts: { path: string; status: number; message: string; body?: unknown }[] }> {
   let lastError: unknown = null
+  const attempts: { path: string; status: number; message: string; body?: unknown }[] = []
   for (const c of candidates) {
     try {
       const data = await dsRequest(c.path, { method: c.method, body: c.body, query: c.query })
-      return { path: c.path, data }
+      return { path: c.path, data, attempts }
     } catch (e) {
       lastError = e
-      if (e instanceof ProviderError && (e.status === 401 || e.status === 403)) throw e
+      if (e instanceof ProviderError) {
+        const snippet = typeof e.body === 'string' ? e.body.slice(0, 300) : e.body
+        attempts.push({ path: c.path, status: e.status, message: e.message, body: snippet })
+        if (e.status === 401 || e.status === 403) {
+          ;(e as any).attempts = attempts
+          throw e
+        }
+      } else {
+        attempts.push({ path: c.path, status: 0, message: (e as Error).message })
+      }
     }
   }
-  throw lastError ?? new ProviderError('هیچ اندپوینتی پاسخ نداد', 502, null)
+  const err = lastError instanceof ProviderError
+    ? lastError
+    : new ProviderError('هیچ اندپوینتی پاسخ نداد', 502, null)
+  ;(err as any).attempts = attempts
+  throw err
 }
+
 
 /* ------------------------------------------------------------------ */
 /* Normalizing provider call payloads                                  */

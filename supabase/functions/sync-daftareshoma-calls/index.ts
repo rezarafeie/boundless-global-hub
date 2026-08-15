@@ -76,23 +76,41 @@ async function runSync(ctx: any, opts: { full?: boolean } = {}) {
       ? new Date(new Date(state.last_synced_at).getTime() - 10 * 60 * 1000) // 10 min overlap
       : new Date(Date.now() - 3 * 24 * 3600 * 1000)
 
+  const now = new Date()
   const fromStr = since.toISOString()
-  const toStr = new Date().toISOString()
+  const toStr = now.toISOString()
+  // many DaftareShoma deployments reject ISO-8601 with 'Z' and return 500
+  const sqlFmt = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ')
+  const dayFmt = (d: Date) => d.toISOString().slice(0, 10)
+  const fromSql = sqlFmt(since), toSql = sqlFmt(now)
+  const fromDay = dayFmt(since), toDay = dayFmt(now)
+  const fromEpoch = Math.floor(since.getTime() / 1000), toEpoch = Math.floor(now.getTime() / 1000)
 
   let records: Record<string, any>[] = []
+  let attempts: any[] = []
   try {
     const res = await dsTryEndpoints([
+      { path: '/api/v1/CallReport/GetCallReports', query: { fromDate: fromSql, toDate: toSql, pageNumber: 1, pageSize: PAGE_SIZE } },
+      { path: '/api/v1/CallReport/GetCallReports', query: { fromDate: fromDay, toDate: toDay, pageNumber: 1, pageSize: PAGE_SIZE } },
       { path: '/api/v1/CallReport/GetCallReports', query: { fromDate: fromStr, toDate: toStr, pageNumber: 1, pageSize: PAGE_SIZE } },
-      { path: '/api/v1/CallReport', query: { from: fromStr, to: toStr, page: 1, pageSize: PAGE_SIZE } },
-      { path: '/api/CallReport/List', query: { startDate: fromStr, endDate: toStr, page: 1, pageSize: PAGE_SIZE } },
-      { path: '/api/v1/Call/Reports', query: { from: fromStr, to: toStr, page: 1, pageSize: PAGE_SIZE } },
+      { path: '/api/v1/CallReport', query: { from: fromSql, to: toSql, page: 1, pageSize: PAGE_SIZE } },
+      { path: '/api/v1/CallReport', query: { from: fromEpoch, to: toEpoch, page: 1, pageSize: PAGE_SIZE } },
+      { path: '/api/CallReport/List', query: { startDate: fromSql, endDate: toSql, page: 1, pageSize: PAGE_SIZE } },
+      { path: '/api/v1/Call/Reports', query: { from: fromSql, to: toSql, page: 1, pageSize: PAGE_SIZE } },
+      { path: '/api/v1/CallReport/GetCallReports', query: { pageNumber: 1, pageSize: PAGE_SIZE } },
     ])
     records = extractRecords(res.data)
+    attempts = res.attempts
   } catch (e) {
     const pe = e as ProviderError
-    await admin.from('daftareshoma_sync_state').update({ last_error: pe.message }).eq('id', 1)
+    attempts = (pe as any).attempts ?? []
+    await admin.from('daftareshoma_sync_state')
+      .update({ last_error: `${pe.message} — ${JSON.stringify(attempts).slice(0, 800)}` })
+      .eq('id', 1)
+    ;(pe as any).attempts = attempts
     throw pe
   }
+
 
   let inserted = 0
   let updated = 0
@@ -186,8 +204,18 @@ Deno.serve(async (req) => {
     const result = await runSync(ctx, { full: !!body.full })
     return json({ success: true, ...result }, 200, corsHeaders)
   } catch (e) {
-    const status = e instanceof AuthError ? e.status : e instanceof ProviderError ? 502 : 500
     console.error('sync error', e)
-    return json({ success: false, error: (e as Error).message }, status, corsHeaders)
+    if (e instanceof AuthError) {
+      return json({ success: false, error: e.message }, e.status, corsHeaders)
+    }
+    // provider/runtime failures are reported as 200 so the admin UI can show a
+    // readable diagnostic instead of a 502 that breaks the page
+    return json({
+      success: false,
+      error: (e as Error).message,
+      provider_status: e instanceof ProviderError ? e.status : null,
+      attempts: (e as any).attempts ?? [],
+    }, 200, corsHeaders)
+
   }
 })
