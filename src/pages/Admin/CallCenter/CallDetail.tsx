@@ -100,13 +100,23 @@ const CallDetail: React.FC = () => {
           <Button variant="ghost" onClick={() => navigate('/enroll/admin')} className="gap-1">
             <ArrowRight className="h-4 w-4" /> بازگشت
           </Button>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 justify-end">
             <CallButton phone={phone} name={c.customer_name} userId={c.user_id} leadId={c.lead_id} variant="button" source="call_detail" />
-            <Button variant="outline" onClick={() => reprocess('auto')} disabled={reprocessing} className="gap-1">
-              {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} پردازش مجدد
+            <Button variant="outline" onClick={() => reprocess('recording')} disabled={reprocessing} className="gap-1">
+              {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} دریافت فایل صوتی
+            </Button>
+            <Button variant="outline" onClick={() => reprocess('transcript')} disabled={reprocessing} className="gap-1">
+              {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />} تبدیل به متن
+            </Button>
+            <Button variant="outline" onClick={() => reprocess('analysis')} disabled={reprocessing} className="gap-1">
+              {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} تحلیل هوشمند
+            </Button>
+            <Button onClick={() => reprocess('auto')} disabled={reprocessing} className="gap-1">
+              {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} پردازش کامل
             </Button>
           </div>
         </div>
+
 
         <div className="grid lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-2">
@@ -190,14 +200,23 @@ const CallDetail: React.FC = () => {
           </Card>
         )}
 
-        {tr?.text && (
-          <Card>
-            <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" /> متن مکالمه</CardTitle></CardHeader>
-            <CardContent>
+        <Card>
+          <CardHeader className="pb-3 flex-row items-center justify-between gap-2 space-y-0">
+            <CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" /> متن مکالمه</CardTitle>
+            <Button size="sm" variant="outline" onClick={() => reprocess('transcript')} disabled={reprocessing} className="gap-1">
+              {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+              {tr?.text ? 'تبدیل مجدد به متن' : 'تبدیل به متن'}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {tr?.text ? (
               <div className="max-h-80 overflow-y-auto text-sm leading-7 whitespace-pre-wrap">{tr.text}</div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <p className="text-sm text-muted-foreground">هنوز متنی برای این تماس ثبت نشده است. برای پیاده‌سازی گفتار به متن دکمهٔ بالا را بزنید (نیازمند فایل ضبط‌شده).</p>
+            )}
+          </CardContent>
+        </Card>
+
 
         <div className="grid lg:grid-cols-2 gap-4">
           <Card>
