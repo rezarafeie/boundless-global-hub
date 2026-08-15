@@ -91,9 +91,13 @@ async function listCalls(ctx: AuthContext, p: any) {
 }
 
 async function callDetail(ctx: AuthContext, callId: string) {
-  let q = admin.from('calls').select(`${CALL_SELECT}, call_transcripts(*), call_followups(*), call_events(*)`).eq('id', callId)
+  let q = admin
+    .from('calls')
+    .select(`${CALL_SELECT}, transcript_detail:call_transcripts(*), call_followups(*), call_events(*)`)
+    .eq('id', callId)
   q = scope(q, ctx)
-  const { data } = await q.maybeSingle()
+  const { data, error } = await q.maybeSingle()
+  if (error) throw new Error(`خطا در دریافت تماس: ${error.message}`)
   if (!data) throw new AuthError('تماس یافت نشد یا دسترسی ندارید', 404)
   const [decorated] = await decorate([data])
 
