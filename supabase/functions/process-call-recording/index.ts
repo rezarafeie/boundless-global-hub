@@ -28,25 +28,18 @@ async function fetchAndStore(callId: string) {
 
   let res: Response
   try {
-    const candidates = [
-      `/api/v1/CallReport/GetRecordFile?recordId=${encodeURIComponent(call.recording_id)}`,
-      `/api/v1/Recording/Download?recordingId=${encodeURIComponent(call.recording_id)}`,
-      `/api/v1/CallRecord/${encodeURIComponent(call.recording_id)}`,
-      `/api/Recording/${encodeURIComponent(call.recording_id)}`,
-    ]
-    let last: unknown = null
-    let found: Response | null = null
-    for (const path of candidates) {
-      try {
-        found = await dsRequest(path, { raw: true, timeoutMs: 60000 })
-        break
-      } catch (e) {
-        last = e
-        if (e instanceof ProviderError && (e.status === 401 || e.status === 403)) throw e
-      }
-    }
-    if (!found) throw last ?? new Error('فایل ضبط در دسترس نیست')
-    res = found
+    // documented API: POST /api/Customize/RecordUrlList?RecordingId=<uuid> -> { success, url, errorMessage }
+    const meta = await dsRequest('/api/Customize/RecordUrlList', {
+      method: 'POST',
+      query: { RecordingId: call.recording_id },
+      timeoutMs: 30000,
+    })
+    const url = meta?.url ?? meta?.Url ?? null
+    if (!url) throw new Error(meta?.errorMessage || meta?.ErrorMessage || 'فایل ضبط در دسترس نیست')
+
+    const dl = await fetch(String(url))
+    if (!dl.ok) throw new Error(`دانلود فایل ضبط ناموفق بود (${dl.status})`)
+    res = dl
   } catch (e) {
     const message = (e as Error).message
     await admin.from('call_recordings').update({

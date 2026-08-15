@@ -239,8 +239,8 @@ export async function dsRequest(
     const res = await fetch(url.toString(), {
       method: opts.method ?? 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'X-API-KEY': token,
+        // DaftareShoma expects the raw token (NO "Bearer" prefix) and rejects extra auth headers
+        'Authorization': token,
         'Accept': 'application/json',
         ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
       },
@@ -282,13 +282,13 @@ export async function dsRequest(
  */
 export async function dsTryEndpoints(
   candidates: { path: string; method?: string; body?: unknown; query?: Record<string, any> }[],
-): Promise<{ path: string; data: any; attempts: { path: string; status: number; message: string; body?: unknown }[] }> {
+): Promise<{ path: string; body?: unknown; data: any; attempts: { path: string; status: number; message: string; body?: unknown }[] }> {
   let lastError: unknown = null
   const attempts: { path: string; status: number; message: string; body?: unknown }[] = []
   for (const c of candidates) {
     try {
       const data = await dsRequest(c.path, { method: c.method, body: c.body, query: c.query })
-      return { path: c.path, data, attempts }
+      return { path: c.path, body: c.body, data, attempts }
     } catch (e) {
       lastError = e
       if (e instanceof ProviderError) {
@@ -363,29 +363,37 @@ export function normalizeProviderCall(rec: Record<string, any>): NormalizedCall 
   const id = pick(rec, ['uniqueId', 'uniqueid', 'unique_id', 'callId', 'call_id', 'id', 'uuid'])
   if (id === undefined) return null
 
-  const rawDirection = String(pick(rec, ['direction', 'callType', 'call_type', 'type', 'dir']) ?? '').toLowerCase()
-  const direction = /out|خروج|outgoing|outbound/.test(rawDirection)
+  const rawDirection = String(pick(rec, ['direction', 'directionType', 'callType', 'call_type', 'type', 'dir']) ?? '').toLowerCase()
+  const direction = /^out|outgoing|outbound|خروج/.test(rawDirection)
     ? 'outgoing'
-    : /in|ورود|incoming|inbound/.test(rawDirection)
+    : /^in(coming)?$|inbound|ورود/.test(rawDirection)
       ? 'incoming'
-      : 'unknown'
+      : /internal|داخلی/.test(rawDirection)
+        ? 'internal'
+        : 'unknown'
 
-  const rawStatus = String(pick(rec, ['status', 'disposition', 'callStatus', 'call_status', 'result']) ?? '').toLowerCase()
-  const talk = toSeconds(pick(rec, ['talkTime', 'talk_time', 'billsec', 'answeredDuration', 'talkDuration']))
+  const rawStatus = String(
+    pick(rec, ['reportDispositionType', 'status', 'disposition', 'callStatus', 'call_status', 'result']) ?? '',
+  ).toLowerCase()
+  const talk = toSeconds(pick(rec, ['talkTime', 'talk_time', 'billsec', 'answeredDuration', 'talkDuration', 'duration']))
   const answeredFlag = pick(rec, ['answered', 'isAnswered', 'is_answered'])
-  const answered = answeredFlag === true || /answer|پاسخ داده|success|connected/.test(rawStatus) || talk > 0
+  const answered = answeredFlag === true
+    || (/answer|پاسخ داده|success|connected/.test(rawStatus) && !/noanswer|no_answer|missed/.test(rawStatus))
+    || (talk > 0 && !/noanswer|no_answer|missed|blocked/.test(rawStatus))
   const status = answered
     ? 'answered'
     : /busy|مشغول/.test(rawStatus)
       ? 'busy'
-      : /fail|error|congestion/.test(rawStatus)
+      : /block/.test(rawStatus)
         ? 'failed'
-        : /cancel/.test(rawStatus)
-          ? 'cancelled'
-          : 'no_answer'
+        : /fail|error|congestion/.test(rawStatus)
+          ? 'failed'
+          : /cancel/.test(rawStatus)
+            ? 'cancelled'
+            : 'no_answer'
 
-  const caller = pick(rec, ['callerNumber', 'caller_number', 'source', 'src', 'from', 'callerId', 'caller'])
-  const destination = pick(rec, ['destinationNumber', 'destination_number', 'destination', 'dst', 'to', 'calleeNumber', 'callee'])
+  const caller = pick(rec, ['fromNumber', 'callerNumber', 'caller_number', 'source', 'src', 'from', 'callerId', 'caller'])
+  const destination = pick(rec, ['toNumber', 'destinationNumber', 'destination_number', 'destination', 'dst', 'to', 'calleeNumber', 'callee'])
   const cn = normalizePhone(caller ? String(caller) : null)
   const dn = normalizePhone(destination ? String(destination) : null)
 
@@ -394,7 +402,7 @@ export function normalizeProviderCall(rec: Record<string, any>): NormalizedCall 
   const answeredAt = toDate(pick(rec, ['answerTime', 'answer_time', 'answeredAt']))
 
   const waiting = toSeconds(pick(rec, ['waitingTime', 'waiting_time', 'ringTime', 'ring_time', 'waitTime']))
-  const total = toSeconds(pick(rec, ['totalTime', 'total_time', 'duration', 'callDuration'])) || (waiting + talk)
+  const total = toSeconds(pick(rec, ['totalCallTime', 'totalTime', 'total_time', 'duration', 'callDuration'])) || (waiting + talk)
 
   const recordingId = pick(rec, ['recordingId', 'recording_id', 'recordId', 'record_id', 'recordingFile', 'recordFile'])
 
@@ -416,7 +424,7 @@ export function normalizeProviderCall(rec: Record<string, any>): NormalizedCall 
     waiting_seconds: waiting,
     talk_seconds: talk,
     total_seconds: total,
-    recording_id: recordingId ? String(recordingId) : null,
+    recording_id: recordingId && String(recordingId) !== '00000000-0000-0000-0000-000000000000' ? String(recordingId) : null,
     raw_payload: rec,
   }
 }

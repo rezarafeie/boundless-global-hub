@@ -21,11 +21,14 @@ Deno.serve(async (req) => {
     let attempts: unknown[] = []
 
     try {
+      const nowD = new Date()
+      const fromD = new Date(nowD.getTime() - 24 * 3600 * 1000)
+      const iso = (d: Date) => d.toISOString().slice(0, 19)
+      const sql = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ')
       const res = await dsTryEndpoints([
-        { path: '/api/v1/CallReport/GetCallReports', query: { pageNumber: 1, pageSize: 1 } },
-        { path: '/api/v1/CallReport', query: { page: 1, pageSize: 1 } },
-        { path: '/api/CallReport/List', query: { page: 1, pageSize: 1 } },
-        { path: '/api/v1/Call/Reports', query: { page: 1, pageSize: 1 } },
+        { path: '/api/Customize/CustomerCallSearch', method: 'POST', body: { fromDate: iso(fromD), toDate: iso(nowD), limit: 1, pagination: 1 } },
+        { path: '/api/Customize/CustomerCallSearch', method: 'POST', body: { fromDate: sql(fromD), toDate: sql(nowD), limit: 1, pagination: 1 } },
+        { path: '/api/Customize/CustomerCallSearch', method: 'POST', body: { limit: 1, pagination: 1 } },
       ])
       ok = true
       endpoint = res.path
