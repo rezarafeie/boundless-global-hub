@@ -7313,6 +7313,10 @@ export type Database = {
       }
     }
     Functions: {
+      assert_webinar_followup_admin: {
+        Args: { p_session_token: string }
+        Returns: number
+      }
       assign_courses_to_sales_agent: {
         Args: { p_agent_user_id: number; p_course_ids: string[] }
         Returns: boolean
@@ -7359,6 +7363,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      delete_webinar_followup: {
+        Args: { p_id: string; p_session_token: string }
+        Returns: boolean
       }
       detect_country_code_from_phone: {
         Args: { phone_number: string }
@@ -7746,6 +7754,50 @@ export type Database = {
       update_user_presence: {
         Args: { p_is_online?: boolean; p_user_id: number }
         Returns: undefined
+      }
+      update_webinar_followup: {
+        Args: {
+          p_anchor: string
+          p_audience: string
+          p_bot_text: string
+          p_channel: string
+          p_delay_minutes: number
+          p_email_body: string
+          p_email_subject: string
+          p_enabled: boolean
+          p_id: string
+          p_max_repeats: number
+          p_name: string
+          p_repeat_delay_minutes: number
+          p_session_token: string
+          p_sms_template_url: string
+          p_sms_text: string
+        }
+        Returns: {
+          anchor: string
+          audience: string
+          bot_text: string | null
+          channel: string
+          created_at: string
+          delay_minutes: number
+          email_body: string | null
+          email_subject: string | null
+          enabled: boolean
+          id: string
+          max_repeats: number
+          name: string
+          repeat_delay_minutes: number
+          sms_template_url: string | null
+          sms_text: string | null
+          updated_at: string
+          webinar_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "webinar_followups"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       url_encode: { Args: { input: string }; Returns: string }
       urlencode:
