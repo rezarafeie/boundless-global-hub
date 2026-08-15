@@ -282,13 +282,13 @@ export async function dsRequest(
  */
 export async function dsTryEndpoints(
   candidates: { path: string; method?: string; body?: unknown; query?: Record<string, any> }[],
-): Promise<{ path: string; data: any; attempts: { path: string; status: number; message: string; body?: unknown }[] }> {
+): Promise<{ path: string; body?: unknown; data: any; attempts: { path: string; status: number; message: string; body?: unknown }[] }> {
   let lastError: unknown = null
   const attempts: { path: string; status: number; message: string; body?: unknown }[] = []
   for (const c of candidates) {
     try {
       const data = await dsRequest(c.path, { method: c.method, body: c.body, query: c.query })
-      return { path: c.path, data, attempts }
+      return { path: c.path, body: c.body, data, attempts }
     } catch (e) {
       lastError = e
       if (e instanceof ProviderError) {
