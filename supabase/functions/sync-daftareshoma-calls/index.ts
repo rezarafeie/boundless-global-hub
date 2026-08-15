@@ -52,16 +52,9 @@ async function createMissedCallFollowup(call: any, settings: any, priorityOverri
     created_by: 'automation',
   })
 
-  if (settings.notifications_enabled && call.agent_id) {
-    await admin.from('notifications').insert({
-      title: 'تماس از دست رفته',
-      message: `تماس بی‌پاسخ از ${call.caller_number ?? 'نامشخص'} — نیاز به پیگیری`,
-      notification_type: 'floating',
-      color: '#dc2626',
-      priority: priority === 'critical' ? 3 : 2,
-      is_active: true,
-    }).then(() => {}, () => {})
-  }
+  // NOTE: never insert into public `notifications` — that table is a site-wide
+  // banner feed visible to every visitor. Missed calls surface to the owning
+  // agent through `call_followups` inside the Call Center dashboard instead.
 }
 
 async function runSync(ctx: any, opts: { full?: boolean } = {}) {
