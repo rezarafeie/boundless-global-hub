@@ -44,10 +44,8 @@ Deno.serve(async (req) => {
     let endpoint: string | null = null
     try {
       const res = await dsTryEndpoints([
-        { path: '/api/v1/Call/Originate', method: 'POST', body: { extension, destination: dial, number: dial } },
-        { path: '/api/v1/Call/MakeCall', method: 'POST', body: { extension, destination: dial, number: dial } },
-        { path: '/api/v1/Click2Call', method: 'POST', body: { extension, destination: dial, number: dial } },
-        { path: '/api/Call/Originate', method: 'POST', body: { extension, destination: dial } },
+        // documented endpoint (External APIs v1)
+        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { from_number: extension, to_number: dial, caller_extension: extension } },
       ])
       endpoint = res.path
       providerResponse = res.data
