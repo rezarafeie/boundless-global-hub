@@ -28,7 +28,8 @@ import {
   Video,
   FileText,
   ClipboardCheck,
-  Instagram
+  Instagram,
+  PhoneCall
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -78,12 +79,12 @@ const SidebarContent: React.FC<Omit<AdminSidebarProps, 'isOpen' | 'onToggle'>> =
   const getFilteredMenuItems = () => {
     // Sales manager gets sales, leads, and crm tabs
     if (userRole === 'sales_manager' && !isMessengerAdmin) {
-      return menuItems.filter(item => ['sales', 'leads', 'crm'].includes(item.id));
+      return menuItems.filter(item => ['sales', 'leads', 'crm', 'call-center'].includes(item.id));
     }
     
     // Sales agent gets sales, leads, crm, accounting, and pipeline tabs (for their financials)
     if (isSalesAgent && !isMessengerAdmin && userRole !== 'sales_manager') {
-      return menuItems.filter(item => ['sales', 'leads', 'accounting', 'crm', 'pipeline'].includes(item.id));
+      return menuItems.filter(item => ['sales', 'leads', 'accounting', 'crm', 'pipeline', 'call-center'].includes(item.id));
     }
     
     // Enrollment managers get specific tabs including webinars

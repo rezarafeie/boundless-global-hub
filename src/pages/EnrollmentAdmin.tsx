@@ -46,6 +46,7 @@ const RequestLeadsTab = React.lazy(() => import('@/components/Admin/RequestLeads
 const FormsManagement = React.lazy(() => import('@/components/Admin/FormsManagement'));
 const AssignmentsList = React.lazy(() => import('@/pages/Admin/Assignments/AssignmentsList'));
 const SupportActivations = React.lazy(() => import('@/pages/Admin/SupportActivations'));
+const CallCenterDashboard = React.lazy(() => import('@/components/Admin/CallCenter/CallCenterDashboard'));
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
