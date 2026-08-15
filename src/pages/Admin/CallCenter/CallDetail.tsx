@@ -100,13 +100,23 @@ const CallDetail: React.FC = () => {
           <Button variant="ghost" onClick={() => navigate('/enroll/admin')} className="gap-1">
             <ArrowRight className="h-4 w-4" /> بازگشت
           </Button>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 justify-end">
             <CallButton phone={phone} name={c.customer_name} userId={c.user_id} leadId={c.lead_id} variant="button" source="call_detail" />
-            <Button variant="outline" onClick={() => reprocess('auto')} disabled={reprocessing} className="gap-1">
-              {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} پردازش مجدد
+            <Button variant="outline" onClick={() => reprocess('recording')} disabled={reprocessing} className="gap-1">
+              {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} دریافت فایل صوتی
+            </Button>
+            <Button variant="outline" onClick={() => reprocess('transcript')} disabled={reprocessing} className="gap-1">
+              {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />} تبدیل به متن
+            </Button>
+            <Button variant="outline" onClick={() => reprocess('analysis')} disabled={reprocessing} className="gap-1">
+              {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} تحلیل هوشمند
+            </Button>
+            <Button onClick={() => reprocess('auto')} disabled={reprocessing} className="gap-1">
+              {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} پردازش کامل
             </Button>
           </div>
         </div>
+
 
         <div className="grid lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-2">
