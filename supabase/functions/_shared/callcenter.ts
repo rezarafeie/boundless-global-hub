@@ -424,7 +424,7 @@ export function normalizeProviderCall(rec: Record<string, any>): NormalizedCall 
     waiting_seconds: waiting,
     talk_seconds: talk,
     total_seconds: total,
-    recording_id: recordingId ? String(recordingId) : null,
+    recording_id: recordingId && String(recordingId) !== '00000000-0000-0000-0000-000000000000' ? String(recordingId) : null,
     raw_payload: rec,
   }
 }
