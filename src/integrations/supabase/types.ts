@@ -994,6 +994,68 @@ export type Database = {
           },
         ]
       }
+      call_attributions: {
+        Row: {
+          agent_id: number | null
+          amount: number
+          attribution_window_days: number
+          calls_before_purchase: number
+          created_at: string
+          enrollment_id: string
+          first_call_at: string | null
+          id: string
+          last_call_at: string | null
+          last_call_before_purchase: string | null
+          phone_assisted_sale: boolean
+          purchase_at: string | null
+          talk_time_before_purchase: number
+          updated_at: string
+          user_phone_normalized: string | null
+        }
+        Insert: {
+          agent_id?: number | null
+          amount?: number
+          attribution_window_days?: number
+          calls_before_purchase?: number
+          created_at?: string
+          enrollment_id: string
+          first_call_at?: string | null
+          id?: string
+          last_call_at?: string | null
+          last_call_before_purchase?: string | null
+          phone_assisted_sale?: boolean
+          purchase_at?: string | null
+          talk_time_before_purchase?: number
+          updated_at?: string
+          user_phone_normalized?: string | null
+        }
+        Update: {
+          agent_id?: number | null
+          amount?: number
+          attribution_window_days?: number
+          calls_before_purchase?: number
+          created_at?: string
+          enrollment_id?: string
+          first_call_at?: string | null
+          id?: string
+          last_call_at?: string | null
+          last_call_before_purchase?: string | null
+          phone_assisted_sale?: boolean
+          purchase_at?: string | null
+          talk_time_before_purchase?: number
+          updated_at?: string
+          user_phone_normalized?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_attributions_last_call_before_purchase_fkey"
+            columns: ["last_call_before_purchase"]
+            isOneToOne: false
+            referencedRelation: "calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       call_audit_logs: {
         Row: {
           action: string
@@ -1076,6 +1138,7 @@ export type Database = {
           created_at: string
           default_extension: string | null
           enabled: boolean
+          high_intent_threshold: number
           id: number
           min_call_seconds_for_ai: number
           missed_call_priority_rules: Json
@@ -1094,6 +1157,7 @@ export type Database = {
           created_at?: string
           default_extension?: string | null
           enabled?: boolean
+          high_intent_threshold?: number
           id?: number
           min_call_seconds_for_ai?: number
           missed_call_priority_rules?: Json
@@ -1112,6 +1176,7 @@ export type Database = {
           created_at?: string
           default_extension?: string | null
           enabled?: boolean
+          high_intent_threshold?: number
           id?: number
           min_call_seconds_for_ai?: number
           missed_call_priority_rules?: Json
@@ -1380,6 +1445,7 @@ export type Database = {
       calls: {
         Row: {
           agent_id: number | null
+          ai_score: number | null
           answered_at: string | null
           assigned_team_id: string | null
           caller_number: string | null
@@ -1401,8 +1467,10 @@ export type Database = {
           processing_status: string
           provider: string
           provider_call_id: string
+          purchase_intent_score: number | null
           raw_payload: Json
           recording_id: string | null
+          resulted_in_sale: boolean
           source: string | null
           started_at: string | null
           status: string
@@ -1416,6 +1484,7 @@ export type Database = {
         }
         Insert: {
           agent_id?: number | null
+          ai_score?: number | null
           answered_at?: string | null
           assigned_team_id?: string | null
           caller_number?: string | null
@@ -1437,8 +1506,10 @@ export type Database = {
           processing_status?: string
           provider?: string
           provider_call_id: string
+          purchase_intent_score?: number | null
           raw_payload?: Json
           recording_id?: string | null
+          resulted_in_sale?: boolean
           source?: string | null
           started_at?: string | null
           status?: string
@@ -1452,6 +1523,7 @@ export type Database = {
         }
         Update: {
           agent_id?: number | null
+          ai_score?: number | null
           answered_at?: string | null
           assigned_team_id?: string | null
           caller_number?: string | null
@@ -1473,8 +1545,10 @@ export type Database = {
           processing_status?: string
           provider?: string
           provider_call_id?: string
+          purchase_intent_score?: number | null
           raw_payload?: Json
           recording_id?: string | null
+          resulted_in_sale?: boolean
           source?: string | null
           started_at?: string | null
           status?: string
