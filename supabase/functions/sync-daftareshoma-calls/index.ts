@@ -79,28 +79,42 @@ async function runSync(ctx: any, opts: { full?: boolean } = {}) {
   const now = new Date()
   const fromStr = since.toISOString()
   const toStr = now.toISOString()
-  // many DaftareShoma deployments reject ISO-8601 with 'Z' and return 500
+  // documented API: POST /api/Customize/CustomerCallSearch
+  // dates are plain strings – try ISO (no Z) first, then SQL style, then unfiltered
+  const isoFmt = (d: Date) => d.toISOString().slice(0, 19)
   const sqlFmt = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ')
   const dayFmt = (d: Date) => d.toISOString().slice(0, 10)
-  const fromSql = sqlFmt(since), toSql = sqlFmt(now)
-  const fromDay = dayFmt(since), toDay = dayFmt(now)
-  const fromEpoch = Math.floor(since.getTime() / 1000), toEpoch = Math.floor(now.getTime() / 1000)
+
+  const SEARCH_PATH = '/api/Customize/CustomerCallSearch'
 
   let records: Record<string, any>[] = []
   let attempts: any[] = []
   try {
     const res = await dsTryEndpoints([
-      { path: '/api/v1/CallReport/GetCallReports', query: { fromDate: fromSql, toDate: toSql, pageNumber: 1, pageSize: PAGE_SIZE } },
-      { path: '/api/v1/CallReport/GetCallReports', query: { fromDate: fromDay, toDate: toDay, pageNumber: 1, pageSize: PAGE_SIZE } },
-      { path: '/api/v1/CallReport/GetCallReports', query: { fromDate: fromStr, toDate: toStr, pageNumber: 1, pageSize: PAGE_SIZE } },
-      { path: '/api/v1/CallReport', query: { from: fromSql, to: toSql, page: 1, pageSize: PAGE_SIZE } },
-      { path: '/api/v1/CallReport', query: { from: fromEpoch, to: toEpoch, page: 1, pageSize: PAGE_SIZE } },
-      { path: '/api/CallReport/List', query: { startDate: fromSql, endDate: toSql, page: 1, pageSize: PAGE_SIZE } },
-      { path: '/api/v1/Call/Reports', query: { from: fromSql, to: toSql, page: 1, pageSize: PAGE_SIZE } },
-      { path: '/api/v1/CallReport/GetCallReports', query: { pageNumber: 1, pageSize: PAGE_SIZE } },
+      { path: SEARCH_PATH, method: 'POST', body: { fromDate: isoFmt(since), toDate: isoFmt(now), limit: PAGE_SIZE, pagination: 1 } },
+      { path: SEARCH_PATH, method: 'POST', body: { fromDate: sqlFmt(since), toDate: sqlFmt(now), limit: PAGE_SIZE, pagination: 1 } },
+      { path: SEARCH_PATH, method: 'POST', body: { fromDate: dayFmt(since), toDate: dayFmt(now), limit: PAGE_SIZE, pagination: 1 } },
+      { path: SEARCH_PATH, method: 'POST', body: { limit: PAGE_SIZE, pagination: 1 } },
     ])
     records = extractRecords(res.data)
     attempts = res.attempts
+
+    // page through remaining results using the same accepted body shape
+    const accepted = (res as any).body ?? null
+    const totalCount = Number(res.data?.totalCount ?? 0)
+    if (records.length && totalCount > records.length) {
+      const maxPages = Math.min(25, Math.ceil(totalCount / PAGE_SIZE))
+      for (let page = 2; page <= maxPages; page++) {
+        try {
+          const next = await dsTryEndpoints([
+            { path: SEARCH_PATH, method: 'POST', body: { ...(accepted ?? { fromDate: isoFmt(since), toDate: isoFmt(now) }), limit: PAGE_SIZE, pagination: page } },
+          ])
+          const chunk = extractRecords(next.data)
+          if (!chunk.length) break
+          records = records.concat(chunk)
+        } catch { break }
+      }
+    }
   } catch (e) {
     const pe = e as ProviderError
     attempts = (pe as any).attempts ?? []
