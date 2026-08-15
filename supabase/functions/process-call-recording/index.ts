@@ -40,6 +40,7 @@ async function fetchAndStore(callId: string) {
     const dl = await fetch(String(url))
     if (!dl.ok) throw new Error(`دانلود فایل ضبط ناموفق بود (${dl.status})`)
     res = dl
+  } catch (e) {
     const message = (e as Error).message
     await admin.from('call_recordings').update({
       status: /404|not found|در دسترس/.test(message) ? 'unavailable' : 'failed',
