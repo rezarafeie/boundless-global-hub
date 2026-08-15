@@ -200,14 +200,23 @@ const CallDetail: React.FC = () => {
           </Card>
         )}
 
-        {tr?.text && (
-          <Card>
-            <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" /> متن مکالمه</CardTitle></CardHeader>
-            <CardContent>
+        <Card>
+          <CardHeader className="pb-3 flex-row items-center justify-between gap-2 space-y-0">
+            <CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" /> متن مکالمه</CardTitle>
+            <Button size="sm" variant="outline" onClick={() => reprocess('transcript')} disabled={reprocessing} className="gap-1">
+              {reprocessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+              {tr?.text ? 'تبدیل مجدد به متن' : 'تبدیل به متن'}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {tr?.text ? (
               <div className="max-h-80 overflow-y-auto text-sm leading-7 whitespace-pre-wrap">{tr.text}</div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <p className="text-sm text-muted-foreground">هنوز متنی برای این تماس ثبت نشده است. برای پیاده‌سازی گفتار به متن دکمهٔ بالا را بزنید (نیازمند فایل ضبط‌شده).</p>
+            )}
+          </CardContent>
+        </Card>
+
 
         <div className="grid lg:grid-cols-2 gap-4">
           <Card>
