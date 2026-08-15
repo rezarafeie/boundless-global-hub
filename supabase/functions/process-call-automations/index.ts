@@ -76,13 +76,19 @@ async function applyActions(rule: Rule, call: any, facts: Record<string, any>) {
 
   if (a.notify) {
     const spec = a.notify === true ? {} : a.notify
-    await admin.from('notifications').insert({
+    // Agent-scoped alert (NOT the public `notifications` banner table).
+    await admin.from('call_followups').insert({
+      call_id: call.id,
+      user_id: call.user_id,
+      lead_id: call.lead_id,
+      agent_id: call.agent_id,
+      type: 'alert',
+      status: 'pending',
+      priority: 'high',
       title: spec.title ?? rule.name,
-      message: spec.message ?? `تماس نیازمند توجه: ${call.caller_number ?? call.destination_number ?? ''}`,
-      notification_type: 'floating',
-      color: spec.color ?? '#2563eb',
-      priority: 2,
-      is_active: true,
+      description: spec.message ?? `تماس نیازمند توجه: ${call.caller_number ?? call.destination_number ?? ''}`,
+      due_at: new Date().toISOString(),
+      created_by: `rule:${rule.id}`,
     }).then(() => {}, () => {})
   }
 
