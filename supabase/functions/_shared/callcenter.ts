@@ -239,8 +239,8 @@ export async function dsRequest(
     const res = await fetch(url.toString(), {
       method: opts.method ?? 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'X-API-KEY': token,
+        // DaftareShoma expects the raw token (NO "Bearer" prefix) and rejects extra auth headers
+        'Authorization': token,
         'Accept': 'application/json',
         ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
       },
