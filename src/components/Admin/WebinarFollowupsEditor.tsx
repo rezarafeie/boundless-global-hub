@@ -109,31 +109,59 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
     }
   };
 
+  const getSessionToken = () => {
+    const cookieToken = document.cookie
+      .split('; ')
+      .find((item) => item.startsWith('session_token='))
+      ?.split('=')
+      .slice(1)
+      .join('=');
+    const t = localStorage.getItem('messenger_session_token') || cookieToken;
+    return t ? decodeURIComponent(t) : null;
+  };
+
   const save = async (r: WebinarFollowup) => {
+    const sessionToken = getSessionToken();
+    if (!sessionToken) {
+      toast({ title: 'نشست مدیریت پیدا نشد', description: 'لطفاً دوباره وارد پنل شوید.', variant: 'destructive' });
+      return;
+    }
     setSavingId(r.id);
-    const { error } = await supabase.from('webinar_followups' as any).update({
-      name: r.name,
-      enabled: r.enabled,
-      channel: r.channel,
-      audience: r.audience,
-      anchor: r.anchor,
-      delay_minutes: Number(r.delay_minutes) || 0,
-      max_repeats: Number(r.max_repeats) || 1,
-      repeat_delay_minutes: Number(r.repeat_delay_minutes) || 1440,
-      email_subject: r.email_subject,
-      email_body: r.email_body,
-      sms_text: r.sms_text,
-      sms_template_url: r.sms_template_url,
-      bot_text: r.bot_text,
-    }).eq('id', r.id);
+    const { data, error } = await (supabase.rpc as any)('update_webinar_followup', {
+      p_session_token: sessionToken,
+      p_id: r.id,
+      p_name: r.name,
+      p_enabled: r.enabled,
+      p_channel: r.channel,
+      p_audience: r.audience,
+      p_anchor: r.anchor,
+      p_delay_minutes: Number(r.delay_minutes) || 0,
+      p_max_repeats: Number(r.max_repeats) || 1,
+      p_repeat_delay_minutes: Number(r.repeat_delay_minutes) || 1440,
+      p_email_subject: r.email_subject,
+      p_email_body: r.email_body,
+      p_sms_text: r.sms_text,
+      p_sms_template_url: r.sms_template_url,
+      p_bot_text: r.bot_text,
+    });
     setSavingId(null);
     if (error) { toast({ title: 'خطا', description: error.message, variant: 'destructive' }); return; }
+    if (data) setRows(prev => prev.map(x => x.id === r.id ? (data as any) : x));
     toast({ title: 'ذخیره شد' });
   };
 
   const remove = async (id: string) => {
     if (!confirm('حذف این پیگیری؟')) return;
-    await supabase.from('webinar_followups' as any).delete().eq('id', id);
+    const sessionToken = getSessionToken();
+    if (!sessionToken) {
+      toast({ title: 'نشست مدیریت پیدا نشد', variant: 'destructive' });
+      return;
+    }
+    const { error } = await (supabase.rpc as any)('delete_webinar_followup', {
+      p_session_token: sessionToken,
+      p_id: id,
+    });
+    if (error) { toast({ title: 'خطا در حذف', description: error.message, variant: 'destructive' }); return; }
     setRows(prev => prev.filter(x => x.id !== id));
   };
 
