@@ -899,6 +899,595 @@ export type Database = {
           },
         ]
       }
+      call_ai_analysis: {
+        Row: {
+          agent_feedback: string | null
+          call_id: string
+          closing_score: number | null
+          created_at: string
+          customer_intent: string | null
+          customer_needs: Json | null
+          customer_summary: string | null
+          discovery_score: number | null
+          explanation_score: number | null
+          follow_up_required: boolean | null
+          id: string
+          model: string | null
+          next_action: string | null
+          objection_handling_score: number | null
+          objections: Json | null
+          opening_score: number | null
+          overall_sales_score: number | null
+          pain_points: Json | null
+          products_mentioned: Json | null
+          purchase_intent_score: number | null
+          raw_ai_response: Json | null
+          recommended_follow_up_at: string | null
+          recommended_products: Json | null
+          sentiment: string | null
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          agent_feedback?: string | null
+          call_id: string
+          closing_score?: number | null
+          created_at?: string
+          customer_intent?: string | null
+          customer_needs?: Json | null
+          customer_summary?: string | null
+          discovery_score?: number | null
+          explanation_score?: number | null
+          follow_up_required?: boolean | null
+          id?: string
+          model?: string | null
+          next_action?: string | null
+          objection_handling_score?: number | null
+          objections?: Json | null
+          opening_score?: number | null
+          overall_sales_score?: number | null
+          pain_points?: Json | null
+          products_mentioned?: Json | null
+          purchase_intent_score?: number | null
+          raw_ai_response?: Json | null
+          recommended_follow_up_at?: string | null
+          recommended_products?: Json | null
+          sentiment?: string | null
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agent_feedback?: string | null
+          call_id?: string
+          closing_score?: number | null
+          created_at?: string
+          customer_intent?: string | null
+          customer_needs?: Json | null
+          customer_summary?: string | null
+          discovery_score?: number | null
+          explanation_score?: number | null
+          follow_up_required?: boolean | null
+          id?: string
+          model?: string | null
+          next_action?: string | null
+          objection_handling_score?: number | null
+          objections?: Json | null
+          opening_score?: number | null
+          overall_sales_score?: number | null
+          pain_points?: Json | null
+          products_mentioned?: Json | null
+          purchase_intent_score?: number | null
+          raw_ai_response?: Json | null
+          recommended_follow_up_at?: string | null
+          recommended_products?: Json | null
+          sentiment?: string | null
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_ai_analysis_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: true
+            referencedRelation: "calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      call_audit_logs: {
+        Row: {
+          action: string
+          actor_id: number | null
+          actor_name: string | null
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+          metadata: Json
+        }
+        Insert: {
+          action: string
+          actor_id?: number | null
+          actor_name?: string | null
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+          metadata?: Json
+        }
+        Update: {
+          action?: string
+          actor_id?: number | null
+          actor_name?: string | null
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          metadata?: Json
+        }
+        Relationships: []
+      }
+      call_automation_rules: {
+        Row: {
+          actions: Json
+          conditions: Json
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          last_run_at: string | null
+          name: string
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          name: string
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          name?: string
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      call_center_settings: {
+        Row: {
+          ai_analysis_enabled: boolean
+          attribution_window_days: number
+          auto_lead_matching: boolean
+          auto_missed_call_followup: boolean
+          auto_sync_enabled: boolean
+          created_at: string
+          default_extension: string | null
+          enabled: boolean
+          id: number
+          min_call_seconds_for_ai: number
+          missed_call_priority_rules: Json
+          notifications_enabled: boolean
+          recording_sync_enabled: boolean
+          sync_interval_minutes: number
+          transcription_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          ai_analysis_enabled?: boolean
+          attribution_window_days?: number
+          auto_lead_matching?: boolean
+          auto_missed_call_followup?: boolean
+          auto_sync_enabled?: boolean
+          created_at?: string
+          default_extension?: string | null
+          enabled?: boolean
+          id?: number
+          min_call_seconds_for_ai?: number
+          missed_call_priority_rules?: Json
+          notifications_enabled?: boolean
+          recording_sync_enabled?: boolean
+          sync_interval_minutes?: number
+          transcription_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          ai_analysis_enabled?: boolean
+          attribution_window_days?: number
+          auto_lead_matching?: boolean
+          auto_missed_call_followup?: boolean
+          auto_sync_enabled?: boolean
+          created_at?: string
+          default_extension?: string | null
+          enabled?: boolean
+          id?: number
+          min_call_seconds_for_ai?: number
+          missed_call_priority_rules?: Json
+          notifications_enabled?: boolean
+          recording_sync_enabled?: boolean
+          sync_interval_minutes?: number
+          transcription_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      call_dispositions: {
+        Row: {
+          color: string
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          is_positive: boolean
+          key: string
+          label: string
+          requires_followup: boolean
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          is_positive?: boolean
+          key: string
+          label: string
+          requires_followup?: boolean
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          is_positive?: boolean
+          key?: string
+          label?: string
+          requires_followup?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      call_events: {
+        Row: {
+          call_id: string | null
+          error: string | null
+          event_type: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          provider_event_id: string | null
+          received_at: string
+          status: string
+        }
+        Insert: {
+          call_id?: string | null
+          error?: string | null
+          event_type: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          provider_event_id?: string | null
+          received_at?: string
+          status?: string
+        }
+        Update: {
+          call_id?: string | null
+          error?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          provider_event_id?: string | null
+          received_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_events_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      call_followups: {
+        Row: {
+          agent_id: number | null
+          call_id: string | null
+          completed_at: string | null
+          completed_by: number | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_at: string
+          id: string
+          lead_id: string | null
+          priority: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: number | null
+        }
+        Insert: {
+          agent_id?: number | null
+          call_id?: string | null
+          completed_at?: string | null
+          completed_by?: number | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_at?: string
+          id?: string
+          lead_id?: string | null
+          priority?: string
+          status?: string
+          title: string
+          type?: string
+          updated_at?: string
+          user_id?: number | null
+        }
+        Update: {
+          agent_id?: number | null
+          call_id?: string | null
+          completed_at?: string | null
+          completed_by?: number | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_at?: string
+          id?: string
+          lead_id?: string | null
+          priority?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_followups_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      call_recordings: {
+        Row: {
+          audio_url: string | null
+          call_id: string
+          created_at: string
+          downloaded_at: string | null
+          duration_seconds: number | null
+          error: string | null
+          id: string
+          mime_type: string | null
+          provider_recording_id: string | null
+          status: string
+          storage_path: string | null
+          updated_at: string
+        }
+        Insert: {
+          audio_url?: string | null
+          call_id: string
+          created_at?: string
+          downloaded_at?: string | null
+          duration_seconds?: number | null
+          error?: string | null
+          id?: string
+          mime_type?: string | null
+          provider_recording_id?: string | null
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audio_url?: string | null
+          call_id?: string
+          created_at?: string
+          downloaded_at?: string | null
+          duration_seconds?: number | null
+          error?: string | null
+          id?: string
+          mime_type?: string | null
+          provider_recording_id?: string | null
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_recordings_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: true
+            referencedRelation: "calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      call_transcripts: {
+        Row: {
+          call_id: string
+          created_at: string
+          error: string | null
+          id: string
+          language: string
+          model: string | null
+          processing_status: string
+          provider: string | null
+          segments: Json | null
+          speaker_diarization: Json | null
+          transcript: string | null
+          updated_at: string
+        }
+        Insert: {
+          call_id: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          language?: string
+          model?: string | null
+          processing_status?: string
+          provider?: string | null
+          segments?: Json | null
+          speaker_diarization?: Json | null
+          transcript?: string | null
+          updated_at?: string
+        }
+        Update: {
+          call_id?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          language?: string
+          model?: string | null
+          processing_status?: string
+          provider?: string | null
+          segments?: Json | null
+          speaker_diarization?: Json | null
+          transcript?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_transcripts_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: true
+            referencedRelation: "calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calls: {
+        Row: {
+          agent_id: number | null
+          answered_at: string | null
+          assigned_team_id: string | null
+          caller_number: string | null
+          caller_number_normalized: string | null
+          campaign_id: string | null
+          consultation_id: string | null
+          created_at: string
+          destination_number: string | null
+          destination_number_normalized: string | null
+          direction: string
+          disposition: string | null
+          ended_at: string | null
+          extension: string | null
+          id: string
+          lead_id: string | null
+          match_confidence: string | null
+          notes: string | null
+          order_id: string | null
+          processing_status: string
+          provider: string
+          provider_call_id: string
+          raw_payload: Json
+          recording_id: string | null
+          source: string | null
+          started_at: string | null
+          status: string
+          support_ticket_id: string | null
+          talk_seconds: number | null
+          total_seconds: number | null
+          updated_at: string
+          user_id: number | null
+          waiting_seconds: number | null
+          webinar_registration_id: string | null
+        }
+        Insert: {
+          agent_id?: number | null
+          answered_at?: string | null
+          assigned_team_id?: string | null
+          caller_number?: string | null
+          caller_number_normalized?: string | null
+          campaign_id?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          destination_number?: string | null
+          destination_number_normalized?: string | null
+          direction?: string
+          disposition?: string | null
+          ended_at?: string | null
+          extension?: string | null
+          id?: string
+          lead_id?: string | null
+          match_confidence?: string | null
+          notes?: string | null
+          order_id?: string | null
+          processing_status?: string
+          provider?: string
+          provider_call_id: string
+          raw_payload?: Json
+          recording_id?: string | null
+          source?: string | null
+          started_at?: string | null
+          status?: string
+          support_ticket_id?: string | null
+          talk_seconds?: number | null
+          total_seconds?: number | null
+          updated_at?: string
+          user_id?: number | null
+          waiting_seconds?: number | null
+          webinar_registration_id?: string | null
+        }
+        Update: {
+          agent_id?: number | null
+          answered_at?: string | null
+          assigned_team_id?: string | null
+          caller_number?: string | null
+          caller_number_normalized?: string | null
+          campaign_id?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          destination_number?: string | null
+          destination_number_normalized?: string | null
+          direction?: string
+          disposition?: string | null
+          ended_at?: string | null
+          extension?: string | null
+          id?: string
+          lead_id?: string | null
+          match_confidence?: string | null
+          notes?: string | null
+          order_id?: string | null
+          processing_status?: string
+          provider?: string
+          provider_call_id?: string
+          raw_payload?: Json
+          recording_id?: string | null
+          source?: string | null
+          started_at?: string | null
+          status?: string
+          support_ticket_id?: string | null
+          talk_seconds?: number | null
+          total_seconds?: number | null
+          updated_at?: string
+          user_id?: number | null
+          waiting_seconds?: number | null
+          webinar_registration_id?: string | null
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           created_at: string | null
@@ -2023,6 +2612,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      daftareshoma_sync_state: {
+        Row: {
+          calls_synced: number
+          created_at: string
+          id: number
+          last_attempt_at: string | null
+          last_call_id: string | null
+          last_error: string | null
+          last_success_at: string | null
+          last_synced_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          calls_synced?: number
+          created_at?: string
+          id?: number
+          last_attempt_at?: string | null
+          last_call_id?: string | null
+          last_error?: string | null
+          last_success_at?: string | null
+          last_synced_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          calls_synced?: number
+          created_at?: string
+          id?: number
+          last_attempt_at?: string | null
+          last_call_id?: string | null
+          last_error?: string | null
+          last_success_at?: string | null
+          last_synced_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       daily_reports: {
         Row: {
@@ -7727,6 +8352,7 @@ export type Database = {
         }
         Returns: string
       }
+      normalize_phone: { Args: { p_phone: string }; Returns: string }
       remove_course_from_sales_agent: {
         Args: { p_agent_user_id: number; p_course_id: string }
         Returns: boolean
