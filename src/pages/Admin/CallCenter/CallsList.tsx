@@ -11,6 +11,14 @@ import { useDebounce } from '@/hooks/use-debounce';
 
 interface Props { missedOnly?: boolean }
 
+const RANGES: { value: string; label: string; days: number | null }[] = [
+  { value: '1', label: 'امروز', days: 1 },
+  { value: '7', label: '۷ روز اخیر', days: 7 },
+  { value: '30', label: '۳۰ روز اخیر', days: 30 },
+  { value: '90', label: '۹۰ روز اخیر', days: 90 },
+  { value: 'custom', label: 'بازه دلخواه', days: null },
+];
+
 const CallsList: React.FC<Props> = ({ missedOnly }) => {
   const { toast } = useToast();
   const [calls, setCalls] = useState<CallRow[]>([]);
@@ -21,9 +29,20 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
   const [direction, setDirection] = useState('all');
   const [status, setStatus] = useState('all');
   const [agentId, setAgentId] = useState('all');
+  const [range, setRange] = useState('30');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
   const [agents, setAgents] = useState<any[]>([]);
   const debouncedSearch = useDebounce(search, 400);
   const pageSize = 20;
+
+  const preset = RANGES.find((r) => r.value === range);
+  const fromISO = range === 'custom'
+    ? (customFrom ? new Date(`${customFrom}T00:00:00`).toISOString() : undefined)
+    : new Date(Date.now() - (preset?.days ?? 30) * 24 * 3600 * 1000).toISOString();
+  const toISO = range === 'custom'
+    ? (customTo ? new Date(`${customTo}T23:59:59`).toISOString() : undefined)
+    : undefined;
 
   useEffect(() => { callCenter.agentList().then((r) => setAgents(r.agents)).catch(() => {}); }, []);
 
@@ -37,16 +56,19 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
       status: status !== 'all' ? status : undefined,
       agentId: agentId !== 'all' ? Number(agentId) : undefined,
       missed: missedOnly || undefined,
+      from: fromISO,
+      to: toISO,
     })
       .then((res) => { if (active) { setCalls(res.calls); setTotal(res.total); } })
       .catch((e) => toast({ title: 'خطا', description: (e as Error).message, variant: 'destructive' }))
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [page, debouncedSearch, direction, status, agentId, missedOnly]);
+  }, [page, debouncedSearch, direction, status, agentId, missedOnly, fromISO, toISO]);
 
-  useEffect(() => { setPage(1); }, [debouncedSearch, direction, status, agentId, missedOnly]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, direction, status, agentId, missedOnly, fromISO, toISO]);
 
   const pages = Math.max(1, Math.ceil(total / pageSize));
+
 
   return (
     <div className="space-y-4">
