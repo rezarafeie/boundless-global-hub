@@ -303,7 +303,9 @@ export function adaptiveSchedule(
   let slots: number[] = [];
 
   if (step >= minInterval) {
-    slots = remaining.map((_, i) => startTs + step * (i + 1) * 60000);
+    // First pending message goes out immediately, the rest are spread across
+    // the remaining window (last one lands at endTs).
+    slots = remaining.map((_, i) => (n === 1 ? startTs : startTs + step * i * 60000));
   } else {
     // Not enough room: keep the highest-priority ones (lower number = higher priority)
     const capacity = Math.max(1, Math.min(n, Math.floor(availableMin / minInterval) + 1));
