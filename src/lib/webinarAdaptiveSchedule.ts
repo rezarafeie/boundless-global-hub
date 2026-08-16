@@ -44,13 +44,13 @@ export function adaptiveSchedule(
 
   const minInterval = Math.max(1, ...remaining.map((f) => f.min_interval_minutes ?? 30));
   const n = remaining.length;
-  const step = availableMin / n;
+  const step = n > 1 ? availableMin / (n - 1) : availableMin;
 
   let selected = remaining;
   let slots: number[] = [];
 
   if (step >= minInterval) {
-    slots = remaining.map((_, i) => startTs + step * (i + 1) * 60000);
+    slots = remaining.map((_, i) => (n === 1 ? startTs : startTs + step * i * 60000));
   } else {
     const capacity = Math.max(1, Math.min(n, Math.floor(availableMin / minInterval) + 1));
     const byPriority = remaining
