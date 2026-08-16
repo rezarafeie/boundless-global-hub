@@ -35,8 +35,6 @@ Deno.serve(async (req) => {
     }
 
     const line = String((settings as any).outbound_line_number || '02128427131').replace(/[^0-9]/g, '')
-    const bare = line.replace(/^0+/, '').replace(/^98/, '')
-    const lineVariants = Array.from(new Set([line, bare, '0' + bare, '98' + bare, '+98' + bare]))
     const dial = target.normalized.startsWith('98') ? '0' + target.normalized.slice(2) : target.normalized
 
     let providerResponse: any = null
@@ -44,11 +42,7 @@ Deno.serve(async (req) => {
     try {
       const res = await dsTryEndpoints([
         // documented endpoint (External APIs v1)
-        ...lineVariants.map((ln) => ({
-          path: '/api/Customize/OutgoingCall',
-          method: 'POST',
-          body: { from_number: ln, to_number: dial, caller_extension: extension },
-        })),
+        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { from_number: line, to_number: dial, caller_extension: extension } },
       ])
       endpoint = res.path
       providerResponse = res.data
