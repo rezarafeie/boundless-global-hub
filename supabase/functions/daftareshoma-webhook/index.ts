@@ -1,7 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts'
 import {
   admin, normalizeProviderCall, matchCrmRecords, customerNumberOf,
-  resolveAgentByExtension, getSettings, invokeFn, json,
+  resolveAgentByExtension, getSettings, json,
 } from '../_shared/callcenter.ts'
 
 /**
