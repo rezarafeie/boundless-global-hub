@@ -68,6 +68,20 @@ interface Course {
   title: string;
 }
 
+interface DuplicateRow {
+  keep_id: string;
+  duplicate_id: string;
+  full_name: string;
+  phone: string;
+  email: string;
+  course_id: string;
+  course_title: string | null;
+  payment_status: string;
+  payment_amount: number;
+  created_at: string;
+}
+
+
 interface Pipeline {
   id: string;
   title: string;
