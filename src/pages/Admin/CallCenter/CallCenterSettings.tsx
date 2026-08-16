@@ -147,8 +147,12 @@ const CallCenterSettings: React.FC = () => {
           <Separator />
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
-              <Label className="text-xs">داخلی پیش‌فرض</Label>
+              <Label className="text-xs">شماره تماس پیش‌فرض کارشناس</Label>
               <Input dir="ltr" value={state.settings?.default_extension ?? ''} onChange={(e) => patch('default_extension', e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">خط خروجی آکادمی</Label>
+              <Input dir="ltr" value={state.settings?.outbound_line_number ?? ''} onChange={(e) => patch('outbound_line_number', e.target.value)} placeholder="+982128427131" />
             </div>
             {NUMBERS.map((n) => (
               <div key={n.key} className="space-y-1">

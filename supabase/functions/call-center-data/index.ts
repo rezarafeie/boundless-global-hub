@@ -463,7 +463,7 @@ Deno.serve(async (req) => {
           'transcription_enabled', 'ai_analysis_enabled', 'auto_lead_matching',
           'auto_missed_call_followup', 'default_extension', 'attribution_window_days',
           'min_call_seconds_for_ai', 'notifications_enabled', 'missed_call_priority_rules',
-          'high_intent_threshold',
+          'high_intent_threshold', 'outbound_line_number',
         ]
         const patch: Record<string, unknown> = {}
         for (const k of allowed) if (k in (p.settings ?? {})) patch[k] = p.settings[k]

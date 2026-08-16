@@ -179,19 +179,19 @@ const CallButton: React.FC<CallButtonProps> = ({
             )}
 
             <div className="space-y-1">
-              <Label htmlFor="cc-ext" className="text-xs">داخلی شما (اختیاری)</Label>
+              <Label htmlFor="cc-ext" className="text-xs">شماره تماس شما (اختیاری)</Label>
               <Input
                 id="cc-ext"
                 value={extension}
                 onChange={(e) => setExtension(e.target.value)}
-                placeholder={myExt?.extension ? `پیش‌فرض: ${myExt.extension}` : 'داخلی ثبت‌شده برای ایمیل شما'}
+                placeholder={myExt?.extension ? `پیش‌فرض: ${myExt.extension}` : 'شماره ثبت‌شده برای حساب شما'}
                 dir="ltr"
               />
               {myExt && (
                 <p className="text-[11px] text-muted-foreground">
                   {myExt.extension
-                    ? `تماس از داخلی ${myExt.extension} برقرار می‌شود${myExt.email ? ` (${myExt.email})` : ''}`
-                    : 'داخلی برای حساب شما ثبت نشده است؛ از مدیر بخواهید در تنظیمات مرکز تماس ثبت کند.'}
+                    ? `ابتدا با شماره ${myExt.extension} تماس گرفته می‌شود${myExt.email ? ` (${myExt.email})` : ''}`
+                    : 'شماره تماس برای حساب شما ثبت نشده است؛ از مدیر بخواهید آن را در تنظیمات مرکز تماس ثبت کند.'}
                 </p>
               )}
             </div>

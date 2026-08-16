@@ -62,8 +62,7 @@ const AgentExtensionsCard: React.FC = () => {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4" /> داخلی کارشناسان</CardTitle>
         <CardDescription>
-          برای هر فروشنده/ادمین، ایمیل حساب آکادمی و داخلی همان کاربر در پنل دفتر شما را ثبت کنید.
-          تماس‌های خروجی هر کارشناس از داخلی خودش برقرار می‌شود.
+          برای هر فروشنده/ادمین، ایمیل و شماره تلفنی را ثبت کنید که دفتر شما ابتدا با آن کارشناس تماس می‌گیرد.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -123,8 +122,8 @@ const AgentExtensionsCard: React.FC = () => {
               <Input dir="ltr" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="agent@rafiei.co" />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">داخلی</Label>
-              <Input dir="ltr" className="w-28" value={draft.extension} onChange={(e) => setDraft({ ...draft, extension: e.target.value })} placeholder="1001" />
+              <Label className="text-xs">شماره تماس کارشناس</Label>
+              <Input dir="ltr" className="w-36" value={draft.extension} onChange={(e) => setDraft({ ...draft, extension: e.target.value })} placeholder="09123456789" />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">نام نمایشی</Label>

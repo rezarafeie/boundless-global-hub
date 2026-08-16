@@ -24,38 +24,49 @@ Deno.serve(async (req) => {
       return json({ success: false, error: 'مرکز تماس غیرفعال است' }, 400, corsHeaders)
     }
 
-    // Extension resolution: explicit (admins/managers) -> per-agent mapping (by email) -> default
+    // DaftareShoma click-to-call first rings the agent's phone (`from_number`).
+    // `caller_extension` is the registered academy line, not a short PBX extension.
     const resolved = await resolveAgentExtension(ctx, body.extension, settings.default_extension)
-    const extension = resolved.extension
-    if (!extension) {
+    const agentPhone = resolved.extension
+    if (!agentPhone) {
       return json({
         success: false,
-        error: 'داخلی شما تعریف نشده است. در تنظیمات مرکز تماس، داخلی این کارشناس را بر اساس ایمیل ثبت کنید.',
+        error: 'شماره تماس کارشناس تعریف نشده است. شماره کارشناس را در تنظیمات مرکز تماس ثبت کنید.',
       }, 400, corsHeaders)
     }
 
-    const line = String((settings as any).outbound_line_number || '02128427131').replace(/[^0-9]/g, '')
+    const lineDigits = String((settings as any).outbound_line_number || '').replace(/[^0-9]/g, '')
+    if (lineDigits.length < 7) {
+      return json({ success: false, error: 'خط خروجی آکادمی در تنظیمات مرکز تماس تعریف نشده است.' }, 400, corsHeaders)
+    }
     const dial = target.normalized.startsWith('98') ? '0' + target.normalized.slice(2) : target.normalized
+    const internationalLine = lineDigits.startsWith('98')
+      ? `+${lineDigits}`
+      : lineDigits.startsWith('0')
+        ? `+98${lineDigits.slice(1)}`
+        : lineDigits
+    const lineVariants = [...new Set([internationalLine, lineDigits])]
 
     let providerResponse: any = null
     let endpoint: string | null = null
     try {
-      const res = await dsTryEndpoints([
-        // documented endpoint (External APIs v1)
-        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { from_number: line, to_number: dial, caller_extension: extension } },
-      ])
+      const res = await dsTryEndpoints(lineVariants.map((callerLine) => ({
+        path: '/api/Customize/OutgoingCall',
+        method: 'POST',
+        body: { from_number: agentPhone, to_number: dial, caller_extension: callerLine },
+      })))
       endpoint = res.path
       providerResponse = res.data
     } catch (e) {
       const pe = e as ProviderError
       console.log('outgoing-call attempts', JSON.stringify((pe as any).attempts ?? []))
-      await audit(ctx, 'call.outgoing_failed', 'call', null, { phone: target.normalized, extension, error: pe.message })
+      await audit(ctx, 'call.outgoing_failed', 'call', null, { phone: target.normalized, agentPhone, callerLine: internationalLine, error: pe.message })
       const raw = JSON.stringify(pe.body ?? '')
       const lineMissing = raw.includes('خط وجود ندارد') || raw.includes('هفت رقم')
       const message = lineMissing
-        ? `تماس برقرار نشد: خط «${line}» یا داخلی «${extension}» در پنل دفتر شما معتبر نیست. در تنظیمات مرکز تماس بررسی کنید.`
+        ? `تماس برقرار نشد: شماره کارشناس «${agentPhone}» یا خط آکادمی «${internationalLine}» در پنل دفتر شما معتبر نیست.`
         : pe.message
-      return json({ success: false, error: message, detail: pe.body ?? null, extension, extensionSource: resolved.source, attempts: (pe as any).attempts ?? [] }, pe.status >= 400 && pe.status < 600 ? pe.status : 502, corsHeaders)
+      return json({ success: false, error: message, detail: pe.body ?? null, agentPhone, phoneSource: resolved.source, callerLine: internationalLine, attempts: (pe as any).attempts ?? [] }, pe.status >= 400 && pe.status < 600 ? pe.status : 502, corsHeaders)
     }
 
     const providerCallId = String(
@@ -70,11 +81,11 @@ Deno.serve(async (req) => {
       provider_call_id: providerCallId,
       direction: 'outgoing',
       status: 'initiated',
-      caller_number: extension,
-      caller_number_normalized: normalizePhone(extension).normalized,
+      caller_number: agentPhone,
+      caller_number_normalized: normalizePhone(agentPhone).normalized,
       destination_number: target.raw,
       destination_number_normalized: target.normalized,
-      extension,
+      extension: internationalLine,
       started_at: new Date().toISOString(),
       agent_id: ctx.userId,
       user_id: match?.user_id ?? body.userId ?? null,
@@ -89,7 +100,7 @@ Deno.serve(async (req) => {
     }, { onConflict: 'provider,provider_call_id' }).select('id').maybeSingle()
 
     await audit(ctx, 'call.outgoing_initiated', 'call', call?.id ?? null, {
-      phone: target.normalized, extension, extensionSource: resolved.source, endpoint,
+      phone: target.normalized, agentPhone, phoneSource: resolved.source, callerLine: internationalLine, endpoint,
     })
 
     return json({

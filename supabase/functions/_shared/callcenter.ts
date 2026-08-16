@@ -158,9 +158,10 @@ export async function authenticate(req: Request, bodyToken?: string): Promise<Au
 }
 
 /**
- * Resolves the extension (DaftareShoma internal number) used to place an outgoing call.
- * Priority: explicit extension (admins/managers only) -> per-agent mapping by email/user id
- * -> global default extension -> the agent's own phone number.
+ * Resolves the agent phone that DaftareShoma calls first for a click-to-call.
+ * The legacy DB column is named `extension`, but OutgoingCall requires this value
+ * in `from_number` and rejects short PBX extensions. The academy line is sent
+ * separately as `caller_extension`.
  */
 export async function resolveAgentExtension(
   ctx: AuthContext,
@@ -172,8 +173,16 @@ export async function resolveAgentExtension(
     return d || null
   }
 
+  const asLocalDialNumber = (value?: string | null) => {
+    const digits = clean(value)
+    if (!digits || digits.length < 7) return null
+    if (digits.startsWith('98')) return '0' + digits.slice(2)
+    if (digits.length === 10 && digits.startsWith('9')) return '0' + digits
+    return digits
+  }
+
   if (requested && (ctx.isAdmin || !ctx.restrictedToSelf)) {
-    const ext = clean(requested)
+    const ext = asLocalDialNumber(requested)
     if (ext) return { extension: ext, source: 'manual' }
   }
 
@@ -194,13 +203,15 @@ export async function resolveAgentExtension(
       .maybeSingle()
     if (data?.is_active) mapping = data
   }
-  if (mapping?.extension) return { extension: clean(mapping.extension), source: 'agent_mapping' }
+  const mappedPhone = asLocalDialNumber(mapping?.extension)
+  if (mappedPhone) return { extension: mappedPhone, source: 'agent_mapping' }
 
-  const fallback = clean(fallbackDefault)
+  const fallback = asLocalDialNumber(fallbackDefault)
   if (fallback) return { extension: fallback, source: 'default_extension' }
 
-  // NOTE: never fall back to the agent's mobile number — DaftareShoma rejects it
-  // with "خط وجود ندارد" because it is not a real internal line/extension.
+  const accountPhone = asLocalDialNumber(ctx.phone)
+  if (accountPhone) return { extension: accountPhone, source: 'account_phone' }
+
   return { extension: null, source: 'none' }
 }
 
