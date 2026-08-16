@@ -148,7 +148,7 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
       return;
     }
     setSavingId(r.id);
-    const { data, error } = await (supabase.rpc as any)('update_webinar_followup', {
+    const { data, error } = await (supabase.rpc as any)('update_webinar_followup_v2', {
       p_session_token: sessionToken,
       p_id: r.id,
       p_name: r.name,
@@ -164,7 +164,15 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
       p_sms_text: r.sms_text,
       p_sms_template_url: r.sms_template_url,
       p_bot_text: r.bot_text,
+      p_schedule_mode: r.schedule_mode || 'fixed',
+      p_priority: Number(r.priority) || 100,
+      p_min_interval_minutes: Number(r.min_interval_minutes) || 30,
+      p_do_not_send_after_webinar_start: r.do_not_send_after_webinar_start ?? true,
+      p_quiet_hours_start: r.quiet_hours_start === null || r.quiet_hours_start === undefined ? null : Number(r.quiet_hours_start),
+      p_quiet_hours_end: r.quiet_hours_end === null || r.quiet_hours_end === undefined ? null : Number(r.quiet_hours_end),
+      p_final_lead_minutes: Number(r.final_lead_minutes) ?? 15,
     });
+
     setSavingId(null);
     if (error) { toast({ title: 'خطا', description: error.message, variant: 'destructive' }); return; }
     if (data) setRows(prev => prev.map(x => x.id === r.id ? (data as any) : x));
