@@ -52,7 +52,20 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
   const [testResult, setTestResult] = useState<Record<string, any>>({});
   const [logs, setLogs] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [webinarStart, setWebinarStart] = useState<string | null>(null);
+  const [previewDays, setPreviewDays] = useState(5);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!webinarId) return;
+    supabase
+      .from('webinar_entries' as any)
+      .select('start_date')
+      .eq('id', webinarId)
+      .maybeSingle()
+      .then(({ data }) => setWebinarStart((data as any)?.start_date ?? null));
+  }, [webinarId]);
+
 
   const load = async () => {
     setLoading(true);
