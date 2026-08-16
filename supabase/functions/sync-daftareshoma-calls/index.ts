@@ -75,6 +75,13 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
   const settings = await getSettings()
   const { data: state } = await admin.from('daftareshoma_sync_state').select('*').eq('id', 1).maybeSingle()
 
+  if (opts.allTimeCount) {
+    const { count: storedCount } = await admin.from('calls').select('id', { count: 'exact', head: true }).eq('provider', 'daftareshoma')
+    if ((state?.calls_synced ?? 0) > (storedCount ?? 0)) {
+      return { providerTotal: state.calls_synced, stored: storedCount ?? 0, counted: false }
+    }
+  }
+
   await admin.from('daftareshoma_sync_state').update({ last_attempt_at: new Date().toISOString() }).eq('id', 1)
 
   // the stored cursor can drift; never start later than the newest stored call

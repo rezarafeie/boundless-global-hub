@@ -35,6 +35,7 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [agents, setAgents] = useState<any[]>([]);
+  const [periodSyncVersion, setPeriodSyncVersion] = useState(0);
   const debouncedSearch = useDebounce(search, 400);
   const pageSize = 20;
 
@@ -58,12 +59,20 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
 
   useEffect(() => {
     let active = true;
+    if (!fromISO && !toISO) return () => { active = false; };
+    setLoading(true);
+    callCenter.syncNow(false, { from: fromISO, to: toISO })
+      .then(() => { if (active) setPeriodSyncVersion((value) => value + 1); })
+      .catch((e) => { if (active) toast({ title: 'خطا در دریافت تماس‌های بازه', description: (e as Error).message, variant: 'destructive' }); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [fromISO, toISO]);
+
+  useEffect(() => {
+    let active = true;
     const loadCalls = async () => {
       setLoading(true);
       try {
-        // Import exactly the period selected by the admin. Omitting provider
-        // number/status/type filters intentionally fetches every call.
-        if (fromISO || toISO) await callCenter.syncNow(false, { from: fromISO, to: toISO });
         const res = await callCenter.calls({
       page, pageSize,
       search: debouncedSearch || undefined,
@@ -81,7 +90,7 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
     };
     loadCalls();
     return () => { active = false; };
-  }, [page, debouncedSearch, direction, status, agentId, missedOnly, fromISO, toISO]);
+  }, [page, debouncedSearch, direction, status, agentId, missedOnly, fromISO, toISO, periodSyncVersion]);
 
   useEffect(() => { setPage(1); }, [debouncedSearch, direction, status, agentId, missedOnly, fromISO, toISO]);
 
