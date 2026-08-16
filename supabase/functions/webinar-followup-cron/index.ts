@@ -102,6 +102,9 @@ serve(async (req) => {
         if (count >= maxRepeats) { skipped++; continue; }
 
         if (isAdaptive) {
+          // respect the minimum interval since the last message of this sequence
+          const last = lastSentBySeq[cacheKey]?.[rec.phone];
+          if (last && (Date.now() - last) / 60000 < (fu.min_interval_minutes ?? 30)) { skipped++; continue; }
           // remaining followups of this adaptive sequence for this recipient
           const remaining = (adaptiveGroups[cacheKey] ?? []).filter((f) =>
             (sentByFollowup[f.id]?.[rec.phone] ?? 0) < (f.max_repeats ?? 1)
