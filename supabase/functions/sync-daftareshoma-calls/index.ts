@@ -218,6 +218,9 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
     const call = normalizeProviderCall(rec)
     return call ? [call.provider_call_id, call] : [crypto.randomUUID(), null]
   })).values()].filter(Boolean) as NonNullable<ReturnType<typeof normalizeProviderCall>>[]
+  if (records.length && !normalized.length) {
+    console.log('unmapped portal call keys', JSON.stringify(Object.keys(records[0]).slice(0, 80)))
+  }
 
   // Large historical/range imports use batched writes. CRM enrichment remains
   // in the lightweight incremental path and recordings are always lazy.
