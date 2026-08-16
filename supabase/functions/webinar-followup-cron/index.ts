@@ -41,7 +41,35 @@ serve(async (req) => {
     // cache recipients per webinar+audience
     const recCache: Record<string, any[]> = {};
 
-    for (const fu of ((followups as any[]) ?? [])) {
+    const allFollowups = ((followups as any[]) ?? []);
+
+    // sent counts for every followup (followup_id -> phone -> count)
+    const sentByFollowup: Record<string, Record<string, number>> = {};
+    for (const fu of allFollowups) {
+      const { data: sentRows } = await supabase
+        .from("webinar_followup_recipients")
+        .select("phone, sent_count")
+        .eq("followup_id", fu.id);
+      const m: Record<string, number> = {};
+      for (const s of ((sentRows as any[]) ?? [])) m[s.phone] = s.sent_count ?? 0;
+      sentByFollowup[fu.id] = m;
+    }
+
+    // adaptive sequences grouped per webinar+audience, ordered by priority
+    const adaptiveGroups: Record<string, any[]> = {};
+    for (const fu of allFollowups) {
+      if ((fu.schedule_mode ?? "fixed") !== "adaptive") continue;
+      const key = `${fu.webinar_id}:${fu.audience}`;
+      (adaptiveGroups[key] ??= []).push(fu);
+    }
+    for (const key of Object.keys(adaptiveGroups)) {
+      adaptiveGroups[key].sort((a, b) =>
+        ((a.priority ?? 100) - (b.priority ?? 100)) ||
+        String(a.created_at).localeCompare(String(b.created_at))
+      );
+    }
+
+    for (const fu of allFollowups) {
       const webinar = webinarById[fu.webinar_id];
       if (!webinar) continue;
       const cacheKey = `${fu.webinar_id}:${fu.audience}`;
@@ -50,14 +78,9 @@ serve(async (req) => {
       if (!recipients.length) continue;
 
       const users = await fetchUsersByPhones(recipients.map((r: any) => r.phone));
+      const sentMap = sentByFollowup[fu.id] ?? {};
 
-      const { data: sentRows } = await supabase
-        .from("webinar_followup_recipients")
-        .select("phone, sent_count")
-        .eq("followup_id", fu.id);
-      const sentMap: Record<string, number> = {};
-      for (const s of ((sentRows as any[]) ?? [])) sentMap[s.phone] = s.sent_count ?? 0;
-
+      const isAdaptive = (fu.schedule_mode ?? "fixed") === "adaptive";
       const maxRepeats = fu.max_repeats ?? 1;
       const firstDelay = fu.delay_minutes ?? 60;
       const repeatDelay = fu.repeat_delay_minutes ?? 1440;
@@ -67,24 +90,36 @@ serve(async (req) => {
       for (const rec of recipients) {
         const count = sentMap[rec.phone] ?? 0;
         if (count >= maxRepeats) { skipped++; continue; }
-        const anchor = anchorTime(fu, webinar, rec);
-        if (!anchor) { skipped++; continue; }
-        const elapsed = minutesSince(anchor);
-        const required = firstDelay + count * repeatDelay;
-        if (elapsed < required) { skipped++; continue; }
+
+        if (isAdaptive) {
+          // remaining followups of this adaptive sequence for this recipient
+          const remaining = (adaptiveGroups[cacheKey] ?? []).filter((f) =>
+            (sentByFollowup[f.id]?.[rec.phone] ?? 0) < (f.max_repeats ?? 1)
+          );
+          const { due } = adaptiveDue(fu, remaining, webinar, rec);
+          if (!due) { skipped++; continue; }
+        } else {
+          const anchor = anchorTime(fu, webinar, rec);
+          if (!anchor) { skipped++; continue; }
+          const elapsed = minutesSince(anchor);
+          const required = firstDelay + count * repeatDelay;
+          if (elapsed < required) { skipped++; continue; }
+        }
 
         try {
           const { ok } = await runWebinarFollowup(fu, webinar, rec, users[rec.phone] ?? null);
           if (ok) {
             await bumpWebinarRecipient(fu, rec, count);
+            sentMap[rec.phone] = count + 1;
             sent++;
           }
         } catch (e) {
           console.error("webinar followup error", fu.id, rec.phone, e);
         }
       }
-      summary.push({ followup_id: fu.id, name: fu.name, webinar: webinar.title, recipients: recipients.length, sent, skipped });
+      summary.push({ followup_id: fu.id, name: fu.name, mode: fu.schedule_mode ?? "fixed", webinar: webinar.title, recipients: recipients.length, sent, skipped });
     }
+
 
     return new Response(JSON.stringify({ ok: true, summary }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
