@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Phone, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Phone, PhoneOutgoing, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -15,49 +15,73 @@ interface CallButtonProps {
   name?: string | null;
   userId?: number | null;
   leadId?: string | null;
+  consultationId?: string | null;
+  webinarRegistrationId?: string | null;
   context?: string;
   source?: string;
   variant?: 'icon' | 'button';
+  /** Allow typing/editing the destination number (manual outgoing call). */
+  manual?: boolean;
+  label?: string;
   className?: string;
 }
 
 type State = 'idle' | 'lookup' | 'connecting' | 'ringing' | 'failed';
 
 const CallButton: React.FC<CallButtonProps> = ({
-  phone, name, userId, leadId, context, source = 'crm', variant = 'icon', className,
+  phone, name, userId, leadId, consultationId, webinarRegistrationId,
+  context, source = 'crm', variant = 'icon', manual = false, label, className,
 }) => {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<State>('idle');
   const [info, setInfo] = useState<{ match: any; history: any[] } | null>(null);
   const [extension, setExtension] = useState('');
+  const [myExt, setMyExt] = useState<{ extension: string | null; source: string; email: string | null } | null>(null);
+  const [target, setTarget] = useState(phone ?? '');
   const [error, setError] = useState<string | null>(null);
 
-  if (!phone) return null;
+  useEffect(() => { setTarget(phone ?? ''); }, [phone]);
 
-  const openDialog = async () => {
-    setOpen(true);
+  if (!phone && !manual) return null;
+
+  const lookup = async (value: string) => {
+    const digits = (value || '').replace(/[^0-9+]/g, '');
+    if (digits.length < 8) { setInfo(null); return; }
     setState('lookup');
-    setError(null);
     try {
-      const res = await callCenter.lookup(phone);
+      const res = await callCenter.lookup(digits);
       setInfo(res);
-    } catch (e) {
+    } catch {
       setInfo(null);
     } finally {
       setState('idle');
     }
   };
 
+  const openDialog = async () => {
+    setOpen(true);
+    setError(null);
+    setState('idle');
+    callCenter.myExtension().then(setMyExt).catch(() => {});
+    if (target) lookup(target);
+  };
+
   const dial = async () => {
+    if (!target || target.replace(/[^0-9]/g, '').length < 8) {
+      setError('شماره تماس معتبر نیست');
+      return;
+    }
     setState('connecting');
     setError(null);
     try {
       const res = await callCenter.dial({
-        phone,
+        phone: target,
         extension: extension || undefined,
         userId: userId ?? info?.match?.user_id ?? null,
         leadId: leadId ?? info?.match?.lead_id ?? null,
+        consultationId: consultationId ?? info?.match?.consultation_id ?? null,
+        webinarRegistrationId: webinarRegistrationId ?? info?.match?.webinar_registration_id ?? null,
         source,
       });
       setState('ringing');
@@ -87,8 +111,8 @@ const CallButton: React.FC<CallButtonProps> = ({
           className={`gap-2 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 ${className ?? ''}`}
           onClick={(e) => { e.stopPropagation(); openDialog(); }}
         >
-          <Phone className="h-4 w-4" />
-          تماس
+          {manual ? <PhoneOutgoing className="h-4 w-4" /> : <Phone className="h-4 w-4" />}
+          {label ?? (manual ? 'تماس خروجی' : 'تماس')}
         </Button>
       )}
 
@@ -105,18 +129,40 @@ const CallButton: React.FC<CallButtonProps> = ({
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="rounded-lg border p-3 space-y-1">
-              <div className="font-semibold">{name || info?.match?.customer_name || 'مخاطب ناشناس'}</div>
-              <div className="text-sm text-muted-foreground font-mono" dir="ltr">{phone}</div>
-              {context && <div className="text-xs text-muted-foreground">{context}</div>}
-              <div className="flex flex-wrap gap-1 pt-1">
-                {info?.match?.user_id && <Badge variant="secondary">کاربر آکادمی</Badge>}
-                {info?.match?.order_id && <Badge variant="secondary">مشتری</Badge>}
-                {info?.match?.lead_id && <Badge variant="outline">لید</Badge>}
-                {info?.match?.consultation_id && <Badge variant="outline">مشاوره</Badge>}
-                {info?.match?.webinar_registration_id && <Badge variant="outline">وبینار</Badge>}
+            {manual ? (
+              <div className="space-y-1">
+                <Label htmlFor="cc-target" className="text-xs">شماره مقصد</Label>
+                <Input
+                  id="cc-target"
+                  dir="ltr"
+                  inputMode="tel"
+                  placeholder="09123456789"
+                  value={target}
+                  onChange={(e) => setTarget(e.target.value)}
+                  onBlur={(e) => lookup(e.target.value)}
+                />
               </div>
-            </div>
+            ) : (
+              <div className="rounded-lg border p-3 space-y-1">
+                <div className="font-semibold">{name || info?.match?.customer_name || 'مخاطب ناشناس'}</div>
+                <div className="text-sm text-muted-foreground font-mono" dir="ltr">{target}</div>
+                {context && <div className="text-xs text-muted-foreground">{context}</div>}
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {info?.match?.user_id && <Badge variant="secondary">کاربر آکادمی</Badge>}
+                  {info?.match?.order_id && <Badge variant="secondary">مشتری</Badge>}
+                  {info?.match?.lead_id && <Badge variant="outline">لید</Badge>}
+                  {info?.match?.consultation_id && <Badge variant="outline">مشاوره</Badge>}
+                  {info?.match?.webinar_registration_id && <Badge variant="outline">وبینار</Badge>}
+                </div>
+              </div>
+            )}
+
+            {manual && info?.match?.customer_name && (
+              <div className="rounded-lg border p-3 text-sm">
+                <span className="text-muted-foreground">مخاطب شناسایی شد: </span>
+                <span className="font-medium">{info.match.customer_name}</span>
+              </div>
+            )}
 
             {!!info?.history?.length && (
               <div className="rounded-lg border p-3">
@@ -133,8 +179,21 @@ const CallButton: React.FC<CallButtonProps> = ({
             )}
 
             <div className="space-y-1">
-              <Label htmlFor="cc-ext" className="text-xs">داخلی کارشناس (اختیاری)</Label>
-              <Input id="cc-ext" value={extension} onChange={(e) => setExtension(e.target.value)} placeholder="پیش‌فرض تنظیمات" dir="ltr" />
+              <Label htmlFor="cc-ext" className="text-xs">داخلی شما (اختیاری)</Label>
+              <Input
+                id="cc-ext"
+                value={extension}
+                onChange={(e) => setExtension(e.target.value)}
+                placeholder={myExt?.extension ? `پیش‌فرض: ${myExt.extension}` : 'داخلی ثبت‌شده برای ایمیل شما'}
+                dir="ltr"
+              />
+              {myExt && (
+                <p className="text-[11px] text-muted-foreground">
+                  {myExt.extension
+                    ? `تماس از داخلی ${myExt.extension} برقرار می‌شود${myExt.email ? ` (${myExt.email})` : ''}`
+                    : 'داخلی برای حساب شما ثبت نشده است؛ از مدیر بخواهید در تنظیمات مرکز تماس ثبت کند.'}
+                </p>
+              )}
             </div>
 
             {state === 'ringing' && (
