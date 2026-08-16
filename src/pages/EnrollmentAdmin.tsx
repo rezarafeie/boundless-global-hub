@@ -47,6 +47,7 @@ const FormsManagement = React.lazy(() => import('@/components/Admin/FormsManagem
 const AssignmentsList = React.lazy(() => import('@/pages/Admin/Assignments/AssignmentsList'));
 const SupportActivations = React.lazy(() => import('@/pages/Admin/SupportActivations'));
 const CallCenterDashboard = React.lazy(() => import('@/components/Admin/CallCenter/CallCenterDashboard'));
+const LiveCallBanner = React.lazy(() => import('@/components/CallCenter/LiveCallBanner'));
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -597,6 +598,11 @@ const EnrollmentAdmin: React.FC = () => {
         
         {/* Main Content */}
         <main className="flex-1 p-4 lg:p-8 overflow-auto bg-background h-full" style={{ direction: 'rtl' }}>
+          <ErrorBoundary>
+            <Suspense fallback={null}>
+              <LiveCallBanner className="mb-4" />
+            </Suspense>
+          </ErrorBoundary>
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
               {renderContent()}
