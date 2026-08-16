@@ -93,10 +93,13 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
     .filter(Boolean).map((v) => new Date(v as string).getTime())
   const cursor = cursorCandidates.length ? Math.min(...cursorCandidates) : null
 
-  const requestedFrom = opts.from ? new Date(opts.from) : null
+  let requestedFrom = opts.from ? new Date(opts.from) : null
   const requestedTo = opts.to ? new Date(opts.to) : null
   if (requestedFrom && Number.isNaN(requestedFrom.getTime())) throw new Error('تاریخ شروع معتبر نیست')
   if (requestedTo && Number.isNaN(requestedTo.getTime())) throw new Error('تاریخ پایان معتبر نیست')
+  if (requestedFrom && requestedTo && requestedTo.getTime() - requestedFrom.getTime() > 7 * 24 * 3600 * 1000) {
+    throw new Error('بازه همگام‌سازی هر درخواست نباید بیشتر از ۷ روز باشد')
+  }
 
   const since = requestedFrom ?? (opts.full
     ? new Date(Date.now() - 30 * 24 * 3600 * 1000)
