@@ -330,6 +330,7 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
     to: toStr,
     ...(records.length ? {} : { providerResponseShape }),
     ...(records.length && !normalized.length ? { providerRecordKeys: Object.keys(records[0]).slice(0, 100) } : {}),
+    ...(records.length && !normalized.length ? { providerFirstRecordShape: responseShape(records[0]) } : {}),
   }
 }
 
