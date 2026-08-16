@@ -1272,7 +1272,63 @@ const SimplifiedLeadManagement: React.FC = () => {
     });
   };
 
+  // ---- Duplicate enrollments cleanup ----
+  const getSessionToken = () => {
+    const cookieToken = document.cookie
+      .split('; ')
+      .find((item) => item.startsWith('session_token='))
+      ?.split('=')[1];
+    const token = localStorage.getItem('messenger_session_token') || cookieToken;
+    return token ? decodeURIComponent(token) : null;
+  };
+
+  const scanDuplicates = async () => {
+    const sessionToken = getSessionToken();
+    if (!sessionToken) {
+      toast({ title: 'خطا', description: 'نشست معتبر یافت نشد. دوباره وارد شوید.', variant: 'destructive' });
+      return;
+    }
+    setShowDuplicates(true);
+    setDuplicatesLoading(true);
+    try {
+      const { data, error } = await (supabase as any).rpc('find_duplicate_enrollments', {
+        p_session_token: sessionToken,
+        p_course_id: selectedCourse || null,
+      });
+      if (error) throw error;
+      setDuplicateRows((data || []) as DuplicateRow[]);
+    } catch (e: any) {
+      toast({ title: 'خطا در بررسی تکراری‌ها', description: e.message, variant: 'destructive' });
+      setDuplicateRows([]);
+    } finally {
+      setDuplicatesLoading(false);
+    }
+  };
+
+  const deleteDuplicates = async () => {
+    const sessionToken = getSessionToken();
+    if (!sessionToken || duplicateRows.length === 0) return;
+    setDuplicatesDeleting(true);
+    try {
+      const { data, error } = await (supabase as any).rpc('remove_duplicate_enrollments', {
+        p_session_token: sessionToken,
+        p_course_id: selectedCourse || null,
+        p_ids: duplicateRows.map((d) => d.duplicate_id),
+      });
+      if (error) throw error;
+      toast({ title: 'موفق', description: `${data ?? 0} رکورد تکراری حذف شد` });
+      setDuplicateRows([]);
+      setShowDuplicates(false);
+      if (hasLoaded) await handleLoadLeads();
+    } catch (e: any) {
+      toast({ title: 'خطا در حذف تکراری‌ها', description: e.message, variant: 'destructive' });
+    } finally {
+      setDuplicatesDeleting(false);
+    }
+  };
+
   const formatDate = (date: string) => {
+
     try {
       return format(new Date(date), 'yyyy/MM/dd HH:mm');
     } catch {
