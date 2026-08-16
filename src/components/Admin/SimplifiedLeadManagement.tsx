@@ -1814,6 +1814,17 @@ const SimplifiedLeadManagement: React.FC = () => {
               <span className="hidden sm:inline">دانلود CSV</span>
               <span className="sm:hidden">CSV</span>
             </Button>
+            <Button
+              variant="outline"
+              onClick={scanDuplicates}
+              size="sm"
+              className="gap-1.5 text-xs md:text-sm text-destructive hover:text-destructive"
+            >
+              <Copy className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">حذف تکراری‌ها</span>
+              <span className="sm:hidden">تکراری</span>
+            </Button>
+
             {hasLoaded && (
               <span className="text-xs md:text-sm text-muted-foreground mr-auto">
                 نمایش {aiScoreFilter !== 'all' ? leads.filter(l => l.ai_category === aiScoreFilter).length : leads.length} لید
