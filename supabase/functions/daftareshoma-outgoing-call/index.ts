@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
       const message = lineMissing
         ? `داخلی «${extension}» در پنل دفتر شما تعریف نشده است. در تنظیمات مرکز تماس، داخلی صحیح این کارشناس را ثبت کنید.`
         : pe.message
-      return json({ success: false, error: message, detail: pe.body ?? null, extension, extensionSource: resolved.source }, pe.status >= 400 && pe.status < 600 ? pe.status : 502, corsHeaders)
+      return json({ success: false, error: message, detail: pe.body ?? null, extension, extensionSource: resolved.source, attempts: (pe as any).attempts ?? [] }, pe.status >= 400 && pe.status < 600 ? pe.status : 502, corsHeaders)
     }
 
     const providerCallId = String(
