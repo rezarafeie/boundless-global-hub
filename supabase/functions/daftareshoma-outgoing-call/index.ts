@@ -48,7 +48,12 @@ Deno.serve(async (req) => {
     } catch (e) {
       const pe = e as ProviderError
       await audit(ctx, 'call.outgoing_failed', 'call', null, { phone: target.normalized, extension, error: pe.message })
-      return json({ success: false, error: pe.message, detail: pe.body ?? null }, pe.status >= 400 && pe.status < 600 ? pe.status : 502, corsHeaders)
+      const raw = JSON.stringify(pe.body ?? '')
+      const lineMissing = raw.includes('خط وجود ندارد')
+      const message = lineMissing
+        ? `داخلی «${extension}» در پنل دفتر شما تعریف نشده است. در تنظیمات مرکز تماس، داخلی صحیح این کارشناس را ثبت کنید.`
+        : pe.message
+      return json({ success: false, error: message, detail: pe.body ?? null, extension, extensionSource: resolved.source }, pe.status >= 400 && pe.status < 600 ? pe.status : 502, corsHeaders)
     }
 
     const providerCallId = String(
