@@ -78,16 +78,54 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
     setLoading(false);
   };
 
+  const getSessionToken = () => {
+    const cookieToken = document.cookie
+      .split('; ')
+      .find((item) => item.startsWith('session_token='))
+      ?.split('=')
+      .slice(1)
+      .join('=');
+    const t = localStorage.getItem('messenger_session_token') || cookieToken;
+    return t ? decodeURIComponent(t) : null;
+  };
+
   const loadLogs = async () => {
     setLogsLoading(true);
-    const { data } = await supabase
-      .from('webinar_followup_log' as any)
-      .select('*')
-      .eq('webinar_id', webinarId)
-      .order('created_at', { ascending: false })
-      .limit(100);
-    setLogs((data as any) || []);
-    setLogsLoading(false);
+    try {
+      const token = getSessionToken();
+      let list: any[] = [];
+      let recs: any[] = [];
+      if (token) {
+        const [{ data: logData, error: logErr }, { data: recData }] = await Promise.all([
+          (supabase.rpc as any)('get_webinar_followup_logs', {
+            p_session_token: token,
+            p_webinar_id: webinarId,
+            p_limit: 200,
+          }),
+          (supabase.rpc as any)('get_webinar_followup_recipients', {
+            p_session_token: token,
+            p_webinar_id: webinarId,
+          }),
+        ]);
+        if (logErr) throw logErr;
+        list = (logData as any) || [];
+        recs = (recData as any) || [];
+      } else {
+        const { data } = await supabase
+          .from('webinar_followup_log' as any)
+          .select('*')
+          .eq('webinar_id', webinarId)
+          .order('created_at', { ascending: false })
+          .limit(200);
+        list = (data as any) || [];
+      }
+      setLogs(list);
+      setRecipients(recs);
+    } catch (e: any) {
+      toast({ title: 'خطا در دریافت لاگ‌ها', description: e.message, variant: 'destructive' });
+    } finally {
+      setLogsLoading(false);
+    }
   };
 
   useEffect(() => { if (webinarId) { load(); loadLogs(); } }, [webinarId]);
