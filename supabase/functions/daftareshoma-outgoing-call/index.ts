@@ -41,19 +41,23 @@ Deno.serve(async (req) => {
     try {
       const res = await dsTryEndpoints([
         // documented endpoint (External APIs v1)
-        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { from_number: extension, to_number: dial, caller_extension: extension } },
+        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { from_number: extension, to_number: dial } },
+        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { From: extension, To: dial } },
+        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { extension, number: dial } },
+        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { caller_extension: extension, to_number: dial } },
       ])
       endpoint = res.path
       providerResponse = res.data
     } catch (e) {
       const pe = e as ProviderError
+      console.log('outgoing-call attempts', JSON.stringify((pe as any).attempts ?? []))
       await audit(ctx, 'call.outgoing_failed', 'call', null, { phone: target.normalized, extension, error: pe.message })
       const raw = JSON.stringify(pe.body ?? '')
       const lineMissing = raw.includes('خط وجود ندارد')
       const message = lineMissing
         ? `داخلی «${extension}» در پنل دفتر شما تعریف نشده است. در تنظیمات مرکز تماس، داخلی صحیح این کارشناس را ثبت کنید.`
         : pe.message
-      return json({ success: false, error: message, detail: pe.body ?? null, extension, extensionSource: resolved.source }, pe.status >= 400 && pe.status < 600 ? pe.status : 502, corsHeaders)
+      return json({ success: false, error: message, detail: pe.body ?? null, extension, extensionSource: resolved.source, attempts: (pe as any).attempts ?? [] }, pe.status >= 400 && pe.status < 600 ? pe.status : 502, corsHeaders)
     }
 
     const providerCallId = String(
