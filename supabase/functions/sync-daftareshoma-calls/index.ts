@@ -2,8 +2,9 @@ import { corsHeaders } from '../_shared/cors.ts'
 import {
   admin, authenticate, requirePermission, audit, AuthError, dsTryEndpoints, ProviderError,
   normalizeProviderCall, matchCrmRecords, customerNumberOf, resolveAgentByExtension,
-  getSettings, invokeFn, json,
+  getSettings, invokeFn, json, tehranNaive,
 } from '../_shared/callcenter.ts'
+
 
 const PAGE_SIZE = 200
 
@@ -70,13 +71,16 @@ async function runSync(ctx: any, opts: { full?: boolean } = {}) {
       : new Date(Date.now() - 3 * 24 * 3600 * 1000)
 
   const now = new Date()
+  // query a bit into the future so provider-side clock / timezone drift never
+  // truncates the newest calls
+  const until = new Date(now.getTime() + 24 * 3600 * 1000)
   const fromStr = since.toISOString()
   const toStr = now.toISOString()
   // documented API: POST /api/Customize/CustomerCallSearch
-  // dates are plain strings – try ISO (no Z) first, then SQL style, then unfiltered
-  const isoFmt = (d: Date) => d.toISOString().slice(0, 19)
-  const sqlFmt = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ')
-  const dayFmt = (d: Date) => d.toISOString().slice(0, 10)
+  // provider dates are naive Tehran local time
+  const isoFmt = (d: Date) => tehranNaive(d)
+  const sqlFmt = (d: Date) => tehranNaive(d, ' ')
+  const dayFmt = (d: Date) => tehranNaive(d).slice(0, 10)
 
   const SEARCH_PATH = '/api/Customize/CustomerCallSearch'
 
@@ -84,11 +88,12 @@ async function runSync(ctx: any, opts: { full?: boolean } = {}) {
   let attempts: any[] = []
   try {
     const res = await dsTryEndpoints([
-      { path: SEARCH_PATH, method: 'POST', body: { fromDate: isoFmt(since), toDate: isoFmt(now), limit: PAGE_SIZE, pagination: 1 } },
-      { path: SEARCH_PATH, method: 'POST', body: { fromDate: sqlFmt(since), toDate: sqlFmt(now), limit: PAGE_SIZE, pagination: 1 } },
-      { path: SEARCH_PATH, method: 'POST', body: { fromDate: dayFmt(since), toDate: dayFmt(now), limit: PAGE_SIZE, pagination: 1 } },
+      { path: SEARCH_PATH, method: 'POST', body: { fromDate: isoFmt(since), toDate: isoFmt(until), limit: PAGE_SIZE, pagination: 1 } },
+      { path: SEARCH_PATH, method: 'POST', body: { fromDate: sqlFmt(since), toDate: sqlFmt(until), limit: PAGE_SIZE, pagination: 1 } },
+      { path: SEARCH_PATH, method: 'POST', body: { fromDate: dayFmt(since), toDate: dayFmt(until), limit: PAGE_SIZE, pagination: 1 } },
       { path: SEARCH_PATH, method: 'POST', body: { limit: PAGE_SIZE, pagination: 1 } },
     ])
+
     records = extractRecords(res.data)
     attempts = res.attempts
 
@@ -100,7 +105,7 @@ async function runSync(ctx: any, opts: { full?: boolean } = {}) {
       for (let page = 2; page <= maxPages; page++) {
         try {
           const next = await dsTryEndpoints([
-            { path: SEARCH_PATH, method: 'POST', body: { ...(accepted ?? { fromDate: isoFmt(since), toDate: isoFmt(now) }), limit: PAGE_SIZE, pagination: page } },
+            { path: SEARCH_PATH, method: 'POST', body: { ...(accepted ?? { fromDate: isoFmt(since), toDate: isoFmt(until) }), limit: PAGE_SIZE, pagination: page } },
           ])
           const chunk = extractRecords(next.data)
           if (!chunk.length) break
