@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import CallButton from '@/components/CallCenter/CallButton';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -139,6 +140,12 @@ const ConsultationDetailsPanel: React.FC<Props> = ({ booking, open, onClose, onO
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-muted-foreground" />
                 <span dir="ltr">{booking.phone}</span>
+                <CallButton
+                  phone={booking.phone}
+                  name={booking.full_name}
+                  consultationId={booking.id}
+                  source="consultation_details"
+                />
               </div>
               {booking.email && (
                 <div className="flex items-center gap-2">
