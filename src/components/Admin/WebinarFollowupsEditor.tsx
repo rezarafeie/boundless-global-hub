@@ -214,6 +214,19 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
   const patch = (id: string, p: Partial<WebinarFollowup>) =>
     setRows(prev => prev.map(r => r.id === id ? { ...r, ...p } : r));
 
+  const adaptiveRows = rows
+    .filter(r => r.enabled && (r.schedule_mode || 'fixed') === 'adaptive')
+    .sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100));
+
+  const preview = webinarStart
+    ? adaptiveSchedule(
+        adaptiveRows,
+        webinarStart,
+        new Date(new Date(webinarStart).getTime() - previewDays * 24 * 60 * 60000),
+      )
+    : [];
+
+
   return (
     <div className="space-y-4" dir="rtl">
       <div className="flex items-center justify-between">
