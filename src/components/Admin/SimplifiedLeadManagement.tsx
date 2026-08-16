@@ -175,6 +175,13 @@ const SimplifiedLeadManagement: React.FC = () => {
   const [assignmentProgress, setAssignmentProgress] = useState({ current: 0, total: 0, status: '' });
   const [isAssigning, setIsAssigning] = useState(false);
 
+  // Duplicate cleanup
+  const [showDuplicates, setShowDuplicates] = useState(false);
+  const [duplicateRows, setDuplicateRows] = useState<DuplicateRow[]>([]);
+  const [duplicatesLoading, setDuplicatesLoading] = useState(false);
+  const [duplicatesDeleting, setDuplicatesDeleting] = useState(false);
+
+
   // Bulk transfer states
   const [bulkTransferDialogOpen, setBulkTransferDialogOpen] = useState(false);
   const [selectedInactiveAgentId, setSelectedInactiveAgentId] = useState<number | null>(null);
