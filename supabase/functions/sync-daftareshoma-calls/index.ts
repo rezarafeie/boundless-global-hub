@@ -11,7 +11,7 @@ const PAGE_SIZE = 25
 function extractRecords(data: any): Record<string, any>[] {
   if (!data) return []
   if (Array.isArray(data)) return data
-  const keys = new Set(['items', 'data', 'result', 'results', 'records', 'callreports', 'list', 'rows', 'entities'])
+  const keys = new Set(['items', 'data', 'result', 'results', 'records', 'callreports', 'calls', 'list', 'rows', 'entities'])
   for (const [key, v] of Object.entries(data)) {
     if (!keys.has(key.toLowerCase())) continue
     if (Array.isArray(v) && v.length) return v as Record<string, any>[]
