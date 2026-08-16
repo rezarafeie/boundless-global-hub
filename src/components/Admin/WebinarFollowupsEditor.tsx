@@ -363,6 +363,39 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
         </div>
       ))}
 
+      {adaptiveRows.length > 0 && (
+        <div className="border rounded p-3 space-y-2 bg-muted/10">
+          <div className="flex flex-wrap items-center gap-2">
+            <CalendarClock className="h-4 w-4" />
+            <h5 className="text-sm font-semibold">پیش‌نمایش زمان‌بندی تطبیقی</h5>
+            <Label className="text-xs mr-2">کاربر چند روز قبل از وبینار ثبت‌نام کند؟</Label>
+            <Input type="number" step="0.5" value={previewDays} onChange={(e) => setPreviewDays(Number(e.target.value))} className="h-8 w-20" />
+          </div>
+          {!webinarStart && <p className="text-xs text-muted-foreground">تاریخ شروع وبینار ثبت نشده است.</p>}
+          {webinarStart && preview.length === 0 && (
+            <p className="text-xs text-destructive">با این تنظیمات، زمانی برای ارسال باقی نمی‌ماند.</p>
+          )}
+          {webinarStart && preview.length > 0 && (
+            <ol className="text-xs space-y-1">
+              {preview.map((s, i) => (
+                <li key={s.id} className="flex gap-2">
+                  <span className="text-muted-foreground">پیگیری {i + 1}:</span>
+                  <span className="font-medium">{s.name}</span>
+                  <span className="mr-auto" dir="rtl">{formatTehran(s.at)}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+          {webinarStart && preview.length < adaptiveRows.length && (
+            <p className="text-[11px] text-amber-600">
+              با رعایت حداقل فاصله، فقط {preview.length} پیگیری از {adaptiveRows.length} پیگیری بر اساس اولویت ارسال می‌شود.
+            </p>
+          )}
+        </div>
+      )}
+
+
+
       <div className="space-y-2 pt-2">
         <div className="flex items-center justify-between">
           <h5 className="text-sm font-semibold">لاگ ارسال‌ها ({logs.length})</h5>
