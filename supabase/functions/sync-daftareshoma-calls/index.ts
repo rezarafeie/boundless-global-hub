@@ -157,6 +157,7 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
 
   let records: Record<string, any>[] = []
   let attempts: any[] = []
+  let providerResponseShape: unknown = null
   try {
     // Match the working customer portal request exactly. Leaving the condition
     // empty requests all numbers, statuses, and call types.
@@ -166,6 +167,7 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
 
     records = extractRecords(res.data)
     attempts = res.attempts
+    providerResponseShape = responseShape(res.data)
     if (!records.length) console.log('portal response shape', JSON.stringify(responseShape(res.data)))
 
     const providerTotal = extractTotal(res.data)
@@ -313,7 +315,7 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
     updated,
     from: fromStr,
     to: toStr,
-    ...(records.length ? {} : { providerResponseShape: responseShape((globalThis as any).__unused) }),
+    ...(records.length ? {} : { providerResponseShape }),
   }
 }
 
