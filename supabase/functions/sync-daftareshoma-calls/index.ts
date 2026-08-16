@@ -86,10 +86,12 @@ async function runSync(ctx: any, opts: { full?: boolean } = {}) {
   const fromStr = since.toISOString()
   const toStr = now.toISOString()
   // documented API: POST /api/Customize/CustomerCallSearch
-  // provider dates are naive Tehran local time
-  const isoFmt = (d: Date) => tehranNaive(d)
-  const sqlFmt = (d: Date) => tehranNaive(d, ' ')
-  const dayFmt = (d: Date) => tehranNaive(d).slice(0, 10)
+  // provider timestamps are naive **UTC** (persianTime is the Tehran rendering),
+  // so the search window must be expressed in UTC too — sending Tehran local
+  // time pushed the lower bound 3.5h into the future and hid the newest calls.
+  const isoFmt = (d: Date) => d.toISOString().slice(0, 19)
+  const sqlFmt = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ')
+  const dayFmt = (d: Date) => d.toISOString().slice(0, 10)
 
   const SEARCH_PATH = '/api/Customize/CustomerCallSearch'
 
@@ -102,6 +104,7 @@ async function runSync(ctx: any, opts: { full?: boolean } = {}) {
       { path: SEARCH_PATH, method: 'POST', body: { fromDate: dayFmt(since), toDate: dayFmt(until), limit: PAGE_SIZE, pagination: 1 } },
       { path: SEARCH_PATH, method: 'POST', body: { limit: PAGE_SIZE, pagination: 1 } },
     ])
+
 
     records = extractRecords(res.data)
     attempts = res.attempts

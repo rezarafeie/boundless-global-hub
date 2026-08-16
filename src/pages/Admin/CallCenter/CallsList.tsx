@@ -3,13 +3,21 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Search, ChevronRight, ChevronLeft, Calendar as CalendarIcon } from 'lucide-react';
 import CallsTable from '@/components/CallCenter/CallsTable';
 import { callCenter, CallRow } from '@/lib/callCenterService';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
 
 interface Props { missedOnly?: boolean }
+
+const RANGES: { value: string; label: string; days: number | null }[] = [
+  { value: '1', label: 'امروز', days: 1 },
+  { value: '7', label: '۷ روز اخیر', days: 7 },
+  { value: '30', label: '۳۰ روز اخیر', days: 30 },
+  { value: '90', label: '۹۰ روز اخیر', days: 90 },
+  { value: 'custom', label: 'بازه دلخواه', days: null },
+];
 
 const CallsList: React.FC<Props> = ({ missedOnly }) => {
   const { toast } = useToast();
@@ -21,9 +29,20 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
   const [direction, setDirection] = useState('all');
   const [status, setStatus] = useState('all');
   const [agentId, setAgentId] = useState('all');
+  const [range, setRange] = useState('30');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
   const [agents, setAgents] = useState<any[]>([]);
   const debouncedSearch = useDebounce(search, 400);
   const pageSize = 20;
+
+  const preset = RANGES.find((r) => r.value === range);
+  const fromISO = range === 'custom'
+    ? (customFrom ? new Date(`${customFrom}T00:00:00`).toISOString() : undefined)
+    : new Date(Date.now() - (preset?.days ?? 30) * 24 * 3600 * 1000).toISOString();
+  const toISO = range === 'custom'
+    ? (customTo ? new Date(`${customTo}T23:59:59`).toISOString() : undefined)
+    : undefined;
 
   useEffect(() => { callCenter.agentList().then((r) => setAgents(r.agents)).catch(() => {}); }, []);
 
@@ -37,16 +56,19 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
       status: status !== 'all' ? status : undefined,
       agentId: agentId !== 'all' ? Number(agentId) : undefined,
       missed: missedOnly || undefined,
+      from: fromISO,
+      to: toISO,
     })
       .then((res) => { if (active) { setCalls(res.calls); setTotal(res.total); } })
       .catch((e) => toast({ title: 'خطا', description: (e as Error).message, variant: 'destructive' }))
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [page, debouncedSearch, direction, status, agentId, missedOnly]);
+  }, [page, debouncedSearch, direction, status, agentId, missedOnly, fromISO, toISO]);
 
-  useEffect(() => { setPage(1); }, [debouncedSearch, direction, status, agentId, missedOnly]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, direction, status, agentId, missedOnly, fromISO, toISO]);
 
   const pages = Math.max(1, Math.ceil(total / pageSize));
+
 
   return (
     <div className="space-y-4">
@@ -92,8 +114,29 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
               ))}
             </SelectContent>
           </Select>
+
+          <Select value={range} onValueChange={setRange}>
+            <SelectTrigger className="gap-2"><CalendarIcon className="h-4 w-4 text-muted-foreground" /><SelectValue placeholder="بازه زمانی" /></SelectTrigger>
+            <SelectContent>
+              {RANGES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          {range === 'custom' && (
+            <>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">از تاریخ</label>
+                <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">تا تاریخ</label>
+                <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
+
 
       <CallsTable calls={calls} loading={loading} />
 
