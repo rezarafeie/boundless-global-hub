@@ -64,11 +64,10 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
     const syncSelectedPeriod = async () => {
       const start = new Date(fromISO ?? Date.now() - 24 * 3600 * 1000);
       const end = new Date(toISO ?? Date.now());
-      // DaftareShoma times out on broad unfiltered searches. Import the chosen
-      // period in seven-day windows while still omitting number/status/type so
-      // every call is included.
-      for (let cursor = start.getTime(); cursor <= end.getTime(); cursor += 7 * 24 * 3600 * 1000) {
-        const chunkEnd = Math.min(end.getTime(), cursor + 7 * 24 * 3600 * 1000 - 1);
+      // The portal endpoint can time out on busy multi-day ranges. Daily
+      // windows reliably import every page while keeping all filters empty.
+      for (let cursor = start.getTime(); cursor <= end.getTime(); cursor += 24 * 3600 * 1000) {
+        const chunkEnd = Math.min(end.getTime(), cursor + 24 * 3600 * 1000 - 1);
         await callCenter.syncNow(false, {
           from: new Date(cursor).toISOString(),
           to: new Date(chunkEnd).toISOString(),

@@ -89,7 +89,7 @@ async function createMissedCallFollowup(call: any, settings: any, priorityOverri
 
 function extractTotal(data: any): number | null {
   if (!data || typeof data !== 'object') return null
-  const totalKeys = new Set(['totalcount', 'total', 'count', 'totalrecords', 'recordscount'])
+  const totalKeys = new Set(['totalcount', 'total', 'count', 'totalrecords', 'recordscount', 'totalitems'])
   for (const [key, value] of Object.entries(data)) {
     if (totalKeys.has(key.toLowerCase())) {
       const parsed = Number(value)
@@ -97,6 +97,12 @@ function extractTotal(data: any): number | null {
     }
   }
   for (const value of Object.values(data)) {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const nested = extractTotal(item)
+        if (nested !== null) return nested
+      }
+    }
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       const nested = extractTotal(value)
       if (nested !== null) return nested
@@ -116,13 +122,6 @@ const portalSearchBody = (from: Date | null, to: Date | null, pageNumber: number
     : '',
   sortText: '',
 })
-
-const responseShape = (value: unknown, depth = 0): unknown => {
-  if (depth > 3 || value === null || value === undefined) return typeof value
-  if (Array.isArray(value)) return { arrayLength: value.length, itemKeys: value[0] && typeof value[0] === 'object' ? Object.keys(value[0]).slice(0, 30) : [] }
-  if (typeof value !== 'object') return typeof value
-  return Object.fromEntries(Object.entries(value as Record<string, unknown>).slice(0, 30).map(([key, nested]) => [key, responseShape(nested, depth + 1)]))
-}
 
 async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: string; allTimeCount?: boolean } = {}) {
   const settings = await getSettings()
@@ -174,7 +173,6 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
 
   let records: Record<string, any>[] = []
   let attempts: any[] = []
-  let providerResponseShape: unknown = null
   try {
     // Match the working customer portal request exactly. Leaving the condition
     // empty requests all numbers, statuses, and call types.
@@ -184,8 +182,6 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
 
     records = extractRecords(res.data)
     attempts = res.attempts
-    providerResponseShape = responseShape(res.data)
-    if (!records.length) console.log('portal response shape', JSON.stringify(responseShape(res.data)))
 
     const providerTotal = extractTotal(res.data)
     if (opts.allTimeCount) {
@@ -237,9 +233,6 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
     const call = normalizeProviderCall(rec)
     return call ? [call.provider_call_id, call] : [crypto.randomUUID(), null]
   })).values()].filter(Boolean) as NonNullable<ReturnType<typeof normalizeProviderCall>>[]
-  if (records.length && !normalized.length) {
-    console.log('unmapped portal call keys', JSON.stringify(Object.keys(records[0]).slice(0, 80)))
-  }
 
   // Large historical/range imports use batched writes. CRM enrichment remains
   // in the lightweight incremental path and recordings are always lazy.
@@ -326,16 +319,7 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
 
   if (ctx) await audit(ctx, 'integration.sync_now', 'daftareshoma', null, { inserted, updated, fetched: records.length })
 
-  return {
-    fetched: normalized.length,
-    inserted,
-    updated,
-    from: fromStr,
-    to: toStr,
-    ...(records.length ? {} : { providerResponseShape }),
-    ...(records.length && !normalized.length ? { providerRecordKeys: Object.keys(records[0]).slice(0, 100) } : {}),
-    ...(records.length && !normalized.length ? { providerFirstRecordShape: responseShape(records[0]) } : {}),
-  }
+  return { fetched: normalized.length, inserted, updated, from: fromStr, to: toStr }
 }
 
 Deno.serve(async (req) => {
