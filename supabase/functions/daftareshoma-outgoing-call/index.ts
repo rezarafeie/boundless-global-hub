@@ -1,7 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts'
 import {
   admin, authenticate, requirePermission, audit, checkRateLimit, AuthError,
-  dsTryEndpoints, ProviderError, normalizePhone, getSettings, matchCrmRecords, json,
+  dsTryEndpoints, ProviderError, normalizePhone, getSettings, matchCrmRecords, json, resolveAgentExtension,
 } from '../_shared/callcenter.ts'
 
 Deno.serve(async (req) => {
@@ -24,18 +24,14 @@ Deno.serve(async (req) => {
       return json({ success: false, error: 'مرکز تماس غیرفعال است' }, 400, corsHeaders)
     }
 
-    // Extension: explicit choice (admins/managers only) or the agent's own default
-    let extension: string | null = null
-    if (body.extension && (ctx.isAdmin || !ctx.restrictedToSelf)) {
-      extension = String(body.extension).replace(/[^0-9]/g, '')
-    } else {
-      const { data: me } = await admin.from('chat_users').select('phone').eq('id', ctx.userId).maybeSingle()
-      extension = (body.extension && ctx.restrictedToSelf ? String(body.extension).replace(/[^0-9]/g, '') : null)
-        || settings.default_extension
-        || (me?.phone ? normalizePhone(me.phone).normalized : null)
-    }
+    // Extension resolution: explicit (admins/managers) -> per-agent mapping (by email) -> default
+    const resolved = await resolveAgentExtension(ctx, body.extension, settings.default_extension)
+    const extension = resolved.extension
     if (!extension) {
-      return json({ success: false, error: 'داخلی کارشناس مشخص نیست. در تنظیمات مرکز تماس داخلی پیش‌فرض را وارد کنید.' }, 400, corsHeaders)
+      return json({
+        success: false,
+        error: 'داخلی شما تعریف نشده است. در تنظیمات مرکز تماس، داخلی این کارشناس را بر اساس ایمیل ثبت کنید.',
+      }, 400, corsHeaders)
     }
 
     const dial = target.normalized.startsWith('98') ? '0' + target.normalized.slice(2) : target.normalized
@@ -86,7 +82,7 @@ Deno.serve(async (req) => {
     }, { onConflict: 'provider,provider_call_id' }).select('id').maybeSingle()
 
     await audit(ctx, 'call.outgoing_initiated', 'call', call?.id ?? null, {
-      phone: target.normalized, extension, endpoint,
+      phone: target.normalized, extension, extensionSource: resolved.source, endpoint,
     })
 
     return json({

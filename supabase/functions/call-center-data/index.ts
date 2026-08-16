@@ -1,7 +1,8 @@
 import { corsHeaders } from '../_shared/cors.ts'
 import {
   admin, authenticate, requirePermission, audit, AuthError,
-  normalizePhone, phoneTail, matchCrmRecords, getSettings, invokeFn, json, type AuthContext,
+  normalizePhone, phoneTail, matchCrmRecords, getSettings, invokeFn, json, type AuthContext,,
+  resolveAgentExtension,
 } from '../_shared/callcenter.ts'
 
 /**
@@ -481,6 +482,61 @@ Deno.serve(async (req) => {
         requirePermission(ctx, 'calls.admin')
         const { data } = await admin.from('call_audit_logs').select('*').order('created_at', { ascending: false }).limit(100)
         return json({ success: true, logs: data ?? [] }, 200, corsHeaders)
+      }
+
+      case 'agent-extensions': {
+        requirePermission(ctx, 'calls.create')
+        if (!ctx.isAdmin && ctx.restrictedToSelf) {
+          const { data } = await admin.from('call_agent_extensions')
+            .select('*')
+            .or(`user_id.eq.${ctx.userId}${ctx.email ? `,email.ilike.${ctx.email}` : ''}`)
+          return json({ success: true, extensions: data ?? [], myEmail: ctx.email, readOnly: true }, 200, corsHeaders)
+        }
+        const { data } = await admin.from('call_agent_extensions').select('*').order('created_at', { ascending: false })
+        return json({ success: true, extensions: data ?? [], myEmail: ctx.email, readOnly: false }, 200, corsHeaders)
+      }
+
+      case 'save-agent-extension': {
+        requirePermission(ctx, 'calls.admin')
+        const row = p.extension ?? {}
+        const email = String(row.email ?? '').trim().toLowerCase()
+        const ext = String(row.extension ?? '').replace(/[^0-9]/g, '')
+        if (!email || !ext) {
+          return json({ success: false, error: 'ایمیل و داخلی الزامی است' }, 400, corsHeaders)
+        }
+        let userId: number | null = row.user_id ?? null
+        if (!userId) {
+          const { data: u } = await admin.from('chat_users').select('id').ilike('email', email).maybeSingle()
+          userId = u?.id ?? null
+        }
+        const { data: existing } = await admin.from('call_agent_extensions').select('id').ilike('email', email).maybeSingle()
+        const payload = {
+          email,
+          extension: ext,
+          display_name: row.display_name ?? null,
+          user_id: userId,
+          is_active: row.is_active ?? true,
+        }
+        const { data, error } = existing?.id
+          ? await admin.from('call_agent_extensions').update(payload).eq('id', existing.id).select('id').maybeSingle()
+          : await admin.from('call_agent_extensions').insert(payload).select('id').maybeSingle()
+        if (error) return json({ success: false, error: error.message }, 400, corsHeaders)
+        await audit(ctx, 'agent_extension.saved', 'call_agent_extension', data?.id ?? null, payload)
+        return json({ success: true, id: data?.id }, 200, corsHeaders)
+      }
+
+      case 'delete-agent-extension': {
+        requirePermission(ctx, 'calls.admin')
+        await admin.from('call_agent_extensions').delete().eq('id', p.id)
+        await audit(ctx, 'agent_extension.deleted', 'call_agent_extension', p.id, {})
+        return json({ success: true }, 200, corsHeaders)
+      }
+
+      case 'my-extension': {
+        requirePermission(ctx, 'calls.create')
+        const settings = await getSettings()
+        const resolved = await resolveAgentExtension(ctx, null, settings.default_extension)
+        return json({ success: true, extension: resolved.extension, source: resolved.source, email: ctx.email }, 200, corsHeaders)
       }
 
       case 'agent-list': {
