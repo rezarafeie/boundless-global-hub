@@ -275,6 +275,49 @@ export async function dsRequest(
   }
 }
 
+/** Portal call-history API. This endpoint uses the customer-admin JWT with a
+ * Bearer prefix, unlike the public Customize API which expects a raw token. */
+export async function dsPortalRequest(
+  path: string,
+  body: unknown,
+  timeoutMs = 25000,
+): Promise<any> {
+  const token = Deno.env.get('DAFTARESHOMA_PORTAL_TOKEN')
+  if (!token) throw new ProviderError('DAFTARESHOMA_PORTAL_TOKEN تنظیم نشده است', 500, null)
+
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const res = await fetch(DS_BASE + (path.startsWith('/') ? path : '/' + path), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token.replace(/^Bearer\s+/i, '')}`,
+        Accept: 'application/json',
+        'Accept-Language': 'fa',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    })
+    const text = await res.text()
+    let parsed: unknown = text
+    try { parsed = text ? JSON.parse(text) : null } catch { /* keep text */ }
+    if (!res.ok) {
+      const message = res.status === 401 || res.status === 403
+        ? 'توکن پنل دفترشما منقضی یا نامعتبر است'
+        : `خطای سرویس تلفنی (${res.status})`
+      throw new ProviderError(message, res.status, parsed)
+    }
+    return parsed
+  } catch (e) {
+    if (e instanceof ProviderError) throw e
+    if ((e as Error).name === 'AbortError') throw new ProviderError('پاسخ پنل دفترشما دریافت نشد (timeout)', 504, null)
+    throw new ProviderError((e as Error).message || 'خطای ارتباط با پنل دفترشما', 502, null)
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 /**
  * Tries the documented candidate endpoints until one responds successfully.
  * DaftareShoma exposes slightly different paths per portal version, so we
@@ -318,6 +361,10 @@ export async function dsTryEndpoints(
 const pick = (o: Record<string, any>, keys: string[]) => {
   for (const k of keys) {
     if (o?.[k] !== undefined && o?.[k] !== null && o?.[k] !== '') return o[k]
+  }
+  const wanted = new Set(keys.map((key) => key.toLowerCase()))
+  for (const [key, value] of Object.entries(o ?? {})) {
+    if (wanted.has(key.toLowerCase()) && value !== undefined && value !== null && value !== '') return value
   }
   return undefined
 }
