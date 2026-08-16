@@ -61,8 +61,9 @@ async function createMissedCallFollowup(call: any, settings: any, priorityOverri
 function extractTotal(data: any): number | null {
   const candidates = [
     data?.totalCount, data?.TotalCount, data?.total, data?.Total,
-    data?.count, data?.Count, data?.data?.totalCount, data?.data?.TotalCount,
-    data?.result?.totalCount, data?.result?.TotalCount,
+    data?.count, data?.Count, data?.totalRecords, data?.TotalRecords,
+    data?.data?.totalCount, data?.data?.TotalCount, data?.data?.totalRecords,
+    data?.result?.totalCount, data?.result?.TotalCount, data?.result?.totalRecords,
   ]
   for (const value of candidates) {
     const parsed = Number(value)
@@ -269,7 +270,11 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
     last_call_id: lastCallId,
     last_success_at: new Date().toISOString(),
     last_error: null,
-    calls_synced: Math.max(state?.calls_synced ?? 0, 0) + inserted,
+    // Historical period imports are already represented by the one-time
+    // provider baseline, so only normal incremental syncs advance that total.
+    calls_synced: requestedFrom
+      ? Math.max(state?.calls_synced ?? 0, 0)
+      : Math.max(state?.calls_synced ?? 0, 0) + inserted,
   }).eq('id', 1)
 
   if (ctx) await audit(ctx, 'integration.sync_now', 'daftareshoma', null, { inserted, updated, fetched: records.length })
