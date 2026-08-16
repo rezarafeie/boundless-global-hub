@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
       }, 400, corsHeaders)
     }
 
+    const line = String((settings as any).outbound_line_number || '02128427131').replace(/[^0-9]/g, '')
     const dial = target.normalized.startsWith('98') ? '0' + target.normalized.slice(2) : target.normalized
 
     let providerResponse: any = null
@@ -41,10 +42,7 @@ Deno.serve(async (req) => {
     try {
       const res = await dsTryEndpoints([
         // documented endpoint (External APIs v1)
-        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { from_number: extension, to_number: dial } },
-        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { From: extension, To: dial } },
-        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { extension, number: dial } },
-        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { caller_extension: extension, to_number: dial } },
+        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { from_number: line, to_number: dial, caller_extension: extension } },
       ])
       endpoint = res.path
       providerResponse = res.data
@@ -53,9 +51,9 @@ Deno.serve(async (req) => {
       console.log('outgoing-call attempts', JSON.stringify((pe as any).attempts ?? []))
       await audit(ctx, 'call.outgoing_failed', 'call', null, { phone: target.normalized, extension, error: pe.message })
       const raw = JSON.stringify(pe.body ?? '')
-      const lineMissing = raw.includes('خط وجود ندارد')
+      const lineMissing = raw.includes('خط وجود ندارد') || raw.includes('هفت رقم')
       const message = lineMissing
-        ? `داخلی «${extension}» در پنل دفتر شما تعریف نشده است. در تنظیمات مرکز تماس، داخلی صحیح این کارشناس را ثبت کنید.`
+        ? `تماس برقرار نشد: خط «${line}» یا داخلی «${extension}» در پنل دفتر شما معتبر نیست. در تنظیمات مرکز تماس بررسی کنید.`
         : pe.message
       return json({ success: false, error: message, detail: pe.body ?? null, extension, extensionSource: resolved.source, attempts: (pe as any).attempts ?? [] }, pe.status >= 400 && pe.status < 600 ? pe.status : 502, corsHeaders)
     }
