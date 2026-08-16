@@ -105,11 +105,9 @@ serve(async (req) => {
           // respect the minimum interval since the last message of this sequence
           const last = lastSentBySeq[cacheKey]?.[rec.phone];
           if (last && (Date.now() - last) / 60000 < (fu.min_interval_minutes ?? 30)) { skipped++; continue; }
-          // remaining followups of this adaptive sequence for this recipient
-          const remaining = (adaptiveGroups[cacheKey] ?? []).filter((f) =>
-            (sentByFollowup[f.id]?.[rec.phone] ?? 0) < (f.max_repeats ?? 1)
-          );
-          const { due } = adaptiveDue(fu, remaining, webinar, rec);
+          // full adaptive sequence (sent + pending) so slots stay anchored to registration time
+          const sequence = adaptiveGroups[cacheKey] ?? [fu];
+          const { due } = adaptiveDue(fu, sequence, webinar, rec);
           if (!due) { skipped++; continue; }
         } else {
           const anchor = anchorTime(fu, webinar, rec);
