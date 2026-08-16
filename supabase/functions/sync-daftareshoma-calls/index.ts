@@ -14,7 +14,7 @@ function extractRecords(data: any): Record<string, any>[] {
   const keys = new Set(['items', 'data', 'result', 'results', 'records', 'callreports', 'list', 'rows', 'entities'])
   for (const [key, v] of Object.entries(data)) {
     if (!keys.has(key.toLowerCase())) continue
-    if (Array.isArray(v)) return v
+    if (Array.isArray(v) && v.length) return v as Record<string, any>[]
     if (v && typeof v === 'object') {
       const nested = extractRecords(v)
       if (nested.length) return nested
@@ -23,7 +23,7 @@ function extractRecords(data: any): Record<string, any>[] {
   // Portal versions wrap the grid rows under varying model names. Fall back
   // to the first nested object array rather than silently importing zero rows.
   for (const value of Object.values(data)) {
-    if (Array.isArray(value) && (!value.length || typeof value[0] === 'object')) return value as Record<string, any>[]
+    if (Array.isArray(value) && value.length && typeof value[0] === 'object') return value as Record<string, any>[]
     if (value && typeof value === 'object') {
       const nested = extractRecords(value)
       if (nested.length) return nested
