@@ -103,10 +103,21 @@ export const callCenter = {
   saveSettings: (settings: Record<string, unknown>) => callFunction('call-center-data', { action: 'save-settings', params: { settings } }),
   saveRule: (rule: Record<string, unknown>) => callFunction('call-center-data', { action: 'save-rule', params: { rule } }),
   deleteRule: (ruleId: string) => callFunction('call-center-data', { action: 'delete-rule', params: { ruleId } }),
+  agentExtensions: () => callFunction<{ extensions: any[]; myEmail: string | null; readOnly: boolean }>(
+    'call-center-data', { action: 'agent-extensions', params: {} }),
+  saveAgentExtension: (extension: Record<string, unknown>) =>
+    callFunction('call-center-data', { action: 'save-agent-extension', params: { extension } }),
+  deleteAgentExtension: (id: string) =>
+    callFunction('call-center-data', { action: 'delete-agent-extension', params: { id } }),
+  myExtension: () => callFunction<{ extension: string | null; source: string; email: string | null }>(
+    'call-center-data', { action: 'my-extension', params: {} }),
   auditLogs: () => callFunction<{ logs: any[] }>('call-center-data', { action: 'audit-logs', params: {} }),
 
   // actions
-  dial: (params: { phone: string; extension?: string; userId?: number | null; leadId?: string | null; source?: string }) =>
+  dial: (params: {
+    phone: string; extension?: string; userId?: number | null; leadId?: string | null;
+    consultationId?: string | null; webinarRegistrationId?: string | null; source?: string;
+  }) =>
     callFunction<{ callId: string; providerCallId: string; message: string }>('daftareshoma-outgoing-call', params),
   testConnection: () => callFunction('daftareshoma-test-connection', {}),
   syncNow: (full = false, params: { from?: string; to?: string; allTimeCount?: boolean } = {}) =>
