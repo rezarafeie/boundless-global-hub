@@ -64,11 +64,20 @@ async function runSync(ctx: any, opts: { full?: boolean } = {}) {
 
   await admin.from('daftareshoma_sync_state').update({ last_attempt_at: new Date().toISOString() }).eq('id', 1)
 
+  // the stored cursor can drift; never start later than the newest stored call
+  const { data: newestCall } = await admin
+    .from('calls').select('started_at').eq('provider', 'daftareshoma')
+    .order('started_at', { ascending: false }).limit(1).maybeSingle()
+  const cursorCandidates = [state?.last_synced_at, newestCall?.started_at]
+    .filter(Boolean).map((v) => new Date(v as string).getTime())
+  const cursor = cursorCandidates.length ? Math.min(...cursorCandidates) : null
+
   const since = opts.full
     ? new Date(Date.now() - 30 * 24 * 3600 * 1000)
-    : state?.last_synced_at
-      ? new Date(new Date(state.last_synced_at).getTime() - 10 * 60 * 1000) // 10 min overlap
+    : cursor
+      ? new Date(cursor - 60 * 60 * 1000) // 1h overlap
       : new Date(Date.now() - 3 * 24 * 3600 * 1000)
+
 
   const now = new Date()
   // query a bit into the future so provider-side clock / timezone drift never
