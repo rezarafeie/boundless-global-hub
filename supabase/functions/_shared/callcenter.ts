@@ -333,12 +333,23 @@ const toSeconds = (v: unknown): number => {
   return 0
 }
 
+/**
+ * DaftareShoma returns naive timestamps in Tehran local time (+03:30).
+ * Treat any string without an explicit offset as Tehran time.
+ */
 const toDate = (v: unknown): string | null => {
   if (!v) return null
   if (typeof v === 'number') return new Date(v > 1e12 ? v : v * 1000).toISOString()
-  const d = new Date(String(v).replace(' ', 'T'))
+  let s = String(v).trim().replace(' ', 'T')
+  if (!/(Z|[+-]\d{2}:?\d{2})$/.test(s)) s += '+03:30'
+  const d = new Date(s)
   return isNaN(d.getTime()) ? null : d.toISOString()
 }
+
+/** Formats a UTC instant as a naive Tehran-local string the provider understands. */
+export const tehranNaive = (d: Date, sep = 'T'): string =>
+  new Date(d.getTime() + 3.5 * 3600 * 1000).toISOString().slice(0, 19).replace('T', sep)
+
 
 export interface NormalizedCall {
   provider_call_id: string
