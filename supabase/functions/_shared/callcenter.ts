@@ -78,6 +78,7 @@ export interface AuthContext {
   userId: number
   name: string
   phone: string | null
+  email: string | null
   role: string
   isAdmin: boolean
   /** sales agents are restricted to their own calls */
@@ -112,7 +113,7 @@ export async function authenticate(req: Request, bodyToken?: string): Promise<Au
 
   const { data: user } = await admin
     .from('chat_users')
-    .select('id, name, phone, role, is_messenger_admin, is_support_agent')
+    .select('id, name, phone, email, role, is_messenger_admin, is_support_agent')
     .eq('id', session.user_id)
     .maybeSingle()
 
@@ -148,11 +149,60 @@ export async function authenticate(req: Request, bodyToken?: string): Promise<Au
     userId: user.id,
     name: user.name ?? '',
     phone: user.phone ?? null,
+    email: (user as any).email ?? null,
     role: primaryRole,
     isAdmin,
     restrictedToSelf: !isAdmin && !roleNames.has('sales_manager') && !roleNames.has('enrollments_manager'),
     permissions: [...permissions],
   }
+}
+
+/**
+ * Resolves the extension (DaftareShoma internal number) used to place an outgoing call.
+ * Priority: explicit extension (admins/managers only) -> per-agent mapping by email/user id
+ * -> global default extension -> the agent's own phone number.
+ */
+export async function resolveAgentExtension(
+  ctx: AuthContext,
+  requested?: string | null,
+  fallbackDefault?: string | null,
+): Promise<{ extension: string | null; source: string }> {
+  const clean = (v?: string | null) => {
+    const d = (v ?? '').replace(/[^0-9]/g, '')
+    return d || null
+  }
+
+  if (requested && (ctx.isAdmin || !ctx.restrictedToSelf)) {
+    const ext = clean(requested)
+    if (ext) return { extension: ext, source: 'manual' }
+  }
+
+  let mapping: any = null
+  if (ctx.email) {
+    const { data } = await admin
+      .from('call_agent_extensions')
+      .select('extension, is_active')
+      .ilike('email', ctx.email)
+      .maybeSingle()
+    if (data?.is_active) mapping = data
+  }
+  if (!mapping) {
+    const { data } = await admin
+      .from('call_agent_extensions')
+      .select('extension, is_active')
+      .eq('user_id', ctx.userId)
+      .maybeSingle()
+    if (data?.is_active) mapping = data
+  }
+  if (mapping?.extension) return { extension: clean(mapping.extension), source: 'agent_mapping' }
+
+  const fallback = clean(fallbackDefault)
+  if (fallback) return { extension: fallback, source: 'default_extension' }
+
+  const own = clean(ctx.phone)
+  if (own) return { extension: own, source: 'agent_phone' }
+
+  return { extension: null, source: 'none' }
 }
 
 export function requirePermission(ctx: AuthContext, permission: Permission) {

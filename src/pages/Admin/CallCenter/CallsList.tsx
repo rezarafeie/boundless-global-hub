@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, ChevronRight, ChevronLeft, Calendar as CalendarIcon } from 'lucide-react';
 import CallsTable from '@/components/CallCenter/CallsTable';
+import CallButton from '@/components/CallCenter/CallButton';
 import { callCenter, CallRow } from '@/lib/callCenterService';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -118,12 +119,15 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
       <div>
         <h2 className="text-xl font-bold">{missedOnly ? 'تماس‌های از دست رفته' : 'تماس‌ها'}</h2>
         <p className="text-sm text-muted-foreground">
           {total.toLocaleString('fa-IR')} رکورد
           {range === 'all' && providerTotal > total ? ` از ${providerTotal.toLocaleString('fa-IR')} تماس دفترشما` : ''}
         </p>
+      </div>
+        <CallButton manual variant="button" source="manual_dialer" label="تماس خروجی جدید" />
       </div>
 
       <Card>

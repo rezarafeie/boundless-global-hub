@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import CallButton from '@/components/CallCenter/CallButton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -709,7 +710,7 @@ const WebinarManagement: React.FC = () => {
                   {registrations.map((registration, index) => (
                     <TableRow key={registration.id}>
                       <TableCell>{index + 1}</TableCell>
-                      <TableCell dir="ltr" className="text-right">{registration.mobile_number}</TableCell>
+                      <TableCell dir="ltr" className="text-right"><span className="inline-flex items-center gap-1">{registration.mobile_number}<CallButton phone={registration.mobile_number} source="webinar_registration" /></span></TableCell>
                       <TableCell>{format(new Date(registration.registered_at), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
                     </TableRow>
                   ))}
@@ -760,7 +761,7 @@ const WebinarManagement: React.FC = () => {
                   {entries.map((entry, index) => (
                     <TableRow key={entry.id}>
                       <TableCell>{index + 1}</TableCell>
-                      <TableCell dir="ltr" className="text-right">{entry.mobile_number}</TableCell>
+                      <TableCell dir="ltr" className="text-right"><span className="inline-flex items-center gap-1">{entry.mobile_number}<CallButton phone={entry.mobile_number} source="webinar_entry" /></span></TableCell>
                       <TableCell>{format(new Date(entry.signup_time), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
                     </TableRow>
                   ))}
@@ -799,7 +800,7 @@ const WebinarManagement: React.FC = () => {
                   {participants.map((p: any, index: number) => (
                     <TableRow key={p.id}>
                       <TableCell>{index + 1}</TableCell>
-                      <TableCell dir="ltr" className="text-right">{p.phone}</TableCell>
+                      <TableCell dir="ltr" className="text-right"><span className="inline-flex items-center gap-1">{p.phone}<CallButton phone={p.phone} name={p.display_name} source="webinar_participant" /></span></TableCell>
                       <TableCell>{p.display_name || '-'}</TableCell>
                       <TableCell>{format(new Date(p.joined_at), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
                     </TableRow>

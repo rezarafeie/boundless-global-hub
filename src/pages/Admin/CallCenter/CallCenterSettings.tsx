@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Copy, PlugZap, RefreshCw, ShieldCheck, Loader2 } from 'lucide-react';
 import { callCenter, tehranDateTime } from '@/lib/callCenterService';
 import { useToast } from '@/hooks/use-toast';
+import AgentExtensionsCard from '@/components/CallCenter/AgentExtensionsCard';
 
 const TOGGLES: { key: string; label: string; hint?: string }[] = [
   { key: 'enabled', label: 'فعال بودن مرکز تماس' },
@@ -150,6 +151,8 @@ const CallCenterSettings: React.FC = () => {
           </Button>
         </CardContent>
       </Card>
+
+      <AgentExtensionsCard />
     </div>
   );
 };

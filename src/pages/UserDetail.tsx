@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import CallButton from '@/components/CallCenter/CallButton';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -172,6 +173,14 @@ const UserDetail: React.FC = () => {
             جزئیات کاربر
           </CardTitle>
           <div className="flex items-center gap-2">
+            <CallButton
+              phone={user.phone}
+              name={user.name}
+              userId={user.id}
+              variant="button"
+              source="user_detail"
+              className="h-9"
+            />
             <Button 
               variant="outline" 
               size="sm" 
