@@ -45,13 +45,23 @@ serve(async (req) => {
 
     // sent counts for every followup (followup_id -> phone -> count)
     const sentByFollowup: Record<string, Record<string, number>> = {};
+    // last send per sequence (webinar:audience -> phone -> timestamp ms)
+    const lastSentBySeq: Record<string, Record<string, number>> = {};
     for (const fu of allFollowups) {
       const { data: sentRows } = await supabase
         .from("webinar_followup_recipients")
-        .select("phone, sent_count")
+        .select("phone, sent_count, last_sent_at")
         .eq("followup_id", fu.id);
       const m: Record<string, number> = {};
-      for (const s of ((sentRows as any[]) ?? [])) m[s.phone] = s.sent_count ?? 0;
+      const seqKey = `${fu.webinar_id}:${fu.audience}`;
+      const seq = (lastSentBySeq[seqKey] ??= {});
+      for (const s of ((sentRows as any[]) ?? [])) {
+        m[s.phone] = s.sent_count ?? 0;
+        if (s.last_sent_at) {
+          const ts = new Date(s.last_sent_at).getTime();
+          if (!seq[s.phone] || ts > seq[s.phone]) seq[s.phone] = ts;
+        }
+      }
       sentByFollowup[fu.id] = m;
     }
 
