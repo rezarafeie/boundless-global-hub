@@ -2,8 +2,9 @@ import { corsHeaders } from '../_shared/cors.ts'
 import {
   admin, authenticate, requirePermission, audit, AuthError, dsTryEndpoints, ProviderError,
   normalizeProviderCall, matchCrmRecords, customerNumberOf, resolveAgentByExtension,
-  getSettings, invokeFn, json,
+  getSettings, invokeFn, json, tehranNaive,
 } from '../_shared/callcenter.ts'
+
 
 const PAGE_SIZE = 200
 
@@ -104,7 +105,7 @@ async function runSync(ctx: any, opts: { full?: boolean } = {}) {
       for (let page = 2; page <= maxPages; page++) {
         try {
           const next = await dsTryEndpoints([
-            { path: SEARCH_PATH, method: 'POST', body: { ...(accepted ?? { fromDate: isoFmt(since), toDate: isoFmt(now) }), limit: PAGE_SIZE, pagination: page } },
+            { path: SEARCH_PATH, method: 'POST', body: { ...(accepted ?? { fromDate: isoFmt(since), toDate: isoFmt(until) }), limit: PAGE_SIZE, pagination: page } },
           ])
           const chunk = extractRecords(next.data)
           if (!chunk.length) break
