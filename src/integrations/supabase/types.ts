@@ -8354,6 +8354,36 @@ export type Database = {
           thread_type_id: number
         }[]
       }
+      get_webinar_followup_logs: {
+        Args: {
+          p_limit?: number
+          p_session_token: string
+          p_webinar_id: string
+        }
+        Returns: {
+          channel: string
+          created_at: string
+          error_message: string
+          followup_id: string
+          id: string
+          payload: Json
+          phone: string
+          status: string
+          user_id: number
+          webinar_id: string
+        }[]
+      }
+      get_webinar_followup_recipients: {
+        Args: { p_session_token: string; p_webinar_id: string }
+        Returns: {
+          followup_id: string
+          id: string
+          last_sent_at: string
+          phone: string
+          sent_count: number
+          webinar_id: string
+        }[]
+      }
       http: {
         Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
