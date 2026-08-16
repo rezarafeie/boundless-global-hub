@@ -1184,6 +1184,7 @@ export type Database = {
           min_call_seconds_for_ai: number
           missed_call_priority_rules: Json
           notifications_enabled: boolean
+          outbound_line_number: string | null
           recording_sync_enabled: boolean
           sync_interval_minutes: number
           transcription_enabled: boolean
@@ -1203,6 +1204,7 @@ export type Database = {
           min_call_seconds_for_ai?: number
           missed_call_priority_rules?: Json
           notifications_enabled?: boolean
+          outbound_line_number?: string | null
           recording_sync_enabled?: boolean
           sync_interval_minutes?: number
           transcription_enabled?: boolean
@@ -1222,6 +1224,7 @@ export type Database = {
           min_call_seconds_for_ai?: number
           missed_call_priority_rules?: Json
           notifications_enabled?: boolean
+          outbound_line_number?: string | null
           recording_sync_enabled?: boolean
           sync_interval_minutes?: number
           transcription_enabled?: boolean
