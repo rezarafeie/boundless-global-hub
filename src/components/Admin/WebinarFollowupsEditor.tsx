@@ -51,6 +51,7 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
   const [testPhone, setTestPhone] = useState<Record<string, string>>({});
   const [testResult, setTestResult] = useState<Record<string, any>>({});
   const [logs, setLogs] = useState<any[]>([]);
+  const [recipients, setRecipients] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [webinarStart, setWebinarStart] = useState<string | null>(null);
   const [previewDays, setPreviewDays] = useState(5);
