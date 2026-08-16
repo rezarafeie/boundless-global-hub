@@ -1,0 +1,2 @@
+ALTER TABLE public.call_center_settings ADD COLUMN IF NOT EXISTS outbound_line_number text;
+UPDATE public.call_center_settings SET outbound_line_number = COALESCE(outbound_line_number, '02128427131') WHERE id = 1;
