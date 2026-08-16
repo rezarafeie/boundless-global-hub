@@ -28,7 +28,17 @@ Deno.serve(async (req) => {
     }
   }
 
-  const eventType = String(raw?.event ?? raw?.eventType ?? raw?.type ?? 'call.update')
+  const eventType = String(raw?.event ?? raw?.eventType ?? raw?.type ?? raw?.EventName ?? raw?.eventName ?? 'call.update')
+  const ev = eventType.toLowerCase()
+
+  // DaftareShoma live event taxonomy:
+  //  call.incoming.started / call.incoming.transferstarted / call.incoming.transfercompleted
+  //  call.incoming.ended / call.outgoing.ended
+  const isIncomingEvent = /incoming|ورودی/.test(ev)
+  const isStart = /started$|\.started|ringing|incoming\.start/.test(ev) && !/transfer/.test(ev)
+  const isTransfer = /transfer/.test(ev)
+  const isEnd = /ended|end$|hangup|complete|finish/.test(ev)
+  const isLive = (isStart || isTransfer) && !isEnd
   const providerEventId = raw?.eventId ?? raw?.event_id ?? null
 
   // 1. persist raw event (idempotent on provider_event_id)
@@ -49,7 +59,8 @@ Deno.serve(async (req) => {
 
   try {
     const settings = await getSettings()
-    const n = normalizeProviderCall(raw?.call ?? raw?.data ?? raw ?? {})
+    const source = raw?.call ?? raw?.data ?? raw ?? {}
+    const n = normalizeProviderCall(source)
     if (!n) {
       await admin.from('call_events').update({ status: 'ignored', processed_at: new Date().toISOString() }).eq('id', event?.id)
       return json({ success: true, ignored: true }, 200, corsHeaders)
@@ -78,6 +89,19 @@ Deno.serve(async (req) => {
       match_confidence: match?.match_confidence ?? 'unknown',
     }
     if (existing?.disposition) delete (payload as any).disposition
+
+    // Live (ringing / in-progress) events: the provider sends no duration or
+    // disposition yet, so force a live status instead of the "no_answer"
+    // default that the historical normalizer produces.
+    if (isLive) {
+      payload.status = isTransfer ? 'answered' : 'ringing'
+      payload.direction = isIncomingEvent ? 'incoming' : (n.direction === 'unknown' ? 'outgoing' : n.direction)
+      payload.started_at = n.started_at ?? new Date().toISOString()
+      payload.ended_at = null
+      if (isTransfer) payload.answered_at = n.answered_at ?? new Date().toISOString()
+    } else if (isEnd && !payload.ended_at) {
+      payload.ended_at = new Date().toISOString()
+    }
 
     const { data: call } = await admin
       .from('calls')
