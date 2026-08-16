@@ -41,17 +41,16 @@ Deno.serve(async (req) => {
     try {
       const res = await dsTryEndpoints([
         // documented endpoint (External APIs v1)
-        // Variant A: extension only in caller_extension (from_number must be a full >=7 digit number)
-        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { from_number: dial, to_number: dial, caller_extension: extension } },
-        // Variant B: no from_number at all
-        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { to_number: dial, caller_extension: extension } },
-        // Variant C: original shape (works when the extension is a full DID line)
-        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { from_number: extension, to_number: dial, caller_extension: extension } },
+        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { from_number: extension, to_number: dial } },
+        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { From: extension, To: dial } },
+        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { extension, number: dial } },
+        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { caller_extension: extension, to_number: dial } },
       ])
       endpoint = res.path
       providerResponse = res.data
     } catch (e) {
       const pe = e as ProviderError
+      console.log('outgoing-call attempts', JSON.stringify((pe as any).attempts ?? []))
       await audit(ctx, 'call.outgoing_failed', 'call', null, { phone: target.normalized, extension, error: pe.message })
       const raw = JSON.stringify(pe.body ?? '')
       const lineMissing = raw.includes('خط وجود ندارد')
