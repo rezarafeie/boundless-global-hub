@@ -21,15 +21,16 @@ Deno.serve(async (req) => {
     let attempts: unknown[] = []
 
     try {
-      const nowD = new Date()
-      const fromD = new Date(nowD.getTime() - 24 * 3600 * 1000)
-      const iso = (d: Date) => d.toISOString().slice(0, 19)
-      const sql = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ')
+      const nowD = new Date(Date.now() + 24 * 3600 * 1000)
+      const fromD = new Date(Date.now() - 48 * 3600 * 1000)
+      const iso = (d: Date) => tehranNaive(d)
+      const sql = (d: Date) => tehranNaive(d, ' ')
       const res = await dsTryEndpoints([
         { path: '/api/Customize/CustomerCallSearch', method: 'POST', body: { fromDate: iso(fromD), toDate: iso(nowD), limit: 1, pagination: 1 } },
         { path: '/api/Customize/CustomerCallSearch', method: 'POST', body: { fromDate: sql(fromD), toDate: sql(nowD), limit: 1, pagination: 1 } },
         { path: '/api/Customize/CustomerCallSearch', method: 'POST', body: { limit: 1, pagination: 1 } },
       ])
+
       ok = true
       endpoint = res.path
       attempts = res.attempts
