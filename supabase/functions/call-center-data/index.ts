@@ -1,7 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts'
 import {
   admin, authenticate, requirePermission, audit, AuthError,
-  normalizePhone, phoneTail, matchCrmRecords, getSettings, invokeFn, json, type AuthContext,,
+  normalizePhone, phoneTail, matchCrmRecords, getSettings, invokeFn, json, type AuthContext,
   resolveAgentExtension,
 } from '../_shared/callcenter.ts'
 
