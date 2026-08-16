@@ -1,21 +1,24 @@
 import { corsHeaders } from '../_shared/cors.ts'
 import {
-  admin, authenticate, requirePermission, audit, AuthError, dsTryEndpoints, ProviderError,
+  admin, authenticate, requirePermission, audit, AuthError, dsPortalRequest, ProviderError,
   normalizeProviderCall, matchCrmRecords, customerNumberOf, resolveAgentByExtension,
   getSettings, json,
 } from '../_shared/callcenter.ts'
 
 
-const PAGE_SIZE = 200
+const PAGE_SIZE = 25
 
 function extractRecords(data: any): Record<string, any>[] {
   if (!data) return []
   if (Array.isArray(data)) return data
-  for (const key of ['items', 'data', 'result', 'results', 'records', 'callReports', 'list']) {
-    const v = data[key]
+  const keys = new Set(['items', 'data', 'result', 'results', 'records', 'callreports', 'list'])
+  for (const [key, v] of Object.entries(data)) {
+    if (!keys.has(key.toLowerCase())) continue
     if (Array.isArray(v)) return v
-    if (v && Array.isArray(v.items)) return v.items
-    if (v && Array.isArray(v.data)) return v.data
+    if (v && typeof v === 'object') {
+      const nested = extractRecords(v)
+      if (nested.length) return nested
+    }
   }
   return []
 }
@@ -59,18 +62,34 @@ async function createMissedCallFollowup(call: any, settings: any, priorityOverri
 }
 
 function extractTotal(data: any): number | null {
-  const candidates = [
-    data?.totalCount, data?.TotalCount, data?.total, data?.Total,
-    data?.count, data?.Count, data?.totalRecords, data?.TotalRecords,
-    data?.data?.totalCount, data?.data?.TotalCount, data?.data?.totalRecords,
-    data?.result?.totalCount, data?.result?.TotalCount, data?.result?.totalRecords,
-  ]
-  for (const value of candidates) {
-    const parsed = Number(value)
-    if (Number.isFinite(parsed) && parsed >= 0) return parsed
+  if (!data || typeof data !== 'object') return null
+  const totalKeys = new Set(['totalcount', 'total', 'count', 'totalrecords', 'recordscount'])
+  for (const [key, value] of Object.entries(data)) {
+    if (totalKeys.has(key.toLowerCase())) {
+      const parsed = Number(value)
+      if (Number.isFinite(parsed) && parsed >= 0) return parsed
+    }
+  }
+  for (const value of Object.values(data)) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      const nested = extractTotal(value)
+      if (nested !== null) return nested
+    }
   }
   return null
 }
+
+const portalDate = (date: Date) => `${date.toISOString().slice(0, 10)} ${date.toISOString().slice(11, 23)} `
+
+const portalSearchBody = (from: Date | null, to: Date | null, pageNumber: number) => ({
+  disablePaging: false,
+  pageNumber,
+  pageSize: PAGE_SIZE,
+  whereConditionText: from && to
+    ? `StartTime>=\"${portalDate(from)}\"  && StartTime<=\"${portalDate(to)}\" `
+    : '',
+  sortText: '',
+})
 
 async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: string; allTimeCount?: boolean } = {}) {
   const settings = await getSettings()
@@ -118,27 +137,16 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
   // provider timestamps are naive **UTC** (persianTime is the Tehran rendering),
   // so the search window must be expressed in UTC too — sending Tehran local
   // time pushed the lower bound 3.5h into the future and hid the newest calls.
-  const isoFmt = (d: Date) => d.toISOString().slice(0, 19)
-  const sqlFmt = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ')
-  const dayFmt = (d: Date) => d.toISOString().slice(0, 10)
-
-  const SEARCH_PATH = '/api/Customize/CustomerCallSearch'
+  const SEARCH_PATH = '/api/CustomerCall/Search'
 
   let records: Record<string, any>[] = []
   let attempts: any[] = []
   try {
-    const allTimeBody = { limit: opts.allTimeCount ? 1 : PAGE_SIZE, pagination: 1 }
-    const res = await dsTryEndpoints(opts.allTimeCount ? [
-      { path: SEARCH_PATH, method: 'POST', body: allTimeBody },
-    ] : [
-      // Omitting number, status and type fields means ALL numbers, statuses and
-      // call types in DaftareShoma. Empty values are not sent because some API
-      // versions interpret them as literal filters.
-      { path: SEARCH_PATH, method: 'POST', body: { fromDate: isoFmt(since), toDate: isoFmt(until), limit: PAGE_SIZE, pagination: 1 } },
-      { path: SEARCH_PATH, method: 'POST', body: { fromDate: sqlFmt(since), toDate: sqlFmt(until), limit: PAGE_SIZE, pagination: 1 } },
-      { path: SEARCH_PATH, method: 'POST', body: { fromDate: dayFmt(since), toDate: dayFmt(until), limit: PAGE_SIZE, pagination: 1 } },
-      { path: SEARCH_PATH, method: 'POST', body: { limit: PAGE_SIZE, pagination: 1 } },
-    ])
+    // Match the working customer portal request exactly. Leaving the condition
+    // empty requests all numbers, statuses, and call types.
+    const firstBody = portalSearchBody(opts.allTimeCount ? null : since, opts.allTimeCount ? null : until, 1)
+    const firstData = await dsPortalRequest(SEARCH_PATH, firstBody)
+    const res = { data: firstData, body: firstBody, attempts: [] as any[] }
 
     records = extractRecords(res.data)
     attempts = res.attempts
@@ -159,16 +167,13 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
 
     // Always paginate until a short/empty page. Older provider responses do
     // not consistently expose totalCount (or vary its casing/nesting).
-    const accepted = (res as any).body ?? null
     if (records.length) {
       const totalCount = extractTotal(res.data)
-      const maxPages = totalCount ? Math.min(500, Math.ceil(totalCount / PAGE_SIZE)) : 500
+      const maxPages = totalCount ? Math.min(1000, Math.ceil(totalCount / PAGE_SIZE)) : 1000
       for (let page = 2; page <= maxPages; page++) {
         try {
-          const next = await dsTryEndpoints([
-            { path: SEARCH_PATH, method: 'POST', body: { ...(accepted ?? { fromDate: isoFmt(since), toDate: isoFmt(until) }), limit: PAGE_SIZE, pagination: page } },
-          ])
-          const chunk = extractRecords(next.data)
+          const next = await dsPortalRequest(SEARCH_PATH, portalSearchBody(since, until, page))
+          const chunk = extractRecords(next)
           if (!chunk.length) break
           records = records.concat(chunk)
           if (chunk.length < PAGE_SIZE) break
