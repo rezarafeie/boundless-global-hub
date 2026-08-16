@@ -258,27 +258,66 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
               </SelectContent>
             </Select>
 
-            <Select value={r.anchor} onValueChange={(v) => patch(r.id, { anchor: v as any })}>
-              <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
+            <Select value={r.schedule_mode || 'fixed'} onValueChange={(v) => patch(r.id, { schedule_mode: v as any })}>
+              <SelectTrigger className="h-8 w-52"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="registration">بعد از ثبت‌نام</SelectItem>
-                <SelectItem value="webinar_start">بعد از شروع وبینار</SelectItem>
-                <SelectItem value="attendance">بعد از حضور در وبینار</SelectItem>
+                <SelectItem value="fixed">زمان‌بندی ثابت</SelectItem>
+                <SelectItem value="adaptive">تطبیقی تا شروع وبینار</SelectItem>
               </SelectContent>
             </Select>
 
-            <div className="flex items-center gap-1">
-              <Label className="text-xs">تاخیر (دقیقه)</Label>
-              <Input type="number" value={r.delay_minutes} onChange={(e) => patch(r.id, { delay_minutes: Number(e.target.value) })} className="h-8 w-24" />
-            </div>
-            <div className="flex items-center gap-1">
-              <Label className="text-xs">تکرار</Label>
-              <Input type="number" value={r.max_repeats} onChange={(e) => patch(r.id, { max_repeats: Number(e.target.value) })} className="h-8 w-16" />
-            </div>
-            <div className="flex items-center gap-1">
-              <Label className="text-xs">فاصله تکرار (دقیقه)</Label>
-              <Input type="number" value={r.repeat_delay_minutes} onChange={(e) => patch(r.id, { repeat_delay_minutes: Number(e.target.value) })} className="h-8 w-24" />
-            </div>
+            {(r.schedule_mode || 'fixed') === 'fixed' && (
+              <>
+                <Select value={r.anchor} onValueChange={(v) => patch(r.id, { anchor: v as any })}>
+                  <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="registration">بعد از ثبت‌نام</SelectItem>
+                    <SelectItem value="webinar_start">بعد از شروع وبینار</SelectItem>
+                    <SelectItem value="attendance">بعد از حضور در وبینار</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">تاخیر (دقیقه)</Label>
+                  <Input type="number" value={r.delay_minutes} onChange={(e) => patch(r.id, { delay_minutes: Number(e.target.value) })} className="h-8 w-24" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">تکرار</Label>
+                  <Input type="number" value={r.max_repeats} onChange={(e) => patch(r.id, { max_repeats: Number(e.target.value) })} className="h-8 w-16" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">فاصله تکرار (دقیقه)</Label>
+                  <Input type="number" value={r.repeat_delay_minutes} onChange={(e) => patch(r.id, { repeat_delay_minutes: Number(e.target.value) })} className="h-8 w-24" />
+                </div>
+              </>
+            )}
+
+            {(r.schedule_mode || 'fixed') === 'adaptive' && (
+              <>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">اولویت</Label>
+                  <Input type="number" value={r.priority ?? 100} onChange={(e) => patch(r.id, { priority: Number(e.target.value) })} className="h-8 w-20" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">حداقل فاصله (دقیقه)</Label>
+                  <Input type="number" value={r.min_interval_minutes ?? 30} onChange={(e) => patch(r.id, { min_interval_minutes: Number(e.target.value) })} className="h-8 w-24" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">حداقل فاصله تا شروع (دقیقه)</Label>
+                  <Input type="number" value={r.final_lead_minutes ?? 15} onChange={(e) => patch(r.id, { final_lead_minutes: Number(e.target.value) })} className="h-8 w-24" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">ساعات سکوت (از/تا)</Label>
+                  <Input type="number" min={0} max={23} placeholder="—" value={r.quiet_hours_start ?? ''} onChange={(e) => patch(r.id, { quiet_hours_start: e.target.value === '' ? null : Number(e.target.value) })} className="h-8 w-16" />
+                  <Input type="number" min={0} max={23} placeholder="—" value={r.quiet_hours_end ?? ''} onChange={(e) => patch(r.id, { quiet_hours_end: e.target.value === '' ? null : Number(e.target.value) })} className="h-8 w-16" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">عدم ارسال بعد از شروع</Label>
+                  <Switch checked={r.do_not_send_after_webinar_start ?? true} onCheckedChange={(v) => patch(r.id, { do_not_send_after_webinar_start: v })} />
+                </div>
+              </>
+            )}
+
 
             <div className="mr-auto flex gap-2">
               <Button type="button" size="sm" variant="outline" onClick={() => save(r)} disabled={savingId === r.id}>
