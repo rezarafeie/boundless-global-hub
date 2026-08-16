@@ -29,7 +29,9 @@ import {
   AlertTriangle,
   ArrowRightLeft,
   UserX,
-  Download
+  Download,
+  Copy
+
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -67,6 +69,20 @@ interface Course {
   id: string;
   title: string;
 }
+
+interface DuplicateRow {
+  keep_id: string;
+  duplicate_id: string;
+  full_name: string;
+  phone: string;
+  email: string;
+  course_id: string;
+  course_title: string | null;
+  payment_status: string;
+  payment_amount: number;
+  created_at: string;
+}
+
 
 interface Pipeline {
   id: string;
@@ -174,6 +190,13 @@ const SimplifiedLeadManagement: React.FC = () => {
   // Assignment progress states
   const [assignmentProgress, setAssignmentProgress] = useState({ current: 0, total: 0, status: '' });
   const [isAssigning, setIsAssigning] = useState(false);
+
+  // Duplicate cleanup
+  const [showDuplicates, setShowDuplicates] = useState(false);
+  const [duplicateRows, setDuplicateRows] = useState<DuplicateRow[]>([]);
+  const [duplicatesLoading, setDuplicatesLoading] = useState(false);
+  const [duplicatesDeleting, setDuplicatesDeleting] = useState(false);
+
 
   // Bulk transfer states
   const [bulkTransferDialogOpen, setBulkTransferDialogOpen] = useState(false);
@@ -1251,7 +1274,63 @@ const SimplifiedLeadManagement: React.FC = () => {
     });
   };
 
+  // ---- Duplicate enrollments cleanup ----
+  const getSessionToken = () => {
+    const cookieToken = document.cookie
+      .split('; ')
+      .find((item) => item.startsWith('session_token='))
+      ?.split('=')[1];
+    const token = localStorage.getItem('messenger_session_token') || cookieToken;
+    return token ? decodeURIComponent(token) : null;
+  };
+
+  const scanDuplicates = async () => {
+    const sessionToken = getSessionToken();
+    if (!sessionToken) {
+      toast({ title: 'خطا', description: 'نشست معتبر یافت نشد. دوباره وارد شوید.', variant: 'destructive' });
+      return;
+    }
+    setShowDuplicates(true);
+    setDuplicatesLoading(true);
+    try {
+      const { data, error } = await (supabase as any).rpc('find_duplicate_enrollments', {
+        p_session_token: sessionToken,
+        p_course_id: selectedCourse || null,
+      });
+      if (error) throw error;
+      setDuplicateRows((data || []) as DuplicateRow[]);
+    } catch (e: any) {
+      toast({ title: 'خطا در بررسی تکراری‌ها', description: e.message, variant: 'destructive' });
+      setDuplicateRows([]);
+    } finally {
+      setDuplicatesLoading(false);
+    }
+  };
+
+  const deleteDuplicates = async () => {
+    const sessionToken = getSessionToken();
+    if (!sessionToken || duplicateRows.length === 0) return;
+    setDuplicatesDeleting(true);
+    try {
+      const { data, error } = await (supabase as any).rpc('remove_duplicate_enrollments', {
+        p_session_token: sessionToken,
+        p_course_id: selectedCourse || null,
+        p_ids: duplicateRows.map((d) => d.duplicate_id),
+      });
+      if (error) throw error;
+      toast({ title: 'موفق', description: `${data ?? 0} رکورد تکراری حذف شد` });
+      setDuplicateRows([]);
+      setShowDuplicates(false);
+      if (hasLoaded) await handleLoadLeads();
+    } catch (e: any) {
+      toast({ title: 'خطا در حذف تکراری‌ها', description: e.message, variant: 'destructive' });
+    } finally {
+      setDuplicatesDeleting(false);
+    }
+  };
+
   const formatDate = (date: string) => {
+
     try {
       return format(new Date(date), 'yyyy/MM/dd HH:mm');
     } catch {
@@ -1737,6 +1816,17 @@ const SimplifiedLeadManagement: React.FC = () => {
               <span className="hidden sm:inline">دانلود CSV</span>
               <span className="sm:hidden">CSV</span>
             </Button>
+            <Button
+              variant="outline"
+              onClick={scanDuplicates}
+              size="sm"
+              className="gap-1.5 text-xs md:text-sm text-destructive hover:text-destructive"
+            >
+              <Copy className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">حذف تکراری‌ها</span>
+              <span className="sm:hidden">تکراری</span>
+            </Button>
+
             {hasLoaded && (
               <span className="text-xs md:text-sm text-muted-foreground mr-auto">
                 نمایش {aiScoreFilter !== 'all' ? leads.filter(l => l.ai_category === aiScoreFilter).length : leads.length} لید
@@ -2418,7 +2508,85 @@ const SimplifiedLeadManagement: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Duplicate enrollments dialog */}
+      <Dialog open={showDuplicates} onOpenChange={setShowDuplicates}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>حذف ثبت‌نام‌های تکراری</DialogTitle>
+            <DialogDescription>
+              رکوردهای تکراری بر اساس «شماره تماس + دوره» شناسایی می‌شوند.
+              {selectedCourse
+                ? ` (دوره: ${courses.find(c => c.id === selectedCourse)?.title || '—'})`
+                : ' (همه دوره‌ها)'}
+              {' '}رکورد اصلی (پرداخت موفق یا قدیمی‌ترین) همیشه نگه داشته می‌شود و ثبت‌نام‌های پرداخت‌شده هرگز حذف نمی‌شوند.
+            </DialogDescription>
+          </DialogHeader>
+
+          {duplicatesLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : duplicateRows.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <CheckCircle className="h-10 w-10 mb-3 opacity-60" />
+              <p>هیچ رکورد تکراری پیدا نشد</p>
+            </div>
+          ) : (
+            <>
+              <div className="text-sm font-medium">
+                {duplicateRows.length.toLocaleString('fa-IR')} رکورد تکراری برای حذف
+              </div>
+              <ScrollArea className="flex-1 max-h-[45vh] border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>نام</TableHead>
+                      <TableHead>تلفن</TableHead>
+                      <TableHead>دوره</TableHead>
+                      <TableHead>وضعیت</TableHead>
+                      <TableHead>تاریخ</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {duplicateRows.map((d) => (
+                      <TableRow key={d.duplicate_id}>
+                        <TableCell className="text-sm">{d.full_name}</TableCell>
+                        <TableCell className="text-sm">{formatPhone(d.phone)}</TableCell>
+                        <TableCell className="text-sm">{d.course_title || '—'}</TableCell>
+                        <TableCell className="text-sm">
+                          <Badge variant="outline">{d.payment_status}</Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">{formatDate(d.created_at)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+              <div className="bg-amber-50 dark:bg-amber-950 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    این عمل غیرقابل بازگشت است و یادداشت‌ها و واگذاری‌های مربوط به این رکوردها نیز حذف می‌شوند.
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowDuplicates(false)}>انصراف</Button>
+                <Button variant="destructive" onClick={deleteDuplicates} disabled={duplicatesDeleting}>
+                  {duplicatesDeleting ? (
+                    <><Loader2 className="h-4 w-4 animate-spin mr-2" />در حال حذف...</>
+                  ) : (
+                    <>حذف {duplicateRows.length.toLocaleString('fa-IR')} رکورد</>
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 };
 
