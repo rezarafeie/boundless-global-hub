@@ -7,13 +7,11 @@ const CallsList = React.lazy(() => import('@/pages/Admin/CallCenter/CallsList'))
 const CallQueues = React.lazy(() => import('@/pages/Admin/CallCenter/CallQueues'));
 const CallAgents = React.lazy(() => import('@/pages/Admin/CallCenter/CallAgents'));
 const CallCenterSettings = React.lazy(() => import('@/pages/Admin/CallCenter/CallCenterSettings'));
-const LiveCallBanner = React.lazy(() => import('@/components/CallCenter/LiveCallBanner'));
 
 const Fallback = () => <div className="p-8 text-center text-muted-foreground">در حال بارگذاری…</div>;
 
 const CallCenterDashboard: React.FC = () => (
   <Tabs defaultValue="overview" dir="rtl" className="space-y-4">
-    <Suspense fallback={null}><LiveCallBanner /></Suspense>
     <TabsList className="flex-wrap h-auto">
       <TabsTrigger value="overview" className="gap-1"><LayoutDashboard className="h-4 w-4" /> نمای کلی</TabsTrigger>
       <TabsTrigger value="calls" className="gap-1"><PhoneCall className="h-4 w-4" /> تماس‌ها</TabsTrigger>

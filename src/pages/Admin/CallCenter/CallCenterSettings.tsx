@@ -113,6 +113,17 @@ const CallCenterSettings: React.FC = () => {
               </Button>
             </div>
           </div>
+          <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-1">
+            <div className="font-medium">رویدادهایی که باید در پنل دفتر شما فعال شوند:</div>
+            <ul className="list-disc pr-4 space-y-0.5 text-muted-foreground">
+              <li>اعلام شروع تماس ورودی (Call.incoming.started)</li>
+              <li>اعلام شروع انتقال تماس (Call.incoming.transferStarted)</li>
+              <li>اعلام پایان انتقال تماس (Call.incoming.transferCompleted)</li>
+              <li>اعلام پایان تماس ورودی (Call.incoming.ended)</li>
+              <li>اعلام پایان تماس خروجی (Call.outgoing.ended)</li>
+            </ul>
+            <div className="text-muted-foreground">با فعال‌سازی رویدادهای شروع تماس، بنر «تماس ورودی» به‌صورت زنده در داشبورد و مرکز تماس نمایش داده می‌شود.</div>
+          </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={test} disabled={testing} className="gap-2">
               {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlugZap className="h-4 w-4" />} تست اتصال
