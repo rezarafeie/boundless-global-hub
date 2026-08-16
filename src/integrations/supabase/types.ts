@@ -8133,6 +8133,21 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      find_duplicate_enrollments: {
+        Args: { p_course_id?: string; p_session_token: string }
+        Returns: {
+          course_id: string
+          course_title: string
+          created_at: string
+          duplicate_id: string
+          email: string
+          full_name: string
+          keep_id: string
+          payment_amount: number
+          payment_status: string
+          phone: string
+        }[]
+      }
       fix_payment_status_inconsistencies: {
         Args: never
         Returns: {
@@ -8430,6 +8445,14 @@ export type Database = {
       remove_course_from_sales_agent: {
         Args: { p_agent_user_id: number; p_course_id: string }
         Returns: boolean
+      }
+      remove_duplicate_enrollments: {
+        Args: {
+          p_course_id?: string
+          p_ids?: string[]
+          p_session_token: string
+        }
+        Returns: number
       }
       search_users: {
         Args: { search_term: string }
