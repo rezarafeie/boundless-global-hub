@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Save, Loader2, Send, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Save, Loader2, Send, RefreshCw, CalendarClock } from 'lucide-react';
+import { adaptiveSchedule, formatTehran } from '@/lib/webinarAdaptiveSchedule';
 
 interface WebinarFollowup {
   id: string;
@@ -27,6 +28,13 @@ interface WebinarFollowup {
   sms_text: string | null;
   sms_template_url: string | null;
   bot_text: string | null;
+  schedule_mode: 'fixed' | 'adaptive';
+  priority: number;
+  min_interval_minutes: number;
+  do_not_send_after_webinar_start: boolean;
+  quiet_hours_start: number | null;
+  quiet_hours_end: number | null;
+  final_lead_minutes: number;
 }
 
 const DEFAULT_KAVENEGAR =
