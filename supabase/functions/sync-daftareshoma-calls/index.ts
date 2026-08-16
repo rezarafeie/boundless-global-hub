@@ -10,7 +10,20 @@ const PAGE_SIZE = 25
 
 function extractRecords(data: any): Record<string, any>[] {
   if (!data) return []
-  if (Array.isArray(data)) return data
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      if (item && typeof item === 'object' && 'calls' in item) {
+        const nested = extractRecords((item as Record<string, unknown>).calls)
+        if (nested.length) return nested
+      }
+    }
+    return data
+  }
+  for (const [key, value] of Object.entries(data)) {
+    if (key.toLowerCase() !== 'calls') continue
+    const nested = extractRecords(value)
+    if (nested.length) return nested
+  }
   const keys = new Set(['items', 'data', 'result', 'results', 'records', 'callreports', 'calls', 'list', 'rows', 'entities'])
   for (const [key, v] of Object.entries(data)) {
     if (!keys.has(key.toLowerCase())) continue
