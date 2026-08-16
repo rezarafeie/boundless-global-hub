@@ -301,38 +301,42 @@ export function applyQuietHours(d: Date, start: number | null | undefined, end: 
 export type AdaptiveSlot = { id: string; at: Date; index: number };
 
 /**
- * @param remaining followups still pending for this recipient, in intended order
+ * @param sequence the FULL adaptive sequence for this recipient (sent + pending), in intended order
  * @param webinarStart webinar start timestamp
  * @param anchor recipient anchor (registration time)
+ *
+ * Slots are anchored to the recipient's registration time — NOT to "now" — so the
+ * plan stays stable between cron runs and the messages genuinely spread out until
+ * the webinar instead of firing back-to-back.
  */
 export function adaptiveSchedule(
-  remaining: Followup[],
+  sequence: Followup[],
   webinarStart: string | null | undefined,
   anchor: string | null | undefined,
   now: Date = new Date(),
 ): AdaptiveSlot[] {
-  if (!remaining.length || !webinarStart) return [];
-  const startTs = Math.max(anchor ? new Date(anchor).getTime() : now.getTime(), now.getTime());
-  const leadMin = Math.max(0, ...remaining.map((f) => f.final_lead_minutes ?? 15));
+  if (!sequence.length || !webinarStart) return [];
+  const startTs = anchor ? new Date(anchor).getTime() : now.getTime();
+  const leadMin = Math.max(0, ...sequence.map((f) => f.final_lead_minutes ?? 15));
   const endTs = new Date(webinarStart).getTime() - leadMin * 60000;
   const availableMin = (endTs - startTs) / 60000;
   if (availableMin <= 0) return [];
 
-  const minInterval = Math.max(1, ...remaining.map((f) => f.min_interval_minutes ?? 30));
-  const n = remaining.length;
+  const minInterval = Math.max(1, ...sequence.map((f) => f.min_interval_minutes ?? 30));
+  const n = sequence.length;
   const step = n > 1 ? availableMin / (n - 1) : availableMin;
 
-  let selected = remaining;
+  let selected = sequence;
   let slots: number[] = [];
 
   if (step >= minInterval) {
-    // First pending message goes out immediately, the rest are spread across
-    // the remaining window (last one lands at endTs).
-    slots = remaining.map((_, i) => (n === 1 ? startTs : startTs + step * i * 60000));
+    // First message at the anchor (immediately for a fresh registration), the rest
+    // spread evenly across the window, last one landing at endTs.
+    slots = sequence.map((_, i) => (n === 1 ? startTs : startTs + step * i * 60000));
   } else {
     // Not enough room: keep the highest-priority ones (lower number = higher priority)
     const capacity = Math.max(1, Math.min(n, Math.floor(availableMin / minInterval) + 1));
-    const byPriority = [...remaining]
+    const byPriority = [...sequence]
       .map((f, i) => ({ f, i }))
       .sort((a, b) => ((a.f.priority ?? 100) - (b.f.priority ?? 100)) || (a.i - b.i))
       .slice(0, capacity)
@@ -352,7 +356,7 @@ export function adaptiveSchedule(
 // Is this followup allowed to fire right now under adaptive rules?
 export function adaptiveDue(
   fu: Followup,
-  remaining: Followup[],
+  sequence: Followup[],
   webinar: any,
   rec: Recipient,
   now: Date = new Date(),
@@ -361,7 +365,7 @@ export function adaptiveDue(
     return { due: false, at: null };
   }
   const anchor = rec.registered_at ?? rec.attended_at ?? null;
-  const plan = adaptiveSchedule(remaining, webinar?.start_date, anchor, now);
+  const plan = adaptiveSchedule(sequence, webinar?.start_date, anchor, now);
   const slot = plan.find((s) => s.id === fu.id);
   if (!slot) return { due: false, at: null };
   return { due: slot.at.getTime() <= now.getTime(), at: slot.at };
