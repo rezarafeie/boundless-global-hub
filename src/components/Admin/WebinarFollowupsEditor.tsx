@@ -168,16 +168,6 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
     }
   };
 
-  const getSessionToken = () => {
-    const cookieToken = document.cookie
-      .split('; ')
-      .find((item) => item.startsWith('session_token='))
-      ?.split('=')
-      .slice(1)
-      .join('=');
-    const t = localStorage.getItem('messenger_session_token') || cookieToken;
-    return t ? decodeURIComponent(t) : null;
-  };
 
   const save = async (r: WebinarFollowup) => {
     const sessionToken = getSessionToken();
