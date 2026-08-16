@@ -250,3 +250,94 @@ export function anchorTime(fu: Followup, webinar: any, rec: Recipient): string |
   if (fu.anchor === "attendance") return rec.attended_at;
   return rec.registered_at;
 }
+
+// ---------------------------------------------------------------------------
+// Adaptive scheduling: distribute the remaining followups across the time left
+// until the webinar starts. The closer the webinar, the tighter the spacing.
+// ---------------------------------------------------------------------------
+
+const TEHRAN_OFFSET_MIN = 210; // UTC+3:30
+
+function tehranHour(d: Date): number {
+  return new Date(d.getTime() + TEHRAN_OFFSET_MIN * 60000).getUTCHours();
+}
+
+// Push a timestamp out of the configured quiet hours (Tehran local hours).
+export function applyQuietHours(d: Date, start: number | null | undefined, end: number | null | undefined): Date {
+  if (start == null || end == null || start === end) return d;
+  let out = new Date(d.getTime());
+  for (let i = 0; i < 48; i++) {
+    const h = tehranHour(out);
+    const inQuiet = start < end ? (h >= start && h < end) : (h >= start || h < end);
+    if (!inQuiet) return out;
+    out = new Date(out.getTime() + 60 * 60000); // step forward one hour
+  }
+  return out;
+}
+
+export type AdaptiveSlot = { id: string; at: Date; index: number };
+
+/**
+ * @param remaining followups still pending for this recipient, in intended order
+ * @param webinarStart webinar start timestamp
+ * @param anchor recipient anchor (registration time)
+ */
+export function adaptiveSchedule(
+  remaining: Followup[],
+  webinarStart: string | null | undefined,
+  anchor: string | null | undefined,
+  now: Date = new Date(),
+): AdaptiveSlot[] {
+  if (!remaining.length || !webinarStart) return [];
+  const startTs = Math.max(anchor ? new Date(anchor).getTime() : now.getTime(), now.getTime());
+  const leadMin = Math.max(0, ...remaining.map((f) => f.final_lead_minutes ?? 15));
+  const endTs = new Date(webinarStart).getTime() - leadMin * 60000;
+  const availableMin = (endTs - startTs) / 60000;
+  if (availableMin <= 0) return [];
+
+  const minInterval = Math.max(1, ...remaining.map((f) => f.min_interval_minutes ?? 30));
+  const n = remaining.length;
+  const step = availableMin / n;
+
+  let selected = remaining;
+  let slots: number[] = [];
+
+  if (step >= minInterval) {
+    slots = remaining.map((_, i) => startTs + step * (i + 1) * 60000);
+  } else {
+    // Not enough room: keep the highest-priority ones (lower number = higher priority)
+    const capacity = Math.max(1, Math.min(n, Math.floor(availableMin / minInterval) + 1));
+    const byPriority = [...remaining]
+      .map((f, i) => ({ f, i }))
+      .sort((a, b) => ((a.f.priority ?? 100) - (b.f.priority ?? 100)) || (a.i - b.i))
+      .slice(0, capacity)
+      .sort((a, b) => a.i - b.i);
+    selected = byPriority.map((x) => x.f);
+    const k = selected.length;
+    slots = selected.map((_, i) => endTs - (k - 1 - i) * minInterval * 60000);
+  }
+
+  return selected.map((f, i) => {
+    let at = applyQuietHours(new Date(slots[i]), f.quiet_hours_start, f.quiet_hours_end);
+    if (at.getTime() > endTs) at = new Date(endTs);
+    return { id: f.id, at, index: i };
+  });
+}
+
+// Is this followup allowed to fire right now under adaptive rules?
+export function adaptiveDue(
+  fu: Followup,
+  remaining: Followup[],
+  webinar: any,
+  rec: Recipient,
+  now: Date = new Date(),
+): { due: boolean; at: Date | null } {
+  if ((fu.do_not_send_after_webinar_start ?? true) && webinar?.start_date && new Date(webinar.start_date).getTime() <= now.getTime()) {
+    return { due: false, at: null };
+  }
+  const anchor = rec.registered_at ?? rec.attended_at ?? null;
+  const plan = adaptiveSchedule(remaining, webinar?.start_date, anchor, now);
+  const slot = plan.find((s) => s.id === fu.id);
+  if (!slot) return { due: false, at: null };
+  return { due: slot.at.getTime() <= now.getTime(), at: slot.at };
+}

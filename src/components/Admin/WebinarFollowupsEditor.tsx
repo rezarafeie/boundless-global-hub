@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Save, Loader2, Send, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Save, Loader2, Send, RefreshCw, CalendarClock } from 'lucide-react';
+import { adaptiveSchedule, formatTehran } from '@/lib/webinarAdaptiveSchedule';
 
 interface WebinarFollowup {
   id: string;
@@ -27,6 +28,13 @@ interface WebinarFollowup {
   sms_text: string | null;
   sms_template_url: string | null;
   bot_text: string | null;
+  schedule_mode: 'fixed' | 'adaptive';
+  priority: number;
+  min_interval_minutes: number;
+  do_not_send_after_webinar_start: boolean;
+  quiet_hours_start: number | null;
+  quiet_hours_end: number | null;
+  final_lead_minutes: number;
 }
 
 const DEFAULT_KAVENEGAR =
@@ -44,7 +52,20 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
   const [testResult, setTestResult] = useState<Record<string, any>>({});
   const [logs, setLogs] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [webinarStart, setWebinarStart] = useState<string | null>(null);
+  const [previewDays, setPreviewDays] = useState(5);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!webinarId) return;
+    supabase
+      .from('webinar_entries' as any)
+      .select('start_date')
+      .eq('id', webinarId)
+      .maybeSingle()
+      .then(({ data }) => setWebinarStart((data as any)?.start_date ?? null));
+  }, [webinarId]);
+
 
   const load = async () => {
     setLoading(true);
@@ -127,7 +148,7 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
       return;
     }
     setSavingId(r.id);
-    const { data, error } = await (supabase.rpc as any)('update_webinar_followup', {
+    const { data, error } = await (supabase.rpc as any)('update_webinar_followup_v2', {
       p_session_token: sessionToken,
       p_id: r.id,
       p_name: r.name,
@@ -143,7 +164,15 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
       p_sms_text: r.sms_text,
       p_sms_template_url: r.sms_template_url,
       p_bot_text: r.bot_text,
+      p_schedule_mode: r.schedule_mode || 'fixed',
+      p_priority: Number(r.priority) || 100,
+      p_min_interval_minutes: Number(r.min_interval_minutes) || 30,
+      p_do_not_send_after_webinar_start: r.do_not_send_after_webinar_start ?? true,
+      p_quiet_hours_start: r.quiet_hours_start === null || r.quiet_hours_start === undefined ? null : Number(r.quiet_hours_start),
+      p_quiet_hours_end: r.quiet_hours_end === null || r.quiet_hours_end === undefined ? null : Number(r.quiet_hours_end),
+      p_final_lead_minutes: Number(r.final_lead_minutes) ?? 15,
     });
+
     setSavingId(null);
     if (error) { toast({ title: 'خطا', description: error.message, variant: 'destructive' }); return; }
     if (data) setRows(prev => prev.map(x => x.id === r.id ? (data as any) : x));
@@ -184,6 +213,19 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
 
   const patch = (id: string, p: Partial<WebinarFollowup>) =>
     setRows(prev => prev.map(r => r.id === id ? { ...r, ...p } : r));
+
+  const adaptiveRows = rows
+    .filter(r => r.enabled && (r.schedule_mode || 'fixed') === 'adaptive')
+    .sort((a, b) => (a.priority ?? 100) - (b.priority ?? 100));
+
+  const preview = webinarStart
+    ? adaptiveSchedule(
+        adaptiveRows,
+        webinarStart,
+        new Date(new Date(webinarStart).getTime() - previewDays * 24 * 60 * 60000),
+      )
+    : [];
+
 
   return (
     <div className="space-y-4" dir="rtl">
@@ -229,27 +271,66 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
               </SelectContent>
             </Select>
 
-            <Select value={r.anchor} onValueChange={(v) => patch(r.id, { anchor: v as any })}>
-              <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
+            <Select value={r.schedule_mode || 'fixed'} onValueChange={(v) => patch(r.id, { schedule_mode: v as any })}>
+              <SelectTrigger className="h-8 w-52"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="registration">بعد از ثبت‌نام</SelectItem>
-                <SelectItem value="webinar_start">بعد از شروع وبینار</SelectItem>
-                <SelectItem value="attendance">بعد از حضور در وبینار</SelectItem>
+                <SelectItem value="fixed">زمان‌بندی ثابت</SelectItem>
+                <SelectItem value="adaptive">تطبیقی تا شروع وبینار</SelectItem>
               </SelectContent>
             </Select>
 
-            <div className="flex items-center gap-1">
-              <Label className="text-xs">تاخیر (دقیقه)</Label>
-              <Input type="number" value={r.delay_minutes} onChange={(e) => patch(r.id, { delay_minutes: Number(e.target.value) })} className="h-8 w-24" />
-            </div>
-            <div className="flex items-center gap-1">
-              <Label className="text-xs">تکرار</Label>
-              <Input type="number" value={r.max_repeats} onChange={(e) => patch(r.id, { max_repeats: Number(e.target.value) })} className="h-8 w-16" />
-            </div>
-            <div className="flex items-center gap-1">
-              <Label className="text-xs">فاصله تکرار (دقیقه)</Label>
-              <Input type="number" value={r.repeat_delay_minutes} onChange={(e) => patch(r.id, { repeat_delay_minutes: Number(e.target.value) })} className="h-8 w-24" />
-            </div>
+            {(r.schedule_mode || 'fixed') === 'fixed' && (
+              <>
+                <Select value={r.anchor} onValueChange={(v) => patch(r.id, { anchor: v as any })}>
+                  <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="registration">بعد از ثبت‌نام</SelectItem>
+                    <SelectItem value="webinar_start">بعد از شروع وبینار</SelectItem>
+                    <SelectItem value="attendance">بعد از حضور در وبینار</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">تاخیر (دقیقه)</Label>
+                  <Input type="number" value={r.delay_minutes} onChange={(e) => patch(r.id, { delay_minutes: Number(e.target.value) })} className="h-8 w-24" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">تکرار</Label>
+                  <Input type="number" value={r.max_repeats} onChange={(e) => patch(r.id, { max_repeats: Number(e.target.value) })} className="h-8 w-16" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">فاصله تکرار (دقیقه)</Label>
+                  <Input type="number" value={r.repeat_delay_minutes} onChange={(e) => patch(r.id, { repeat_delay_minutes: Number(e.target.value) })} className="h-8 w-24" />
+                </div>
+              </>
+            )}
+
+            {(r.schedule_mode || 'fixed') === 'adaptive' && (
+              <>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">اولویت</Label>
+                  <Input type="number" value={r.priority ?? 100} onChange={(e) => patch(r.id, { priority: Number(e.target.value) })} className="h-8 w-20" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">حداقل فاصله (دقیقه)</Label>
+                  <Input type="number" value={r.min_interval_minutes ?? 30} onChange={(e) => patch(r.id, { min_interval_minutes: Number(e.target.value) })} className="h-8 w-24" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">حداقل فاصله تا شروع (دقیقه)</Label>
+                  <Input type="number" value={r.final_lead_minutes ?? 15} onChange={(e) => patch(r.id, { final_lead_minutes: Number(e.target.value) })} className="h-8 w-24" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">ساعات سکوت (از/تا)</Label>
+                  <Input type="number" min={0} max={23} placeholder="—" value={r.quiet_hours_start ?? ''} onChange={(e) => patch(r.id, { quiet_hours_start: e.target.value === '' ? null : Number(e.target.value) })} className="h-8 w-16" />
+                  <Input type="number" min={0} max={23} placeholder="—" value={r.quiet_hours_end ?? ''} onChange={(e) => patch(r.id, { quiet_hours_end: e.target.value === '' ? null : Number(e.target.value) })} className="h-8 w-16" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">عدم ارسال بعد از شروع</Label>
+                  <Switch checked={r.do_not_send_after_webinar_start ?? true} onCheckedChange={(v) => patch(r.id, { do_not_send_after_webinar_start: v })} />
+                </div>
+              </>
+            )}
+
 
             <div className="mr-auto flex gap-2">
               <Button type="button" size="sm" variant="outline" onClick={() => save(r)} disabled={savingId === r.id}>
@@ -294,6 +375,39 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
           )}
         </div>
       ))}
+
+      {adaptiveRows.length > 0 && (
+        <div className="border rounded p-3 space-y-2 bg-muted/10">
+          <div className="flex flex-wrap items-center gap-2">
+            <CalendarClock className="h-4 w-4" />
+            <h5 className="text-sm font-semibold">پیش‌نمایش زمان‌بندی تطبیقی</h5>
+            <Label className="text-xs mr-2">کاربر چند روز قبل از وبینار ثبت‌نام کند؟</Label>
+            <Input type="number" step="0.5" value={previewDays} onChange={(e) => setPreviewDays(Number(e.target.value))} className="h-8 w-20" />
+          </div>
+          {!webinarStart && <p className="text-xs text-muted-foreground">تاریخ شروع وبینار ثبت نشده است.</p>}
+          {webinarStart && preview.length === 0 && (
+            <p className="text-xs text-destructive">با این تنظیمات، زمانی برای ارسال باقی نمی‌ماند.</p>
+          )}
+          {webinarStart && preview.length > 0 && (
+            <ol className="text-xs space-y-1">
+              {preview.map((s, i) => (
+                <li key={s.id} className="flex gap-2">
+                  <span className="text-muted-foreground">پیگیری {i + 1}:</span>
+                  <span className="font-medium">{s.name}</span>
+                  <span className="mr-auto" dir="rtl">{formatTehran(s.at)}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+          {webinarStart && preview.length < adaptiveRows.length && (
+            <p className="text-[11px] text-amber-600">
+              با رعایت حداقل فاصله، فقط {preview.length} پیگیری از {adaptiveRows.length} پیگیری بر اساس اولویت ارسال می‌شود.
+            </p>
+          )}
+        </div>
+      )}
+
+
 
       <div className="space-y-2 pt-2">
         <div className="flex items-center justify-between">
