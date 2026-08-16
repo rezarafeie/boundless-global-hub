@@ -124,6 +124,7 @@ serve(async (req) => {
           if (ok) {
             await bumpWebinarRecipient(fu, rec, count);
             sentMap[rec.phone] = count + 1;
+            (lastSentBySeq[cacheKey] ??= {})[rec.phone] = Date.now();
             sent++;
           }
         } catch (e) {
