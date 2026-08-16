@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 interface Props { missedOnly?: boolean }
 
 const RANGES: { value: string; label: string; days: number | null }[] = [
+  { value: 'all', label: 'همه تاریخ‌ها', days: null },
   { value: '1', label: 'امروز', days: 1 },
   { value: '7', label: '۷ روز اخیر', days: 7 },
   { value: '30', label: '۳۰ روز اخیر', days: 30 },
@@ -29,20 +30,28 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
   const [direction, setDirection] = useState('all');
   const [status, setStatus] = useState('all');
   const [agentId, setAgentId] = useState('all');
-  const [range, setRange] = useState('30');
+  const [range, setRange] = useState('all');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [agents, setAgents] = useState<any[]>([]);
   const debouncedSearch = useDebounce(search, 400);
   const pageSize = 20;
 
-  const preset = RANGES.find((r) => r.value === range);
-  const fromISO = range === 'custom'
-    ? (customFrom ? new Date(`${customFrom}T00:00:00`).toISOString() : undefined)
-    : new Date(Date.now() - (preset?.days ?? 30) * 24 * 3600 * 1000).toISOString();
-  const toISO = range === 'custom'
-    ? (customTo ? new Date(`${customTo}T23:59:59`).toISOString() : undefined)
-    : undefined;
+  const { fromISO, toISO } = useMemo(() => {
+    if (range === 'all') return { fromISO: undefined, toISO: undefined };
+    if (range === 'custom') {
+      return {
+        fromISO: customFrom ? new Date(`${customFrom}T00:00:00`).toISOString() : undefined,
+        toISO: customTo ? new Date(`${customTo}T23:59:59`).toISOString() : undefined,
+      };
+    }
+
+    const days = RANGES.find((item) => item.value === range)?.days;
+    return {
+      fromISO: days ? new Date(Date.now() - days * 24 * 3600 * 1000).toISOString() : undefined,
+      toISO: undefined,
+    };
+  }, [range, customFrom, customTo]);
 
   useEffect(() => { callCenter.agentList().then((r) => setAgents(r.agents)).catch(() => {}); }, []);
 

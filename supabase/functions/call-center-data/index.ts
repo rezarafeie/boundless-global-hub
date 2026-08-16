@@ -46,46 +46,66 @@ async function decorate(rows: any[]) {
 async function listCalls(ctx: AuthContext, p: any) {
   const page = Math.max(1, Number(p.page ?? 1))
   const pageSize = Math.min(100, Number(p.pageSize ?? 20))
-  let q = admin.from('calls').select(CALL_SELECT, { count: 'exact' })
-  q = scope(q, ctx)
+  const applyFilters = (query: any) => {
+    let filtered = scope(query, ctx)
 
-  if (p.direction) q = q.eq('direction', p.direction)
-  if (p.status) q = q.eq('status', p.status)
-  if (p.disposition) q = q.eq('disposition', p.disposition)
-  if (p.agentId) q = q.eq('agent_id', p.agentId)
-  if (p.extension) q = q.eq('extension', p.extension)
-  if (p.userId) q = q.eq('user_id', p.userId)
-  if (p.leadId) q = q.eq('lead_id', p.leadId)
-  if (p.consultationId) q = q.eq('consultation_id', p.consultationId)
-  if (p.webinarRegistrationId) q = q.eq('webinar_registration_id', p.webinarRegistrationId)
-  if (p.missed) q = q.eq('direction', 'incoming').neq('status', 'answered')
-  if (p.hasRecording) q = q.not('recording_id', 'is', null)
-  if (p.minAiScore) q = q.gte('ai_score', Number(p.minAiScore))
-  if (p.minIntent) q = q.gte('purchase_intent_score', Number(p.minIntent))
-  if (p.from) q = q.gte('started_at', p.from)
-  if (p.to) q = q.lte('started_at', p.to)
+    if (p.direction) filtered = filtered.eq('direction', p.direction)
+    if (p.status) filtered = filtered.eq('status', p.status)
+    if (p.disposition) filtered = filtered.eq('disposition', p.disposition)
+    if (p.agentId) filtered = filtered.eq('agent_id', p.agentId)
+    if (p.extension) filtered = filtered.eq('extension', p.extension)
+    if (p.userId) filtered = filtered.eq('user_id', p.userId)
+    if (p.leadId) filtered = filtered.eq('lead_id', p.leadId)
+    if (p.consultationId) filtered = filtered.eq('consultation_id', p.consultationId)
+    if (p.webinarRegistrationId) filtered = filtered.eq('webinar_registration_id', p.webinarRegistrationId)
+    if (p.missed) filtered = filtered.eq('direction', 'incoming').neq('status', 'answered')
+    if (p.hasRecording) filtered = filtered.not('recording_id', 'is', null)
+    if (p.minAiScore) filtered = filtered.gte('ai_score', Number(p.minAiScore))
+    if (p.minIntent) filtered = filtered.gte('purchase_intent_score', Number(p.minIntent))
+    if (p.from) filtered = filtered.gte('started_at', p.from)
+    if (p.to) filtered = filtered.lte('started_at', p.to)
+    return filtered
+  }
+
+  let searchUserIds: number[] | null = null
+  let phoneSearch: string | null = null
+  let providerSearch: string | null = null
 
   if (p.search) {
     const term = String(p.search).trim()
     const tail = phoneTail(term)
     if (tail) {
-      q = q.or(`caller_number_normalized.like.%${tail},destination_number_normalized.like.%${tail}`)
+      phoneSearch = tail
     } else {
       const { data: matches } = await admin
         .from('chat_users')
         .select('id')
         .or(`name.ilike.%${term}%,full_name.ilike.%${term}%,email.ilike.%${term}%`)
         .limit(50)
-      const ids = (matches ?? []).map((m: any) => m.id)
-      if (ids.length) q = q.in('user_id', ids)
-      else q = q.eq('provider_call_id', term)
+      searchUserIds = (matches ?? []).map((m: any) => m.id)
+      if (!searchUserIds.length) providerSearch = term
     }
   }
 
-  const { data, count, error } = await q
-    .order('started_at', { ascending: false, nullsFirst: false })
-    .range((page - 1) * pageSize, page * pageSize - 1)
-  if (error) throw new Error(error.message)
+  const applySearch = (query: any) => {
+    if (phoneSearch) return query.or(`caller_number_normalized.like.%${phoneSearch},destination_number_normalized.like.%${phoneSearch}`)
+    if (searchUserIds?.length) return query.in('user_id', searchUserIds)
+    if (providerSearch) return query.eq('provider_call_id', providerSearch)
+    return query
+  }
+
+  let countQuery = applySearch(applyFilters(admin.from('calls').select('id', { count: 'exact', head: true })))
+  let rowsQuery = applySearch(applyFilters(admin.from('calls').select(CALL_SELECT)))
+
+  const [{ count, error: countError }, { data, error: rowsError }] = await Promise.all([
+    countQuery,
+    rowsQuery
+      .order('started_at', { ascending: false, nullsFirst: false })
+      .range((page - 1) * pageSize, page * pageSize - 1),
+  ])
+
+  if (countError) throw new Error(countError.message)
+  if (rowsError) throw new Error(rowsError.message)
 
   return { calls: await decorate(data ?? []), total: count ?? 0, page, pageSize }
 }
