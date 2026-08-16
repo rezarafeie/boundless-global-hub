@@ -114,8 +114,29 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
               ))}
             </SelectContent>
           </Select>
+
+          <Select value={range} onValueChange={setRange}>
+            <SelectTrigger className="gap-2"><CalendarIcon className="h-4 w-4 text-muted-foreground" /><SelectValue placeholder="بازه زمانی" /></SelectTrigger>
+            <SelectContent>
+              {RANGES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          {range === 'custom' && (
+            <>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">از تاریخ</label>
+                <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">تا تاریخ</label>
+                <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
+
 
       <CallsTable calls={calls} loading={loading} />
 
