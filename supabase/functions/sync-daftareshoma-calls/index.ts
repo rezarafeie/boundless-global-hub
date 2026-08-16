@@ -2,7 +2,7 @@ import { corsHeaders } from '../_shared/cors.ts'
 import {
   admin, authenticate, requirePermission, audit, AuthError, dsTryEndpoints, ProviderError,
   normalizeProviderCall, matchCrmRecords, customerNumberOf, resolveAgentByExtension,
-  getSettings, invokeFn, json, tehranNaive,
+  getSettings, json,
 } from '../_shared/callcenter.ts'
 
 
@@ -58,7 +58,20 @@ async function createMissedCallFollowup(call: any, settings: any, priorityOverri
   // agent through `call_followups` inside the Call Center dashboard instead.
 }
 
-async function runSync(ctx: any, opts: { full?: boolean } = {}) {
+function extractTotal(data: any): number | null {
+  const candidates = [
+    data?.totalCount, data?.TotalCount, data?.total, data?.Total,
+    data?.count, data?.Count, data?.data?.totalCount, data?.data?.TotalCount,
+    data?.result?.totalCount, data?.result?.TotalCount,
+  ]
+  for (const value of candidates) {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed) && parsed >= 0) return parsed
+  }
+  return null
+}
+
+async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: string; allTimeCount?: boolean } = {}) {
   const settings = await getSettings()
   const { data: state } = await admin.from('daftareshoma_sync_state').select('*').eq('id', 1).maybeSingle()
 
@@ -72,17 +85,22 @@ async function runSync(ctx: any, opts: { full?: boolean } = {}) {
     .filter(Boolean).map((v) => new Date(v as string).getTime())
   const cursor = cursorCandidates.length ? Math.min(...cursorCandidates) : null
 
-  const since = opts.full
+  const requestedFrom = opts.from ? new Date(opts.from) : null
+  const requestedTo = opts.to ? new Date(opts.to) : null
+  if (requestedFrom && Number.isNaN(requestedFrom.getTime())) throw new Error('تاریخ شروع معتبر نیست')
+  if (requestedTo && Number.isNaN(requestedTo.getTime())) throw new Error('تاریخ پایان معتبر نیست')
+
+  const since = requestedFrom ?? (opts.full
     ? new Date(Date.now() - 30 * 24 * 3600 * 1000)
     : cursor
       ? new Date(cursor - 60 * 60 * 1000) // 1h overlap
-      : new Date(Date.now() - 3 * 24 * 3600 * 1000)
+      : new Date(Date.now() - 3 * 24 * 3600 * 1000))
 
 
   const now = new Date()
   // query a bit into the future so provider-side clock / timezone drift never
   // truncates the newest calls
-  const until = new Date(now.getTime() + 24 * 3600 * 1000)
+  const until = requestedTo ?? new Date(now.getTime() + 24 * 3600 * 1000)
   const fromStr = since.toISOString()
   const toStr = now.toISOString()
   // documented API: POST /api/Customize/CustomerCallSearch
@@ -98,22 +116,42 @@ async function runSync(ctx: any, opts: { full?: boolean } = {}) {
   let records: Record<string, any>[] = []
   let attempts: any[] = []
   try {
-    const res = await dsTryEndpoints([
+    const allTimeBody = { limit: opts.allTimeCount ? 1 : PAGE_SIZE, pagination: 1 }
+    const res = await dsTryEndpoints(opts.allTimeCount ? [
+      { path: SEARCH_PATH, method: 'POST', body: allTimeBody },
+    ] : [
+      // Omitting number, status and type fields means ALL numbers, statuses and
+      // call types in DaftareShoma. Empty values are not sent because some API
+      // versions interpret them as literal filters.
       { path: SEARCH_PATH, method: 'POST', body: { fromDate: isoFmt(since), toDate: isoFmt(until), limit: PAGE_SIZE, pagination: 1 } },
       { path: SEARCH_PATH, method: 'POST', body: { fromDate: sqlFmt(since), toDate: sqlFmt(until), limit: PAGE_SIZE, pagination: 1 } },
       { path: SEARCH_PATH, method: 'POST', body: { fromDate: dayFmt(since), toDate: dayFmt(until), limit: PAGE_SIZE, pagination: 1 } },
       { path: SEARCH_PATH, method: 'POST', body: { limit: PAGE_SIZE, pagination: 1 } },
     ])
 
-
     records = extractRecords(res.data)
     attempts = res.attempts
 
-    // page through remaining results using the same accepted body shape
+    const providerTotal = extractTotal(res.data)
+    if (opts.allTimeCount) {
+      if (providerTotal === null) throw new Error('تعداد کل تماس‌ها در پاسخ دفترشما موجود نبود')
+      const { count: storedCount } = await admin.from('calls').select('id', { count: 'exact', head: true }).eq('provider', 'daftareshoma')
+      // calls_synced is the persisted provider total. Future incremental syncs
+      // add newly inserted calls to this baseline without recounting history.
+      await admin.from('daftareshoma_sync_state').update({
+        calls_synced: Math.max(providerTotal, storedCount ?? 0),
+        last_success_at: new Date().toISOString(),
+        last_error: null,
+      }).eq('id', 1)
+      return { providerTotal, stored: storedCount ?? 0, counted: true }
+    }
+
+    // Always paginate until a short/empty page. Older provider responses do
+    // not consistently expose totalCount (or vary its casing/nesting).
     const accepted = (res as any).body ?? null
-    const totalCount = Number(res.data?.totalCount ?? 0)
-    if (records.length && totalCount > records.length) {
-      const maxPages = Math.min(25, Math.ceil(totalCount / PAGE_SIZE))
+    if (records.length) {
+      const totalCount = extractTotal(res.data)
+      const maxPages = totalCount ? Math.min(500, Math.ceil(totalCount / PAGE_SIZE)) : 500
       for (let page = 2; page <= maxPages; page++) {
         try {
           const next = await dsTryEndpoints([
@@ -122,6 +160,7 @@ async function runSync(ctx: any, opts: { full?: boolean } = {}) {
           const chunk = extractRecords(next.data)
           if (!chunk.length) break
           records = records.concat(chunk)
+          if (chunk.length < PAGE_SIZE) break
         } catch { break }
       }
     }
@@ -141,10 +180,34 @@ async function runSync(ctx: any, opts: { full?: boolean } = {}) {
   let latest = state?.last_synced_at ? new Date(state.last_synced_at) : since
   let lastCallId = state?.last_call_id ?? null
 
-  for (const rec of records) {
-    const n = normalizeProviderCall(rec)
-    if (!n) continue
+  // De-duplicate provider pages before writing.
+  const normalized = [...new Map(records.map((rec) => {
+    const call = normalizeProviderCall(rec)
+    return call ? [call.provider_call_id, call] : [crypto.randomUUID(), null]
+  })).values()].filter(Boolean) as NonNullable<ReturnType<typeof normalizeProviderCall>>[]
 
+  // Large historical/range imports use batched writes. CRM enrichment remains
+  // in the lightweight incremental path and recordings are always lazy.
+  if (normalized.length > 400 || requestedFrom) {
+    for (let offset = 0; offset < normalized.length; offset += PAGE_SIZE) {
+      const chunk = normalized.slice(offset, offset + PAGE_SIZE)
+      const ids = chunk.map((item) => item.provider_call_id)
+      const { data: existingRows } = await admin.from('calls').select('provider_call_id').eq('provider', 'daftareshoma').in('provider_call_id', ids)
+      const existingIds = new Set((existingRows ?? []).map((item: any) => item.provider_call_id))
+      const payloads = chunk.map((item) => ({ ...item, provider: 'daftareshoma' }))
+      const { error } = await admin.from('calls').upsert(payloads, { onConflict: 'provider,provider_call_id' })
+      if (error) throw new Error(`ذخیره تماس‌ها ناموفق بود: ${error.message}`)
+      const newCount = ids.filter((id) => !existingIds.has(id)).length
+      inserted += newCount
+      updated += ids.length - newCount
+      for (const item of chunk) {
+        if (item.started_at && new Date(item.started_at) > latest) {
+          latest = new Date(item.started_at)
+          lastCallId = item.provider_call_id
+        }
+      }
+    }
+  } else for (const n of normalized) {
     const { data: existing } = await admin
       .from('calls')
       .select('id, status, recording_id, processing_status, disposition, user_id, lead_id, agent_id, notes')
@@ -192,10 +255,6 @@ async function runSync(ctx: any, opts: { full?: boolean } = {}) {
       await createMissedCallFollowup(saved, settings)
     }
 
-    // Recording pipeline
-    if (settings.recording_sync_enabled && saved.recording_id && (!existing || !existing.recording_id)) {
-      invokeFn('process-call-recording', { callId: saved.id })
-    }
   }
 
   await admin.from('daftareshoma_sync_state').update({
@@ -203,12 +262,12 @@ async function runSync(ctx: any, opts: { full?: boolean } = {}) {
     last_call_id: lastCallId,
     last_success_at: new Date().toISOString(),
     last_error: null,
-    calls_synced: (state?.calls_synced ?? 0) + inserted,
+    calls_synced: Math.max(state?.calls_synced ?? 0, 0) + inserted,
   }).eq('id', 1)
 
   if (ctx) await audit(ctx, 'integration.sync_now', 'daftareshoma', null, { inserted, updated, fetched: records.length })
 
-  return { fetched: records.length, inserted, updated, from: fromStr, to: toStr }
+  return { fetched: normalized.length, inserted, updated, from: fromStr, to: toStr }
 }
 
 Deno.serve(async (req) => {
@@ -219,13 +278,13 @@ Deno.serve(async (req) => {
 
     // cron / internal invocation
     if (body.internal || body.cron) {
-      const result = await runSync(null, { full: !!body.full })
+      const result = await runSync(null, { full: !!body.full, from: body.from, to: body.to, allTimeCount: !!body.allTimeCount })
       return json({ success: true, ...result }, 200, corsHeaders)
     }
 
     const ctx = await authenticate(req, body.sessionToken)
     requirePermission(ctx, 'calls.admin')
-    const result = await runSync(ctx, { full: !!body.full })
+    const result = await runSync(ctx, { full: !!body.full, from: body.from, to: body.to, allTimeCount: !!body.allTimeCount })
     return json({ success: true, ...result }, 200, corsHeaders)
   } catch (e) {
     console.error('sync error', e)

@@ -24,6 +24,7 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
   const { toast } = useToast();
   const [calls, setCalls] = useState<CallRow[]>([]);
   const [total, setTotal] = useState(0);
+  const [providerTotal, setProviderTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -57,8 +58,13 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    callCenter.calls({
+    const loadCalls = async () => {
+      setLoading(true);
+      try {
+        // Import exactly the period selected by the admin. Omitting provider
+        // number/status/type filters intentionally fetches every call.
+        if (fromISO || toISO) await callCenter.syncNow(false, { from: fromISO, to: toISO });
+        const res = await callCenter.calls({
       page, pageSize,
       search: debouncedSearch || undefined,
       direction: direction !== 'all' ? direction : undefined,
@@ -67,14 +73,23 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
       missed: missedOnly || undefined,
       from: fromISO,
       to: toISO,
-    })
-      .then((res) => { if (active) { setCalls(res.calls); setTotal(res.total); } })
-      .catch((e) => toast({ title: 'خطا', description: (e as Error).message, variant: 'destructive' }))
-      .finally(() => { if (active) setLoading(false); });
+        });
+        if (active) { setCalls(res.calls); setTotal(res.total); setProviderTotal(res.providerTotal ?? res.total); }
+      } catch (e) {
+        if (active) toast({ title: 'خطا', description: (e as Error).message, variant: 'destructive' });
+      } finally { if (active) setLoading(false); }
+    };
+    loadCalls();
     return () => { active = false; };
   }, [page, debouncedSearch, direction, status, agentId, missedOnly, fromISO, toISO]);
 
   useEffect(() => { setPage(1); }, [debouncedSearch, direction, status, agentId, missedOnly, fromISO, toISO]);
+
+  useEffect(() => {
+    // The provider's all-time count is persisted once in sync state. Once it
+    // exceeds the locally stored count, subsequent mounts reuse that baseline.
+    callCenter.syncNow(false, { allTimeCount: true }).catch(() => {});
+  }, []);
 
   const pages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -83,7 +98,10 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-bold">{missedOnly ? 'تماس‌های از دست رفته' : 'تماس‌ها'}</h2>
-        <p className="text-sm text-muted-foreground">{total.toLocaleString('fa-IR')} رکورد</p>
+        <p className="text-sm text-muted-foreground">
+          {total.toLocaleString('fa-IR')} رکورد
+          {range === 'all' && providerTotal > total ? ` از ${providerTotal.toLocaleString('fa-IR')} تماس دفترشما` : ''}
+        </p>
       </div>
 
       <Card>

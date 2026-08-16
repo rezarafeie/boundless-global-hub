@@ -1,7 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts'
 import {
   admin, authenticate, requirePermission, audit, AuthError,
-  normalizePhone, phoneTail, matchCrmRecords, getSettings, json, type AuthContext,
+  normalizePhone, phoneTail, matchCrmRecords, getSettings, invokeFn, json, type AuthContext,
 } from '../_shared/callcenter.ts'
 
 /**
@@ -107,7 +107,8 @@ async function listCalls(ctx: AuthContext, p: any) {
   if (countError) throw new Error(countError.message)
   if (rowsError) throw new Error(rowsError.message)
 
-  return { calls: await decorate(data ?? []), total: count ?? 0, page, pageSize }
+  const { data: syncState } = await admin.from('daftareshoma_sync_state').select('calls_synced').eq('id', 1).maybeSingle()
+  return { calls: await decorate(data ?? []), total: count ?? 0, providerTotal: syncState?.calls_synced ?? count ?? 0, page, pageSize }
 }
 
 async function callDetail(ctx: AuthContext, callId: string) {
@@ -119,6 +120,11 @@ async function callDetail(ctx: AuthContext, callId: string) {
   const { data, error } = await q.maybeSingle()
   if (error) throw new Error(`خطا در دریافت تماس: ${error.message}`)
   if (!data) throw new AuthError('تماس یافت نشد یا دسترسی ندارید', 404)
+
+  const recording = Array.isArray(data.call_recordings) ? data.call_recordings[0] : data.call_recordings
+  if (data.recording_id && !recording?.storage_path && recording?.status !== 'downloading') {
+    invokeFn('process-call-recording', { callId: data.id, internal: true })
+  }
   const [decorated] = await decorate([data])
 
   let customer: any = null
