@@ -899,6 +899,47 @@ export type Database = {
           },
         ]
       }
+      call_agent_extensions: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string
+          extension: string
+          id: string
+          is_active: boolean
+          updated_at: string
+          user_id: number | null
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email: string
+          extension: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          user_id?: number | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          extension?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_agent_extensions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       call_ai_analysis: {
         Row: {
           agent_feedback: string | null
