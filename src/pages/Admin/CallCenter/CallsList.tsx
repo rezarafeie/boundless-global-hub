@@ -24,6 +24,7 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
   const { toast } = useToast();
   const [calls, setCalls] = useState<CallRow[]>([]);
   const [total, setTotal] = useState(0);
+  const [providerTotal, setProviderTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -34,6 +35,7 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [agents, setAgents] = useState<any[]>([]);
+  const [periodSyncVersion, setPeriodSyncVersion] = useState(0);
   const debouncedSearch = useDebounce(search, 400);
   const pageSize = 20;
 
@@ -57,8 +59,35 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
 
   useEffect(() => {
     let active = true;
+    if (!fromISO && !toISO) return () => { active = false; };
     setLoading(true);
-    callCenter.calls({
+    const syncSelectedPeriod = async () => {
+      const start = new Date(fromISO ?? Date.now() - 24 * 3600 * 1000);
+      const end = new Date(toISO ?? Date.now());
+      // DaftareShoma times out on broad unfiltered searches. Import the chosen
+      // period in seven-day windows while still omitting number/status/type so
+      // every call is included.
+      for (let cursor = start.getTime(); cursor <= end.getTime(); cursor += 7 * 24 * 3600 * 1000) {
+        const chunkEnd = Math.min(end.getTime(), cursor + 7 * 24 * 3600 * 1000 - 1);
+        await callCenter.syncNow(false, {
+          from: new Date(cursor).toISOString(),
+          to: new Date(chunkEnd).toISOString(),
+        });
+      }
+    };
+    syncSelectedPeriod()
+      .then(() => { if (active) setPeriodSyncVersion((value) => value + 1); })
+      .catch((e) => { if (active) toast({ title: 'خطا در دریافت تماس‌های بازه', description: (e as Error).message, variant: 'destructive' }); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [fromISO, toISO]);
+
+  useEffect(() => {
+    let active = true;
+    const loadCalls = async () => {
+      setLoading(true);
+      try {
+        const res = await callCenter.calls({
       page, pageSize,
       search: debouncedSearch || undefined,
       direction: direction !== 'all' ? direction : undefined,
@@ -67,14 +96,23 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
       missed: missedOnly || undefined,
       from: fromISO,
       to: toISO,
-    })
-      .then((res) => { if (active) { setCalls(res.calls); setTotal(res.total); } })
-      .catch((e) => toast({ title: 'خطا', description: (e as Error).message, variant: 'destructive' }))
-      .finally(() => { if (active) setLoading(false); });
+        });
+        if (active) { setCalls(res.calls); setTotal(res.total); setProviderTotal(res.providerTotal ?? res.total); }
+      } catch (e) {
+        if (active) toast({ title: 'خطا', description: (e as Error).message, variant: 'destructive' });
+      } finally { if (active) setLoading(false); }
+    };
+    loadCalls();
     return () => { active = false; };
-  }, [page, debouncedSearch, direction, status, agentId, missedOnly, fromISO, toISO]);
+  }, [page, debouncedSearch, direction, status, agentId, missedOnly, fromISO, toISO, periodSyncVersion]);
 
   useEffect(() => { setPage(1); }, [debouncedSearch, direction, status, agentId, missedOnly, fromISO, toISO]);
+
+  useEffect(() => {
+    // The provider's all-time count is persisted once in sync state. Once it
+    // exceeds the locally stored count, subsequent mounts reuse that baseline.
+    callCenter.syncNow(false, { allTimeCount: true }).catch(() => {});
+  }, []);
 
   const pages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -83,7 +121,10 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-bold">{missedOnly ? 'تماس‌های از دست رفته' : 'تماس‌ها'}</h2>
-        <p className="text-sm text-muted-foreground">{total.toLocaleString('fa-IR')} رکورد</p>
+        <p className="text-sm text-muted-foreground">
+          {total.toLocaleString('fa-IR')} رکورد
+          {range === 'all' && providerTotal > total ? ` از ${providerTotal.toLocaleString('fa-IR')} تماس دفترشما` : ''}
+        </p>
       </div>
 
       <Card>

@@ -1,7 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts'
 import {
   admin, normalizeProviderCall, matchCrmRecords, customerNumberOf,
-  resolveAgentByExtension, getSettings, invokeFn, json,
+  resolveAgentByExtension, getSettings, json,
 } from '../_shared/callcenter.ts'
 
 /**
@@ -113,10 +113,8 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Recording pipeline (async, never inline)
-      if (finished && settings.recording_sync_enabled && call.recording_id && !existing?.recording_id) {
-        invokeFn('process-call-recording', { callId: call.id })
-      }
+      // Recording metadata is stored with the call, but the actual recording
+      // URL/file is fetched lazily when an admin opens the call detail page.
     }
 
     return json({ success: true }, 200, corsHeaders)

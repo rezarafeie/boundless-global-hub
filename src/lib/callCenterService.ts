@@ -80,7 +80,7 @@ export const callCenter = {
     callFunction('call-center-data', { action: 'overview', params }),
 
   calls: (params: Record<string, unknown>) =>
-    callFunction<{ calls: CallRow[]; total: number; page: number; pageSize: number }>(
+    callFunction<{ calls: CallRow[]; total: number; providerTotal: number; page: number; pageSize: number }>(
       'call-center-data', { action: 'calls', params },
     ),
 
@@ -109,7 +109,8 @@ export const callCenter = {
   dial: (params: { phone: string; extension?: string; userId?: number | null; leadId?: string | null; source?: string }) =>
     callFunction<{ callId: string; providerCallId: string; message: string }>('daftareshoma-outgoing-call', params),
   testConnection: () => callFunction('daftareshoma-test-connection', {}),
-  syncNow: (full = false) => callFunction('sync-daftareshoma-calls', { full }),
+  syncNow: (full = false, params: { from?: string; to?: string; allTimeCount?: boolean } = {}) =>
+    callFunction('sync-daftareshoma-calls', { full, ...params }),
   reprocess: (callId: string, stage: 'auto' | 'recording' | 'transcript' | 'analysis' = 'auto') =>
     callFunction('reprocess-call', { callId, stage }),
 };
