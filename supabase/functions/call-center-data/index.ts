@@ -118,12 +118,31 @@ async function overview(ctx: AuthContext, p: any) {
   const from = p.from ?? new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString()
   const to = p.to ?? new Date().toISOString()
 
-  let q = admin.from('calls')
-    .select('id, direction, status, talk_seconds, waiting_seconds, started_at, agent_id, ai_score, purchase_intent_score, resulted_in_sale')
+  // KPIs are computed with head-only COUNT queries — no call rows are fetched.
+  const countCalls = async (build: (q: any) => any = (q) => q) => {
+    let q = admin.from('calls').select('id', { count: 'exact', head: true })
+      .gte('started_at', from).lte('started_at', to)
+    q = scope(q, ctx)
+    const { count } = await build(q)
+    return count ?? 0
+  }
+
+  const [total, incoming, outgoing, answered, missed] = await Promise.all([
+    countCalls(),
+    countCalls((q) => q.eq('direction', 'incoming')),
+    countCalls((q) => q.eq('direction', 'outgoing')),
+    countCalls((q) => q.eq('status', 'answered')),
+    countCalls((q) => q.eq('direction', 'incoming').neq('status', 'answered')),
+  ])
+
+  // aggregate durations / AI scores through a single RPC-free lightweight read
+  let sq = admin.from('calls').select('talk_seconds, waiting_seconds, ai_score, status')
     .gte('started_at', from).lte('started_at', to)
-  q = scope(q, ctx)
-  const { data: calls } = await q.limit(5000)
-  const list = calls ?? []
+  sq = scope(sq, ctx)
+  const { data: durations } = await sq.limit(5000)
+  const dl = durations ?? []
+  const answeredRows = dl.filter((c: any) => c.status === 'answered')
+  const scored = dl.filter((c: any) => c.ai_score != null)
 
   let fq = admin.from('call_followups').select('id, status, due_at, agent_id')
   fq = scope(fq, ctx)
@@ -133,34 +152,36 @@ async function overview(ctx: AuthContext, p: any) {
   aq = scope(aq, ctx)
   const { data: attributions } = await aq.limit(2000)
 
-  const answered = list.filter((c) => c.status === 'answered')
   const now = Date.now()
-  const scored = list.filter((c) => c.ai_score != null)
+
+  // compact trend data (only the columns the charts need)
+  let tq = admin.from('calls').select('started_at, direction, status')
+    .gte('started_at', from).lte('started_at', to)
+    .order('started_at', { ascending: false })
+  tq = scope(tq, ctx)
+  const { data: series } = p.includeSeries === false ? { data: [] as any[] } : await tq.limit(3000)
 
   return {
     kpis: {
-      total: list.length,
-      incoming: list.filter((c) => c.direction === 'incoming').length,
-      outgoing: list.filter((c) => c.direction === 'outgoing').length,
-      answered: answered.length,
-      missed: list.filter((c) => c.direction === 'incoming' && c.status !== 'answered').length,
-      answerRate: list.length ? Math.round((answered.length / list.length) * 100) : 0,
-      totalTalk: list.reduce((s, c) => s + (c.talk_seconds ?? 0), 0),
-      avgTalk: answered.length ? Math.round(answered.reduce((s, c) => s + (c.talk_seconds ?? 0), 0) / answered.length) : 0,
-      avgWait: list.length ? Math.round(list.reduce((s, c) => s + (c.waiting_seconds ?? 0), 0) / list.length) : 0,
+      total,
+      incoming,
+      outgoing,
+      answered,
+      missed,
+      answerRate: total ? Math.round((answered / total) * 100) : 0,
+      totalTalk: dl.reduce((s: number, c: any) => s + (c.talk_seconds ?? 0), 0),
+      avgTalk: answeredRows.length ? Math.round(answeredRows.reduce((s: number, c: any) => s + (c.talk_seconds ?? 0), 0) / answeredRows.length) : 0,
+      avgWait: dl.length ? Math.round(dl.reduce((s: number, c: any) => s + (c.waiting_seconds ?? 0), 0) / dl.length) : 0,
       followupsDue: (followups ?? []).filter((f) => f.status === 'pending').length,
       followupsOverdue: (followups ?? []).filter((f) => f.status === 'overdue' || (f.due_at && new Date(f.due_at).getTime() < now && f.status === 'pending')).length,
       assistedSales: attributions?.length ?? 0,
       assistedRevenue: (attributions ?? []).reduce((s, a: any) => s + Number(a.amount ?? 0), 0),
-      avgAiScore: scored.length ? Math.round(scored.reduce((s, c) => s + (c.ai_score ?? 0), 0) / scored.length) : null,
+      avgAiScore: scored.length ? Math.round(scored.reduce((s: number, c: any) => s + (c.ai_score ?? 0), 0) / scored.length) : null,
     },
-    series: list.map((c) => ({
-      started_at: c.started_at, direction: c.direction, status: c.status,
-      talk_seconds: c.talk_seconds, agent_id: c.agent_id,
-      ai_score: c.ai_score, purchase_intent_score: c.purchase_intent_score,
-    })),
+    series: series ?? [],
   }
 }
+
 
 async function agentStats(ctx: AuthContext, p: any) {
   requirePermission(ctx, 'calls.analytics')
