@@ -27,7 +27,11 @@ function extractRecords(data: any): Record<string, any>[] {
   const keys = new Set(['items', 'data', 'result', 'results', 'records', 'callreports', 'calls', 'list', 'rows', 'entities'])
   for (const [key, v] of Object.entries(data)) {
     if (!keys.has(key.toLowerCase())) continue
-    if (Array.isArray(v) && v.length) return v as Record<string, any>[]
+    if (Array.isArray(v) && v.length) {
+      if (key.toLowerCase() === 'calls') return v as Record<string, any>[]
+      const nested = extractRecords(v)
+      if (nested.length) return nested
+    }
     if (v && typeof v === 'object') {
       const nested = extractRecords(v)
       if (nested.length) return nested
