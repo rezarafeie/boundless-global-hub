@@ -1,5 +1,5 @@
 import { corsHeaders } from '../_shared/cors.ts'
-import { admin, authenticate, requirePermission, audit, AuthError, dsTryEndpoints, ProviderError, json } from '../_shared/callcenter.ts'
+import { admin, authenticate, requirePermission, audit, AuthError, dsTryEndpoints, ProviderError, json, tehranNaive } from '../_shared/callcenter.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
