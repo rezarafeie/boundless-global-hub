@@ -44,7 +44,7 @@ export function adaptiveSchedule(
 
   const minInterval = Math.max(1, ...remaining.map((f) => f.min_interval_minutes ?? 30));
   const n = remaining.length;
-  const step = availableMin / n;
+  const step = n > 1 ? availableMin / (n - 1) : availableMin;
 
   let selected = remaining;
   let slots: number[] = [];
