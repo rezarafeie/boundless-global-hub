@@ -41,6 +41,11 @@ Deno.serve(async (req) => {
     try {
       const res = await dsTryEndpoints([
         // documented endpoint (External APIs v1)
+        // Variant A: extension only in caller_extension (from_number must be a full >=7 digit number)
+        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { from_number: dial, to_number: dial, caller_extension: extension } },
+        // Variant B: no from_number at all
+        { path: '/api/Customize/OutgoingCall', method: 'POST', body: { to_number: dial, caller_extension: extension } },
+        // Variant C: original shape (works when the extension is a full DID line)
         { path: '/api/Customize/OutgoingCall', method: 'POST', body: { from_number: extension, to_number: dial, caller_extension: extension } },
       ])
       endpoint = res.path
