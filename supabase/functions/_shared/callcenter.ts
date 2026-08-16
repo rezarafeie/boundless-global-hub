@@ -199,9 +199,8 @@ export async function resolveAgentExtension(
   const fallback = clean(fallbackDefault)
   if (fallback) return { extension: fallback, source: 'default_extension' }
 
-  const own = clean(ctx.phone)
-  if (own) return { extension: own, source: 'agent_phone' }
-
+  // NOTE: never fall back to the agent's mobile number — DaftareShoma rejects it
+  // with "خط وجود ندارد" because it is not a real internal line/extension.
   return { extension: null, source: 'none' }
 }
 
