@@ -93,6 +93,8 @@ export const callCenter = {
   dispositions: () => callFunction<{ dispositions: any[] }>('call-center-data', { action: 'dispositions', params: {} }),
   recordingUrl: (callId: string) => callFunction<{ url: string; mime: string }>('call-center-data', { action: 'recording-url', params: { callId } }),
   transcript: (callId: string) => callFunction<{ transcript: any }>('call-center-data', { action: 'transcript', params: { callId } }),
+  liveCalls: (windowMinutes = 3) =>
+    callFunction<{ calls: CallRow[] }>('call-center-data', { action: 'live-calls', params: { windowMinutes } }),
   lookup: (phone: string) => callFunction<{ match: any; history: any[] }>('call-center-data', { action: 'lookup', params: { phone } }),
   saveOutcome: (params: Record<string, unknown>) => callFunction('call-center-data', { action: 'save-outcome', params }),
   createFollowup: (params: Record<string, unknown>) => callFunction('call-center-data', { action: 'create-followup', params }),

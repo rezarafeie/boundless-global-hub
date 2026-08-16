@@ -405,6 +405,23 @@ Deno.serve(async (req) => {
         return json({ success: true }, 200, corsHeaders)
       }
 
+      // Live (ringing / in-progress) calls for the realtime incoming-call banner.
+      case 'live-calls': {
+        const windowMs = Math.min(15, Math.max(1, Number(p.windowMinutes ?? 3))) * 60 * 1000
+        const since = new Date(Date.now() - windowMs).toISOString()
+        let q = admin.from('calls')
+          .select('*')
+          .in('status', ['ringing', 'initiated'])
+          .is('ended_at', null)
+          .gte('started_at', since)
+          .order('started_at', { ascending: false })
+          .limit(10)
+        if (ctx.restrictedToSelf) q = q.or(`agent_id.eq.${ctx.userId},agent_id.is.null`)
+        const { data, error } = await q
+        if (error) return json({ success: false, error: error.message }, 500, corsHeaders)
+        return json({ success: true, calls: await decorate(data ?? []) }, 200, corsHeaders)
+      }
+
       case 'lookup': {
         const match = await matchCrmRecords(normalizePhone(p.phone).normalized)
         let history: any[] = []
