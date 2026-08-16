@@ -224,25 +224,48 @@ export async function fetchUsersByPhones(phones: string[]): Promise<Record<strin
   const out: Record<string, any> = {};
   const variants = new Map<string, string>(); // variant -> normalized
   for (const p of phones) {
-    variants.set(p, p);
-    variants.set(`+98${p.replace(/^0/, "")}`, p);
-    variants.set(`98${p.replace(/^0/, "")}`, p);
-    variants.set(p.replace(/^0/, ""), p);
+    if (!p) continue;
+    const noZero = p.replace(/^0/, "");
+    for (const v of [p, `+${p}`, `0${noZero}`, noZero, `+${noZero}`, `98${noZero}`, `+98${noZero}`]) {
+      variants.set(v, p);
+    }
   }
   const all = Array.from(variants.keys());
+  const take = (u: any) => {
+    const norm = normalizePhone(u.phone);
+    if (norm && (!out[norm] || (!out[norm].telegram_chat_id && u.telegram_chat_id))) out[norm] = u;
+  };
+  const cols = "id, name, full_name, first_name, last_name, email, phone, telegram_chat_id";
   for (let i = 0; i < all.length; i += 500) {
     const chunk = all.slice(i, i + 500);
-    const { data } = await supabase
-      .from("chat_users")
-      .select("id, name, full_name, first_name, last_name, email, phone, telegram_chat_id")
-      .in("phone", chunk);
+    const { data } = await supabase.from("chat_users").select(cols).in("phone", chunk);
+    for (const u of ((data as any[]) ?? [])) take(u);
+  }
+
+  // Fallback: suffix match for numbers stored in another format (e.g. international
+  // numbers saved with a "+" prefix or extra country code digits).
+  const missing = phones.filter((p) => p && !out[p]);
+  for (let i = 0; i < missing.length; i += 40) {
+    const chunk = missing.slice(i, i + 40);
+    const filters = chunk
+      .map((p) => {
+        const tail = p.replace(/^0/, "").slice(-9);
+        return tail.length >= 8 ? `phone.like.*${tail}` : null;
+      })
+      .filter(Boolean)
+      .join(",");
+    if (!filters) continue;
+    const { data } = await supabase.from("chat_users").select(cols).or(filters);
     for (const u of ((data as any[]) ?? [])) {
-      const norm = normalizePhone(u.phone);
-      if (norm && (!out[norm] || (!out[norm].telegram_chat_id && u.telegram_chat_id))) out[norm] = u;
+      const digits = String(u.phone ?? "").replace(/[^0-9]/g, "");
+      const match = chunk.find((p) => digits.endsWith(p.replace(/^0/, "").slice(-9)));
+      if (!match) continue;
+      if (!out[match] || (!out[match].telegram_chat_id && u.telegram_chat_id)) out[match] = u;
     }
   }
   return out;
 }
+
 
 // Compute the anchor timestamp for a followup and recipient.
 export function anchorTime(fu: Followup, webinar: any, rec: Recipient): string | null {
