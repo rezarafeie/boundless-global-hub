@@ -307,7 +307,14 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
 
   if (ctx) await audit(ctx, 'integration.sync_now', 'daftareshoma', null, { inserted, updated, fetched: records.length })
 
-  return { fetched: normalized.length, inserted, updated, from: fromStr, to: toStr }
+  return {
+    fetched: normalized.length,
+    inserted,
+    updated,
+    from: fromStr,
+    to: toStr,
+    ...(records.length ? {} : { providerResponseShape: responseShape((globalThis as any).__unused) }),
+  }
 }
 
 Deno.serve(async (req) => {
