@@ -437,8 +437,61 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
       )}
 
 
+      <div className="space-y-2 pt-2">
+        <h5 className="text-sm font-semibold">صف زمان‌بندی پیگیری‌ها</h5>
+        <div className="overflow-x-auto border rounded">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>پیگیری</TableHead>
+                <TableHead>حالت</TableHead>
+                <TableHead>کانال</TableHead>
+                <TableHead>ارسال‌شده</TableHead>
+                <TableHead>در انتظار</TableHead>
+                <TableHead>آخرین ارسال</TableHead>
+                <TableHead>وضعیت</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.length === 0 && (
+                <TableRow><TableCell colSpan={7} className="text-center py-4 text-muted-foreground text-xs">پیگیری‌ای تعریف نشده</TableCell></TableRow>
+              )}
+              {rows.map((r) => {
+                const recs = recipients.filter((x) => x.followup_id === r.id);
+                const maxRep = Number(r.max_repeats) || 1;
+                const done = recs.filter((x) => (x.sent_count ?? 0) >= maxRep).length;
+                const partial = recs.filter((x) => (x.sent_count ?? 0) > 0 && (x.sent_count ?? 0) < maxRep).length;
+                const lastSent = recs
+                  .map((x) => x.last_sent_at)
+                  .filter(Boolean)
+                  .sort()
+                  .pop();
+                const status = !r.enabled
+                  ? { label: 'غیرفعال', variant: 'secondary' as const }
+                  : partial > 0
+                    ? { label: 'در حال ارسال', variant: 'default' as const }
+                    : done > 0
+                      ? { label: 'تکمیل‌شده', variant: 'default' as const }
+                      : { label: 'در صف انتظار', variant: 'outline' as const };
+                return (
+                  <TableRow key={`q-${r.id}`}>
+                    <TableCell className="text-xs">{r.name}</TableCell>
+                    <TableCell className="text-xs">{r.schedule_mode === 'adaptive' ? 'تطبیقی' : 'ثابت'}</TableCell>
+                    <TableCell className="text-xs">{r.channel}</TableCell>
+                    <TableCell className="text-xs">{done.toLocaleString('fa-IR')}</TableCell>
+                    <TableCell className="text-xs">{partial.toLocaleString('fa-IR')}</TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">{lastSent ? new Date(lastSent).toLocaleString('fa-IR') : '—'}</TableCell>
+                    <TableCell><Badge variant={status.variant}>{status.label}</Badge></TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
 
       <div className="space-y-2 pt-2">
+
         <div className="flex items-center justify-between">
           <h5 className="text-sm font-semibold">لاگ ارسال‌ها ({logs.length})</h5>
           <Button size="sm" variant="ghost" onClick={loadLogs} disabled={logsLoading}>
