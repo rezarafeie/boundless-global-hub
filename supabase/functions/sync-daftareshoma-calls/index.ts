@@ -100,6 +100,13 @@ const portalSearchBody = (from: Date | null, to: Date | null, pageNumber: number
   sortText: '',
 })
 
+const responseShape = (value: unknown, depth = 0): unknown => {
+  if (depth > 3 || value === null || value === undefined) return typeof value
+  if (Array.isArray(value)) return { arrayLength: value.length, itemKeys: value[0] && typeof value[0] === 'object' ? Object.keys(value[0]).slice(0, 30) : [] }
+  if (typeof value !== 'object') return typeof value
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>).slice(0, 30).map(([key, nested]) => [key, responseShape(nested, depth + 1)]))
+}
+
 async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: string; allTimeCount?: boolean } = {}) {
   const settings = await getSettings()
   const { data: state } = await admin.from('daftareshoma_sync_state').select('*').eq('id', 1).maybeSingle()
@@ -159,6 +166,7 @@ async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: str
 
     records = extractRecords(res.data)
     attempts = res.attempts
+    if (!records.length) console.log('portal response shape', JSON.stringify(responseShape(res.data)))
 
     const providerTotal = extractTotal(res.data)
     if (opts.allTimeCount) {
