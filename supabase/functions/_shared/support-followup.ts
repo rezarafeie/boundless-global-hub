@@ -13,6 +13,17 @@ export function render(tpl: string | null | undefined, vars: Record<string, stri
   return out;
 }
 
+// Build an inline keyboard from an admin-configured buttons array, rendering
+// placeholders inside both the label and the url.
+export function renderButtons(buttons: unknown, vars: Record<string, string>) {
+  if (!Array.isArray(buttons) || !buttons.length) return undefined;
+  return buildButtonsKeyboard(
+    (buttons as any[]).map((b) => ({ text: render(b?.text, vars), url: render(b?.url, vars) })),
+  );
+}
+
+
+
 export function minutesSince(iso: string | null): number {
   if (!iso) return Number.POSITIVE_INFINITY;
   return (Date.now() - new Date(iso).getTime()) / 60000;
