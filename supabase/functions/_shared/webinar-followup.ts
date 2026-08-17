@@ -133,15 +133,23 @@ export async function runWebinarFollowup(
     return { ok: true, results: [{ channel: ch, ok: false, unreachable: true, reason: "no linked telegram account" }] };
   }
 
-  const text = render(fu.bot_text, vars) || "[TEST] webinar followup";
-  const kb = vars.webinar_link ? [[{ text: "🎥 ورود به وبینار", url: vars.webinar_link }]] : undefined;
+  let text = render(fu.bot_text, vars) || "[TEST] webinar followup";
+  const mediaUrl = (fu.media_url ?? "").trim();
+  const mediaType = fu.media_type ?? null;
+
+  // Custom buttons configured by the admin (each entry: { text, url }).
+  const customButtons = buildButtonsKeyboard(
+    Array.isArray(fu.buttons) ? fu.buttons.map((b: any) => ({ text: render(b?.text, vars), url: render(b?.url, vars) })) : [],
+  );
+  const kb = customButtons
+    ?? (vars.webinar_link ? [[{ text: "🎥 ورود به وبینار", url: vars.webinar_link }]] : undefined);
 
   if (fu.channel === "bot") {
-    const res = await sendMessage(chatId, text, { keyboard: kb as any, parse_mode: "HTML" });
+    const res = await sendRichMessage(chatId, text, { mediaUrl, mediaType, keyboard: kb as any, parse_mode: "HTML" });
     const ok = (res as any)?.ok !== false;
     const errStr = ok ? "" : JSON.stringify(res);
     const permanent = !ok && /chat not found|bot was blocked|user is deactivated|PEER_ID_INVALID|Forbidden/i.test(errStr);
-    await logWebinarSend(fu, rec, userId, "telegram_bot", ok ? "sent" : (permanent ? "unreachable" : "failed"), ok ? undefined : errStr, { ...logExtra, chat_id: chatId, text, response: res });
+    await logWebinarSend(fu, rec, userId, "telegram_bot", ok ? "sent" : (permanent ? "unreachable" : "failed"), ok ? undefined : errStr, { ...logExtra, chat_id: chatId, text, media_url: mediaUrl || null, response: res });
     results.push({ channel: "bot", ok, unreachable: permanent, chat_id: chatId, text, response: res });
     return { ok: ok || permanent, results };
   }
@@ -155,8 +163,11 @@ export async function runWebinarFollowup(
   const bcid = (settings as any)?.telegram_business_connection_id;
   let res: any = null;
   if (bcid) {
-    res = await tgCall("sendMessage", { chat_id: chatId, text, business_connection_id: bcid, parse_mode: "HTML" });
+    // Telegram Business messages can't carry inline keyboards — render buttons as links.
+    text = appendButtonsAsLinks(text, kb);
+    res = await sendRichMessage(chatId, text, { mediaUrl, mediaType, business_connection_id: bcid, parse_mode: "HTML" });
   }
+
   const ok = res?.ok === true;
   if (ok) {
     await logWebinarSend(fu, rec, userId, "telegram_business", "sent", undefined, { ...logExtra, chat_id: chatId, text, business_connection_id: bcid, response: res });
