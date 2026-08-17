@@ -237,10 +237,15 @@ export async function runStage2(row: Row, opts: { isTest?: boolean } = {}) {
   }
   const vars = buildVars(row);
   const text = render(row.courses.support_followup_stage2_bot_text, vars) || "[TEST] followup";
-  const res = await sendMessage(row.telegram_id, text, {
-    keyboard: [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]],
+  const kb = renderButtons(row.courses.support_followup_stage2_buttons, vars)
+    ?? [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]];
+  const res = await sendRichMessage(row.telegram_id, text, {
+    mediaUrl: row.courses.support_followup_stage2_media_url,
+    mediaType: row.courses.support_followup_stage2_media_type,
+    keyboard: kb as any,
     parse_mode: "HTML",
   });
+
   const ok = (res as any)?.ok !== false;
   await logSend(row, 2, "telegram_bot", ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { chat_id: row.telegram_id, text, response: res, is_test: !!opts.isTest });
   return [{ ok, chat_id: row.telegram_id, text, response: res }];
