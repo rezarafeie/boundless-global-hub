@@ -1,6 +1,6 @@
 // Shared helpers for webinar followups (used by cron + test function).
 import { supabase } from "./supabase.ts";
-import { sendMessage, tgCall } from "./telegram.ts";
+import { sendMessage, tgCall, sendRichMessage, buildButtonsKeyboard, appendButtonsAsLinks } from "./telegram.ts";
 import { render, sendEmail, sendSms } from "./support-followup.ts";
 
 export type Followup = any;
