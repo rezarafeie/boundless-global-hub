@@ -17,6 +17,7 @@ interface Webinar {
   webinar_link: string;
   description: string | null;
   telegram_channel_link: string | null;
+  telegram_bot_enabled?: boolean | null;
   created_at: string;
 }
 
@@ -31,6 +32,8 @@ const WebinarRegistration: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [botUsername, setBotUsername] = useState('rafiei_bot');
+  const [submittedPhone, setSubmittedPhone] = useState<string | null>(null);
   
   const { register, handleSubmit, formState: { errors } } = useForm<RegistrationFormData>();
 
@@ -38,6 +41,15 @@ const WebinarRegistration: React.FC = () => {
     if (slug) {
       fetchWebinar();
     }
+    supabase
+      .from('admin_settings')
+      .select('telegram_bot_username' as any)
+      .eq('id', 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        const u = (data as any)?.telegram_bot_username;
+        if (u) setBotUsername(String(u).replace(/^@/, ''));
+      });
   }, [slug]);
 
   const fetchWebinar = async () => {
@@ -111,6 +123,8 @@ const WebinarRegistration: React.FC = () => {
       if (checkError && checkError.code !== 'PGRST116') {
         throw checkError;
       }
+
+      setSubmittedPhone(normalizedPhone);
 
       if (existingReg) {
         toast({
@@ -187,6 +201,44 @@ const WebinarRegistration: React.FC = () => {
 
   if (!webinar) {
     return <Navigate to="/404" replace />;
+  }
+
+  const telegramFlow = !!(webinar as any)?.telegram_bot_enabled;
+  const telegramDeepLink = submittedPhone
+    ? `https://t.me/${botUsername}?start=wreg_${webinar?.id.slice(0, 8)}_${submittedPhone.replace(/\D/g, '')}`
+    : `https://t.me/${botUsername}?start=webinar_${webinar?.id.slice(0, 8)}`;
+
+  if (registrationSuccess && telegramFlow) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/10 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Card className="border-0 shadow-2xl bg-card/95 backdrop-blur">
+            <CardContent className="p-8 text-center space-y-6">
+              <div className="w-20 h-20 mx-auto bg-green-500/10 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="h-12 w-12 text-green-500" />
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-2xl font-bold text-foreground">شماره شما ثبت شد!</h1>
+                <p className="text-muted-foreground leading-relaxed">
+                  برای تکمیل ثبت‌نام و دریافت لینک ورود، ادامه فرآیند در ربات تلگرام آکادمی انجام می‌شود.
+                  <br />
+                  روی دکمه زیر بزنید تا ثبت‌نام شما نهایی شود.
+                </p>
+              </div>
+              <Button asChild className="w-full h-14 text-lg font-bold" size="lg">
+                <a href={telegramDeepLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                  <ExternalLink className="h-5 w-5" />
+                  ادامه در ربات تلگرام
+                </a>
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                در صورت باز نشدن تلگرام، لینک را کپی کنید: <span dir="ltr">{telegramDeepLink}</span>
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   if (registrationSuccess) {

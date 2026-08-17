@@ -3610,6 +3610,22 @@ async function handleUpdate(update: any) {
   const startPayload = startMatch?.[1] ?? null;
   console.log('📥 msg chat_id=', chat_id, 'text=', JSON.stringify(text), 'startPayload=', startPayload, 'user_linked=', !!user);
 
+  // ===== Webinar registration deep-link with phone: /start wreg_<id-prefix>_<digits> =====
+  if (startPayload?.startsWith('wreg_')) {
+    const rest = startPayload.slice('wreg_'.length);
+    const sep = rest.lastIndexOf('_');
+    const wPrefix = sep > 0 ? rest.slice(0, sep) : rest;
+    const digits = sep > 0 ? rest.slice(sep + 1).replace(/\D/g, '') : '';
+    if (user) { await renderWebinar(chat_id, null, wPrefix, user, { hideMenu: true }); return; }
+    if (digits.length >= 8) {
+      await setSession(chat_id, null, 'awaiting_webinar_phone', { webinar_prefix: wPrefix });
+      await handleWebinarGuestPhone(chat_id, '+' + digits);
+      return;
+    }
+    await startWebinarGuest(chat_id, wPrefix);
+    return;
+  }
+
   // ===== Webinar registration deep-link: /start webinar_<id-prefix> =====
   if (startPayload?.startsWith('webinar_')) {
     const wPrefix = startPayload.slice('webinar_'.length);
@@ -3617,6 +3633,7 @@ async function handleUpdate(update: any) {
     await renderWebinar(chat_id, null, wPrefix, user, { hideMenu: true });
     return;
   }
+
 
   // ===== Guest webinar registration states (work without bot login) =====
   {
