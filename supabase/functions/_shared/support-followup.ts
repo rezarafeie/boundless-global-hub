@@ -337,16 +337,25 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
       results.push({ channel: "business", ok: true, skipped: true, reason: "no telegram_id", unreachable: true });
       return results;
     }
-    const text = render(cf.bot_text, vars) || "[TEST] followup";
+    const text = appendButtonsAsLinks(
+      render(cf.bot_text, vars) || "[TEST] followup",
+      renderButtons(cf.buttons, vars),
+    );
     const { data: settings } = await supabase.from("admin_settings").select("telegram_business_connection_id" as any).eq("id", 1).maybeSingle();
     const bcid = (settings as any)?.telegram_business_connection_id;
 
     let businessOk = false;
     let businessRes: any = null;
     if (bcid) {
-      businessRes = await tgCall("sendMessage", { chat_id: row.telegram_id, text, business_connection_id: bcid, parse_mode: "HTML" });
+      businessRes = await sendRichMessage(row.telegram_id, text, {
+        mediaUrl: cf.media_url,
+        mediaType: cf.media_type,
+        business_connection_id: bcid,
+        parse_mode: "HTML",
+      });
       businessOk = (businessRes as any)?.ok === true;
     }
+
 
     if (businessOk) {
       await logSendCustom(row, cf, "telegram_business", "sent", undefined, { ...logExtra, chat_id: row.telegram_id, text, business: true, business_connection_id: bcid, response: businessRes });
