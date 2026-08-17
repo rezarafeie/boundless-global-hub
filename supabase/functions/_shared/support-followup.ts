@@ -257,7 +257,7 @@ export async function runStage3(row: Row, opts: { isTest?: boolean } = {}) {
     return [{ ok: false, error: "no telegram_id" }];
   }
   const vars = buildVars(row);
-  const text = render(row.courses.support_followup_stage3_business_text, vars) || "[TEST] followup";
+  let text = render(row.courses.support_followup_stage3_business_text, vars) || "[TEST] followup";
   const { data: settings } = await supabase.from("admin_settings").select("telegram_business_connection_id" as any).eq("id", 1).maybeSingle();
   const bcid = (settings as any)?.telegram_business_connection_id;
   if (!bcid) {
@@ -265,7 +265,15 @@ export async function runStage3(row: Row, opts: { isTest?: boolean } = {}) {
     await logSend(row, 3, "telegram_business", "failed", error, { chat_id: row.telegram_id, text, business: false, is_test: !!opts.isTest });
     return [{ ok: false, chat_id: row.telegram_id, text, business: false, error }];
   }
-  const res = await tgCall("sendMessage", { chat_id: row.telegram_id, text, business_connection_id: bcid, parse_mode: "HTML" });
+  // Business messages can't carry inline keyboards — render buttons as links.
+  text = appendButtonsAsLinks(text, renderButtons(row.courses.support_followup_stage3_buttons, vars));
+  const res = await sendRichMessage(row.telegram_id, text, {
+    mediaUrl: row.courses.support_followup_stage3_media_url,
+    mediaType: row.courses.support_followup_stage3_media_type,
+    business_connection_id: bcid,
+    parse_mode: "HTML",
+  });
+
   const ok = (res as any)?.ok !== false;
   await logSend(row, 3, "telegram_business", ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { chat_id: row.telegram_id, text, business: true, business_connection_id: bcid, response: res, is_test: !!opts.isTest });
   return [{ ok, chat_id: row.telegram_id, text, business: true, business_connection_id: bcid, response: res }];
