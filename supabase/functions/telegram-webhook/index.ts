@@ -3832,10 +3832,12 @@ async function handleUpdate(update: any) {
       // Reply in the chat the message came from (business chat / support group)
       const wMediaUrl = ((w as any)?.telegram_support_activated_media_url as string | null) || '';
       const wMediaType = ((w as any)?.telegram_support_activated_media_type as string | null) || null;
+      // Business chats reject inline keyboards — render buttons as links there.
+      const confirmForChat = business_connection_id ? appendButtonsAsLinks(confirm, wButtons) : confirm;
 
       // Reply in the chat the message came from (business chat / support group)
       try {
-        const res = await sendRichMessage(chat_id, confirm, {
+        const res = await sendRichMessage(chat_id, confirmForChat, {
           mediaUrl: wMediaUrl,
           mediaType: wMediaType,
           keyboard: business_connection_id ? undefined : (wButtons as any),
@@ -3844,13 +3846,14 @@ async function handleUpdate(update: any) {
         });
         if (!res?.ok) {
           // Retry without reply/buttons (business chats reject some markups)
-          await sendRichMessage(chat_id, confirm, {
+          await sendRichMessage(chat_id, confirmForChat, {
             mediaUrl: wMediaUrl,
             mediaType: wMediaType,
             business_connection_id,
           });
         }
       } catch (e) { console.warn('webinar support confirm reply failed', e); }
+
 
       // Also confirm in the user's private chat with the bot
       if (targetChat && targetChat !== chat_id) {
