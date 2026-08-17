@@ -10,7 +10,9 @@ import {
   mdToTelegramHtml,
   tgCall,
   sendRichMessage,
+  appendButtonsAsLinks,
   type InlineKeyboard,
+
 
 } from '../_shared/telegram.ts';
 import {
