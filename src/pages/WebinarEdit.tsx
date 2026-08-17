@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import MessageMediaButtonsEditor from '@/components/Admin/MessageMediaButtonsEditor';
 import { ArrowRight, Save } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -33,6 +34,8 @@ const WebinarEdit: React.FC = () => {
     telegram_support_username: '',
     telegram_support_prefilled_message: '',
     telegram_support_activated_message: '',
+    telegram_support_activated_media_url: '',
+    telegram_support_activated_media_type: '',
     telegram_support_activation_buttons: [] as { text: string; url: string }[]
 
   });
@@ -68,6 +71,8 @@ const WebinarEdit: React.FC = () => {
         telegram_support_username: (data as any).telegram_support_username || '',
         telegram_support_prefilled_message: (data as any).telegram_support_prefilled_message || '',
         telegram_support_activated_message: (data as any).telegram_support_activated_message || '',
+        telegram_support_activated_media_url: (data as any).telegram_support_activated_media_url || '',
+        telegram_support_activated_media_type: (data as any).telegram_support_activated_media_type || '',
         telegram_support_activation_buttons: Array.isArray((data as any).telegram_support_activation_buttons)
           ? (data as any).telegram_support_activation_buttons
           : []
@@ -112,6 +117,8 @@ const WebinarEdit: React.FC = () => {
         telegram_support_username: formData.telegram_support_username.trim().replace(/^@/, '') || null,
         telegram_support_prefilled_message: formData.telegram_support_prefilled_message || null,
         telegram_support_activated_message: formData.telegram_support_activated_message || null,
+        telegram_support_activated_media_url: formData.telegram_support_activated_media_url || null,
+        telegram_support_activated_media_type: formData.telegram_support_activated_media_type || null,
         telegram_support_activation_buttons: (formData.telegram_support_activation_buttons || [])
           .filter((b) => b?.text?.trim() && b?.url?.trim())
 
@@ -295,6 +302,20 @@ const WebinarEdit: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, telegram_support_activated_message: e.target.value })}
                   placeholder="در صورت خالی بودن، متن پیش‌فرض ارسال می‌شود."
                   rows={6}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">رسانه پیام فعال‌سازی (اختیاری)</label>
+                <MessageMediaButtonsEditor
+                  hideButtons
+                  mediaUrl={formData.telegram_support_activated_media_url}
+                  mediaType={formData.telegram_support_activated_media_type}
+                  buttons={[]}
+                  onChange={(p) => setFormData({
+                    ...formData,
+                    ...(p.media_url !== undefined ? { telegram_support_activated_media_url: p.media_url || '' } : {}),
+                    ...(p.media_type !== undefined ? { telegram_support_activated_media_type: p.media_type || '' } : {}),
+                  })}
                 />
               </div>
               <div>

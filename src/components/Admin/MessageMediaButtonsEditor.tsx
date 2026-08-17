@@ -39,6 +39,7 @@ interface Props {
   /** Business channels can't render inline keyboards; buttons are appended as links. */
   buttonsAsLinksHint?: boolean;
   extraButtonTypes?: { value: string; label: string }[];
+  hideButtons?: boolean;
 }
 
 const MessageMediaButtonsEditor: React.FC<Props> = ({
@@ -48,6 +49,7 @@ const MessageMediaButtonsEditor: React.FC<Props> = ({
   onChange,
   buttonsAsLinksHint,
   extraButtonTypes,
+  hideButtons,
 }) => {
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -120,6 +122,7 @@ const MessageMediaButtonsEditor: React.FC<Props> = ({
       </div>
 
       {/* Buttons */}
+      {!hideButtons && (
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-xs">دکمه‌های زیر پیام</Label>
@@ -153,6 +156,7 @@ const MessageMediaButtonsEditor: React.FC<Props> = ({
           </p>
         )}
       </div>
+      )}
     </div>
   );
 };
