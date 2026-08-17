@@ -51,7 +51,6 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
   const [testPhone, setTestPhone] = useState<Record<string, string>>({});
   const [testResult, setTestResult] = useState<Record<string, any>>({});
   const [logs, setLogs] = useState<any[]>([]);
-  const [recipients, setRecipients] = useState<any[]>([]);
   const [queue, setQueue] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [webinarStart, setWebinarStart] = useState<string | null>(null);
@@ -96,17 +95,12 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
     try {
       const token = getSessionToken();
       let list: any[] = [];
-      let recs: any[] = [];
       if (token) {
-        const [{ data: logData, error: logErr }, { data: recData }, { data: queueData, error: queueErr }] = await Promise.all([
+        const [{ data: logData, error: logErr }, { data: queueData, error: queueErr }] = await Promise.all([
           (supabase.rpc as any)('get_webinar_followup_logs', {
             p_session_token: token,
             p_webinar_id: webinarId,
             p_limit: 200,
-          }),
-          (supabase.rpc as any)('get_webinar_followup_recipients', {
-            p_session_token: token,
-            p_webinar_id: webinarId,
           }),
           (supabase.rpc as any)('get_webinar_followup_queue', {
             p_session_token: token,
@@ -116,7 +110,6 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
         if (logErr) throw logErr;
         if (queueErr) throw queueErr;
         list = (logData as any) || [];
-        recs = (recData as any) || [];
         setQueue((queueData as any) || []);
       } else {
         const { data } = await supabase
@@ -128,7 +121,6 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
         list = (data as any) || [];
       }
       setLogs(list);
-      setRecipients(recs);
     } catch (e: any) {
       toast({ title: 'خطا در دریافت لاگ‌ها', description: e.message, variant: 'destructive' });
     } finally {
