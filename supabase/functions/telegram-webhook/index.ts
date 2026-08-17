@@ -9,7 +9,9 @@ import {
   downloadFile,
   mdToTelegramHtml,
   tgCall,
+  sendRichMessage,
   type InlineKeyboard,
+
 } from '../_shared/telegram.ts';
 import {
   getFields as getReportFields,
