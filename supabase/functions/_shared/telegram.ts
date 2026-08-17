@@ -251,10 +251,19 @@ export function buildButtonsKeyboard(
   for (const raw of buttons as MessageButton[]) {
     if (!raw?.text) continue;
     const url = resolve ? resolve(raw) : (raw.url ?? null);
-    if (!url) continue;
+    if (!url || !isTelegramButtonUrl(String(url))) continue;
     rows.push([{ text: String(raw.text), url: String(url) }]);
   }
   return rows.length ? rows : undefined;
+}
+
+function isTelegramButtonUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:' || parsed.protocol === 'tg:';
+  } catch {
+    return false;
+  }
 }
 
 // Guess a Telegram media method from a media type or file URL.
@@ -284,7 +293,9 @@ const MEDIA_METHOD: Record<string, { method: string; field: string }> = {
   document: { method: 'sendDocument', field: 'document' },
 };
 
-const CAPTION_LIMIT = 1024;
+// Telegram's documented caption limit is 1024 characters after entity parsing.
+// Keep a small safety margin for HTML entities and multi-byte captions.
+const CAPTION_LIMIT = 950;
 
 export interface MediaItem { url: string; type?: string | null }
 
@@ -467,9 +478,19 @@ async function sendWithButtons(
   const err = String(res?.description ?? '');
   if (!/reply_markup|button|BUSINESS|keyboard/i.test(err)) return res;
 
-  const withLinks = appendButtonsAsLinks(bodyText ?? '', keyboard);
-  const key = 'text' in payload ? 'text' : 'caption';
-  return tgCall(method, { ...payload, [key]: withLinks, parse_mode });
+  // A malformed button must never make Telegram drop the media. Retry with only
+  // valid URL buttons; if none remain, preserve the media and omit the bad button.
+  const validKeyboard = keyboard
+    .map(row => row.filter(button => !button.url || isTelegramButtonUrl(button.url)))
+    .filter(row => row.length > 0);
+  if (validKeyboard.length && JSON.stringify(validKeyboard) !== JSON.stringify(keyboard)) {
+    const retry = await tgCall(method, { ...payload, reply_markup: { inline_keyboard: validKeyboard } });
+    if (retry?.ok !== false) return retry;
+  }
+
+  // Do not turn configured buttons into caption links or replace the attachment
+  // with a text-only message. The media is the higher-priority part of delivery.
+  return tgCall(method, payload);
 }
 
 
