@@ -352,3 +352,15 @@ export async function sendRichMessage(
     ...(reply_markup ? { reply_markup } : {}),
   });
 }
+
+// Telegram Business messages cannot carry inline keyboards, so buttons are
+// appended to the message body as clickable links instead.
+export function appendButtonsAsLinks(text: string, keyboard?: InlineKeyboard): string {
+  if (!keyboard?.length) return text;
+  const links = keyboard
+    .flat()
+    .filter(b => b?.url && b?.text)
+    .map(b => `👉 <a href="${b.url}">${escapeHtml(b.text)}</a>`);
+  if (!links.length) return text;
+  return `${text}\n\n${links.join('\n')}`;
+}
