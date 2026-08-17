@@ -453,7 +453,14 @@ export const SUPPORT_ACTIVATION_SELECT = `
     support_followup_stage1_sms_text,
     support_followup_stage1_sms_template_url,
     support_followup_stage2_bot_text,
-    support_followup_stage3_business_text
+    support_followup_stage2_media_url,
+    support_followup_stage2_media_type,
+    support_followup_stage2_buttons,
+    support_followup_stage3_business_text,
+    support_followup_stage3_media_url,
+    support_followup_stage3_media_type,
+    support_followup_stage3_buttons
+
   ),
   chat_users:user_id (id, name, first_name, last_name, full_name, email, phone)
 `;
