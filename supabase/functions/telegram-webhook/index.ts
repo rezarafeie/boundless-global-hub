@@ -3972,15 +3972,16 @@ async function handleUpdate(update: any) {
             try {
               await sendRichMessage(
                 chat_id,
-                business_connection_id ? appendButtonsAsLinks(welcome, buttons) : welcome,
+                welcome,
                 {
                   mediaUrl: (course as any)?.telegram_bot_activated_media_url,
                   mediaType: (course as any)?.telegram_bot_activated_media_type,
                   reply_to_message_id: msg.message_id,
-                  keyboard: business_connection_id || !buttons.length ? undefined : (buttons as any),
+                  keyboard: buttons.length ? (buttons as any) : undefined,
                   business_connection_id,
                 },
               );
+
             } catch (e) { console.warn('activated welcome reply failed', e); }
           }
         }
