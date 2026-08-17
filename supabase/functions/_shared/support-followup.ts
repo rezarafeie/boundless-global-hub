@@ -315,8 +315,15 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
       return results;
     }
     const text = render(cf.bot_text, vars) || "[TEST] followup";
-    const kb = vars.activation_link ? { keyboard: [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]] } : {};
-    const res = await sendMessage(row.telegram_id, text, { ...(kb as any), parse_mode: "HTML" });
+    const kb = renderButtons(cf.buttons, vars)
+      ?? (vars.activation_link ? [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]] : undefined);
+    const res = await sendRichMessage(row.telegram_id, text, {
+      mediaUrl: cf.media_url,
+      mediaType: cf.media_type,
+      keyboard: kb as any,
+      parse_mode: "HTML",
+    });
+
     const ok = (res as any)?.ok !== false;
     const errStr = ok ? "" : JSON.stringify(res);
     const permanent = !ok && /chat not found|bot was blocked|user is deactivated|PEER_ID_INVALID|Forbidden/i.test(errStr);
