@@ -3830,22 +3830,24 @@ async function handleUpdate(update: any) {
 
 
       // Reply in the chat the message came from (business chat / support group)
+      const wMediaUrl = ((w as any)?.telegram_support_activated_media_url as string | null) || '';
+      const wMediaType = ((w as any)?.telegram_support_activated_media_type as string | null) || null;
+
+      // Reply in the chat the message came from (business chat / support group)
       try {
-        const res = await tgCall('sendMessage', {
-          chat_id,
-          text: confirm,
-          parse_mode: 'HTML',
+        const res = await sendRichMessage(chat_id, confirm, {
+          mediaUrl: wMediaUrl,
+          mediaType: wMediaType,
+          keyboard: business_connection_id ? undefined : (wButtons as any),
           reply_to_message_id: msg.message_id,
-          reply_markup: wButtons.length ? { inline_keyboard: wButtons } : undefined,
-          ...(business_connection_id ? { business_connection_id } : {}),
+          business_connection_id,
         });
         if (!res?.ok) {
           // Retry without reply/buttons (business chats reject some markups)
-          await tgCall('sendMessage', {
-            chat_id,
-            text: confirm,
-            parse_mode: 'HTML',
-            ...(business_connection_id ? { business_connection_id } : {}),
+          await sendRichMessage(chat_id, confirm, {
+            mediaUrl: wMediaUrl,
+            mediaType: wMediaType,
+            business_connection_id,
           });
         }
       } catch (e) { console.warn('webinar support confirm reply failed', e); }
@@ -3853,16 +3855,16 @@ async function handleUpdate(update: any) {
       // Also confirm in the user's private chat with the bot
       if (targetChat && targetChat !== chat_id) {
         try {
-          await tgCall('sendMessage', {
-            chat_id: targetChat,
-            text: confirm,
-            parse_mode: 'HTML',
-            reply_markup: wButtons.length ? { inline_keyboard: wButtons } : undefined,
+          await sendRichMessage(targetChat, confirm, {
+            mediaUrl: wMediaUrl,
+            mediaType: wMediaType,
+            keyboard: wButtons.length ? (wButtons as any) : undefined,
           });
         } catch (e) { console.warn('webinar support confirm DM failed', e); }
       }
       return;
       }
+
 
     }
   }
