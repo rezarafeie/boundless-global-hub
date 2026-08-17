@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import MessageMediaButtonsEditor, { MessageButton } from './MessageMediaButtonsEditor';
 import { Plus, Trash2, Save, Loader2, Send, RefreshCw, CalendarClock } from 'lucide-react';
 import { adaptiveSchedule, formatTehran } from '@/lib/webinarAdaptiveSchedule';
 
@@ -28,6 +29,9 @@ interface WebinarFollowup {
   sms_text: string | null;
   sms_template_url: string | null;
   bot_text: string | null;
+  media_url: string | null;
+  media_type: string | null;
+  buttons: MessageButton[] | null;
   schedule_mode: 'fixed' | 'adaptive';
   priority: number;
   min_interval_minutes: number;
@@ -176,7 +180,7 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
       return;
     }
     setSavingId(r.id);
-    const { data, error } = await (supabase.rpc as any)('update_webinar_followup_v2', {
+    const { data, error } = await (supabase.rpc as any)('update_webinar_followup_v3', {
       p_session_token: sessionToken,
       p_id: r.id,
       p_name: r.name,
@@ -199,6 +203,9 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
       p_quiet_hours_start: r.quiet_hours_start === null || r.quiet_hours_start === undefined ? null : Number(r.quiet_hours_start),
       p_quiet_hours_end: r.quiet_hours_end === null || r.quiet_hours_end === undefined ? null : Number(r.quiet_hours_end),
       p_final_lead_minutes: Number(r.final_lead_minutes) ?? 15,
+      p_media_url: r.media_url,
+      p_media_type: r.media_type,
+      p_buttons: r.buttons ?? [],
     });
 
     setSavingId(null);
@@ -381,8 +388,17 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
             </div>
           )}
           {(r.channel === 'bot' || r.channel === 'business') && (
-            <Textarea rows={4} value={r.bot_text || ''} onChange={(e) => patch(r.id, { bot_text: e.target.value })}
-              placeholder={r.channel === 'business' ? 'متن پیام از چت شخصی (Telegram Business)' : 'متن پیام ربات تلگرام'} dir="rtl" />
+            <div className="space-y-2">
+              <Textarea rows={4} value={r.bot_text || ''} onChange={(e) => patch(r.id, { bot_text: e.target.value })}
+                placeholder={r.channel === 'business' ? 'متن پیام از چت شخصی (Telegram Business)' : 'متن پیام ربات تلگرام'} dir="rtl" />
+              <MessageMediaButtonsEditor
+                mediaUrl={r.media_url}
+                mediaType={r.media_type}
+                buttons={r.buttons}
+                buttonsAsLinksHint={r.channel === 'business'}
+                onChange={(pp) => patch(r.id, pp as any)}
+              />
+            </div>
           )}
 
           <p className="text-[10px] text-muted-foreground">
