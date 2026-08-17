@@ -136,6 +136,9 @@ export async function runWebinarFollowup(
   let text = render(fu.bot_text, vars) || "[TEST] webinar followup";
   const mediaUrl = (fu.media_url ?? "").trim();
   const mediaType = fu.media_type ?? null;
+  const mediaItems = (Array.isArray(fu.media_items) ? fu.media_items : [])
+    .map((m: any) => ({ url: String(m?.url ?? "").trim(), type: m?.type ?? null }))
+    .filter((m: any) => m.url);
 
   // Custom buttons configured by the admin (each entry: { text, url }).
   const customButtons = buildButtonsKeyboard(
@@ -145,7 +148,7 @@ export async function runWebinarFollowup(
     ?? (vars.webinar_link ? [[{ text: "🎥 ورود به وبینار", url: vars.webinar_link }]] : undefined);
 
   if (fu.channel === "bot") {
-    const res = await sendRichMessage(chatId, text, { mediaUrl, mediaType, keyboard: kb as any, parse_mode: "HTML" });
+    const res = await sendRichMessage(chatId, text, { mediaUrl, mediaType, mediaItems, keyboard: kb as any, parse_mode: "HTML" });
     const ok = (res as any)?.ok !== false;
     const errStr = ok ? "" : JSON.stringify(res);
     const permanent = !ok && /chat not found|bot was blocked|user is deactivated|PEER_ID_INVALID|Forbidden/i.test(errStr);
@@ -163,10 +166,17 @@ export async function runWebinarFollowup(
   const bcid = (settings as any)?.telegram_business_connection_id;
   let res: any = null;
   if (bcid) {
-    // Telegram Business messages can't carry inline keyboards — render buttons as links.
-    text = appendButtonsAsLinks(text, kb);
-    res = await sendRichMessage(chatId, text, { mediaUrl, mediaType, business_connection_id: bcid, parse_mode: "HTML" });
+    // Inline keyboards are attempted first; sendRichMessage falls back to links if rejected.
+    res = await sendRichMessage(chatId, text, {
+      mediaUrl,
+      mediaType,
+      mediaItems,
+      keyboard: kb as any,
+      business_connection_id: bcid,
+      parse_mode: "HTML",
+    });
   }
+
 
   const ok = res?.ok === true;
   if (ok) {

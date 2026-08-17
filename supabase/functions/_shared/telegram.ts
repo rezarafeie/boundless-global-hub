@@ -286,11 +286,30 @@ const MEDIA_METHOD: Record<string, { method: string; field: string }> = {
 
 const CAPTION_LIMIT = 1024;
 
+export interface MediaItem { url: string; type?: string | null }
+
+// Split long HTML text at a safe boundary so the first part can be used as a caption.
+function splitForCaption(text: string): { caption: string; rest: string } {
+  if (!text || text.length <= CAPTION_LIMIT) return { caption: text ?? '', rest: '' };
+  const head = text.slice(0, CAPTION_LIMIT);
+  let cut = head.lastIndexOf('\n');
+  if (cut < CAPTION_LIMIT * 0.4) cut = head.lastIndexOf(' ');
+  if (cut < CAPTION_LIMIT * 0.4) cut = CAPTION_LIMIT;
+  // Avoid cutting inside an html tag
+  const lastOpen = head.lastIndexOf('<');
+  const lastClose = head.lastIndexOf('>');
+  if (lastOpen > lastClose && lastOpen < cut) cut = lastOpen;
+  return { caption: text.slice(0, cut).trim(), rest: text.slice(cut).trim() };
+}
+
+// media_group supports only photo/video/audio/document
+const GROUPABLE: Record<string, string> = { photo: 'photo', video: 'video', audio: 'audio', document: 'document' };
+
 /**
- * Send a message that may carry a media attachment and inline buttons.
+ * Send a message that may carry one or more media attachments and inline buttons.
  * Works for both the bot and Telegram Business (pass business_connection_id).
- * When the text is longer than Telegram's caption limit, the media is sent first
- * (without caption) and the text follows as a normal message carrying the buttons.
+ * The text is always attached to the media as a caption; only the overflow beyond
+ * Telegram's 1024-char caption limit is sent as an extra message.
  */
 export async function sendRichMessage(
   chat_id: number | string,
@@ -298,6 +317,7 @@ export async function sendRichMessage(
   opts: {
     mediaUrl?: string | null;
     mediaType?: string | null;
+    mediaItems?: MediaItem[] | null;
     keyboard?: InlineKeyboard;
     business_connection_id?: string | null;
     parse_mode?: 'HTML' | 'MarkdownV2';
@@ -310,48 +330,148 @@ export async function sendRichMessage(
   if (opts.reply_to_message_id) base.reply_to_message_id = opts.reply_to_message_id;
   const reply_markup = opts.keyboard?.length ? { inline_keyboard: opts.keyboard } : undefined;
 
-  const mediaUrl = (opts.mediaUrl ?? '').trim();
-  if (!mediaUrl) {
-    return tgCall('sendMessage', {
+  const plain = (extra?: Record<string, unknown>) =>
+    sendWithButtons({ ...base, text, disable_web_page_preview: true, ...(extra ?? {}) }, opts.keyboard, text, parse_mode);
+
+  const items: MediaItem[] = [];
+  for (const it of (opts.mediaItems ?? [])) {
+    const u = (it?.url ?? '').trim();
+    if (u) items.push({ url: u, type: it?.type ?? null });
+  }
+  if (!items.length) {
+    const single = (opts.mediaUrl ?? '').trim();
+    if (single) items.push({ url: single, type: opts.mediaType ?? null });
+  }
+
+  if (!items.length) return plain();
+
+  const { caption, rest } = splitForCaption(text ?? '');
+
+  // ---- Multiple attachments: album when possible ----
+  if (items.length > 1) {
+    const kinds = items.map(i => resolveMediaType(i.type, i.url));
+    const groupable = kinds.every(k => GROUPABLE[k]);
+    let lastRes: any = null;
+
+    if (groupable) {
+      const media = items.map((it, i) => ({
+        type: GROUPABLE[kinds[i]],
+        media: it.url,
+        ...(i === 0 && caption ? { caption, parse_mode } : {}),
+      }));
+      lastRes = await tgCall('sendMediaGroup', { ...base, media });
+      if (lastRes?.ok === false) {
+        // fall back to sending one by one
+        lastRes = await sendItemsSequentially(base, items, kinds, caption, parse_mode);
+      }
+    } else {
+      lastRes = await sendItemsSequentially(base, items, kinds, caption, parse_mode);
+    }
+
+    // Buttons (and any overflow text) go in a trailing message.
+    if (rest || reply_markup) {
+      return await sendWithButtons(
+        { ...base, text: rest || '⬆️', disable_web_page_preview: true },
+        opts.keyboard,
+        rest || '⬆️',
+        parse_mode,
+      );
+    }
+    return lastRes;
+  }
+
+  // ---- Single attachment ----
+  const kind = resolveMediaType(items[0].type, items[0].url);
+  const spec = MEDIA_METHOD[kind] ?? MEDIA_METHOD.document;
+
+  const mediaRes = await sendWithButtons(
+    {
       ...base,
-      text,
-      disable_web_page_preview: true,
-      ...(reply_markup ? { reply_markup } : {}),
+      [spec.field]: items[0].url,
+      ...(caption ? { caption } : {}),
+    },
+    rest ? undefined : opts.keyboard,
+    caption,
+    parse_mode,
+    spec.method,
+  );
+
+  // If Telegram rejected the media (e.g. a voice note that isn't OGG/OPUS),
+  // retry with a more permissive method before giving up on the attachment.
+  if (mediaRes?.ok === false && kind !== 'document') {
+    const fallbackKind = kind === 'voice' ? 'audio' : 'document';
+    const fbSpec = MEDIA_METHOD[fallbackKind];
+    const retry = await sendWithButtons(
+      { ...base, [fbSpec.field]: items[0].url, ...(caption ? { caption } : {}) },
+      rest ? undefined : opts.keyboard,
+      caption,
+      parse_mode,
+      fbSpec.method,
+    );
+    if (retry?.ok !== false) {
+      if (rest) {
+        return await sendWithButtons({ ...base, text: rest, disable_web_page_preview: true }, opts.keyboard, rest, parse_mode);
+      }
+      return retry;
+    }
+  }
+  if (mediaRes?.ok === false) return plain();
+
+  if (rest || (reply_markup && rest)) {
+    return await sendWithButtons(
+      { ...base, text: rest, disable_web_page_preview: true },
+      opts.keyboard,
+      rest,
+      parse_mode,
+    );
+  }
+  return mediaRes;
+}
+
+async function sendItemsSequentially(
+  base: Record<string, unknown>,
+  items: MediaItem[],
+  kinds: MediaType[],
+  caption: string,
+  parse_mode: string,
+) {
+  let res: any = null;
+  for (let i = 0; i < items.length; i++) {
+    const spec = MEDIA_METHOD[kinds[i]] ?? MEDIA_METHOD.document;
+    res = await tgCall(spec.method, {
+      ...base,
+      [spec.field]: items[i].url,
+      ...(i === 0 && caption ? { caption, parse_mode } : {}),
     });
   }
-
-  const kind = resolveMediaType(opts.mediaType, mediaUrl);
-  const spec = MEDIA_METHOD[kind] ?? MEDIA_METHOD.document;
-  const short = (text ?? '').length <= CAPTION_LIMIT;
-
-  const mediaRes = await tgCall(spec.method, {
-    ...base,
-    [spec.field]: mediaUrl,
-    ...(short && text ? { caption: text } : {}),
-    ...(short && reply_markup ? { reply_markup } : {}),
-  });
-
-  if (short) {
-    // If Telegram rejected the media (bad url / unsupported), fall back to a plain message.
-    if (mediaRes?.ok === false) {
-      return tgCall('sendMessage', {
-        ...base,
-        text,
-        disable_web_page_preview: true,
-        ...(reply_markup ? { reply_markup } : {}),
-      });
-    }
-    return mediaRes;
-  }
-
-  // Long text: send it as a separate message right after the media.
-  return tgCall('sendMessage', {
-    ...base,
-    text,
-    disable_web_page_preview: true,
-    ...(reply_markup ? { reply_markup } : {}),
-  });
+  return res;
 }
+
+/**
+ * Send a payload with inline buttons. Telegram Business connections normally accept
+ * inline keyboards; if a specific account/method rejects them, we retry once with the
+ * buttons rendered as links inside the text/caption so the message still goes out.
+ */
+async function sendWithButtons(
+  payload: Record<string, unknown>,
+  keyboard: InlineKeyboard | undefined,
+  bodyText: string,
+  parse_mode: string,
+  method = 'sendMessage',
+): Promise<any> {
+  if (!keyboard?.length) return tgCall(method, payload);
+
+  const res = await tgCall(method, { ...payload, reply_markup: { inline_keyboard: keyboard } });
+  if (res?.ok !== false) return res;
+
+  const err = String(res?.description ?? '');
+  if (!/reply_markup|button|BUSINESS|keyboard/i.test(err)) return res;
+
+  const withLinks = appendButtonsAsLinks(bodyText ?? '', keyboard);
+  const key = 'text' in payload ? 'text' : 'caption';
+  return tgCall(method, { ...payload, [key]: withLinks, parse_mode });
+}
+
 
 // Telegram Business messages cannot carry inline keyboards, so buttons are
 // appended to the message body as clickable links instead.
