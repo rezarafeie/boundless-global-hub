@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import MessageMediaButtonsEditor, { MessageButton } from './MessageMediaButtonsEditor';
+import MessageMediaButtonsEditor, { MessageButton, MessageMediaItem } from './MessageMediaButtonsEditor';
 import { Plus, Trash2, Save, Loader2, Send, RefreshCw, CalendarClock } from 'lucide-react';
 import { adaptiveSchedule, formatTehran } from '@/lib/webinarAdaptiveSchedule';
 
@@ -32,6 +32,7 @@ interface WebinarFollowup {
   media_url: string | null;
   media_type: string | null;
   buttons: MessageButton[] | null;
+  media_items: MessageMediaItem[] | null;
   schedule_mode: 'fixed' | 'adaptive';
   priority: number;
   min_interval_minutes: number;
@@ -180,7 +181,7 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
       return;
     }
     setSavingId(r.id);
-    const { data, error } = await (supabase.rpc as any)('update_webinar_followup_v3', {
+    const { data, error } = await (supabase.rpc as any)('update_webinar_followup_v4', {
       p_session_token: sessionToken,
       p_id: r.id,
       p_name: r.name,
@@ -206,6 +207,7 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
       p_media_url: r.media_url,
       p_media_type: r.media_type,
       p_buttons: r.buttons ?? [],
+      p_media_items: r.media_items ?? [],
     });
 
     setSavingId(null);
@@ -395,7 +397,7 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
                 mediaUrl={r.media_url}
                 mediaType={r.media_type}
                 buttons={r.buttons}
-                buttonsAsLinksHint={r.channel === 'business'}
+                mediaItems={r.media_items ?? []}
                 onChange={(pp) => patch(r.id, pp as any)}
               />
             </div>
