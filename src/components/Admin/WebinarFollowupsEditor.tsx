@@ -51,7 +51,7 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
   const [testPhone, setTestPhone] = useState<Record<string, string>>({});
   const [testResult, setTestResult] = useState<Record<string, any>>({});
   const [logs, setLogs] = useState<any[]>([]);
-  const [recipients, setRecipients] = useState<any[]>([]);
+  const [queue, setQueue] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [webinarStart, setWebinarStart] = useState<string | null>(null);
   const [previewDays, setPreviewDays] = useState(5);
@@ -95,22 +95,22 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
     try {
       const token = getSessionToken();
       let list: any[] = [];
-      let recs: any[] = [];
       if (token) {
-        const [{ data: logData, error: logErr }, { data: recData }] = await Promise.all([
+        const [{ data: logData, error: logErr }, { data: queueData, error: queueErr }] = await Promise.all([
           (supabase.rpc as any)('get_webinar_followup_logs', {
             p_session_token: token,
             p_webinar_id: webinarId,
             p_limit: 200,
           }),
-          (supabase.rpc as any)('get_webinar_followup_recipients', {
+          (supabase.rpc as any)('get_webinar_followup_queue', {
             p_session_token: token,
             p_webinar_id: webinarId,
           }),
         ]);
         if (logErr) throw logErr;
+        if (queueErr) throw queueErr;
         list = (logData as any) || [];
-        recs = (recData as any) || [];
+        setQueue((queueData as any) || []);
       } else {
         const { data } = await supabase
           .from('webinar_followup_log' as any)
@@ -121,7 +121,6 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
         list = (data as any) || [];
       }
       setLogs(list);
-      setRecipients(recs);
     } catch (e: any) {
       toast({ title: 'خطا در دریافت لاگ‌ها', description: e.message, variant: 'destructive' });
     } finally {
@@ -457,30 +456,31 @@ const WebinarFollowupsEditor: React.FC<Props> = ({ webinarId }) => {
                 <TableRow><TableCell colSpan={7} className="text-center py-4 text-muted-foreground text-xs">پیگیری‌ای تعریف نشده</TableCell></TableRow>
               )}
               {rows.map((r) => {
-                const recs = recipients.filter((x) => x.followup_id === r.id);
-                const maxRep = Number(r.max_repeats) || 1;
-                const done = recs.filter((x) => (x.sent_count ?? 0) >= maxRep).length;
-                const partial = recs.filter((x) => (x.sent_count ?? 0) > 0 && (x.sent_count ?? 0) < maxRep).length;
-                const lastSent = recs
-                  .map((x) => x.last_sent_at)
-                  .filter(Boolean)
-                  .sort()
-                  .pop();
+                const item = queue.find((x) => x.followup_id === r.id);
+                const done = Number(item?.sent_count ?? 0);
+                const pending = Number(item?.pending_count ?? 0);
+                const processing = Number(item?.processing_count ?? 0);
+                const failed = Number(item?.failed_count ?? 0);
+                const lastSent = item?.last_sent_at;
                 const status = !r.enabled
                   ? { label: 'غیرفعال', variant: 'secondary' as const }
-                  : partial > 0
+                  : processing > 0
                     ? { label: 'در حال ارسال', variant: 'default' as const }
+                    : failed > 0
+                      ? { label: 'نیازمند تلاش مجدد', variant: 'destructive' as const }
+                    : pending > 0
+                      ? { label: 'در صف انتظار', variant: 'outline' as const }
                     : done > 0
                       ? { label: 'تکمیل‌شده', variant: 'default' as const }
-                      : { label: 'در صف انتظار', variant: 'outline' as const };
+                      : { label: 'بدون دریافت‌کننده', variant: 'secondary' as const };
                 return (
                   <TableRow key={`q-${r.id}`}>
                     <TableCell className="text-xs">{r.name}</TableCell>
                     <TableCell className="text-xs">{r.schedule_mode === 'adaptive' ? 'تطبیقی' : 'ثابت'}</TableCell>
                     <TableCell className="text-xs">{r.channel}</TableCell>
                     <TableCell className="text-xs">{done.toLocaleString('fa-IR')}</TableCell>
-                    <TableCell className="text-xs">{partial.toLocaleString('fa-IR')}</TableCell>
-                    <TableCell className="text-xs whitespace-nowrap">{lastSent ? new Date(lastSent).toLocaleString('fa-IR') : '—'}</TableCell>
+                    <TableCell className="text-xs">{pending.toLocaleString('fa-IR')}</TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">{lastSent ? new Date(lastSent).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' }) : '—'}</TableCell>
                     <TableCell><Badge variant={status.variant}>{status.label}</Badge></TableCell>
                   </TableRow>
                 );

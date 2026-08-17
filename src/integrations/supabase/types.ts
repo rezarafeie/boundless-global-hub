@@ -7446,31 +7446,46 @@ export type Database = {
       }
       webinar_followup_recipients: {
         Row: {
+          attempt_count: number
+          claimed_at: string | null
           created_at: string
+          delivery_status: string
           followup_id: string
           id: string
+          last_error: string | null
           last_sent_at: string | null
           phone: string
+          scheduled_at: string | null
           sent_count: number
           updated_at: string
           webinar_id: string
         }
         Insert: {
+          attempt_count?: number
+          claimed_at?: string | null
           created_at?: string
+          delivery_status?: string
           followup_id: string
           id?: string
+          last_error?: string | null
           last_sent_at?: string | null
           phone: string
+          scheduled_at?: string | null
           sent_count?: number
           updated_at?: string
           webinar_id: string
         }
         Update: {
+          attempt_count?: number
+          claimed_at?: string | null
           created_at?: string
+          delivery_status?: string
           followup_id?: string
           id?: string
+          last_error?: string | null
           last_sent_at?: string | null
           phone?: string
+          scheduled_at?: string | null
           sent_count?: number
           updated_at?: string
           webinar_id?: string
@@ -8098,6 +8113,16 @@ export type Database = {
         Args: { p_agent_user_id: number; p_enrollment_id: string }
         Returns: boolean
       }
+      claim_webinar_followup_delivery: {
+        Args: {
+          p_followup_id: string
+          p_max_deliveries?: number
+          p_phone: string
+          p_scheduled_at: string
+          p_webinar_id: string
+        }
+        Returns: boolean
+      }
       cleanup_expired_sso_tokens: { Args: never; Returns: undefined }
       cleanup_inactive_sessions: { Args: never; Returns: undefined }
       create_webinar_followup: {
@@ -8204,6 +8229,16 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      finalize_webinar_followup_delivery: {
+        Args: {
+          p_delivered: boolean
+          p_error?: string
+          p_followup_id: string
+          p_phone: string
+          p_status: string
+        }
+        Returns: undefined
       }
       find_duplicate_enrollments: {
         Args: { p_course_id?: string; p_session_token: string }
@@ -8371,6 +8406,18 @@ export type Database = {
           status: string
           user_id: number
           webinar_id: string
+        }[]
+      }
+      get_webinar_followup_queue: {
+        Args: { p_session_token: string; p_webinar_id: string }
+        Returns: {
+          eligible_count: number
+          failed_count: number
+          followup_id: string
+          last_sent_at: string
+          pending_count: number
+          processing_count: number
+          sent_count: number
         }[]
       }
       get_webinar_followup_recipients: {
