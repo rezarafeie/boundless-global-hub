@@ -2413,17 +2413,25 @@ export type Database = {
           support_followup_stage1_sms_template_url: string | null
           support_followup_stage1_sms_text: string | null
           support_followup_stage2_bot_text: string | null
+          support_followup_stage2_buttons: Json
           support_followup_stage2_delay_minutes: number
           support_followup_stage2_enabled: boolean
+          support_followup_stage2_media_type: string | null
+          support_followup_stage2_media_url: string | null
           support_followup_stage2_repeat_delay_minutes: number
           support_followup_stage3_business_text: string | null
+          support_followup_stage3_buttons: Json
           support_followup_stage3_delay_minutes: number
           support_followup_stage3_enabled: boolean
+          support_followup_stage3_media_type: string | null
+          support_followup_stage3_media_url: string | null
           support_followup_stage3_repeat_delay_minutes: number
           support_link: string | null
           support_prefilled_message_template: string | null
           telegram_activation_keyword: string | null
           telegram_activation_required: boolean | null
+          telegram_bot_activated_media_type: string | null
+          telegram_bot_activated_media_url: string | null
           telegram_bot_activated_message: string | null
           telegram_bot_activation_buttons: Json
           telegram_bot_welcome_message: string | null
@@ -2479,17 +2487,25 @@ export type Database = {
           support_followup_stage1_sms_template_url?: string | null
           support_followup_stage1_sms_text?: string | null
           support_followup_stage2_bot_text?: string | null
+          support_followup_stage2_buttons?: Json
           support_followup_stage2_delay_minutes?: number
           support_followup_stage2_enabled?: boolean
+          support_followup_stage2_media_type?: string | null
+          support_followup_stage2_media_url?: string | null
           support_followup_stage2_repeat_delay_minutes?: number
           support_followup_stage3_business_text?: string | null
+          support_followup_stage3_buttons?: Json
           support_followup_stage3_delay_minutes?: number
           support_followup_stage3_enabled?: boolean
+          support_followup_stage3_media_type?: string | null
+          support_followup_stage3_media_url?: string | null
           support_followup_stage3_repeat_delay_minutes?: number
           support_link?: string | null
           support_prefilled_message_template?: string | null
           telegram_activation_keyword?: string | null
           telegram_activation_required?: boolean | null
+          telegram_bot_activated_media_type?: string | null
+          telegram_bot_activated_media_url?: string | null
           telegram_bot_activated_message?: string | null
           telegram_bot_activation_buttons?: Json
           telegram_bot_welcome_message?: string | null
@@ -2545,17 +2561,25 @@ export type Database = {
           support_followup_stage1_sms_template_url?: string | null
           support_followup_stage1_sms_text?: string | null
           support_followup_stage2_bot_text?: string | null
+          support_followup_stage2_buttons?: Json
           support_followup_stage2_delay_minutes?: number
           support_followup_stage2_enabled?: boolean
+          support_followup_stage2_media_type?: string | null
+          support_followup_stage2_media_url?: string | null
           support_followup_stage2_repeat_delay_minutes?: number
           support_followup_stage3_business_text?: string | null
+          support_followup_stage3_buttons?: Json
           support_followup_stage3_delay_minutes?: number
           support_followup_stage3_enabled?: boolean
+          support_followup_stage3_media_type?: string | null
+          support_followup_stage3_media_url?: string | null
           support_followup_stage3_repeat_delay_minutes?: number
           support_link?: string | null
           support_prefilled_message_template?: string | null
           telegram_activation_keyword?: string | null
           telegram_activation_required?: boolean | null
+          telegram_bot_activated_media_type?: string | null
+          telegram_bot_activated_media_url?: string | null
           telegram_bot_activated_message?: string | null
           telegram_bot_activation_buttons?: Json
           telegram_bot_welcome_message?: string | null
@@ -5876,6 +5900,7 @@ export type Database = {
       support_activation_custom_followups: {
         Row: {
           bot_text: string | null
+          buttons: Json
           channel: string
           course_id: string
           created_at: string
@@ -5885,6 +5910,8 @@ export type Database = {
           enabled: boolean
           id: string
           max_repeats: number
+          media_type: string | null
+          media_url: string | null
           name: string
           only_if_activated: boolean
           repeat_delay_minutes: number
@@ -5895,6 +5922,7 @@ export type Database = {
         }
         Insert: {
           bot_text?: string | null
+          buttons?: Json
           channel: string
           course_id: string
           created_at?: string
@@ -5904,6 +5932,8 @@ export type Database = {
           enabled?: boolean
           id?: string
           max_repeats?: number
+          media_type?: string | null
+          media_url?: string | null
           name?: string
           only_if_activated?: boolean
           repeat_delay_minutes?: number
@@ -5914,6 +5944,7 @@ export type Database = {
         }
         Update: {
           bot_text?: string | null
+          buttons?: Json
           channel?: string
           course_id?: string
           created_at?: string
@@ -5923,6 +5954,8 @@ export type Database = {
           enabled?: boolean
           id?: string
           max_repeats?: number
+          media_type?: string | null
+          media_url?: string | null
           name?: string
           only_if_activated?: boolean
           repeat_delay_minutes?: number
@@ -7339,6 +7372,8 @@ export type Database = {
           status: string
           telegram_bot_enabled: boolean
           telegram_channel_link: string | null
+          telegram_support_activated_media_type: string | null
+          telegram_support_activated_media_url: string | null
           telegram_support_activated_message: string | null
           telegram_support_activation_buttons: Json
           telegram_support_prefilled_message: string | null
@@ -7363,6 +7398,8 @@ export type Database = {
           status?: string
           telegram_bot_enabled?: boolean
           telegram_channel_link?: string | null
+          telegram_support_activated_media_type?: string | null
+          telegram_support_activated_media_url?: string | null
           telegram_support_activated_message?: string | null
           telegram_support_activation_buttons?: Json
           telegram_support_prefilled_message?: string | null
@@ -7387,6 +7424,8 @@ export type Database = {
           status?: string
           telegram_bot_enabled?: boolean
           telegram_channel_link?: string | null
+          telegram_support_activated_media_type?: string | null
+          telegram_support_activated_media_url?: string | null
           telegram_support_activated_message?: string | null
           telegram_support_activation_buttons?: Json
           telegram_support_prefilled_message?: string | null
@@ -7505,6 +7544,7 @@ export type Database = {
           anchor: string
           audience: string
           bot_text: string | null
+          buttons: Json
           channel: string
           created_at: string
           delay_minutes: number
@@ -7515,6 +7555,8 @@ export type Database = {
           final_lead_minutes: number
           id: string
           max_repeats: number
+          media_type: string | null
+          media_url: string | null
           min_interval_minutes: number
           name: string
           priority: number
@@ -7531,6 +7573,7 @@ export type Database = {
           anchor?: string
           audience?: string
           bot_text?: string | null
+          buttons?: Json
           channel?: string
           created_at?: string
           delay_minutes?: number
@@ -7541,6 +7584,8 @@ export type Database = {
           final_lead_minutes?: number
           id?: string
           max_repeats?: number
+          media_type?: string | null
+          media_url?: string | null
           min_interval_minutes?: number
           name?: string
           priority?: number
@@ -7557,6 +7602,7 @@ export type Database = {
           anchor?: string
           audience?: string
           bot_text?: string | null
+          buttons?: Json
           channel?: string
           created_at?: string
           delay_minutes?: number
@@ -7567,6 +7613,8 @@ export type Database = {
           final_lead_minutes?: number
           id?: string
           max_repeats?: number
+          media_type?: string | null
+          media_url?: string | null
           min_interval_minutes?: number
           name?: string
           priority?: number
@@ -8131,6 +8179,7 @@ export type Database = {
           anchor: string
           audience: string
           bot_text: string | null
+          buttons: Json
           channel: string
           created_at: string
           delay_minutes: number
@@ -8141,6 +8190,8 @@ export type Database = {
           final_lead_minutes: number
           id: string
           max_repeats: number
+          media_type: string | null
+          media_url: string | null
           min_interval_minutes: number
           name: string
           priority: number
@@ -8649,6 +8700,7 @@ export type Database = {
           anchor: string
           audience: string
           bot_text: string | null
+          buttons: Json
           channel: string
           created_at: string
           delay_minutes: number
@@ -8659,6 +8711,8 @@ export type Database = {
           final_lead_minutes: number
           id: string
           max_repeats: number
+          media_type: string | null
+          media_url: string | null
           min_interval_minutes: number
           name: string
           priority: number
@@ -8707,6 +8761,7 @@ export type Database = {
           anchor: string
           audience: string
           bot_text: string | null
+          buttons: Json
           channel: string
           created_at: string
           delay_minutes: number
@@ -8717,6 +8772,8 @@ export type Database = {
           final_lead_minutes: number
           id: string
           max_repeats: number
+          media_type: string | null
+          media_url: string | null
           min_interval_minutes: number
           name: string
           priority: number
