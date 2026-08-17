@@ -396,7 +396,25 @@ export async function sendRichMessage(
     spec.method,
   );
 
-  // If Telegram rejected the media (bad url / unsupported), fall back to a plain message.
+  // If Telegram rejected the media (e.g. a voice note that isn't OGG/OPUS),
+  // retry with a more permissive method before giving up on the attachment.
+  if (mediaRes?.ok === false && kind !== 'document') {
+    const fallbackKind = kind === 'voice' ? 'audio' : 'document';
+    const fbSpec = MEDIA_METHOD[fallbackKind];
+    const retry = await sendWithButtons(
+      { ...base, [fbSpec.field]: items[0].url, ...(caption ? { caption } : {}) },
+      rest ? undefined : opts.keyboard,
+      caption,
+      parse_mode,
+      fbSpec.method,
+    );
+    if (retry?.ok !== false) {
+      if (rest) {
+        return await sendWithButtons({ ...base, text: rest, disable_web_page_preview: true }, opts.keyboard, rest, parse_mode);
+      }
+      return retry;
+    }
+  }
   if (mediaRes?.ok === false) return plain();
 
   if (rest || (reply_markup && rest)) {
