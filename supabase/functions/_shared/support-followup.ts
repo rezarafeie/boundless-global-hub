@@ -241,6 +241,13 @@ export async function runStage1(row: Row, opts: { isTest?: boolean } = {}) {
   return results;
 }
 
+function cfMediaItems(cf: any): { url: string; type?: string | null }[] {
+  const list = Array.isArray(cf?.media_items) ? cf.media_items : [];
+  return list
+    .map((m: any) => ({ url: String(m?.url ?? "").trim(), type: m?.type ?? null }))
+    .filter((m: any) => m.url);
+}
+
 export async function runStage2(row: Row, opts: { isTest?: boolean } = {}) {
   if (!row.telegram_id) {
     await logSend(row, 2, "telegram_bot", "failed", "no telegram_id", { is_test: !!opts.isTest });
@@ -276,11 +283,11 @@ export async function runStage3(row: Row, opts: { isTest?: boolean } = {}) {
     await logSend(row, 3, "telegram_business", "failed", error, { chat_id: row.telegram_id, text, business: false, is_test: !!opts.isTest });
     return [{ ok: false, chat_id: row.telegram_id, text, business: false, error }];
   }
-  // Business messages can't carry inline keyboards — render buttons as links.
-  text = appendButtonsAsLinks(text, renderButtons(row.courses.support_followup_stage3_buttons, vars));
+  const stage3Kb = renderButtons(row.courses.support_followup_stage3_buttons, vars);
   const res = await sendRichMessage(row.telegram_id, text, {
     mediaUrl: row.courses.support_followup_stage3_media_url,
     mediaType: row.courses.support_followup_stage3_media_type,
+    keyboard: stage3Kb as any,
     business_connection_id: bcid,
     parse_mode: "HTML",
   });
@@ -331,6 +338,7 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
     const res = await sendRichMessage(row.telegram_id, text, {
       mediaUrl: cf.media_url,
       mediaType: cf.media_type,
+      mediaItems: cfMediaItems(cf),
       keyboard: kb as any,
       parse_mode: "HTML",
     });
@@ -348,10 +356,8 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
       results.push({ channel: "business", ok: true, skipped: true, reason: "no telegram_id", unreachable: true });
       return results;
     }
-    const text = appendButtonsAsLinks(
-      render(cf.bot_text, vars) || "[TEST] followup",
-      renderButtons(cf.buttons, vars),
-    );
+    const text = render(cf.bot_text, vars) || "[TEST] followup";
+    const businessKb = renderButtons(cf.buttons, vars);
     const { data: settings } = await supabase.from("admin_settings").select("telegram_business_connection_id" as any).eq("id", 1).maybeSingle();
     const bcid = (settings as any)?.telegram_business_connection_id;
 
@@ -361,6 +367,8 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
       businessRes = await sendRichMessage(row.telegram_id, text, {
         mediaUrl: cf.media_url,
         mediaType: cf.media_type,
+        mediaItems: cfMediaItems(cf),
+        keyboard: businessKb as any,
         business_connection_id: bcid,
         parse_mode: "HTML",
       });
