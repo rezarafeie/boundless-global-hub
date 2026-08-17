@@ -1,6 +1,6 @@
 // Shared helpers for support-activation followups (used by cron + test function).
 import { supabase } from "./supabase.ts";
-import { sendMessage, tgCall } from "./telegram.ts";
+import { sendMessage, tgCall, sendRichMessage, buildButtonsKeyboard, appendButtonsAsLinks } from "./telegram.ts";
 
 export type Row = any;
 
@@ -12,6 +12,17 @@ export function render(tpl: string | null | undefined, vars: Record<string, stri
   }
   return out;
 }
+
+// Build an inline keyboard from an admin-configured buttons array, rendering
+// placeholders inside both the label and the url.
+export function renderButtons(buttons: unknown, vars: Record<string, string>) {
+  if (!Array.isArray(buttons) || !buttons.length) return undefined;
+  return buildButtonsKeyboard(
+    (buttons as any[]).map((b) => ({ text: render(b?.text, vars), url: render(b?.url, vars) })),
+  );
+}
+
+
 
 export function minutesSince(iso: string | null): number {
   if (!iso) return Number.POSITIVE_INFINITY;
@@ -237,10 +248,15 @@ export async function runStage2(row: Row, opts: { isTest?: boolean } = {}) {
   }
   const vars = buildVars(row);
   const text = render(row.courses.support_followup_stage2_bot_text, vars) || "[TEST] followup";
-  const res = await sendMessage(row.telegram_id, text, {
-    keyboard: [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]],
+  const kb = renderButtons(row.courses.support_followup_stage2_buttons, vars)
+    ?? [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]];
+  const res = await sendRichMessage(row.telegram_id, text, {
+    mediaUrl: row.courses.support_followup_stage2_media_url,
+    mediaType: row.courses.support_followup_stage2_media_type,
+    keyboard: kb as any,
     parse_mode: "HTML",
   });
+
   const ok = (res as any)?.ok !== false;
   await logSend(row, 2, "telegram_bot", ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { chat_id: row.telegram_id, text, response: res, is_test: !!opts.isTest });
   return [{ ok, chat_id: row.telegram_id, text, response: res }];
@@ -252,7 +268,7 @@ export async function runStage3(row: Row, opts: { isTest?: boolean } = {}) {
     return [{ ok: false, error: "no telegram_id" }];
   }
   const vars = buildVars(row);
-  const text = render(row.courses.support_followup_stage3_business_text, vars) || "[TEST] followup";
+  let text = render(row.courses.support_followup_stage3_business_text, vars) || "[TEST] followup";
   const { data: settings } = await supabase.from("admin_settings").select("telegram_business_connection_id" as any).eq("id", 1).maybeSingle();
   const bcid = (settings as any)?.telegram_business_connection_id;
   if (!bcid) {
@@ -260,7 +276,15 @@ export async function runStage3(row: Row, opts: { isTest?: boolean } = {}) {
     await logSend(row, 3, "telegram_business", "failed", error, { chat_id: row.telegram_id, text, business: false, is_test: !!opts.isTest });
     return [{ ok: false, chat_id: row.telegram_id, text, business: false, error }];
   }
-  const res = await tgCall("sendMessage", { chat_id: row.telegram_id, text, business_connection_id: bcid, parse_mode: "HTML" });
+  // Business messages can't carry inline keyboards — render buttons as links.
+  text = appendButtonsAsLinks(text, renderButtons(row.courses.support_followup_stage3_buttons, vars));
+  const res = await sendRichMessage(row.telegram_id, text, {
+    mediaUrl: row.courses.support_followup_stage3_media_url,
+    mediaType: row.courses.support_followup_stage3_media_type,
+    business_connection_id: bcid,
+    parse_mode: "HTML",
+  });
+
   const ok = (res as any)?.ok !== false;
   await logSend(row, 3, "telegram_business", ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { chat_id: row.telegram_id, text, business: true, business_connection_id: bcid, response: res, is_test: !!opts.isTest });
   return [{ ok, chat_id: row.telegram_id, text, business: true, business_connection_id: bcid, response: res }];
@@ -302,8 +326,15 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
       return results;
     }
     const text = render(cf.bot_text, vars) || "[TEST] followup";
-    const kb = vars.activation_link ? { keyboard: [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]] } : {};
-    const res = await sendMessage(row.telegram_id, text, { ...(kb as any), parse_mode: "HTML" });
+    const kb = renderButtons(cf.buttons, vars)
+      ?? (vars.activation_link ? [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]] : undefined);
+    const res = await sendRichMessage(row.telegram_id, text, {
+      mediaUrl: cf.media_url,
+      mediaType: cf.media_type,
+      keyboard: kb as any,
+      parse_mode: "HTML",
+    });
+
     const ok = (res as any)?.ok !== false;
     const errStr = ok ? "" : JSON.stringify(res);
     const permanent = !ok && /chat not found|bot was blocked|user is deactivated|PEER_ID_INVALID|Forbidden/i.test(errStr);
@@ -317,16 +348,25 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
       results.push({ channel: "business", ok: true, skipped: true, reason: "no telegram_id", unreachable: true });
       return results;
     }
-    const text = render(cf.bot_text, vars) || "[TEST] followup";
+    const text = appendButtonsAsLinks(
+      render(cf.bot_text, vars) || "[TEST] followup",
+      renderButtons(cf.buttons, vars),
+    );
     const { data: settings } = await supabase.from("admin_settings").select("telegram_business_connection_id" as any).eq("id", 1).maybeSingle();
     const bcid = (settings as any)?.telegram_business_connection_id;
 
     let businessOk = false;
     let businessRes: any = null;
     if (bcid) {
-      businessRes = await tgCall("sendMessage", { chat_id: row.telegram_id, text, business_connection_id: bcid, parse_mode: "HTML" });
+      businessRes = await sendRichMessage(row.telegram_id, text, {
+        mediaUrl: cf.media_url,
+        mediaType: cf.media_type,
+        business_connection_id: bcid,
+        parse_mode: "HTML",
+      });
       businessOk = (businessRes as any)?.ok === true;
     }
+
 
     if (businessOk) {
       await logSendCustom(row, cf, "telegram_business", "sent", undefined, { ...logExtra, chat_id: row.telegram_id, text, business: true, business_connection_id: bcid, response: businessRes });
@@ -413,7 +453,14 @@ export const SUPPORT_ACTIVATION_SELECT = `
     support_followup_stage1_sms_text,
     support_followup_stage1_sms_template_url,
     support_followup_stage2_bot_text,
-    support_followup_stage3_business_text
+    support_followup_stage2_media_url,
+    support_followup_stage2_media_type,
+    support_followup_stage2_buttons,
+    support_followup_stage3_business_text,
+    support_followup_stage3_media_url,
+    support_followup_stage3_media_type,
+    support_followup_stage3_buttons
+
   ),
   chat_users:user_id (id, name, first_name, last_name, full_name, email, phone)
 `;

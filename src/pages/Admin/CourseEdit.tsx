@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { TetherlandService } from '@/lib/tetherlandService';
 import MainLayout from '@/components/Layout/MainLayout';
 import TestStageButton from '@/components/Admin/TestStageButton';
+import MessageMediaButtonsEditor from '@/components/Admin/MessageMediaButtonsEditor';
 import CustomFollowupsEditor from '@/components/Admin/CustomFollowupsEditor';
 
 interface Course {
@@ -111,6 +112,8 @@ const CourseEdit: React.FC = () => {
     telegram_bot_welcome_message: 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال و دوره برات فعال بشه.',
     telegram_bot_activated_message: 'درود بر شما {{name}} 🌱\nپشتیبانی اختصاصی شما با موفقیت فعال شد ✅\n\nدسترسی به دوره «{{course_title}}» از دکمه‌های زیر برای شما فعال است.\n\nبا آرزوی موفقیت\nتیم پشتیبانی آکادمی رفیعی',
     telegram_bot_activation_buttons: [] as { text: string; url: string }[],
+    telegram_bot_activated_media_url: '',
+    telegram_bot_activated_media_type: '',
     telegram_activation_keyword: '',
     support_prefilled_message_template: '',
     support_followup_enabled: true,
@@ -129,7 +132,13 @@ const CourseEdit: React.FC = () => {
     support_followup_stage1_sms_text: '',
     support_followup_stage1_sms_template_url: 'https://api.kavenegar.com/v1/{api_key}/verify/lookup.json?receptor={user_phone_number}&token={user_name}&token10={course_title}&template=welcomefollowup',
     support_followup_stage2_bot_text: '',
+    support_followup_stage2_media_url: '',
+    support_followup_stage2_media_type: '',
+    support_followup_stage2_buttons: [] as any[],
     support_followup_stage3_business_text: '',
+    support_followup_stage3_media_url: '',
+    support_followup_stage3_media_type: '',
+    support_followup_stage3_buttons: [] as any[],
 
     use_enrollments_as_leads: false,
     lead_start_date: '',
@@ -215,6 +224,8 @@ const CourseEdit: React.FC = () => {
         telegram_bot_welcome_message: (data as any).telegram_bot_welcome_message || 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال و دوره برات فعال بشه.',
         telegram_bot_activated_message: (data as any).telegram_bot_activated_message || 'درود بر شما {{name}} 🌱\nپشتیبانی اختصاصی شما با موفقیت فعال شد ✅\n\nدسترسی به دوره «{{course_title}}» از دکمه‌های زیر برای شما فعال است.\n\nبا آرزوی موفقیت\nتیم پشتیبانی آکادمی رفیعی',
         telegram_bot_activation_buttons: Array.isArray((data as any).telegram_bot_activation_buttons) ? (data as any).telegram_bot_activation_buttons : [],
+        telegram_bot_activated_media_url: (data as any).telegram_bot_activated_media_url || '',
+        telegram_bot_activated_media_type: (data as any).telegram_bot_activated_media_type || '',
         telegram_activation_keyword: (data as any).telegram_activation_keyword || '',
         support_prefilled_message_template: (data as any).support_prefilled_message_template || '',
         support_followup_enabled: (data as any).support_followup_enabled ?? true,
@@ -233,7 +244,13 @@ const CourseEdit: React.FC = () => {
         support_followup_stage1_sms_text: (data as any).support_followup_stage1_sms_text || '',
         support_followup_stage1_sms_template_url: (data as any).support_followup_stage1_sms_template_url || 'https://api.kavenegar.com/v1/{api_key}/verify/lookup.json?receptor={user_phone_number}&token={user_name}&token10={course_title}&template=welcomefollowup',
         support_followup_stage2_bot_text: (data as any).support_followup_stage2_bot_text || '',
+        support_followup_stage2_media_url: (data as any).support_followup_stage2_media_url || '',
+        support_followup_stage2_media_type: (data as any).support_followup_stage2_media_type || '',
+        support_followup_stage2_buttons: Array.isArray((data as any).support_followup_stage2_buttons) ? (data as any).support_followup_stage2_buttons : [],
         support_followup_stage3_business_text: (data as any).support_followup_stage3_business_text || '',
+        support_followup_stage3_media_url: (data as any).support_followup_stage3_media_url || '',
+        support_followup_stage3_media_type: (data as any).support_followup_stage3_media_type || '',
+        support_followup_stage3_buttons: Array.isArray((data as any).support_followup_stage3_buttons) ? (data as any).support_followup_stage3_buttons : [],
       });
 
       // If editing a dollar-priced course, fetch the exchange rate
@@ -338,6 +355,8 @@ const CourseEdit: React.FC = () => {
         telegram_bot_welcome_message: formData.telegram_bot_welcome_message?.trim() || null,
         telegram_bot_activated_message: formData.telegram_bot_activated_message?.trim() || null,
         telegram_bot_activation_buttons: (formData.telegram_bot_activation_buttons || []).filter((b: any) => b?.text?.trim() && b?.url?.trim()),
+        telegram_bot_activated_media_url: formData.telegram_bot_activated_media_url?.trim() || null,
+        telegram_bot_activated_media_type: formData.telegram_bot_activated_media_type?.trim() || null,
         telegram_activation_keyword: formData.telegram_activation_keyword?.trim() || null,
         support_prefilled_message_template: formData.support_prefilled_message_template?.trim() || null,
         support_followup_enabled: formData.support_followup_enabled,
@@ -356,7 +375,13 @@ const CourseEdit: React.FC = () => {
         support_followup_stage1_sms_text: formData.support_followup_stage1_sms_text?.trim() || null,
         support_followup_stage1_sms_template_url: formData.support_followup_stage1_sms_template_url?.trim() || null,
         support_followup_stage2_bot_text: formData.support_followup_stage2_bot_text?.trim() || null,
+        support_followup_stage2_media_url: formData.support_followup_stage2_media_url?.trim() || null,
+        support_followup_stage2_media_type: formData.support_followup_stage2_media_type?.trim() || null,
+        support_followup_stage2_buttons: (formData.support_followup_stage2_buttons || []).filter((b: any) => b?.text?.trim() && b?.url?.trim()),
         support_followup_stage3_business_text: formData.support_followup_stage3_business_text?.trim() || null,
+        support_followup_stage3_media_url: formData.support_followup_stage3_media_url?.trim() || null,
+        support_followup_stage3_media_type: formData.support_followup_stage3_media_type?.trim() || null,
+        support_followup_stage3_buttons: (formData.support_followup_stage3_buttons || []).filter((b: any) => b?.text?.trim() && b?.url?.trim()),
 
       };
 
@@ -971,6 +996,19 @@ mba
                             rows={7}
                             className="mt-2"
                           />
+                          <div className="mt-3">
+                            <MessageMediaButtonsEditor
+                              hideButtons
+                              mediaUrl={formData.telegram_bot_activated_media_url}
+                              mediaType={formData.telegram_bot_activated_media_type}
+                              buttons={[]}
+                              onChange={(p) => setFormData(prev => ({
+                                ...prev,
+                                ...(p.media_url !== undefined ? { telegram_bot_activated_media_url: p.media_url || '' } : {}),
+                                ...(p.media_type !== undefined ? { telegram_bot_activated_media_type: p.media_type || '' } : {}),
+                              }))}
+                            />
+                          </div>
                           <p className="text-xs text-muted-foreground mt-2">
                             پس از فعال‌سازی پشتیبانی، این پیام همراه با دکمه‌های دسترسی دوره برای کاربر ارسال می‌شود. متغیرها: {"{{name}}"}, {"{{course_title}}"}
                           </p>
@@ -1143,6 +1181,18 @@ mba
                         <Textarea rows={4} value={formData.support_followup_stage2_bot_text}
                           onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage2_bot_text: e.target.value }))}
                           dir="rtl" />
+                        <MessageMediaButtonsEditor
+                          mediaUrl={formData.support_followup_stage2_media_url}
+                          mediaType={formData.support_followup_stage2_media_type}
+                          buttons={formData.support_followup_stage2_buttons as any}
+                          buttonsAsLinksHint={false}
+                          onChange={(p) => setFormData(prev => ({
+                            ...prev,
+                            ...(p.media_url !== undefined ? { support_followup_stage2_media_url: p.media_url || '' } : {}),
+                            ...(p.media_type !== undefined ? { support_followup_stage2_media_type: p.media_type || '' } : {}),
+                            ...(p.buttons !== undefined ? { support_followup_stage2_buttons: p.buttons as any } : {}),
+                          }))}
+                        />
                         <TestStageButton stage={2} courseId={courseId!} />
                       </div>
 
@@ -1175,6 +1225,18 @@ mba
                         <Textarea rows={4} value={formData.support_followup_stage3_business_text}
                           onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage3_business_text: e.target.value }))}
                           dir="rtl" />
+                        <MessageMediaButtonsEditor
+                          mediaUrl={formData.support_followup_stage3_media_url}
+                          mediaType={formData.support_followup_stage3_media_type}
+                          buttons={formData.support_followup_stage3_buttons as any}
+                          buttonsAsLinksHint={true}
+                          onChange={(p) => setFormData(prev => ({
+                            ...prev,
+                            ...(p.media_url !== undefined ? { support_followup_stage3_media_url: p.media_url || '' } : {}),
+                            ...(p.media_type !== undefined ? { support_followup_stage3_media_type: p.media_type || '' } : {}),
+                            ...(p.buttons !== undefined ? { support_followup_stage3_buttons: p.buttons as any } : {}),
+                          }))}
+                        />
                         <p className="text-xs text-muted-foreground">
                           در صورت تنظیم <code>telegram_business_connection_id</code> در تنظیمات ادمین، پیام به صورت چت بیزینسی از حساب @rafieiacademy ارسال می‌شود؛ در غیر این صورت از طریق ربات به کاربر ارسال می‌گردد.
                         </p>

@@ -9,7 +9,11 @@ import {
   downloadFile,
   mdToTelegramHtml,
   tgCall,
+  sendRichMessage,
+  appendButtonsAsLinks,
   type InlineKeyboard,
+
+
 } from '../_shared/telegram.ts';
 import {
   getFields as getReportFields,
@@ -3184,7 +3188,7 @@ async function handleUpdate(update: any) {
 
         // Load course + user, build welcome + buttons
         const [{ data: course }, { data: cu }] = await Promise.all([
-          supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', cur.course_id).maybeSingle(),
+          supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activated_media_url, telegram_bot_activated_media_type, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', cur.course_id).maybeSingle(),
           supabase.from('chat_users').select('name, first_name, email').eq('id', cur.user_id).maybeSingle(),
         ]);
         const displayName = (cu as any)?.first_name || (cu as any)?.name || 'دوست عزیز';
@@ -3223,11 +3227,10 @@ async function handleUpdate(update: any) {
         try {
           await editMessage(chat_id, message_id, '✅ پشتیبانی شما فعال شد.', []);
         } catch {}
-        await tgCall('sendMessage', {
-          chat_id,
-          text: welcome,
-          parse_mode: 'HTML',
-          reply_markup: buttons.length ? { inline_keyboard: buttons } : undefined,
+        await sendRichMessage(chat_id, welcome, {
+          mediaUrl: (course as any)?.telegram_bot_activated_media_url,
+          mediaType: (course as any)?.telegram_bot_activated_media_type,
+          keyboard: buttons.length ? (buttons as any) : undefined,
         });
       } else {
         await editMessage(chat_id, message_id, '❌ فعال‌سازی یافت نشد.', []);
@@ -3828,39 +3831,44 @@ async function handleUpdate(update: any) {
 
 
       // Reply in the chat the message came from (business chat / support group)
+      const wMediaUrl = ((w as any)?.telegram_support_activated_media_url as string | null) || '';
+      const wMediaType = ((w as any)?.telegram_support_activated_media_type as string | null) || null;
+      // Business chats reject inline keyboards — render buttons as links there.
+      const confirmForChat = business_connection_id ? appendButtonsAsLinks(confirm, wButtons) : confirm;
+
+      // Reply in the chat the message came from (business chat / support group)
       try {
-        const res = await tgCall('sendMessage', {
-          chat_id,
-          text: confirm,
-          parse_mode: 'HTML',
+        const res = await sendRichMessage(chat_id, confirmForChat, {
+          mediaUrl: wMediaUrl,
+          mediaType: wMediaType,
+          keyboard: business_connection_id ? undefined : (wButtons as any),
           reply_to_message_id: msg.message_id,
-          reply_markup: wButtons.length ? { inline_keyboard: wButtons } : undefined,
-          ...(business_connection_id ? { business_connection_id } : {}),
+          business_connection_id,
         });
         if (!res?.ok) {
           // Retry without reply/buttons (business chats reject some markups)
-          await tgCall('sendMessage', {
-            chat_id,
-            text: confirm,
-            parse_mode: 'HTML',
-            ...(business_connection_id ? { business_connection_id } : {}),
+          await sendRichMessage(chat_id, confirmForChat, {
+            mediaUrl: wMediaUrl,
+            mediaType: wMediaType,
+            business_connection_id,
           });
         }
       } catch (e) { console.warn('webinar support confirm reply failed', e); }
 
+
       // Also confirm in the user's private chat with the bot
       if (targetChat && targetChat !== chat_id) {
         try {
-          await tgCall('sendMessage', {
-            chat_id: targetChat,
-            text: confirm,
-            parse_mode: 'HTML',
-            reply_markup: wButtons.length ? { inline_keyboard: wButtons } : undefined,
+          await sendRichMessage(targetChat, confirm, {
+            mediaUrl: wMediaUrl,
+            mediaType: wMediaType,
+            keyboard: wButtons.length ? (wButtons as any) : undefined,
           });
         } catch (e) { console.warn('webinar support confirm DM failed', e); }
       }
       return;
       }
+
 
     }
   }
@@ -3904,7 +3912,7 @@ async function handleUpdate(update: any) {
         const targetChat = (act as any).telegram_id;
         if (targetChat) {
           const [{ data: course }, { data: cu }] = await Promise.all([
-            supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', act.course_id).maybeSingle(),
+            supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activated_media_url, telegram_bot_activated_media_type, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', act.course_id).maybeSingle(),
             supabase.from('chat_users').select('name, first_name, email').eq('id', act.user_id).maybeSingle(),
           ]);
           const displayName = (cu as any)?.first_name || (cu as any)?.name || 'دوست عزیز';
@@ -3943,11 +3951,10 @@ async function handleUpdate(update: any) {
           // Send welcome DM to the user's private chat with bot (if known)
           if (targetChat) {
             try {
-              await tgCall('sendMessage', {
-                chat_id: targetChat,
-                text: welcome,
-                parse_mode: 'HTML',
-                reply_markup: buttons.length ? { inline_keyboard: buttons } : undefined,
+              await sendRichMessage(targetChat, welcome, {
+                mediaUrl: (course as any)?.telegram_bot_activated_media_url,
+                mediaType: (course as any)?.telegram_bot_activated_media_type,
+                keyboard: buttons.length ? (buttons as any) : undefined,
               });
             } catch (e) { console.warn('activated welcome DM failed', e); }
 
@@ -3961,14 +3968,17 @@ async function handleUpdate(update: any) {
           // Reply in the chat where the activation message was sent (business/support group)
           if (business_connection_id || (msg?.chat?.type && msg.chat.type !== 'private')) {
             try {
-              await tgCall('sendMessage', {
+              await sendRichMessage(
                 chat_id,
-                text: welcome,
-                parse_mode: 'HTML',
-                reply_to_message_id: msg.message_id,
-                reply_markup: buttons.length ? { inline_keyboard: buttons } : undefined,
-                ...(business_connection_id ? { business_connection_id } : {}),
-              });
+                business_connection_id ? appendButtonsAsLinks(welcome, buttons) : welcome,
+                {
+                  mediaUrl: (course as any)?.telegram_bot_activated_media_url,
+                  mediaType: (course as any)?.telegram_bot_activated_media_type,
+                  reply_to_message_id: msg.message_id,
+                  keyboard: business_connection_id || !buttons.length ? undefined : (buttons as any),
+                  business_connection_id,
+                },
+              );
             } catch (e) { console.warn('activated welcome reply failed', e); }
           }
         }

@@ -230,3 +230,137 @@ export function formatTehran(d: Date | string | null): string {
     timeStyle: 'short',
   }).format(date);
 }
+
+// ---------------- Rich messages (media + buttons) ----------------
+
+export type MediaType = 'photo' | 'video' | 'document' | 'audio' | 'voice' | 'animation' | '';
+
+export interface MessageButton {
+  text: string;
+  url?: string;
+  type?: string;
+}
+
+// Build an inline keyboard (one button per row) from a stored buttons array.
+export function buildButtonsKeyboard(
+  buttons: unknown,
+  resolve?: (b: MessageButton) => string | null,
+): InlineKeyboard | undefined {
+  if (!Array.isArray(buttons)) return undefined;
+  const rows: InlineKeyboard = [];
+  for (const raw of buttons as MessageButton[]) {
+    if (!raw?.text) continue;
+    const url = resolve ? resolve(raw) : (raw.url ?? null);
+    if (!url) continue;
+    rows.push([{ text: String(raw.text), url: String(url) }]);
+  }
+  return rows.length ? rows : undefined;
+}
+
+// Guess a Telegram media method from a media type or file URL.
+export function resolveMediaType(mediaType: string | null | undefined, url: string | null | undefined): MediaType {
+  const t = (mediaType ?? '').toLowerCase();
+  if (t.startsWith('photo') || t.startsWith('image')) return 'photo';
+  if (t.startsWith('video')) return 'video';
+  if (t.startsWith('voice')) return 'voice';
+  if (t.startsWith('audio') || t.startsWith('music')) return 'audio';
+  if (t.startsWith('animation') || t === 'gif') return 'animation';
+  if (t.startsWith('document') || t.startsWith('file') || t.startsWith('application')) return 'document';
+  const ext = (url ?? '').split('?')[0].split('.').pop()?.toLowerCase() ?? '';
+  if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) return 'photo';
+  if (ext === 'gif') return 'animation';
+  if (['mp4', 'mov', 'm4v', 'webm'].includes(ext)) return 'video';
+  if (['ogg', 'oga'].includes(ext)) return 'voice';
+  if (['mp3', 'm4a', 'wav', 'flac', 'aac'].includes(ext)) return 'audio';
+  return url ? 'document' : '';
+}
+
+const MEDIA_METHOD: Record<string, { method: string; field: string }> = {
+  photo: { method: 'sendPhoto', field: 'photo' },
+  video: { method: 'sendVideo', field: 'video' },
+  audio: { method: 'sendAudio', field: 'audio' },
+  voice: { method: 'sendVoice', field: 'voice' },
+  animation: { method: 'sendAnimation', field: 'animation' },
+  document: { method: 'sendDocument', field: 'document' },
+};
+
+const CAPTION_LIMIT = 1024;
+
+/**
+ * Send a message that may carry a media attachment and inline buttons.
+ * Works for both the bot and Telegram Business (pass business_connection_id).
+ * When the text is longer than Telegram's caption limit, the media is sent first
+ * (without caption) and the text follows as a normal message carrying the buttons.
+ */
+export async function sendRichMessage(
+  chat_id: number | string,
+  text: string,
+  opts: {
+    mediaUrl?: string | null;
+    mediaType?: string | null;
+    keyboard?: InlineKeyboard;
+    business_connection_id?: string | null;
+    parse_mode?: 'HTML' | 'MarkdownV2';
+    reply_to_message_id?: number;
+  } = {},
+): Promise<any> {
+  const parse_mode = opts.parse_mode ?? 'HTML';
+  const base: Record<string, unknown> = { chat_id, parse_mode };
+  if (opts.business_connection_id) base.business_connection_id = opts.business_connection_id;
+  if (opts.reply_to_message_id) base.reply_to_message_id = opts.reply_to_message_id;
+  const reply_markup = opts.keyboard?.length ? { inline_keyboard: opts.keyboard } : undefined;
+
+  const mediaUrl = (opts.mediaUrl ?? '').trim();
+  if (!mediaUrl) {
+    return tgCall('sendMessage', {
+      ...base,
+      text,
+      disable_web_page_preview: true,
+      ...(reply_markup ? { reply_markup } : {}),
+    });
+  }
+
+  const kind = resolveMediaType(opts.mediaType, mediaUrl);
+  const spec = MEDIA_METHOD[kind] ?? MEDIA_METHOD.document;
+  const short = (text ?? '').length <= CAPTION_LIMIT;
+
+  const mediaRes = await tgCall(spec.method, {
+    ...base,
+    [spec.field]: mediaUrl,
+    ...(short && text ? { caption: text } : {}),
+    ...(short && reply_markup ? { reply_markup } : {}),
+  });
+
+  if (short) {
+    // If Telegram rejected the media (bad url / unsupported), fall back to a plain message.
+    if (mediaRes?.ok === false) {
+      return tgCall('sendMessage', {
+        ...base,
+        text,
+        disable_web_page_preview: true,
+        ...(reply_markup ? { reply_markup } : {}),
+      });
+    }
+    return mediaRes;
+  }
+
+  // Long text: send it as a separate message right after the media.
+  return tgCall('sendMessage', {
+    ...base,
+    text,
+    disable_web_page_preview: true,
+    ...(reply_markup ? { reply_markup } : {}),
+  });
+}
+
+// Telegram Business messages cannot carry inline keyboards, so buttons are
+// appended to the message body as clickable links instead.
+export function appendButtonsAsLinks(text: string, keyboard?: InlineKeyboard): string {
+  if (!keyboard?.length) return text;
+  const links = keyboard
+    .flat()
+    .filter(b => b?.url && b?.text)
+    .map(b => `👉 <a href="${b.url}">${escapeHtml(b.text)}</a>`);
+  if (!links.length) return text;
+  return `${text}\n\n${links.join('\n')}`;
+}

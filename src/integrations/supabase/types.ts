@@ -8793,6 +8793,70 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      update_webinar_followup_v3: {
+        Args: {
+          p_anchor: string
+          p_audience: string
+          p_bot_text: string
+          p_buttons: Json
+          p_channel: string
+          p_delay_minutes: number
+          p_do_not_send_after_webinar_start: boolean
+          p_email_body: string
+          p_email_subject: string
+          p_enabled: boolean
+          p_final_lead_minutes: number
+          p_id: string
+          p_max_repeats: number
+          p_media_type: string
+          p_media_url: string
+          p_min_interval_minutes: number
+          p_name: string
+          p_priority: number
+          p_quiet_hours_end: number
+          p_quiet_hours_start: number
+          p_repeat_delay_minutes: number
+          p_schedule_mode: string
+          p_session_token: string
+          p_sms_template_url: string
+          p_sms_text: string
+        }
+        Returns: {
+          anchor: string
+          audience: string
+          bot_text: string | null
+          buttons: Json
+          channel: string
+          created_at: string
+          delay_minutes: number
+          do_not_send_after_webinar_start: boolean
+          email_body: string | null
+          email_subject: string | null
+          enabled: boolean
+          final_lead_minutes: number
+          id: string
+          max_repeats: number
+          media_type: string | null
+          media_url: string | null
+          min_interval_minutes: number
+          name: string
+          priority: number
+          quiet_hours_end: number | null
+          quiet_hours_start: number | null
+          repeat_delay_minutes: number
+          schedule_mode: string
+          sms_template_url: string | null
+          sms_text: string | null
+          updated_at: string
+          webinar_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "webinar_followups"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       url_encode: { Args: { input: string }; Returns: string }
       urlencode:
         | { Args: { data: Json }; Returns: string }
