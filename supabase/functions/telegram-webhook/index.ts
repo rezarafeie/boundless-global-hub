@@ -3951,11 +3951,10 @@ async function handleUpdate(update: any) {
           // Send welcome DM to the user's private chat with bot (if known)
           if (targetChat) {
             try {
-              await tgCall('sendMessage', {
-                chat_id: targetChat,
-                text: welcome,
-                parse_mode: 'HTML',
-                reply_markup: buttons.length ? { inline_keyboard: buttons } : undefined,
+              await sendRichMessage(targetChat, welcome, {
+                mediaUrl: (course as any)?.telegram_bot_activated_media_url,
+                mediaType: (course as any)?.telegram_bot_activated_media_type,
+                keyboard: buttons.length ? (buttons as any) : undefined,
               });
             } catch (e) { console.warn('activated welcome DM failed', e); }
 
@@ -3969,14 +3968,17 @@ async function handleUpdate(update: any) {
           // Reply in the chat where the activation message was sent (business/support group)
           if (business_connection_id || (msg?.chat?.type && msg.chat.type !== 'private')) {
             try {
-              await tgCall('sendMessage', {
+              await sendRichMessage(
                 chat_id,
-                text: welcome,
-                parse_mode: 'HTML',
-                reply_to_message_id: msg.message_id,
-                reply_markup: buttons.length ? { inline_keyboard: buttons } : undefined,
-                ...(business_connection_id ? { business_connection_id } : {}),
-              });
+                business_connection_id ? appendButtonsAsLinks(welcome, buttons) : welcome,
+                {
+                  mediaUrl: (course as any)?.telegram_bot_activated_media_url,
+                  mediaType: (course as any)?.telegram_bot_activated_media_type,
+                  reply_to_message_id: msg.message_id,
+                  keyboard: business_connection_id || !buttons.length ? undefined : (buttons as any),
+                  business_connection_id,
+                },
+              );
             } catch (e) { console.warn('activated welcome reply failed', e); }
           }
         }
