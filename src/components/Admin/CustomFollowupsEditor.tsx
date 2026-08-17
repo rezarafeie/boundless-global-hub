@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Save, Loader2 } from 'lucide-react';
 import TestStageButton from './TestStageButton';
-import MessageMediaButtonsEditor, { MessageButton } from './MessageMediaButtonsEditor';
+import MessageMediaButtonsEditor, { MessageButton, MessageMediaItem } from './MessageMediaButtonsEditor';
 
 interface CustomFollowup {
   id: string;
@@ -28,6 +28,7 @@ interface CustomFollowup {
   media_url: string | null;
   media_type: string | null;
   buttons: MessageButton[] | null;
+  media_items: MessageMediaItem[] | null;
   skip_if_activated: boolean;
   only_if_activated: boolean;
 }
@@ -86,6 +87,7 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
       media_url: r.media_url,
       media_type: r.media_type,
       buttons: r.buttons ?? [],
+      media_items: r.media_items ?? [],
       skip_if_activated: r.skip_if_activated,
       only_if_activated: r.only_if_activated,
     }).eq('id', r.id);
@@ -176,7 +178,7 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
                 mediaUrl={r.media_url}
                 mediaType={r.media_type}
                 buttons={r.buttons}
-                buttonsAsLinksHint={r.channel === 'business'}
+                mediaItems={r.media_items ?? []}
                 onChange={(p) => patch(r.id, p as any)}
               />
             </div>
