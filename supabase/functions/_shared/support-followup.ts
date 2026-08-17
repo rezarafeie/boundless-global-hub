@@ -1,6 +1,6 @@
 // Shared helpers for support-activation followups (used by cron + test function).
 import { supabase } from "./supabase.ts";
-import { sendMessage, tgCall } from "./telegram.ts";
+import { sendMessage, tgCall, sendRichMessage, buildButtonsKeyboard, appendButtonsAsLinks } from "./telegram.ts";
 
 export type Row = any;
 
