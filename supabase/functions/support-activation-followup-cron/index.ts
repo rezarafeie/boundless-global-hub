@@ -63,9 +63,9 @@ serve(async (req) => {
       if (from >= 20000) break; // hard safety cap
     }
 
-    // Already-delivered custom followups (per followup + user) so duplicate
-    // support_activation rows for the same person never send twice.
-    const deliveredCustom = new Set<string>();
+    // Already-delivered custom followups counted per (followup, user) so duplicate
+    // support_activation rows for the same person never send the same message twice.
+    const deliveredCustom = new Map<string, number>();
     if (customCourseIds.length) {
       let logFrom = 0;
       while (true) {
@@ -77,12 +77,16 @@ serve(async (req) => {
           .range(logFrom, logFrom + PAGE - 1);
         if (logErr) break;
         const batch = (logs as any[]) ?? [];
-        for (const l of batch) deliveredCustom.add(`${l.custom_followup_id}:${l.user_id}`);
+        for (const l of batch) {
+          const k = `${l.custom_followup_id}:${l.user_id}`;
+          deliveredCustom.set(k, (deliveredCustom.get(k) ?? 0) + 1);
+        }
         if (batch.length < PAGE) break;
         logFrom += PAGE;
         if (logFrom >= 100000) break;
       }
     }
+
 
 
 
