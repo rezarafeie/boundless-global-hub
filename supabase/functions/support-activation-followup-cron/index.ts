@@ -161,17 +161,51 @@ serve(async (req) => {
         if (sent >= (cf.max_repeats ?? 1)) continue;
         const required = (cf.delay_minutes ?? 0) + sent * (cf.repeat_delay_minutes ?? cf.delay_minutes ?? 0);
         if (purchaseElapsed < required) continue;
-        // Reserve the slot before sending so a slow send can't be re-attempted
-        // by an overlapping cron run or a duplicate activation row.
+        // Atomically reserve this user/followup/repeat slot in Postgres. Multiple
+        // pg_cron HTTP requests can overlap, so an in-memory reservation is not enough.
+        const deliveryNumber = sent + 1;
+        const { data: claimed, error: claimError } = await supabase.rpc("claim_support_custom_followup", {
+          _custom_followup_id: cf.id,
+          _user_id: row.user_id,
+          _delivery_number: deliveryNumber,
+          _support_activation_id: row.id,
+        });
+        if (claimError) {
+          console.error("custom followup claim failed", row.id, cf.id, claimError);
+          continue;
+        }
+        if (!claimed) continue;
+
         deliveredCustom.set(dedupeKey, sent + 1);
         try {
           const result = await runCustom(row, cf);
           const delivered = result.some((item: any) => item?.ok === true);
-          if (delivered) await bumpCustomCounter(row, cf);
-          else deliveredCustom.set(dedupeKey, sent);
+          if (delivered) {
+            await bumpCustomCounter(row, cf);
+            await supabase.rpc("complete_support_custom_followup", {
+              _custom_followup_id: cf.id,
+              _user_id: row.user_id,
+              _delivery_number: deliveryNumber,
+              _status: "delivered",
+            });
+          } else {
+            deliveredCustom.set(dedupeKey, sent);
+            await supabase
+              .from("support_activation_followup_claims")
+              .delete()
+              .eq("custom_followup_id", cf.id)
+              .eq("user_id", row.user_id)
+              .eq("delivery_number", deliveryNumber);
+          }
           summary.push({ id: row.id, custom_followup_id: cf.id, channel: cf.channel, result });
         } catch (e) {
           deliveredCustom.set(dedupeKey, sent);
+          await supabase
+            .from("support_activation_followup_claims")
+            .delete()
+            .eq("custom_followup_id", cf.id)
+            .eq("user_id", row.user_id)
+            .eq("delivery_number", deliveryNumber);
           console.error("custom followup failed", row.id, cf.id, e);
 
           summary.push({ id: row.id, custom_followup_id: cf.id, error: String(e) });
