@@ -6015,6 +6015,51 @@ export type Database = {
           },
         ]
       }
+      support_activation_followup_claims: {
+        Row: {
+          claimed_at: string
+          completed_at: string | null
+          custom_followup_id: string
+          delivery_number: number
+          status: string
+          support_activation_id: string | null
+          user_id: number
+        }
+        Insert: {
+          claimed_at?: string
+          completed_at?: string | null
+          custom_followup_id: string
+          delivery_number: number
+          status?: string
+          support_activation_id?: string | null
+          user_id: number
+        }
+        Update: {
+          claimed_at?: string
+          completed_at?: string | null
+          custom_followup_id?: string
+          delivery_number?: number
+          status?: string
+          support_activation_id?: string | null
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_activation_followup_claims_custom_followup_id_fkey"
+            columns: ["custom_followup_id"]
+            isOneToOne: false
+            referencedRelation: "support_activation_custom_followups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_activation_followup_claims_support_activation_id_fkey"
+            columns: ["support_activation_id"]
+            isOneToOne: false
+            referencedRelation: "support_activations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_activation_followup_log: {
         Row: {
           channel: string
@@ -8167,6 +8212,15 @@ export type Database = {
         Args: { p_agent_user_id: number; p_enrollment_id: string }
         Returns: boolean
       }
+      claim_support_custom_followup: {
+        Args: {
+          _custom_followup_id: string
+          _delivery_number: number
+          _support_activation_id: string
+          _user_id: number
+        }
+        Returns: boolean
+      }
       claim_webinar_followup_delivery: {
         Args: {
           p_followup_id: string
@@ -8179,6 +8233,15 @@ export type Database = {
       }
       cleanup_expired_sso_tokens: { Args: never; Returns: undefined }
       cleanup_inactive_sessions: { Args: never; Returns: undefined }
+      complete_support_custom_followup: {
+        Args: {
+          _custom_followup_id: string
+          _delivery_number: number
+          _status: string
+          _user_id: number
+        }
+        Returns: undefined
+      }
       create_webinar_followup: {
         Args: { p_session_token: string; p_webinar_id: string }
         Returns: {
