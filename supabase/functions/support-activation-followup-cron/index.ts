@@ -37,6 +37,7 @@ serve(async (req) => {
     const PAGE = 1000;
     let from = 0;
     let rows: any[] = [];
+    const seenRowIds = new Set<string>();
     while (true) {
       const { data: page, error } = await supabase
         .from("support_activations")
@@ -46,15 +47,48 @@ serve(async (req) => {
             ? `status.neq.activated,course_id.in.(${customCourseIds.join(",")})`
             : "status.neq.activated",
         )
-        .order("created_at", { ascending: false })
+        // Stable, unique ordering — ordering by created_at alone lets Postgres
+        // return the same row on two different pages (that duplicated sends).
+        .order("id", { ascending: true })
         .range(from, from + PAGE - 1);
       if (error) throw error;
       const batch = (page as any[]) ?? [];
-      rows = rows.concat(batch);
+      for (const r of batch) {
+        if (seenRowIds.has(r.id)) continue;
+        seenRowIds.add(r.id);
+        rows.push(r);
+      }
       if (batch.length < PAGE) break;
       from += PAGE;
       if (from >= 20000) break; // hard safety cap
     }
+
+    // Already-delivered custom followups counted per (followup, user) so duplicate
+    // support_activation rows for the same person never send the same message twice.
+    const deliveredCustom = new Map<string, number>();
+    if (customCourseIds.length) {
+      let logFrom = 0;
+      while (true) {
+        const { data: logs, error: logErr } = await supabase
+          .from("support_activation_followup_log")
+          .select("custom_followup_id,user_id")
+          .not("custom_followup_id", "is", null)
+          .in("status", ["sent", "unreachable"])
+          .range(logFrom, logFrom + PAGE - 1);
+        if (logErr) break;
+        const batch = (logs as any[]) ?? [];
+        for (const l of batch) {
+          const k = `${l.custom_followup_id}:${l.user_id}`;
+          deliveredCustom.set(k, (deliveredCustom.get(k) ?? 0) + 1);
+        }
+        if (batch.length < PAGE) break;
+        logFrom += PAGE;
+        if (logFrom >= 100000) break;
+      }
+    }
+
+
+
 
 
 
@@ -122,17 +156,24 @@ serve(async (req) => {
       for (const cf of customs) {
         if (cf.only_if_activated && row.status !== "activated") continue;
         if (!cf.only_if_activated && cf.skip_if_activated && row.status === "activated") continue;
-        const sent = counts[cf.id] ?? 0;
+        const dedupeKey = `${cf.id}:${row.user_id}`;
+        const sent = Math.max(counts[cf.id] ?? 0, deliveredCustom.get(dedupeKey) ?? 0);
         if (sent >= (cf.max_repeats ?? 1)) continue;
         const required = (cf.delay_minutes ?? 0) + sent * (cf.repeat_delay_minutes ?? cf.delay_minutes ?? 0);
         if (purchaseElapsed < required) continue;
+        // Reserve the slot before sending so a slow send can't be re-attempted
+        // by an overlapping cron run or a duplicate activation row.
+        deliveredCustom.set(dedupeKey, sent + 1);
         try {
           const result = await runCustom(row, cf);
           const delivered = result.some((item: any) => item?.ok === true);
           if (delivered) await bumpCustomCounter(row, cf);
+          else deliveredCustom.set(dedupeKey, sent);
           summary.push({ id: row.id, custom_followup_id: cf.id, channel: cf.channel, result });
         } catch (e) {
+          deliveredCustom.set(dedupeKey, sent);
           console.error("custom followup failed", row.id, cf.id, e);
+
           summary.push({ id: row.id, custom_followup_id: cf.id, error: String(e) });
         }
       }
