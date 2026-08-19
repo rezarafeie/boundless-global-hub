@@ -156,17 +156,24 @@ serve(async (req) => {
       for (const cf of customs) {
         if (cf.only_if_activated && row.status !== "activated") continue;
         if (!cf.only_if_activated && cf.skip_if_activated && row.status === "activated") continue;
-        const sent = counts[cf.id] ?? 0;
+        const dedupeKey = `${cf.id}:${row.user_id}`;
+        const sent = Math.max(counts[cf.id] ?? 0, deliveredCustom.get(dedupeKey) ?? 0);
         if (sent >= (cf.max_repeats ?? 1)) continue;
         const required = (cf.delay_minutes ?? 0) + sent * (cf.repeat_delay_minutes ?? cf.delay_minutes ?? 0);
         if (purchaseElapsed < required) continue;
+        // Reserve the slot before sending so a slow send can't be re-attempted
+        // by an overlapping cron run or a duplicate activation row.
+        deliveredCustom.set(dedupeKey, sent + 1);
         try {
           const result = await runCustom(row, cf);
           const delivered = result.some((item: any) => item?.ok === true);
           if (delivered) await bumpCustomCounter(row, cf);
+          else deliveredCustom.set(dedupeKey, sent);
           summary.push({ id: row.id, custom_followup_id: cf.id, channel: cf.channel, result });
         } catch (e) {
+          deliveredCustom.set(dedupeKey, sent);
           console.error("custom followup failed", row.id, cf.id, e);
+
           summary.push({ id: row.id, custom_followup_id: cf.id, error: String(e) });
         }
       }
