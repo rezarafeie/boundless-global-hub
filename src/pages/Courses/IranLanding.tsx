@@ -346,8 +346,6 @@ const IranLanding = () => {
               style={{ borderColor: `hsl(${IRAN_GREEN} / 0.3)` }}>
               <div className="h-1" style={{ background: `linear-gradient(90deg, hsl(${IRAN_GREEN}), hsl(${IRAN_RED}))` }} />
               <CardContent className="p-6 text-center space-y-3">
-                <p className="text-sm text-muted-foreground">ارزش کل پکیج</p>
-                <p className="text-2xl font-bold line-through text-muted-foreground">{formatPrice(totalValue)} تومان</p>
                 <div className="flex items-center justify-center gap-2 text-sm" style={{ color: `hsl(${IRAN_RED})` }}>
                   <TrendingUp size={16} />
                   <span>قیمت ویژه شما:</span>
