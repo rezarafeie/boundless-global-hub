@@ -25,6 +25,15 @@ import {
   getAdminChatIds,
   type ReportRole,
 } from '../_shared/daily-report.ts';
+import {
+  parseBroadcastButtons,
+  buttonsToKeyboard,
+  renderBroadcastText,
+  fetchBroadcastTargets,
+  runBroadcastQueue,
+  type BroadcastButton,
+} from './broadcast.ts';
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -173,6 +182,51 @@ async function saveFilters(chat_id: number, user_id: number, filters: Filters) {
 async function clearSession(chat_id: number) {
   await supabase.from('telegram_bot_sessions').delete().eq('chat_id', chat_id);
 }
+
+// ============ Broadcast (اطلاعیه همگانی) ============
+async function showBroadcastPreview(chat_id: number, user: BotUser, text: string, buttons: BroadcastButton[]) {
+  const targets = await fetchBroadcastTargets(supabase);
+  const eta = Math.ceil(targets.length / 22);
+  await sendMessage(chat_id, `👁 <b>پیش‌نمایش اطلاعیه</b>\n<i>پیام زیر دقیقاً به همین شکل ارسال می‌شود:</i>`);
+  await sendMessage(chat_id, renderBroadcastText(text), { keyboard: buttonsToKeyboard(buttons) });
+  const info = [
+    `📋 <b>وضعیت صف ارسال</b>`,
+    ``,
+    `👥 تعداد مخاطبان: <b>${targets.length}</b>`,
+    `🔘 دکمه‌ها: <b>${buttons.length ? buttons.map(b => b.text).join(' | ') : 'ندارد'}</b>`,
+    `⚡️ سرعت ارسال: <b>22 پیام در ثانیه</b> (جلوگیری از خطای 429)`,
+    `🕐 زمان تخمینی: ~<b>${eta}</b> ثانیه`,
+    ``,
+    `➕ برای افزودن دکمه، هر دکمه را در یک خط بفرستید:`,
+    `<code>عنوان دکمه | https://example.com</code>`,
+  ].join('\n');
+  await sendMessage(chat_id, info, {
+    keyboard: [
+      [{ text: '✅ تایید و شروع ارسال', callback_data: 'admin:bc_send' }],
+      ...(buttons.length ? [[{ text: '🗑 حذف دکمه‌ها', callback_data: 'admin:bc_clear' }]] : []),
+      [{ text: '❌ انصراف', callback_data: 'admin:menu' }],
+    ],
+  });
+}
+
+async function startBroadcast(chat_id: number, user: BotUser, text: string, buttons: BroadcastButton[]) {
+  const targets = await fetchBroadcastTargets(supabase);
+  await clearSession(chat_id);
+  if (!targets.length) {
+    await sendMessage(chat_id, '❌ هیچ کاربر لینک‌شده‌ای برای ارسال یافت نشد.', { keyboard: await mainMenu(user) });
+    return;
+  }
+  const progress: any = await sendMessage(chat_id, `📤 صف ارسال ساخته شد — <b>${targets.length}</b> پیام…`);
+  const progressMessageId = progress?.result?.message_id;
+  if (!progressMessageId) return;
+  const job = runBroadcastQueue({ adminChatId: chat_id, progressMessageId, text, buttons, targets })
+    .catch((e) => console.error('broadcast queue error:', e));
+  // deno-lint-ignore no-explicit-any
+  const rt = (globalThis as any).EdgeRuntime;
+  if (rt?.waitUntil) rt.waitUntil(job); else await job;
+}
+
+
 
 // ============ Menus ============
 function twoColumnKeyboard(rows: InlineKeyboard): InlineKeyboard {
@@ -3497,6 +3551,22 @@ async function handleUpdate(update: any) {
             [[{ text: '⬅️ انصراف', callback_data: 'admin:menu' }]]);
           return;
         }
+        if (sub === 'bc_clear') {
+          const s = await getSession(chat_id);
+          const bText = s?.context?.broadcast_text ?? '';
+          if (!bText) { await sendMessage(chat_id, '⛔️ پیامی در صف نیست.'); return; }
+          await setSession(chat_id, user.id, 'broadcast_confirm', { ...(s?.context ?? {}), broadcast_buttons: [] });
+          await showBroadcastPreview(chat_id, user, bText, []);
+          return;
+        }
+        if (sub === 'bc_send') {
+          const s = await getSession(chat_id);
+          const bText = s?.context?.broadcast_text ?? '';
+          if (!bText) { await sendMessage(chat_id, '⛔️ پیامی در صف نیست.'); return; }
+          await startBroadcast(chat_id, user, bText, (s?.context?.broadcast_buttons ?? []) as BroadcastButton[]);
+          return;
+        }
+
       }
 
       if (action === 'student') {
@@ -4154,20 +4224,23 @@ async function handleUpdate(update: any) {
   }
 
   if (session?.state === 'awaiting_broadcast' && text && user.role === 'admin') {
-    const { data: targets } = await supabase.from('chat_users')
-      .select('telegram_chat_id').not('telegram_chat_id', 'is', null).limit(2000);
-    let ok = 0, fail = 0;
-    for (const t of (targets ?? [])) {
-      try {
-        const r = await sendMessage(t.telegram_chat_id as number, `📢 <b>اطلاعیه:</b>\n\n${escapeHtml(text)}`);
-        if ((r as any)?.ok) ok++; else fail++;
-      } catch { fail++; }
-    }
-    await clearSession(chat_id);
-    await sendMessage(chat_id, `✅ ارسال شد. موفق: <b>${ok}</b> — ناموفق: <b>${fail}</b>`,
-      { keyboard: await mainMenu(user) });
+    await setSession(chat_id, user.id, 'broadcast_confirm', { ...(session.context ?? {}), broadcast_text: text, broadcast_buttons: [] });
+    await showBroadcastPreview(chat_id, user, text, []);
     return;
   }
+
+  if (session?.state === 'broadcast_confirm' && text && user.role === 'admin') {
+    const bText = session.context?.broadcast_text ?? '';
+    const parsed = parseBroadcastButtons(text);
+    if (!parsed.length) {
+      await sendMessage(chat_id, '❌ فرمت دکمه نامعتبر است.\nهر خط باید به این شکل باشد:\n<code>عنوان دکمه | https://example.com</code>');
+      return;
+    }
+    await setSession(chat_id, user.id, 'broadcast_confirm', { ...(session.context ?? {}), broadcast_buttons: parsed });
+    await showBroadcastPreview(chat_id, user, bText, parsed);
+    return;
+  }
+
 
   // Only send the fallback hint in private 1:1 chats with actual text input,
   // and skip edited messages / business messages / group or channel chats.
