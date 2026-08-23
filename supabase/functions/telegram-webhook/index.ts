@@ -3551,6 +3551,22 @@ async function handleUpdate(update: any) {
             [[{ text: '⬅️ انصراف', callback_data: 'admin:menu' }]]);
           return;
         }
+        if (sub === 'bc_clear') {
+          const s = await getSession(chat_id);
+          const bText = s?.context?.broadcast_text ?? '';
+          if (!bText) { await sendMessage(chat_id, '⛔️ پیامی در صف نیست.'); return; }
+          await setSession(chat_id, user.id, 'broadcast_confirm', { ...(s?.context ?? {}), broadcast_buttons: [] });
+          await showBroadcastPreview(chat_id, user, bText, []);
+          return;
+        }
+        if (sub === 'bc_send') {
+          const s = await getSession(chat_id);
+          const bText = s?.context?.broadcast_text ?? '';
+          if (!bText) { await sendMessage(chat_id, '⛔️ پیامی در صف نیست.'); return; }
+          await startBroadcast(chat_id, user, bText, (s?.context?.broadcast_buttons ?? []) as BroadcastButton[]);
+          return;
+        }
+
       }
 
       if (action === 'student') {
