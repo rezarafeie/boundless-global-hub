@@ -4154,20 +4154,23 @@ async function handleUpdate(update: any) {
   }
 
   if (session?.state === 'awaiting_broadcast' && text && user.role === 'admin') {
-    const { data: targets } = await supabase.from('chat_users')
-      .select('telegram_chat_id').not('telegram_chat_id', 'is', null).limit(2000);
-    let ok = 0, fail = 0;
-    for (const t of (targets ?? [])) {
-      try {
-        const r = await sendMessage(t.telegram_chat_id as number, `📢 <b>اطلاعیه:</b>\n\n${escapeHtml(text)}`);
-        if ((r as any)?.ok) ok++; else fail++;
-      } catch { fail++; }
-    }
-    await clearSession(chat_id);
-    await sendMessage(chat_id, `✅ ارسال شد. موفق: <b>${ok}</b> — ناموفق: <b>${fail}</b>`,
-      { keyboard: await mainMenu(user) });
+    await setSession(chat_id, user.id, 'broadcast_confirm', { ...(session.context ?? {}), broadcast_text: text, broadcast_buttons: [] });
+    await showBroadcastPreview(chat_id, user, text, []);
     return;
   }
+
+  if (session?.state === 'broadcast_confirm' && text && user.role === 'admin') {
+    const bText = session.context?.broadcast_text ?? '';
+    const parsed = parseBroadcastButtons(text);
+    if (!parsed.length) {
+      await sendMessage(chat_id, '❌ فرمت دکمه نامعتبر است.\nهر خط باید به این شکل باشد:\n<code>عنوان دکمه | https://example.com</code>');
+      return;
+    }
+    await setSession(chat_id, user.id, 'broadcast_confirm', { ...(session.context ?? {}), broadcast_buttons: parsed });
+    await showBroadcastPreview(chat_id, user, bText, parsed);
+    return;
+  }
+
 
   // Only send the fallback hint in private 1:1 chats with actual text input,
   // and skip edited messages / business messages / group or channel chats.
