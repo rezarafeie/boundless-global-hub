@@ -183,6 +183,51 @@ async function clearSession(chat_id: number) {
   await supabase.from('telegram_bot_sessions').delete().eq('chat_id', chat_id);
 }
 
+// ============ Broadcast (اطلاعیه همگانی) ============
+async function showBroadcastPreview(chat_id: number, user: BotUser, text: string, buttons: BroadcastButton[]) {
+  const targets = await fetchBroadcastTargets(supabase);
+  const eta = Math.ceil(targets.length / 22);
+  await sendMessage(chat_id, `👁 <b>پیش‌نمایش اطلاعیه</b>\n<i>پیام زیر دقیقاً به همین شکل ارسال می‌شود:</i>`);
+  await sendMessage(chat_id, renderBroadcastText(text), { keyboard: buttonsToKeyboard(buttons) });
+  const info = [
+    `📋 <b>وضعیت صف ارسال</b>`,
+    ``,
+    `👥 تعداد مخاطبان: <b>${targets.length}</b>`,
+    `🔘 دکمه‌ها: <b>${buttons.length ? buttons.map(b => b.text).join(' | ') : 'ندارد'}</b>`,
+    `⚡️ سرعت ارسال: <b>22 پیام در ثانیه</b> (جلوگیری از خطای 429)`,
+    `🕐 زمان تخمینی: ~<b>${eta}</b> ثانیه`,
+    ``,
+    `➕ برای افزودن دکمه، هر دکمه را در یک خط بفرستید:`,
+    `<code>عنوان دکمه | https://example.com</code>`,
+  ].join('\n');
+  await sendMessage(chat_id, info, {
+    keyboard: [
+      [{ text: '✅ تایید و شروع ارسال', callback_data: 'admin:bc_send' }],
+      ...(buttons.length ? [[{ text: '🗑 حذف دکمه‌ها', callback_data: 'admin:bc_clear' }]] : []),
+      [{ text: '❌ انصراف', callback_data: 'admin:menu' }],
+    ],
+  });
+}
+
+async function startBroadcast(chat_id: number, user: BotUser, text: string, buttons: BroadcastButton[]) {
+  const targets = await fetchBroadcastTargets(supabase);
+  await clearSession(chat_id);
+  if (!targets.length) {
+    await sendMessage(chat_id, '❌ هیچ کاربر لینک‌شده‌ای برای ارسال یافت نشد.', { keyboard: await mainMenu(user) });
+    return;
+  }
+  const progress: any = await sendMessage(chat_id, `📤 صف ارسال ساخته شد — <b>${targets.length}</b> پیام…`);
+  const progressMessageId = progress?.result?.message_id;
+  if (!progressMessageId) return;
+  const job = runBroadcastQueue({ adminChatId: chat_id, progressMessageId, text, buttons, targets })
+    .catch((e) => console.error('broadcast queue error:', e));
+  // deno-lint-ignore no-explicit-any
+  const rt = (globalThis as any).EdgeRuntime;
+  if (rt?.waitUntil) rt.waitUntil(job); else await job;
+}
+
+
+
 // ============ Menus ============
 function twoColumnKeyboard(rows: InlineKeyboard): InlineKeyboard {
   const buttons = rows.flat();
