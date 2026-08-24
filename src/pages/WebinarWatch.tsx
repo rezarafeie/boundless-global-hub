@@ -104,6 +104,7 @@ const WebinarWatch: React.FC = () => {
   if (!participant) return null;
 
   const embed = resolveWebinarEmbed(webinar);
+  const chatOff = !webinar.chat_enabled || webinar.chat_mode === 'off';
 
   const retryIframe = () => {
     setIframeFailed(false);
@@ -138,9 +139,9 @@ const WebinarWatch: React.FC = () => {
       </div>
 
       <div className="flex-1 min-h-0 container mx-auto px-4 py-3">
-        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-3 content-start lg:h-full h-full">
+        <div className={`flex flex-col gap-3 content-start lg:h-full h-full ${chatOff ? '' : 'lg:grid lg:grid-cols-3'}`}>
           {/* Video Player */}
-          <div className="lg:col-span-2 shrink-0">
+          <div className={`shrink-0 ${chatOff ? '' : 'lg:col-span-2'}`}>
             <Card className="overflow-hidden border-0 shadow-md rounded-xl">
               <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                 {iframeFailed ? (
@@ -180,24 +181,24 @@ const WebinarWatch: React.FC = () => {
           </div>
 
           {/* Right Panel: Active Interaction on top + Chat */}
-          <div className="lg:col-span-1 flex flex-col gap-3 min-h-0 lg:h-full flex-1">
-            {activeInteraction && (
-              <div className="shrink-0 overflow-y-auto">
-                <AnimatePresence mode="wait">
-                  <InteractionCard
-                    key={activeInteraction.id}
-                    interaction={activeInteraction}
-                    participantId={participant.id}
-                    responses={responses}
-                    isActive={true}
-                  />
-                </AnimatePresence>
-              </div>
-            )}
+          {!chatOff && (
+            <div className="lg:col-span-1 flex flex-col gap-3 min-h-0 lg:h-full flex-1">
+              {activeInteraction && (
+                <div className="shrink-0 overflow-y-auto">
+                  <AnimatePresence mode="wait">
+                    <InteractionCard
+                      key={activeInteraction.id}
+                      interaction={activeInteraction}
+                      participantId={participant.id}
+                      responses={responses}
+                      isActive={true}
+                    />
+                  </AnimatePresence>
+                </div>
+              )}
 
 
-            {/* Chat Panel - fills remaining space, hidden when chat is deactivated */}
-            {webinar.chat_enabled && webinar.chat_mode !== 'off' && (
+              {/* Chat Panel - fills remaining space, hidden when chat is deactivated */}
               <Card className="flex-1 min-h-[280px] lg:min-h-0 border rounded-xl overflow-hidden flex flex-col">
                 <WebinarChat
                   webinarId={webinar.id}
@@ -208,8 +209,23 @@ const WebinarWatch: React.FC = () => {
                   isHost={false}
                 />
               </Card>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Banner below video when chat is off */}
+          {chatOff && activeInteraction && (
+            <div className="shrink-0 overflow-y-auto">
+              <AnimatePresence mode="wait">
+                <InteractionCard
+                  key={activeInteraction.id}
+                  interaction={activeInteraction}
+                  participantId={participant.id}
+                  responses={responses}
+                  isActive={true}
+                />
+              </AnimatePresence>
+            </div>
+          )}
         </div>
       </div>
     </div>
