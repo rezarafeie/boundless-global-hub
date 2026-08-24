@@ -191,6 +191,7 @@ import InvoicePaymentCallback from "./pages/InvoicePaymentCallback";
 
 // Consultation pages
 import ConsultationBooking from "./pages/ConsultationBooking";
+import Reserve from "./pages/Reserve";
 import LeadRequest from "./pages/LeadRequest";
 import FormView from "./pages/FormView";
 
@@ -465,6 +466,7 @@ const App = () => {
 
                     {/* Consultation Routes */}
                     <Route path="/consultations" element={<ConsultationBooking />} />
+                    <Route path="/reserve" element={<Reserve />} />
 
                     {/* Lead Request Route */}
                     <Route path="/request" element={<LeadRequest />} />

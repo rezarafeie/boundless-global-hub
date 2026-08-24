@@ -350,6 +350,32 @@ const InteractionCard: React.FC<InteractionCardProps> = ({
         );
       }
 
+      case 'reservation':
+        return (
+          <div className="space-y-3 text-center">
+            {interaction.question && (
+              <p className="text-base font-bold leading-relaxed">{interaction.question}</p>
+            )}
+            {settings.cta_description && (
+              <p className="text-sm text-muted-foreground leading-relaxed">{settings.cta_description}</p>
+            )}
+            <Button
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              onClick={() => {
+                window.open(settings.link_url || '/reserve', '_blank');
+                if (!hasAnswered) submitResponse({ clicked: true });
+              }}
+            >
+              <ExternalLink className="h-4 w-4 ml-2" />
+              {settings.button_label || 'رزرو مشاوره دوره بدون مرز'}
+            </Button>
+            {hasAnswered && <p className="text-xs text-green-600">صفحه رزرو باز شد ✅</p>}
+            {showResults && totalVotes > 0 && (
+              <p className="text-xs text-muted-foreground">{totalVotes} نفر اقدام کردند</p>
+            )}
+          </div>
+        );
+
       default:
         return <p className="text-sm text-muted-foreground">نوع تعامل پشتیبانی نمی‌شود</p>;
 
@@ -365,6 +391,7 @@ const InteractionCard: React.FC<InteractionCardProps> = ({
     reaction: '⚡ واکنش',
     qa: '❓ پرسش و پاسخ',
     banner: '📢 بنر اعلان',
+    reservation: '🎟️ رزرو مشاوره',
   };
 
   return (

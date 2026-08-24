@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import ReservationsManagement from '@/components/Admin/ReservationsManagement';
 import { 
   Calendar, 
   Clock, 
@@ -487,7 +488,15 @@ const ConsultationManagement: React.FC = () => {
             <Calendar className="h-4 w-4" />
             زمان‌های موجود
           </TabsTrigger>
+          <TabsTrigger value="reservations" className="gap-2">
+            <Calendar className="h-4 w-4" />
+            رزروها
+          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="reservations">
+          <ReservationsManagement />
+        </TabsContent>
 
         <TabsContent value="dashboard">
           <ConsultationDashboard />

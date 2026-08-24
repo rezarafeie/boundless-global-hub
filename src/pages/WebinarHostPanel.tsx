@@ -280,7 +280,7 @@ const WebinarHostPanel: React.FC = () => {
 
   const typeLabels: Record<string, string> = {
     poll: '📊 نظرسنجی', quiz: '🧠 کوییز', checkin: '✋ حضور',
-    task: '📝 تکلیف', cta: '🔗 لینک', reaction: '⚡ واکنش', banner: '📢 بنر اعلان',
+    task: '📝 تکلیف', cta: '🔗 لینک', reaction: '⚡ واکنش', banner: '📢 بنر اعلان', reservation: '🎟️ رزرو مشاوره',
   };
 
   const getResponseStats = (interactionId: string) => {
@@ -482,6 +482,7 @@ const WebinarHostPanel: React.FC = () => {
                           <SelectItem value="cta">🔗 لینک</SelectItem>
                           <SelectItem value="reaction">⚡ واکنش</SelectItem>
                           <SelectItem value="banner">📢 بنر اعلان</SelectItem>
+                          <SelectItem value="reservation">🎟️ رزرو مشاوره</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -533,7 +534,7 @@ const WebinarHostPanel: React.FC = () => {
                     )}
 
                     {/* CTA settings */}
-                    {form.type === 'cta' && (
+                    {(form.type === 'cta' || form.type === 'reservation') && (
                       <div className="space-y-2">
                         <div><Label>لینک</Label><Input value={form.settings.link_url} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, link_url: e.target.value } }))} placeholder="https://..." dir="ltr" /></div>
                         <div><Label>متن دکمه</Label><Input value={form.settings.button_label} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, button_label: e.target.value } }))} /></div>
