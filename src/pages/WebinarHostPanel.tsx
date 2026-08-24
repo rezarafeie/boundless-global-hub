@@ -60,8 +60,11 @@ interface InteractionForm {
     banner_background: string;
     banner_text_color: string;
     countdown_to: string;
+    emojis: string[];
   };
 }
+
+const EMOJI_PALETTE = ['❤️', '👏', '🔥', '😍', '👍', '😮', '🤩', '😂', '🙏', '💯', '🚀', '✅', '🤔', '😢', '⚡', '🎉', '💡', '👌'];
 
 const defaultForm: InteractionForm = {
   type: 'poll',
