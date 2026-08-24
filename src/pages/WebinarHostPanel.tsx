@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
   Play, Square, Plus, Users, BarChart3, Send, Trash2, Eye, Clock, Pin,
-  Check, EyeOff, Radio, ArrowRight, Copy
+  Check, EyeOff, Radio, ArrowRight, Copy, Pencil
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
