@@ -103,7 +103,7 @@ const WebinarWatch: React.FC = () => {
   if (!webinar) return notFound ? <Navigate to="/404" replace /> : null;
   if (!participant) return null;
 
-  const getIframeSrc = () => resolveIframeSrc(webinar);
+  const embed = resolveWebinarEmbed(webinar);
 
   const retryIframe = () => {
     setIframeFailed(false);
