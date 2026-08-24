@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   CheckCircle2, CreditCard, Loader2, Upload, ShieldCheck, XCircle, Copy,
   CalendarClock, Headphones, Sparkles, Target, Lock, BadgeCheck, Users, Clock,
+  Phone, Send,
 } from 'lucide-react';
 
 type Settings = {
