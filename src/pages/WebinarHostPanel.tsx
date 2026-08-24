@@ -81,6 +81,12 @@ const defaultForm: InteractionForm = {
     cta_description: '',
     scale_max: 5,
     explanation: '',
+    banner_title: '',
+    banner_description: '',
+    banner_icon: '',
+    banner_background: '',
+    banner_text_color: '',
+    countdown_to: '',
   },
 };
 
