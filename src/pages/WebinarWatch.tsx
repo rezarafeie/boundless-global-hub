@@ -90,7 +90,7 @@ const WebinarWatch: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen lg:h-screen flex flex-col bg-background lg:overflow-hidden" dir="rtl">
+    <div className="h-[100dvh] flex flex-col bg-background overflow-hidden" dir="rtl">
       {/* Minimal Header */}
       <div className="border-b border-border/50 bg-card/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-2.5 flex items-center justify-between">
@@ -116,9 +116,9 @@ const WebinarWatch: React.FC = () => {
       </div>
 
       <div className="flex-1 min-h-0 container mx-auto px-4 py-3">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 content-start lg:h-full">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-3 content-start lg:h-full h-full">
           {/* Video Player */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 shrink-0">
             <Card className="overflow-hidden border-0 shadow-md rounded-xl">
               <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                 {iframeFailed ? (
@@ -144,7 +144,7 @@ const WebinarWatch: React.FC = () => {
           </div>
 
           {/* Right Panel: Active Interaction on top + Chat */}
-          <div className="lg:col-span-1 flex flex-col gap-3 min-h-0 lg:h-full">
+          <div className="lg:col-span-1 flex flex-col gap-3 min-h-0 lg:h-full flex-1">
             {/* Active Interaction - shows on top when active */}
             {activeInteraction && (
               <div className="shrink-0 max-h-[45vh] lg:max-h-[50%] overflow-y-auto">
