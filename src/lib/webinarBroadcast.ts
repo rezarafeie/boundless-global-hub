@@ -20,7 +20,8 @@ export type WebinarBroadcastEvent =
   | 'reaction'
   | 'interaction'
   | 'question'
-  | 'response';
+  | 'response'
+  | 'settings';
 
 type Handler = (payload: any) => void;
 
@@ -48,6 +49,7 @@ const EVENTS: WebinarBroadcastEvent[] = [
   'interaction',
   'question',
   'response',
+  'settings',
 ];
 
 function notifyStatus(webinarId: string, entry: Entry, status: WebinarConnectionStatus) {

@@ -16,6 +16,7 @@ import {
   type CachedWebinar,
 } from '@/lib/webinarCache';
 import { startWebinarEntrySync } from '@/lib/webinarEntryQueue';
+import { subscribeWebinarBroadcast } from '@/lib/webinarBroadcast';
 import { AnimatePresence } from 'framer-motion';
 
 type Webinar = CachedWebinar;
@@ -50,6 +51,33 @@ const WebinarWatch: React.FC = () => {
       navigate(`/webinar/${slug}/login?redirect=live${wl ? `&wl=${encodeURIComponent(wl)}` : ''}`, { replace: true });
     }
   }, [loading, participantLoading, webinar, participant, slug, navigate]);
+
+  // Live chat settings: react instantly to host toggles (on/off/private)
+  // via broadcast, with a light poll as a safety net for missed events.
+  useEffect(() => {
+    if (!webinar?.id) return;
+    const unsubscribe = subscribeWebinarBroadcast(webinar.id, {
+      settings: (payload: any) => {
+        if (!payload) return;
+        setWebinar(prev => {
+          if (!prev) return prev;
+          const next = {
+            ...prev,
+            chat_enabled: payload.chat_enabled ?? prev.chat_enabled,
+            chat_mode: payload.chat_mode ?? prev.chat_mode,
+          };
+          writeCachedWebinar(next);
+          return next;
+        });
+      },
+    });
+    const poll = window.setInterval(() => { fetchWebinar(); }, 20000);
+    return () => {
+      unsubscribe();
+      window.clearInterval(poll);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [webinar?.id]);
 
   // Push locally-admitted viewers to the backend every 5 minutes until the
   // webinar ends. The live page itself never waits on this.

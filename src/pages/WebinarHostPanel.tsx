@@ -379,6 +379,10 @@ const WebinarHostPanel: React.FC = () => {
                     onCheckedChange={async (v) => {
                       await supabase.from('webinar_entries').update({ chat_enabled: v }).eq('id', webinar.id);
                       setWebinar(prev => prev ? { ...prev, chat_enabled: v } : null);
+                      broadcastWebinarEvent(webinar.id, 'settings', {
+                        chat_enabled: v,
+                        chat_mode: webinar.chat_mode,
+                      });
                     }}
                   />
                 </div>
@@ -394,6 +398,10 @@ const WebinarHostPanel: React.FC = () => {
                     onValueChange={async (v) => {
                       await supabase.from('webinar_entries').update({ chat_mode: v }).eq('id', webinar.id);
                       setWebinar(prev => prev ? { ...prev, chat_mode: v } : null);
+                      broadcastWebinarEvent(webinar.id, 'settings', {
+                        chat_enabled: webinar.chat_enabled,
+                        chat_mode: v,
+                      });
                     }}
                   >
                     <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
