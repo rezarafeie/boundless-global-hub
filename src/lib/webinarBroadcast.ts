@@ -49,6 +49,7 @@ const EVENTS: WebinarBroadcastEvent[] = [
   'interaction',
   'question',
   'response',
+  'settings',
 ];
 
 function notifyStatus(webinarId: string, entry: Entry, status: WebinarConnectionStatus) {
