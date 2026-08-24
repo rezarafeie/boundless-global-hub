@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { subscribeWebinarBroadcast } from '@/lib/webinarBroadcast';
+import { subscribeWebinarBroadcast, subscribeWebinarConnection } from '@/lib/webinarBroadcast';
 
 interface Interaction {
   id: string;
@@ -55,9 +55,13 @@ const HOST_RESPONSE_THROTTLE_MS = 2000;
 const VIEWER_INTERACTION_THROTTLE_MS = 400;
 const VIEWER_QUESTION_THROTTLE_MS = 4000;
 const VIEWER_RECONCILE_MS = 25000;
+// When Realtime is unavailable (e.g. the project's Realtime service can't
+// connect), fall back to fast REST polling so the page keeps working.
+const VIEWER_DEGRADED_POLL_MS = 5000;
 
 export const useWebinarRealtime = (webinarId: string | undefined, options: Options = {}) => {
   const { isHost = false } = options;
+  const [realtimeDegraded, setRealtimeDegraded] = useState(false);
 
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [responses, setResponses] = useState<Response[]>([]);
@@ -141,6 +145,14 @@ export const useWebinarRealtime = (webinarId: string | undefined, options: Optio
     setParticipantCount(count || 0);
   }, [webinarId]);
 
+  // Watch realtime health so we can switch to REST polling when it is down.
+  useEffect(() => {
+    if (!webinarId || isHost) return;
+    return subscribeWebinarConnection(webinarId, status => {
+      setRealtimeDegraded(status !== 'connected');
+    });
+  }, [webinarId, isHost]);
+
   // --- base subscriptions --------------------------------------------------
   // Host (single client) keeps postgres_changes: authoritative and cheap.
   // Viewers (up to thousands) use Realtime Broadcast — no per-row RLS
@@ -184,13 +196,14 @@ export const useWebinarRealtime = (webinarId: string | undefined, options: Optio
       fetchInteractions();
       fetchReactionCounts();
       fetchParticipantCount();
-    }, VIEWER_RECONCILE_MS);
+      if (realtimeDegraded) fetchQuestions();
+    }, realtimeDegraded ? VIEWER_DEGRADED_POLL_MS : VIEWER_RECONCILE_MS);
 
     return () => {
       unsubscribe();
       window.clearInterval(reconcile);
     };
-  }, [webinarId, isHost, fetchInteractions, fetchQuestions, fetchReactionCounts, fetchParticipantCount, throttle]);
+  }, [webinarId, isHost, realtimeDegraded, fetchInteractions, fetchQuestions, fetchReactionCounts, fetchParticipantCount, throttle]);
 
   const activeInteraction = interactions.find(i => i.status === 'active') || null;
   const previousInteractions = interactions.filter(i => i.status === 'ended');
@@ -237,8 +250,15 @@ export const useWebinarRealtime = (webinarId: string | undefined, options: Optio
       },
     });
 
-    return () => { unsubscribe(); };
-  }, [isHost, webinarId, activeInteractionId, fetchResponses, appendResponse]);
+    const poll = realtimeDegraded
+      ? window.setInterval(() => fetchResponses([activeInteractionId]), VIEWER_DEGRADED_POLL_MS)
+      : null;
+
+    return () => {
+      unsubscribe();
+      if (poll) window.clearInterval(poll);
+    };
+  }, [isHost, webinarId, activeInteractionId, realtimeDegraded, fetchResponses, appendResponse]);
 
 
   return {
