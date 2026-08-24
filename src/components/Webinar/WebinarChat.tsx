@@ -133,6 +133,14 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
     const trimmedMessage = newMessage.trim();
     if (!trimmedMessage || sending) return;
 
+    // Client-side rate limit: max 1 message / 2s per participant.
+    const since = Date.now() - lastSentRef.current;
+    if (!isHost && since < SEND_COOLDOWN_MS) {
+      toast({ title: `کمی آهسته‌تر — ${Math.ceil((SEND_COOLDOWN_MS - since) / 1000)} ثانیه صبر کنید` });
+      return;
+    }
+    lastSentRef.current = Date.now();
+
     setSending(true);
     try {
       const { data, error } = await supabase
