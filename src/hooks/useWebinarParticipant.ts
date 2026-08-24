@@ -16,14 +16,32 @@ interface Participant {
   is_active_badge: boolean;
 }
 
+/** True only when we actually have something to resolve over the network. */
+const needsNetworkResolve = (webinarId: string | undefined) => {
+  if (!webinarId) return false;
+  try {
+    if (new URLSearchParams(window.location.search).get('wl')) return true;
+    return !!localStorage.getItem(`webinar_phone_${webinarId}`);
+  } catch {
+    return false;
+  }
+};
+
 export const useWebinarParticipant = (webinarId: string | undefined) => {
-  const [participant, setParticipant] = useState<Participant | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [participant, setParticipant] = useState<Participant | null>(() =>
+    readCachedParticipant<Participant>(webinarId),
+  );
+  // Never block the UI: we only "load" when there is no local record AND
+  // something to resolve remotely.
+  const [loading, setLoading] = useState<boolean>(
+    () => !readCachedParticipant<Participant>(webinarId) && needsNetworkResolve(webinarId),
+  );
 
   const getStoredPhone = useCallback(() => {
     if (!webinarId) return null;
     return localStorage.getItem(`webinar_phone_${webinarId}`);
   }, [webinarId]);
+
 
   const joinWebinar = useCallback(async (phone: string, displayName?: string) => {
     if (!webinarId) return null;
