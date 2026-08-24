@@ -182,7 +182,7 @@ const WebinarWatch: React.FC = () => {
           {/* Right Panel: Active Interaction on top + Chat */}
           <div className="lg:col-span-1 flex flex-col gap-3 min-h-0 lg:h-full flex-1">
             {activeInteraction && (
-              <div className="shrink-0 max-h-[45vh] lg:max-h-[50%] overflow-y-auto">
+              <div className="shrink-0 overflow-y-auto">
                 <AnimatePresence mode="wait">
                   <InteractionCard
                     key={activeInteraction.id}
