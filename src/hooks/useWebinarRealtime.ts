@@ -39,13 +39,43 @@ interface Question {
   created_at: string;
 }
 
-export const useWebinarRealtime = (webinarId: string | undefined) => {
+interface Options {
+  /**
+   * Host panels need the full per-answer feed (there is only one host, so the
+   * fan-out cost is fine). Viewer pages must NOT subscribe to every answer of
+   * every webinar — at 500 concurrent viewers that is a quadratic explosion.
+   */
+  isHost?: boolean;
+}
+
+const REACTION_THROTTLE_MS = 5000;
+const PARTICIPANT_THROTTLE_MS = 10000;
+const HOST_RESPONSE_THROTTLE_MS = 2000;
+
+export const useWebinarRealtime = (webinarId: string | undefined, options: Options = {}) => {
+  const { isHost = false } = options;
+
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [responses, setResponses] = useState<Response[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [reactionCounts, setReactionCounts] = useState<Record<string, number>>({});
   const [participantCount, setParticipantCount] = useState(0);
   const interactionIdsRef = useRef<string[]>([]);
+
+  // --- throttling helpers -------------------------------------------------
+  const timersRef = useRef<Record<string, number | null>>({});
+  const throttle = useCallback((key: string, ms: number, fn: () => void) => {
+    if (timersRef.current[key]) return;
+    timersRef.current[key] = window.setTimeout(() => {
+      timersRef.current[key] = null;
+      fn();
+    }, ms);
+  }, []);
+
+  useEffect(() => () => {
+    Object.values(timersRef.current).forEach(t => { if (t) window.clearTimeout(t); });
+    timersRef.current = {};
+  }, []);
 
   const fetchInteractions = useCallback(async () => {
     if (!webinarId) return;
@@ -58,12 +88,19 @@ export const useWebinarRealtime = (webinarId: string | undefined) => {
   }, [webinarId]);
 
   const fetchResponses = useCallback(async (interactionIds: string[]) => {
-    if (!interactionIds.length) return;
+    if (!interactionIds.length) {
+      setResponses([]);
+      return;
+    }
     const { data } = await supabase
       .from('webinar_responses')
       .select('*')
       .in('interaction_id', interactionIds);
     if (data) setResponses(data);
+  }, []);
+
+  const appendResponse = useCallback((row: Response) => {
+    setResponses(prev => (prev.some(r => r.id === row.id) ? prev : [...prev, row]));
   }, []);
 
   const fetchQuestions = useCallback(async () => {
@@ -79,16 +116,15 @@ export const useWebinarRealtime = (webinarId: string | undefined) => {
 
   const fetchReactionCounts = useCallback(async () => {
     if (!webinarId) return;
-    const types = ['understood', 'repeat', 'excellent', 'important'];
-    const counts: Record<string, number> = {};
-    for (const type of types) {
-      const { count } = await supabase
-        .from('webinar_reactions')
-        .select('*', { count: 'exact', head: true })
-        .eq('webinar_id', webinarId)
-        .eq('reaction_type', type);
-      counts[type] = count || 0;
-    }
+    // Single lightweight read instead of one count query per reaction type.
+    const { data } = await supabase
+      .from('webinar_reactions')
+      .select('reaction_type')
+      .eq('webinar_id', webinarId);
+    const counts: Record<string, number> = { understood: 0, repeat: 0, excellent: 0, important: 0 };
+    (data || []).forEach((r: any) => {
+      counts[r.reaction_type] = (counts[r.reaction_type] || 0) + 1;
+    });
     setReactionCounts(counts);
   }, [webinarId]);
 
@@ -101,6 +137,7 @@ export const useWebinarRealtime = (webinarId: string | undefined) => {
     setParticipantCount(count || 0);
   }, [webinarId]);
 
+  // --- base subscriptions (cheap, one event per host action) --------------
   useEffect(() => {
     if (!webinarId) return;
 
@@ -109,33 +146,73 @@ export const useWebinarRealtime = (webinarId: string | undefined) => {
     fetchReactionCounts();
     fetchParticipantCount();
 
-    // Realtime subscriptions
     const channel = supabase
       .channel(`webinar-${webinarId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_interactions', filter: `webinar_id=eq.${webinarId}` }, () => fetchInteractions())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_responses' }, (payload: any) => {
-        const newId = payload?.new?.interaction_id || payload?.old?.interaction_id;
-        if (newId && interactionIdsRef.current.includes(newId)) {
-          fetchResponses(interactionIdsRef.current);
-        }
-      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_questions', filter: `webinar_id=eq.${webinarId}` }, () => fetchQuestions())
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'webinar_reactions', filter: `webinar_id=eq.${webinarId}` }, () => fetchReactionCounts())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_participants', filter: `webinar_id=eq.${webinarId}` }, () => fetchParticipantCount())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'webinar_reactions', filter: `webinar_id=eq.${webinarId}` }, () => {
+        throttle('reactions', REACTION_THROTTLE_MS, fetchReactionCounts);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_participants', filter: `webinar_id=eq.${webinarId}` }, () => {
+        throttle('participants', PARTICIPANT_THROTTLE_MS, fetchParticipantCount);
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [webinarId]);
-
-  // Fetch responses whenever interactions change
-  useEffect(() => {
-    const ids = interactions.map(i => i.id);
-    interactionIdsRef.current = ids;
-    if (ids.length) fetchResponses(ids);
-  }, [interactions, fetchResponses]);
+  }, [webinarId, fetchInteractions, fetchQuestions, fetchReactionCounts, fetchParticipantCount, throttle]);
 
   const activeInteraction = interactions.find(i => i.status === 'active') || null;
   const previousInteractions = interactions.filter(i => i.status === 'ended');
+  const activeInteractionId = activeInteraction?.id ?? null;
+
+  // --- answers -------------------------------------------------------------
+  // Host: full feed across all interactions of this webinar, throttled refetch.
+  useEffect(() => {
+    if (!webinarId || !isHost) return;
+    const ids = interactions.map(i => i.id);
+    interactionIdsRef.current = ids;
+    if (!ids.length) return;
+
+    fetchResponses(ids);
+
+    const channel = supabase
+      .channel(`webinar-responses-host-${webinarId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_responses' }, (payload: any) => {
+        const id = payload?.new?.interaction_id || payload?.old?.interaction_id;
+        if (!id || !interactionIdsRef.current.includes(id)) return;
+        throttle('host-responses', HOST_RESPONSE_THROTTLE_MS, () => fetchResponses(interactionIdsRef.current));
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [webinarId, isHost, interactions.map(i => i.id).join(','), fetchResponses, throttle]);
+
+  // Viewer: only the currently active interaction, incremental updates only.
+  useEffect(() => {
+    if (isHost) return;
+    if (!activeInteractionId) {
+      setResponses([]);
+      return;
+    }
+
+    interactionIdsRef.current = [activeInteractionId];
+    fetchResponses([activeInteractionId]);
+
+    const channel = supabase
+      .channel(`webinar-responses-${activeInteractionId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'webinar_responses',
+        filter: `interaction_id=eq.${activeInteractionId}`,
+      }, (payload: any) => {
+        if (payload?.new) appendResponse(payload.new as Response);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isHost, activeInteractionId, fetchResponses, appendResponse]);
 
   return {
     interactions,
