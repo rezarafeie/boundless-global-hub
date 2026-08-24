@@ -104,6 +104,7 @@ const WebinarWatch: React.FC = () => {
   if (!participant) return null;
 
   const embed = resolveWebinarEmbed(webinar);
+  const chatOff = !webinar.chat_enabled || webinar.chat_mode === 'off';
 
   const retryIframe = () => {
     setIframeFailed(false);
