@@ -1,0 +1,2 @@
+ALTER TABLE public.webinar_interactions DROP CONSTRAINT webinar_interactions_type_check;
+ALTER TABLE public.webinar_interactions ADD CONSTRAINT webinar_interactions_type_check CHECK (type = ANY (ARRAY['poll','quiz','reaction','qa','task','cta','checkin','banner']));
