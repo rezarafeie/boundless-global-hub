@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, ExternalLink, Clock, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { broadcastWebinarEvent } from '@/lib/webinarBroadcast';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -87,19 +88,22 @@ const InteractionCard: React.FC<InteractionCardProps> = ({
         if (isCorrect && settings.points_enabled) points = 10;
       }
 
-      const { error } = await supabase.from('webinar_responses').insert({
+      const { data: inserted, error } = await supabase.from('webinar_responses').insert({
         interaction_id: interaction.id,
         participant_id: participantId,
         answer,
         is_correct: isCorrect,
         points,
-      });
+      }).select('*').maybeSingle();
 
       if (error) {
         if (error.code === '23505') {
           toast({ title: 'فقط یک بار می‌تونی رأی بدی', variant: 'default' });
         } else throw error;
       } else {
+        if (inserted) {
+          broadcastWebinarEvent(interaction.webinar_id, 'response', inserted);
+        }
         toast({ title: 'رأی شما ثبت شد ✅' });
       }
     } catch (e) {
