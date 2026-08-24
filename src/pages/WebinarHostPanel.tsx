@@ -208,7 +208,7 @@ const WebinarHostPanel: React.FC = () => {
 
   const typeLabels: Record<string, string> = {
     poll: '📊 نظرسنجی', quiz: '🧠 کوییز', checkin: '✋ حضور',
-    task: '📝 تکلیف', cta: '🔗 لینک', reaction: '⚡ واکنش',
+    task: '📝 تکلیف', cta: '🔗 لینک', reaction: '⚡ واکنش', banner: '📢 بنر اعلان',
   };
 
   const getResponseStats = (interactionId: string) => {
