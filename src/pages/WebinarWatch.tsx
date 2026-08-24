@@ -139,9 +139,9 @@ const WebinarWatch: React.FC = () => {
       </div>
 
       <div className="flex-1 min-h-0 container mx-auto px-4 py-3">
-        <div className={`flex flex-col gap-3 content-start lg:h-full h-full ${chatOff ? '' : 'lg:grid lg:grid-cols-3'}`}>
+        <div className="flex flex-col gap-3 content-start lg:h-full h-full lg:grid lg:grid-cols-3">
           {/* Video Player */}
-          <div className={`shrink-0 ${chatOff ? '' : 'lg:col-span-2'}`}>
+          <div className="shrink-0 lg:col-span-2">
             <Card className="overflow-hidden border-0 shadow-md rounded-xl">
               <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                 {iframeFailed ? (
@@ -180,25 +180,44 @@ const WebinarWatch: React.FC = () => {
             </Card>
           </div>
 
-          {/* Right Panel: Active Interaction on top + Chat */}
-          {!chatOff && (
-            <div className="lg:col-span-1 flex flex-col gap-3 min-h-0 lg:h-full flex-1">
-              {activeInteraction && (
-                <div className="shrink-0 overflow-y-auto">
-                  <AnimatePresence mode="wait">
-                    <InteractionCard
-                      key={activeInteraction.id}
-                      interaction={activeInteraction}
-                      participantId={participant.id}
-                      responses={responses}
-                      isActive={true}
-                    />
-                  </AnimatePresence>
-                </div>
-              )}
+          {/* Right Panel: Active Interaction (or webinar info) on top + Chat */}
+          <div className="lg:col-span-1 flex flex-col gap-3 min-h-0 lg:h-full flex-1">
+            {activeInteraction ? (
+              <div className="shrink-0 overflow-y-auto">
+                <AnimatePresence mode="wait">
+                  <InteractionCard
+                    key={activeInteraction.id}
+                    interaction={activeInteraction}
+                    participantId={participant.id}
+                    responses={responses}
+                    isActive={true}
+                  />
+                </AnimatePresence>
+              </div>
+            ) : (
+              <Card className="shrink-0 border rounded-xl p-4 space-y-2">
+                <h2 className="text-sm font-bold text-foreground">{webinar.title}</h2>
+                {webinar.host_name && (
+                  <p className="text-xs text-muted-foreground">ارائه‌دهنده: {webinar.host_name}</p>
+                )}
+                {webinar.start_date && (
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(webinar.start_date).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })}
+                  </p>
+                )}
+                {webinar.description && (
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-6 whitespace-pre-line">
+                    {webinar.description}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground/80 pt-1">
+                  در طول وبینار، کارت‌های تعاملی همین‌جا نمایش داده می‌شوند.
+                </p>
+              </Card>
+            )}
 
-
-              {/* Chat Panel - fills remaining space, hidden when chat is deactivated */}
+            {/* Chat Panel - fills remaining space, hidden when chat is deactivated */}
+            {!chatOff && (
               <Card className="flex-1 min-h-[280px] lg:min-h-0 border rounded-xl overflow-hidden flex flex-col">
                 <WebinarChat
                   webinarId={webinar.id}
@@ -209,23 +228,9 @@ const WebinarWatch: React.FC = () => {
                   isHost={false}
                 />
               </Card>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Banner below video when chat is off */}
-          {chatOff && activeInteraction && (
-            <div className="shrink-0 overflow-y-auto">
-              <AnimatePresence mode="wait">
-                <InteractionCard
-                  key={activeInteraction.id}
-                  interaction={activeInteraction}
-                  participantId={participant.id}
-                  responses={responses}
-                  isActive={true}
-                />
-              </AnimatePresence>
-            </div>
-          )}
         </div>
       </div>
     </div>
