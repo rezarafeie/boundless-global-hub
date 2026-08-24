@@ -52,6 +52,9 @@ interface Options {
 const REACTION_THROTTLE_MS = 5000;
 const PARTICIPANT_THROTTLE_MS = 10000;
 const HOST_RESPONSE_THROTTLE_MS = 2000;
+const VIEWER_INTERACTION_THROTTLE_MS = 400;
+const VIEWER_QUESTION_THROTTLE_MS = 4000;
+const VIEWER_RECONCILE_MS = 25000;
 
 export const useWebinarRealtime = (webinarId: string | undefined, options: Options = {}) => {
   const { isHost = false } = options;
