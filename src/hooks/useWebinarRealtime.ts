@@ -182,7 +182,16 @@ export const useWebinarRealtime = (webinarId: string | undefined, options: Optio
     }
 
     const unsubscribe = subscribeWebinarBroadcast(webinarId, {
-      interaction: () => throttle('interactions', VIEWER_INTERACTION_THROTTLE_MS, fetchInteractions),
+      interaction: (payload: any) => {
+        // Host broadcasts the authoritative interaction snapshot. Applying it
+        // locally avoids hundreds of simultaneous REST reads when a card is
+        // activated. Older senders still fall back to a throttled refetch.
+        if (Array.isArray(payload?.interactions)) {
+          setInteractions(payload.interactions as Interaction[]);
+          return;
+        }
+        throttle('interactions', VIEWER_INTERACTION_THROTTLE_MS, fetchInteractions);
+      },
       question: () => throttle('questions', VIEWER_QUESTION_THROTTLE_MS, fetchQuestions),
       reaction: (payload: any) => {
         const type = payload?.type;
