@@ -90,7 +90,7 @@ const WebinarWatch: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden" dir="rtl">
+    <div className="min-h-screen lg:h-screen flex flex-col bg-background lg:overflow-hidden" dir="rtl">
       {/* Minimal Header */}
       <div className="border-b border-border/50 bg-card/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-2.5 flex items-center justify-between">
