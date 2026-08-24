@@ -166,6 +166,10 @@ export const useWebinarRealtime = (webinarId: string | undefined, options: Optio
     fetchParticipantCount();
 
     if (isHost) {
+      // Keep the broadcast publisher joined for the lifetime of the host
+      // panel. Card activation can then fan out immediately instead of first
+      // waiting for a temporary channel to subscribe.
+      const unsubscribeBroadcast = subscribeWebinarBroadcast(webinarId, {});
       const channel = supabase
         .channel(`webinar-${webinarId}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_interactions', filter: `webinar_id=eq.${webinarId}` }, () => fetchInteractions())
@@ -178,7 +182,10 @@ export const useWebinarRealtime = (webinarId: string | undefined, options: Optio
         })
         .subscribe();
 
-      return () => { supabase.removeChannel(channel); };
+      return () => {
+        unsubscribeBroadcast();
+        supabase.removeChannel(channel);
+      };
     }
 
     const unsubscribe = subscribeWebinarBroadcast(webinarId, {
