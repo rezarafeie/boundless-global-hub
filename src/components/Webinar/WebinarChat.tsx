@@ -5,6 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, Trash2, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { subscribeWebinarBroadcast, broadcastWebinarEvent } from '@/lib/webinarBroadcast';
 
 interface ChatMessage {
   id: string;
@@ -90,36 +91,55 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
   useEffect(() => {
     if (!webinarId) return;
 
-    const channel = supabase
-      .channel(`webinar-chat-${webinarId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'webinar_messages',
-        filter: `webinar_id=eq.${webinarId}`,
-      }, (payload) => {
-        const newMsg = payload.new as ChatMessage;
-        if (chatMode === 'private' && !isHost && newMsg.is_private) return;
-        appendMessage(newMsg);
-      })
-      .on('postgres_changes', {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'webinar_messages',
-        filter: `webinar_id=eq.${webinarId}`,
-      }, (payload) => {
-        const deletedId = (payload.old as { id?: string }).id;
-        if (!deletedId) return;
-        setMessages(prev => prev.filter(m => m.id !== deletedId));
-      })
-      .subscribe((status) => {
-        if (status === 'CHANNEL_ERROR') {
-          fetchMessages();
-        }
-      });
+    // Host (single client) uses postgres_changes for an authoritative feed.
+    if (isHost) {
+      const channel = supabase
+        .channel(`webinar-chat-${webinarId}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'webinar_messages',
+          filter: `webinar_id=eq.${webinarId}`,
+        }, (payload) => {
+          appendMessage(payload.new as ChatMessage);
+        })
+        .on('postgres_changes', {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'webinar_messages',
+          filter: `webinar_id=eq.${webinarId}`,
+        }, (payload) => {
+          const deletedId = (payload.old as { id?: string }).id;
+          if (!deletedId) return;
+          setMessages(prev => prev.filter(m => m.id !== deletedId));
+        })
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR') fetchMessages();
+        });
+
+      return () => { supabase.removeChannel(channel); };
+    }
+
+    // Viewers use Realtime Broadcast: no per-row RLS authorization, so the
+    // fan-out scales to hundreds/thousands of concurrent clients.
+    const unsubscribe = subscribeWebinarBroadcast(webinarId, {
+      chat: (msg: ChatMessage) => {
+        if (!msg?.id) return;
+        if (chatMode === 'private' && msg.is_private) return;
+        appendMessage(msg);
+      },
+      chat_delete: (payload: { id?: string }) => {
+        if (!payload?.id) return;
+        setMessages(prev => prev.filter(m => m.id !== payload.id));
+      },
+    });
+
+    // Safety net for missed broadcasts.
+    const reconcile = window.setInterval(fetchMessages, 30000);
 
     return () => {
-      supabase.removeChannel(channel);
+      unsubscribe();
+      window.clearInterval(reconcile);
     };
   }, [webinarId, chatMode, isHost, appendMessage, fetchMessages]);
 
@@ -161,6 +181,7 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
       setNewMessage('');
       if (data) {
         const insertedMessage = data as ChatMessage;
+        broadcastWebinarEvent(webinarId, 'chat', insertedMessage);
         if (!(chatMode === 'private' && !isHost && insertedMessage.is_private)) {
           appendMessage(insertedMessage);
         }
@@ -174,6 +195,7 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
 
   const deleteMessage = async (messageId: string) => {
     await supabase.from('webinar_messages').delete().eq('id', messageId);
+    broadcastWebinarEvent(webinarId, 'chat_delete', { id: messageId });
   };
 
   if (!chatEnabled || chatMode === 'off') {
