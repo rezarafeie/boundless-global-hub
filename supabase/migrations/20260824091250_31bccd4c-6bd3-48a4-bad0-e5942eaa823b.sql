@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.enforce_webinar_chat_rate_limit() FROM PUBLIC, anon, authenticated;
