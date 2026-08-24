@@ -404,6 +404,7 @@ const WebinarHostPanel: React.FC = () => {
                           <SelectItem value="checkin">✋ حضور</SelectItem>
                           <SelectItem value="task">📝 تکلیف</SelectItem>
                           <SelectItem value="cta">🔗 لینک</SelectItem>
+                          <SelectItem value="banner">📢 بنر اعلان</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
