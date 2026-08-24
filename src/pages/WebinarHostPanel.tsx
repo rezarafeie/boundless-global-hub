@@ -131,7 +131,12 @@ const WebinarHostPanel: React.FC = () => {
     if (!webinar) return;
     const updates: any = { status };
     if (status === 'ended') updates.ended_at = new Date().toISOString();
-    await supabase.from('webinar_entries').update(updates).eq('id', webinar.id);
+    if (status === 'live') updates.ended_at = null;
+    const { error } = await supabase.from('webinar_entries').update(updates).eq('id', webinar.id);
+    if (error) {
+      toast({ title: 'خطا در تغییر وضعیت وبینار', description: error.message, variant: 'destructive' });
+      return;
+    }
     setWebinar(prev => prev ? { ...prev, status } : null);
     toast({ title: status === 'live' ? '🔴 وبینار شروع شد' : 'وبینار پایان یافت' });
   };
