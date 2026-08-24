@@ -24,12 +24,19 @@ export type WebinarBroadcastEvent =
 
 type Handler = (payload: any) => void;
 
+export type WebinarConnectionStatus = 'connecting' | 'connected' | 'reconnecting';
+
 interface Entry {
   channel: RealtimeChannel;
   refs: number;
   handlers: Map<WebinarBroadcastEvent, Set<Handler>>;
   joined: boolean;
+  status: WebinarConnectionStatus;
+  statusListeners: Set<(s: WebinarConnectionStatus) => void>;
+  retries: number;
+  retryTimer: number | null;
 }
+
 
 const registry = new Map<string, Entry>();
 
