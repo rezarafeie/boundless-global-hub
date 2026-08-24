@@ -2063,6 +2063,99 @@ export type Database = {
           },
         ]
       }
+      consultation_reservation_settings: {
+        Row: {
+          card_details: string
+          created_at: string
+          description: string
+          id: number
+          is_active: boolean
+          price: number
+          success_message: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          card_details?: string
+          created_at?: string
+          description?: string
+          id?: number
+          is_active?: boolean
+          price?: number
+          success_message?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          card_details?: string
+          created_at?: string
+          description?: string
+          id?: number
+          is_active?: boolean
+          price?: number
+          success_message?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      consultation_reservations: {
+        Row: {
+          admin_status: string
+          amount: number
+          created_at: string
+          email: string | null
+          full_name: string
+          gateway_authority: string | null
+          gateway_ref_id: string | null
+          id: string
+          notes: string | null
+          payment_method: string
+          payment_status: string
+          phone: string
+          receipt_url: string | null
+          source: string
+          updated_at: string
+          webinar_id: string | null
+        }
+        Insert: {
+          admin_status?: string
+          amount?: number
+          created_at?: string
+          email?: string | null
+          full_name: string
+          gateway_authority?: string | null
+          gateway_ref_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          payment_status?: string
+          phone: string
+          receipt_url?: string | null
+          source?: string
+          updated_at?: string
+          webinar_id?: string | null
+        }
+        Update: {
+          admin_status?: string
+          amount?: number
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          gateway_authority?: string | null
+          gateway_ref_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          payment_status?: string
+          phone?: string
+          receipt_url?: string | null
+          source?: string
+          updated_at?: string
+          webinar_id?: string | null
+        }
+        Relationships: []
+      }
       consultation_settings: {
         Row: {
           created_at: string
