@@ -201,17 +201,19 @@ const WebinarWatch: React.FC = () => {
             )}
 
 
-            {/* Chat Panel - fills remaining space */}
-            <Card className="flex-1 min-h-[280px] lg:min-h-0 border rounded-xl overflow-hidden flex flex-col">
-              <WebinarChat
-                webinarId={webinar.id}
-                participantId={participant.id}
-                displayName={participant.display_name || 'ناشناس'}
-                chatEnabled={webinar.chat_enabled}
-                chatMode={webinar.chat_mode as 'public' | 'private' | 'off'}
-                isHost={false}
-              />
-            </Card>
+            {/* Chat Panel - fills remaining space, hidden when chat is deactivated */}
+            {webinar.chat_enabled && webinar.chat_mode !== 'off' && (
+              <Card className="flex-1 min-h-[280px] lg:min-h-0 border rounded-xl overflow-hidden flex flex-col">
+                <WebinarChat
+                  webinarId={webinar.id}
+                  participantId={participant.id}
+                  displayName={participant.display_name || 'ناشناس'}
+                  chatEnabled={webinar.chat_enabled}
+                  chatMode={webinar.chat_mode as 'public' | 'private' | 'off'}
+                  isHost={false}
+                />
+              </Card>
+            )}
           </div>
         </div>
       </div>
