@@ -313,6 +313,38 @@ const Reserve: React.FC = () => {
               ))}
             </Accordion>
           </div>
+
+          <div className="space-y-3">
+            <h2 className="text-lg font-bold">ارتباط با ما</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <a
+                href="tel:02128427131"
+                className="flex items-center gap-3 rounded-xl border bg-card p-4 hover:border-primary/40 transition-colors"
+              >
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Phone className="h-4.5 w-4.5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">تماس تلفنی</p>
+                  <p className="text-xs text-muted-foreground" dir="ltr">021-28427131</p>
+                </div>
+              </a>
+              <a
+                href="https://t.me/rafieiacademy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 rounded-xl border bg-card p-4 hover:border-primary/40 transition-colors"
+              >
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Send className="h-4.5 w-4.5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">تلگرام</p>
+                  <p className="text-xs text-muted-foreground" dir="ltr">@rafieiacademy</p>
+                </div>
+              </a>
+            </div>
+          </div>
         </section>
 
         {/* Form column */}
