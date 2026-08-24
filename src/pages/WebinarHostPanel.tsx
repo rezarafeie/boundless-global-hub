@@ -177,7 +177,13 @@ const WebinarHostPanel: React.FC = () => {
       title: interaction.title || '',
       question: interaction.question || '',
       options: opts,
-      settings: { ...defaultForm.settings, ...(interaction.settings || {}) },
+      settings: {
+        ...defaultForm.settings,
+        ...(interaction.settings || {}),
+        emojis: Array.isArray(interaction.settings?.emojis)
+          ? interaction.settings.emojis.map((e: any) => (typeof e === 'string' ? e : e?.emoji || e?.label || '')).filter(Boolean)
+          : [],
+      },
     });
     setEditingId(interaction.id);
     setCreateOpen(true);
