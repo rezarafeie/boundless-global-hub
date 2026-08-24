@@ -154,12 +154,22 @@ const WebinarWatch: React.FC = () => {
                       تلاش مجدد
                     </Button>
                   </div>
+                ) : embed.mode === 'html' ? (
+                  <iframe
+                    key={iframeKey}
+                    srcDoc={buildEmbedDocument(embed.value)}
+                    className="absolute inset-0 w-full h-full border-0"
+                    allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
+                    onError={() => setIframeFailed(true)}
+                  />
                 ) : (
                   <iframe
                     key={iframeKey}
-                    src={getIframeSrc()}
+                    src={embed.value}
                     className="absolute inset-0 w-full h-full border-0"
-                    allow="fullscreen; autoplay"
+                    allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
                     allowFullScreen
                     onError={() => setIframeFailed(true)}
                   />
