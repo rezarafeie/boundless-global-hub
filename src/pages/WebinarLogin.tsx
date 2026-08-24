@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { enhancedWebhookManager } from '@/lib/enhancedWebhookManager';
 import { consumeWebinarLoginToken, getWlTokenFromUrl, clearWlFromUrl } from '@/lib/webinarAutoLogin';
+import { enterWebinarLocally, normalizeWebinarPhone } from '@/lib/webinarEntryQueue';
+import { readCachedParticipant, writeCachedWebinar } from '@/lib/webinarCache';
 
 
 interface Webinar {
@@ -28,13 +30,7 @@ interface SignupFormData {
   display_name: string;
 }
 
-const normalizePhoneNumber = (phone: string): string => {
-  const cleaned = phone.replace(/[^\d+]/g, '');
-  if (cleaned.startsWith('+')) return cleaned;
-  if (cleaned.startsWith('00')) return '+' + cleaned.substring(2);
-  if (cleaned.startsWith('0')) return '+98' + cleaned.substring(1);
-  return '+' + cleaned;
-};
+const normalizePhoneNumber = normalizeWebinarPhone;
 
 const WebinarLogin: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -65,27 +61,11 @@ const WebinarLogin: React.FC = () => {
   }, [slug]);
 
 
-  // Check if already logged in for interactive mode - verify participant exists in DB
+  // Already entered? Decided purely from the local record — no Supabase call.
   useEffect(() => {
-    const checkExistingSession = async () => {
-      if (!webinar || webinar.login_method !== 'interactive') return;
-      const storedPhone = localStorage.getItem(`webinar_phone_${webinar.id}`);
-      if (!storedPhone) return;
-
-      const { data } = await supabase
-        .from('webinar_participants')
-        .select('id')
-        .eq('webinar_id', webinar.id)
-        .eq('phone', storedPhone)
-        .single();
-
-      if (data) {
-        window.location.href = `/webinar/${slug}/live`;
-      } else {
-        localStorage.removeItem(`webinar_phone_${webinar.id}`);
-      }
-    };
-    checkExistingSession();
+    if (!webinar || webinar.login_method !== 'interactive') return;
+    const cached = readCachedParticipant(webinar.id);
+    if (cached) window.location.href = `/webinar/${slug}/live`;
   }, [webinar, slug]);
 
   const fetchWebinar = async () => {
@@ -101,6 +81,7 @@ const WebinarLogin: React.FC = () => {
         else throw error;
       } else {
         setWebinar(data);
+        writeCachedWebinar(data as any);
       }
     } catch (error) {
       console.error('Error fetching webinar:', error);
@@ -113,75 +94,26 @@ const WebinarLogin: React.FC = () => {
   const onSubmit = async (data: SignupFormData) => {
     if (!webinar) return;
     setSubmitting(true);
-    
+
     try {
-      const normalizedPhone = normalizePhoneNumber(data.mobile_number);
-      
-      // Save to webinar_signups (legacy login tracking)
-      const { data: existingSignup, error: checkError } = await supabase
-        .from('webinar_signups')
-        .select('id')
-        .eq('webinar_id', webinar.id)
-        .eq('mobile_number', normalizedPhone)
-        .single();
-
-      if (checkError && checkError.code !== 'PGRST116') throw checkError;
-
-      if (!existingSignup) {
-        const { error: insertError } = await supabase
-          .from('webinar_signups')
-          .insert([{ webinar_id: webinar.id, mobile_number: normalizedPhone }]);
-        if (insertError) throw insertError;
-      }
-
-      // Also save to webinar_participants (unified system)
-      const { data: participant, error: participantError } = await supabase
-        .from('webinar_participants')
-        .upsert(
-          { webinar_id: webinar.id, phone: normalizedPhone, display_name: data.display_name || null },
-          { onConflict: 'webinar_id,phone' }
-        )
-        .select()
-        .single();
-
-      if (participantError) {
-        console.error('Error saving participant:', participantError);
-      }
-
-      // Store phone in localStorage for session persistence
-      localStorage.setItem(`webinar_phone_${webinar.id}`, normalizedPhone);
-
-      // Send webhook
-      try {
-        const webhookUrl = 'https://hook.us1.make.com/v8w9f6i37sca42qt1g1mwng1dt1xh616';
-        await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            webinar_title: webinar.title,
-            webinar_id: webinar.id,
-            webinar_slug: webinar.slug,
-            webinar_start_date: webinar.start_date,
-            mobile_number: normalizedPhone,
-            login_time: new Date().toISOString(),
-            event_type: 'webinar_login'
-          })
-        });
-      } catch (webhookError) {
-        console.error('Failed to send webhook:', webhookError);
-      }
+      // Local-first entry: the viewer is admitted from a local record with no
+      // network round-trip. A background job syncs entries every 5 minutes.
+      enterWebinarLocally({
+        webinarId: webinar.id,
+        webinarSlug: webinar.slug,
+        webinarTitle: webinar.title,
+        webinarStartDate: webinar.start_date,
+        phone: data.mobile_number,
+        displayName: data.display_name || null,
+      });
 
       toast({ title: "موفقیت", description: "در حال انتقال..." });
 
-      // Redirect based on login_method
-      setTimeout(() => {
-        if (webinar.login_method === 'interactive') {
-          navigateTo(`/webinar/${slug}/live`, { replace: true });
-        } else {
-          window.location.href = webinar.webinar_link;
-        }
-      }, 800);
-
+      if (webinar.login_method === 'interactive') {
+        navigateTo(`/webinar/${slug}/live`, { replace: true });
+      } else {
+        window.location.href = webinar.webinar_link;
+      }
     } catch (error) {
       console.error('Error submitting signup:', error);
       toast({ title: "خطا", description: "خطا در ورود. لطفاً دوباره تلاش کنید", variant: "destructive" });

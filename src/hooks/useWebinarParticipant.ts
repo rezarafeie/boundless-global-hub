@@ -117,7 +117,11 @@ export const useWebinarParticipant = (webinarId: string | undefined) => {
         if (error) {
           console.error('Error loading participant:', error);
           // Phone in localStorage but not in DB — clear it
-          if (error.code === 'PGRST116') {
+          // Do NOT evict a locally-admitted viewer whose entry has not been
+          // synced to the backend yet.
+          const pendingRaw = localStorage.getItem('webinar_entry_queue_v1') || '[]';
+          const hasPending = pendingRaw.includes(phone);
+          if (error.code === 'PGRST116' && !hasPending) {
             localStorage.removeItem(`webinar_phone_${webinarId}`);
             clearCachedParticipant(webinarId);
             setParticipant(null);
