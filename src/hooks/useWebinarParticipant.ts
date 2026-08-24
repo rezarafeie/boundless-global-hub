@@ -79,7 +79,8 @@ export const useWebinarParticipant = (webinarId: string | undefined) => {
     // Hydrate instantly from cache so the live page never waits on Supabase.
     const cached = readCachedParticipant<Participant>(webinarId);
     setParticipant(cached);
-    setLoading(!cached);
+    setLoading(!cached && needsNetworkResolve(webinarId));
+
 
     const loadParticipant = async () => {
       if (!webinarId) {
