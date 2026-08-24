@@ -20,6 +20,8 @@ export interface CachedWebinar {
   allow_late_responses: boolean;
   chat_enabled: boolean;
   chat_mode: string;
+  login_method?: string;
+
 }
 
 const KEY = (slug: string) => `webinar_meta_${slug}`;
