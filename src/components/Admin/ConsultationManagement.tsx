@@ -487,7 +487,15 @@ const ConsultationManagement: React.FC = () => {
             <Calendar className="h-4 w-4" />
             زمان‌های موجود
           </TabsTrigger>
+          <TabsTrigger value="reservations" className="gap-2">
+            <Calendar className="h-4 w-4" />
+            رزروها
+          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="reservations">
+          <ReservationsManagement />
+        </TabsContent>
 
         <TabsContent value="dashboard">
           <ConsultationDashboard />
