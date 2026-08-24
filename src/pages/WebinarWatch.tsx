@@ -134,16 +134,19 @@ const WebinarWatch: React.FC = () => {
             <Card className="overflow-hidden border-0 shadow-md rounded-xl">
               <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                 {iframeFailed ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted gap-3">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted gap-3 px-6 text-center">
                     <AlertCircle className="h-10 w-10 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">خطا در بارگذاری پخش زنده</p>
-                    <Button variant="outline" size="sm" onClick={() => setIframeFailed(false)}>
+                    <p className="text-sm text-muted-foreground">
+                      پخش زنده لحظه‌ای در دسترس نیست. لطفاً چند لحظه شکیبا باشید؛ در حال تلاش مجدد هستیم.
+                    </p>
+                    <Button variant="outline" size="sm" onClick={retryIframe}>
                       <RefreshCw className="h-3.5 w-3.5 ml-1.5" />
                       تلاش مجدد
                     </Button>
                   </div>
                 ) : (
                   <iframe
+                    key={iframeKey}
                     src={getIframeSrc()}
                     className="absolute inset-0 w-full h-full border-0"
                     allow="fullscreen; autoplay"
@@ -151,6 +154,7 @@ const WebinarWatch: React.FC = () => {
                     onError={() => setIframeFailed(true)}
                   />
                 )}
+
               </div>
             </Card>
           </div>
