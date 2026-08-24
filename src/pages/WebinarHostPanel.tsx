@@ -135,30 +135,66 @@ const WebinarHostPanel: React.FC = () => {
     toast({ title: status === 'live' ? '🔴 وبینار شروع شد' : 'وبینار پایان یافت' });
   };
 
+  const openCreate = () => {
+    setEditingId(null);
+    setForm({ ...defaultForm });
+    setCreateOpen(true);
+  };
+
+  const openEdit = (interaction: any) => {
+    const opts = Array.isArray(interaction.options) && interaction.options.length
+      ? interaction.options.map((o: any, i: number) => ({
+          id: String(o.id ?? i + 1),
+          text: o.text ?? '',
+          is_correct: !!o.is_correct,
+        }))
+      : [...defaultForm.options];
+    setForm({
+      type: interaction.type,
+      title: interaction.title || '',
+      question: interaction.question || '',
+      options: opts,
+      settings: { ...defaultForm.settings, ...(interaction.settings || {}) },
+    });
+    setEditingId(interaction.id);
+    setCreateOpen(true);
+  };
+
   const createInteraction = async () => {
     if (!webinar || !form.title) return;
-    const maxOrder = interactions.length > 0 ? Math.max(...interactions.map(i => i.order_index)) + 1 : 0;
 
-    const { error } = await supabase.from('webinar_interactions').insert({
-      webinar_id: webinar.id,
+    const payload = {
       type: form.type,
       title: form.title,
       question: form.question || null,
       options: ['poll', 'quiz'].includes(form.type) ? form.options.filter(o => o.text.trim()) : null,
       settings: form.settings,
-      status: 'draft',
-      order_index: maxOrder,
-    });
+    };
+
+    let error;
+    if (editingId) {
+      ({ error } = await supabase.from('webinar_interactions').update(payload).eq('id', editingId));
+    } else {
+      const maxOrder = interactions.length > 0 ? Math.max(...interactions.map(i => i.order_index)) + 1 : 0;
+      ({ error } = await supabase.from('webinar_interactions').insert({
+        webinar_id: webinar.id,
+        ...payload,
+        status: 'draft',
+        order_index: maxOrder,
+      }));
+    }
 
     if (error) {
-      toast({ title: 'خطا در ایجاد تعامل', variant: 'destructive' });
+      toast({ title: editingId ? 'خطا در ویرایش تعامل' : 'خطا در ایجاد تعامل', variant: 'destructive' });
     } else {
-      toast({ title: 'تعامل ایجاد شد ✅' });
+      toast({ title: editingId ? 'تعامل ویرایش شد ✅' : 'تعامل ایجاد شد ✅' });
       setCreateOpen(false);
+      setEditingId(null);
       setForm({ ...defaultForm });
       refetchInteractions();
     }
   };
+
 
   const pushLive = async (interactionId: string) => {
     // End any active interaction first
