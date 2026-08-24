@@ -78,18 +78,19 @@ const WebinarLogin: React.FC = () => {
         .from('webinar_entries')
         .select('*')
         .eq('slug', slug)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        if (error.code === 'PGRST116') setWebinar(null);
-        else throw error;
-      } else {
+      if (error) throw error;
+
+      if (data) {
         setWebinar(data);
         writeCachedWebinar(data as any);
+      } else if (!readCachedWebinar(slug)) {
+        setNotFound(true);
       }
     } catch (error) {
+      // Never break the form on a network failure — keep whatever we have.
       console.error('Error fetching webinar:', error);
-      toast({ title: "خطا", description: "خطا در دریافت اطلاعات وبینار", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -126,15 +127,18 @@ const WebinarLogin: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/10">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+  if (!webinar) {
+    if (notFound) return <Navigate to="/404" replace />;
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/10">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      );
+    }
+    return null;
   }
 
-  if (!webinar) return <Navigate to="/404" replace />;
 
   const isLive = webinar.status === 'live';
   const isInteractive = webinar.login_method === 'interactive';
