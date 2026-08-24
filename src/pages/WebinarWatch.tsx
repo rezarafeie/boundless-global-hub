@@ -12,7 +12,8 @@ import ConnectionStatusBanner from '@/components/Webinar/ConnectionStatusBanner'
 import {
   readCachedWebinar,
   writeCachedWebinar,
-  resolveIframeSrc,
+  resolveWebinarEmbed,
+  buildEmbedDocument,
   type CachedWebinar,
 } from '@/lib/webinarCache';
 import { startWebinarEntrySync } from '@/lib/webinarEntryQueue';
@@ -103,7 +104,7 @@ const WebinarWatch: React.FC = () => {
   if (!webinar) return notFound ? <Navigate to="/404" replace /> : null;
   if (!participant) return null;
 
-  const getIframeSrc = () => resolveIframeSrc(webinar);
+  const embed = resolveWebinarEmbed(webinar);
 
   const retryIframe = () => {
     setIframeFailed(false);
@@ -154,12 +155,22 @@ const WebinarWatch: React.FC = () => {
                       تلاش مجدد
                     </Button>
                   </div>
+                ) : embed.mode === 'html' ? (
+                  <iframe
+                    key={iframeKey}
+                    srcDoc={buildEmbedDocument(embed.value)}
+                    className="absolute inset-0 w-full h-full border-0"
+                    allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
+                    onError={() => setIframeFailed(true)}
+                  />
                 ) : (
                   <iframe
                     key={iframeKey}
-                    src={getIframeSrc()}
+                    src={embed.value}
                     className="absolute inset-0 w-full h-full border-0"
-                    allow="fullscreen; autoplay"
+                    allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
                     allowFullScreen
                     onError={() => setIframeFailed(true)}
                   />
