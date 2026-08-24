@@ -234,3 +234,9 @@ verify_jwt = false
 
 [functions.reprocess-call]
 verify_jwt = false
+
+[functions.reserve-payment-request]
+verify_jwt = false
+
+[functions.reserve-payment-verify]
+verify_jwt = false
