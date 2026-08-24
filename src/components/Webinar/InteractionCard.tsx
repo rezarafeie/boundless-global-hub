@@ -402,14 +402,16 @@ const InteractionCard: React.FC<InteractionCardProps> = ({
       transition={{ duration: 0.3 }}
     >
       <Card className={`border ${isActive ? 'border-primary shadow-lg ring-1 ring-primary/20' : 'border-border'}`}>
-        <CardContent className="p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <Badge variant={isActive ? 'default' : 'secondary'} className="text-xs">
-              {typeLabels[interaction.type] || interaction.type}
-            </Badge>
-            {isActive && <Badge variant="outline" className="text-xs text-green-600 border-green-300">فعال</Badge>}
-            {isEnded && <Badge variant="outline" className="text-xs">پایان‌یافته</Badge>}
-          </div>
+        <CardContent className={`p-4 ${interaction.type !== 'banner' ? 'space-y-3' : ''}`}>
+          {interaction.type !== 'banner' && (
+            <div className="flex items-center gap-2">
+              <Badge variant={isActive ? 'default' : 'secondary'} className="text-xs">
+                {typeLabels[interaction.type] || interaction.type}
+              </Badge>
+              {isActive && <Badge variant="outline" className="text-xs text-green-600 border-green-300">فعال</Badge>}
+              {isEnded && <Badge variant="outline" className="text-xs">پایان‌یافته</Badge>}
+            </div>
+          )}
           {renderContent()}
         </CardContent>
       </Card>
