@@ -36,9 +36,13 @@ const WebinarLogin: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigateTo = useNavigate();
   const { toast } = useToast();
-  const [webinar, setWebinar] = useState<Webinar | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [webinar, setWebinar] = useState<Webinar | null>(
+    () => (readCachedWebinar(slug) as unknown as Webinar) || null,
+  );
+  const [loading, setLoading] = useState(() => !readCachedWebinar(slug));
+  const [notFound, setNotFound] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
   
   const { register, handleSubmit, formState: { errors }, reset } = useForm<SignupFormData>();
 
