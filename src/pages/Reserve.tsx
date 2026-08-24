@@ -6,8 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle2, CreditCard, Loader2, Upload, ShieldCheck, XCircle } from 'lucide-react';
+import {
+  CheckCircle2, CreditCard, Loader2, Upload, ShieldCheck, XCircle, Copy,
+  CalendarClock, Headphones, Sparkles, Target, Lock, BadgeCheck, Users, Clock,
+} from 'lucide-react';
 
 type Settings = {
   is_active: boolean;
@@ -18,10 +24,31 @@ type Settings = {
   success_message: string;
 };
 
-const GATEWAYS: { id: 'zarinpal' | 'zibal' | 'rafieipay'; label: string }[] = [
-  { id: 'zarinpal', label: 'زرین‌پال' },
-  { id: 'zibal', label: 'زیبال' },
-  { id: 'rafieipay', label: 'رفیعی‌پی' },
+const GATEWAYS: { id: 'zarinpal' | 'zibal' | 'rafieipay'; label: string; hint: string }[] = [
+  { id: 'zarinpal', label: 'زرین‌پال', hint: 'کارت‌های شتاب' },
+  { id: 'zibal', label: 'زیبال', hint: 'درگاه پشتیبان' },
+  { id: 'rafieipay', label: 'رفیعی‌پی', hint: 'درگاه اختصاصی' },
+];
+
+const BENEFITS = [
+  { icon: Target, title: 'بررسی اختصاصی شرایط شما', desc: 'وضعیت فعلی، سرمایه و هدف‌تان بررسی و مسیر مناسب پیشنهاد می‌شود.' },
+  { icon: Sparkles, title: 'نقشه راه شخصی‌سازی‌شده', desc: 'گام‌به‌گام مشخص می‌شود از کجا شروع کنید و چه چیزی را حذف کنید.' },
+  { icon: Headphones, title: 'پاسخ به تمام سؤالات دوره', desc: 'هر ابهامی درباره دوره بدون مرز، پرداخت و پشتیبانی برطرف می‌شود.' },
+  { icon: CalendarClock, title: 'زمان‌بندی منعطف', desc: 'بعد از ثبت رزرو، برای هماهنگی ساعت جلسه با شما تماس گرفته می‌شود.' },
+];
+
+const STEPS = [
+  { n: '۱', t: 'تکمیل فرم', d: 'نام و شماره تماس خود را وارد کنید.' },
+  { n: '۲', t: 'پرداخت هزینه رزرو', d: 'آنلاین یا کارت‌به‌کارت با ارسال رسید.' },
+  { n: '۳', t: 'هماهنگی جلسه', d: 'کارشناس ما برای تعیین زمان تماس می‌گیرد.' },
+  { n: '۴', t: 'برگزاری مشاوره', d: 'جلسه اختصاصی و دریافت نقشه راه.' },
+];
+
+const FAQS = [
+  { q: 'هزینه رزرو قابل بازگشت است؟', a: 'در صورتی که جلسه از سمت ما برگزار نشود، مبلغ به‌طور کامل بازگردانده می‌شود. این مبلغ صرفاً برای تضمین حضور شما در جلسه دریافت می‌شود.' },
+  { q: 'جلسه مشاوره چقدر طول می‌کشد؟', a: 'به‌طور میانگین بین ۲۰ تا ۳۰ دقیقه، به‌صورت تلفنی یا آنلاین و کاملاً اختصاصی.' },
+  { q: 'بعد از پرداخت چه اتفاقی می‌افتد؟', a: 'رزرو شما ثبت می‌شود و کارشناسان ما در اولین فرصت کاری برای هماهنگی زمان جلسه با شما تماس می‌گیرند.' },
+  { q: 'اگر پرداخت آنلاین انجام نشد چه کنم؟', a: 'می‌توانید از درگاه‌های جایگزین استفاده کنید یا با روش کارت‌به‌کارت مبلغ را واریز و تصویر رسید را بارگذاری کنید.' },
 ];
 
 const Reserve: React.FC = () => {
@@ -154,10 +181,18 @@ const Reserve: React.FC = () => {
     }
   };
 
+  const copyCard = async () => {
+    const digits = (settings?.card_details || '').match(/\d[\d\s-]{10,}/)?.[0]?.replace(/\D/g, '');
+    if (!digits) return;
+    await navigator.clipboard.writeText(digits);
+    toast({ title: 'شماره کارت کپی شد ✅' });
+  };
+
   if (loading || verifying) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-background" dir="rtl">
         <Loader2 className="h-7 w-7 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">{verifying ? 'در حال بررسی پرداخت...' : 'در حال بارگذاری...'}</p>
       </div>
     );
   }
@@ -165,14 +200,12 @@ const Reserve: React.FC = () => {
   if (result) {
     const ok = result !== 'failed';
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4" dir="rtl">
-        <Card className="max-w-md w-full text-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-muted/40 to-background px-4" dir="rtl">
+        <Card className="max-w-md w-full text-center border-2 shadow-lg">
           <CardContent className="p-8 space-y-4">
-            {ok ? (
-              <CheckCircle2 className="h-14 w-14 mx-auto text-green-600" />
-            ) : (
-              <XCircle className="h-14 w-14 mx-auto text-destructive" />
-            )}
+            <div className={`mx-auto h-16 w-16 rounded-full flex items-center justify-center ${ok ? 'bg-primary/10' : 'bg-destructive/10'}`}>
+              {ok ? <CheckCircle2 className="h-9 w-9 text-primary" /> : <XCircle className="h-9 w-9 text-destructive" />}
+            </div>
             <h1 className="text-xl font-bold">
               {result === 'success' && 'رزرو شما ثبت شد'}
               {result === 'manual' && 'رسید شما دریافت شد'}
@@ -183,6 +216,11 @@ const Reserve: React.FC = () => {
               {result === 'manual' && 'رسید شما پس از بررسی توسط کارشناسان تأیید و رزرو نهایی می‌شود.'}
               {result === 'failed' && 'مبلغی از حساب شما کسر نشده است. لطفاً دوباره تلاش کنید.'}
             </p>
+            {ok && (
+              <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground leading-relaxed">
+                مرحله بعد: کارشناسان ما در اولین فرصت کاری برای هماهنگی زمان جلسه با شما تماس می‌گیرند.
+              </div>
+            )}
             {result === 'failed' && (
               <Button onClick={() => (window.location.href = '/reserve')}>تلاش مجدد</Button>
             )}
@@ -206,91 +244,174 @@ const Reserve: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background py-10 px-4" dir="rtl">
-      <div className="max-w-xl mx-auto space-y-5">
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold">{settings?.title || 'رزرو مشاوره دوره بدون مرز'}</h1>
-          <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+    <div className="min-h-screen bg-background" dir="rtl">
+      {/* Hero */}
+      <header className="relative overflow-hidden border-b bg-gradient-to-b from-primary/10 via-primary/5 to-background">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.15),transparent_55%)]" />
+        <div className="max-w-5xl mx-auto px-4 py-12 md:py-16 text-center space-y-4">
+          <Badge variant="secondary" className="gap-1.5 px-3 py-1">
+            <Sparkles className="h-3.5 w-3.5" /> ظرفیت محدود جلسات مشاوره
+          </Badge>
+          <h1 className="text-2xl md:text-4xl font-extrabold leading-relaxed">
+            {settings?.title || 'رزرو مشاوره دوره بدون مرز'}
+          </h1>
+          <p className="text-sm md:text-base text-muted-foreground leading-loose whitespace-pre-line max-w-2xl mx-auto">
             {settings?.description}
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-2 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5"><ShieldCheck className="h-3.5 w-3.5 text-primary" /> پرداخت امن</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5"><Clock className="h-3.5 w-3.5 text-primary" /> جلسه ۲۰ تا ۳۰ دقیقه</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5"><Users className="h-3.5 w-3.5 text-primary" /> کاملاً اختصاصی</span>
+          </div>
         </div>
+      </header>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center justify-between">
-              <span>مبلغ رزرو</span>
-              <span className="text-primary">{priceLabel}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      <main className="max-w-5xl mx-auto px-4 py-8 md:py-12 grid gap-8 lg:grid-cols-5">
+        {/* Content column */}
+        <section className="lg:col-span-3 space-y-8 order-2 lg:order-1">
+          <div className="space-y-4">
+            <h2 className="text-lg font-bold">در این جلسه چه چیزی دریافت می‌کنید؟</h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>نام و نام خانوادگی *</Label>
-                <Input value={fullName} onChange={e => setFullName(e.target.value)} maxLength={100} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>شماره تماس *</Label>
-                <Input value={phone} onChange={e => setPhone(e.target.value)} dir="ltr" maxLength={20} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>ایمیل (اختیاری)</Label>
-              <Input value={email} onChange={e => setEmail(e.target.value)} dir="ltr" maxLength={255} />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <Button variant={mode === 'online' ? 'default' : 'outline'} onClick={() => setMode('online')}>
-                <CreditCard className="h-4 w-4 ml-2" /> پرداخت آنلاین
-              </Button>
-              <Button variant={mode === 'manual' ? 'default' : 'outline'} onClick={() => setMode('manual')}>
-                <Upload className="h-4 w-4 ml-2" /> کارت به کارت
-              </Button>
-            </div>
-
-            {mode === 'online' ? (
-              <div className="space-y-3">
-                <Label>انتخاب درگاه پرداخت</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {GATEWAYS.map(g => (
-                    <Button
-                      key={g.id}
-                      variant={gateway === g.id ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setGateway(g.id)}
-                    >
-                      {g.label}
-                    </Button>
-                  ))}
+              {BENEFITS.map(b => (
+                <div key={b.title} className="rounded-xl border bg-card p-4 space-y-2 hover:border-primary/40 transition-colors">
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <b.icon className="h-4.5 w-4.5 text-primary" />
+                  </div>
+                  <h3 className="text-sm font-semibold">{b.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{b.desc}</p>
                 </div>
-                <Button className="w-full" disabled={submitting} onClick={handleOnline}>
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <ShieldCheck className="h-4 w-4 ml-2" />}
-                  پرداخت و رزرو
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {settings?.card_details && (
-                  <div className="rounded-lg border bg-muted/40 p-3 text-sm whitespace-pre-line leading-relaxed">
-                    {settings.card_details}
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-lg font-bold">مراحل رزرو</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {STEPS.map(s => (
+                <div key={s.n} className="flex gap-3 rounded-xl border bg-card p-4">
+                  <div className="h-8 w-8 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                    {s.n}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">{s.t}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{s.d}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-lg font-bold">سؤالات متداول</h2>
+            <Accordion type="single" collapsible className="rounded-xl border bg-card px-4">
+              {FAQS.map((f, i) => (
+                <AccordionItem key={i} value={`faq-${i}`} className={i === FAQS.length - 1 ? 'border-b-0' : ''}>
+                  <AccordionTrigger className="text-sm text-right hover:no-underline">{f.q}</AccordionTrigger>
+                  <AccordionContent className="text-xs text-muted-foreground leading-relaxed">{f.a}</AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </section>
+
+        {/* Form column */}
+        <section className="lg:col-span-2 order-1 lg:order-2">
+          <div className="lg:sticky lg:top-6 space-y-4">
+            <Card className="border-2 shadow-lg">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center justify-between">
+                  <span>مبلغ رزرو</span>
+                  <span className="text-primary text-lg font-extrabold">{priceLabel}</span>
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">این مبلغ صرفاً برای تضمین حضور شما در جلسه دریافت می‌شود.</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label>نام و نام خانوادگی *</Label>
+                  <Input value={fullName} onChange={e => setFullName(e.target.value)} maxLength={100} placeholder="نام کامل" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>شماره تماس *</Label>
+                  <Input value={phone} onChange={e => setPhone(e.target.value)} dir="ltr" maxLength={20} placeholder="09xxxxxxxxx" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>ایمیل (اختیاری)</Label>
+                  <Input value={email} onChange={e => setEmail(e.target.value)} dir="ltr" maxLength={255} placeholder="you@example.com" />
+                </div>
+
+                <Separator />
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant={mode === 'online' ? 'default' : 'outline'} onClick={() => setMode('online')}>
+                    <CreditCard className="h-4 w-4 ml-2" /> پرداخت آنلاین
+                  </Button>
+                  <Button variant={mode === 'manual' ? 'default' : 'outline'} onClick={() => setMode('manual')}>
+                    <Upload className="h-4 w-4 ml-2" /> کارت به کارت
+                  </Button>
+                </div>
+
+                {mode === 'online' ? (
+                  <div className="space-y-3">
+                    <Label>انتخاب درگاه پرداخت</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {GATEWAYS.map(g => (
+                        <button
+                          key={g.id}
+                          type="button"
+                          onClick={() => setGateway(g.id)}
+                          className={`rounded-lg border p-2 text-center transition ${gateway === g.id ? 'border-primary bg-primary/10' : 'hover:bg-muted'}`}
+                        >
+                          <span className="block text-xs font-semibold">{g.label}</span>
+                          <span className="block text-[10px] text-muted-foreground mt-0.5">{g.hint}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <Button className="w-full h-11" disabled={submitting} onClick={handleOnline}>
+                      {submitting ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <ShieldCheck className="h-4 w-4 ml-2" />}
+                      پرداخت و رزرو جلسه
+                    </Button>
+                    <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                      <Lock className="h-3 w-3" /> انتقال به درگاه بانکی امن
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {settings?.card_details && (
+                      <div className="rounded-lg border bg-muted/40 p-3 text-sm whitespace-pre-line leading-relaxed space-y-2">
+                        <div dir="ltr" className="text-right">{settings.card_details}</div>
+                        <Button variant="outline" size="sm" className="w-full" onClick={copyCard}>
+                          <Copy className="h-3.5 w-3.5 ml-2" /> کپی شماره کارت
+                        </Button>
+                      </div>
+                    )}
+                    <div className="space-y-1.5">
+                      <Label>تصویر رسید پرداخت *</Label>
+                      <Input type="file" accept="image/*,application/pdf" onChange={e => setReceipt(e.target.files?.[0] || null)} />
+                      <p className="text-[11px] text-muted-foreground">حداکثر ۵ مگابایت — تصویر یا PDF</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>توضیحات (اختیاری)</Label>
+                      <Textarea rows={2} value={note} onChange={e => setNote(e.target.value)} maxLength={500} />
+                    </div>
+                    <Button className="w-full h-11" disabled={submitting} onClick={handleManual}>
+                      {submitting ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <Upload className="h-4 w-4 ml-2" />}
+                      ارسال رسید و ثبت رزرو
+                    </Button>
                   </div>
                 )}
-                <div className="space-y-1.5">
-                  <Label>تصویر رسید پرداخت *</Label>
-                  <Input type="file" accept="image/*,application/pdf" onChange={e => setReceipt(e.target.files?.[0] || null)} />
+              </CardContent>
+            </Card>
+
+            <div className="rounded-xl border bg-card p-4 space-y-2">
+              {['ثبت آنی رزرو پس از پرداخت', 'تماس کارشناس در اولین فرصت کاری', 'پشتیبانی کامل تا زمان جلسه'].map(t => (
+                <div key={t} className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <BadgeCheck className="h-4 w-4 text-primary shrink-0" /> {t}
                 </div>
-                <div className="space-y-1.5">
-                  <Label>توضیحات (اختیاری)</Label>
-                  <Textarea rows={2} value={note} onChange={e => setNote(e.target.value)} maxLength={500} />
-                </div>
-                <Button className="w-full" disabled={submitting} onClick={handleManual}>
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <Upload className="h-4 w-4 ml-2" />}
-                  ارسال رسید و ثبت رزرو
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 };
