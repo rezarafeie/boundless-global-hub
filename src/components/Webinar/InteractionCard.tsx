@@ -47,6 +47,31 @@ const InteractionCard: React.FC<InteractionCardProps> = ({
     }
   }, [interaction, isActive, hasAnswered, settings.timer_duration]);
 
+  // Countdown for announcement banners
+  useEffect(() => {
+    const target = settings.countdown_to;
+    if (interaction.type !== 'banner' || !target) {
+      setBannerCountdown(null);
+      return;
+    }
+    const tick = () => {
+      const diff = new Date(target).getTime() - Date.now();
+      if (isNaN(diff) || diff <= 0) {
+        setBannerCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+      setBannerCountdown({
+        days: Math.floor(diff / 86400000),
+        hours: Math.floor((diff / 3600000) % 24),
+        minutes: Math.floor((diff / 60000) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+      });
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [interaction.type, settings.countdown_to]);
+
   const submitResponse = async (answer: any) => {
     if (!participantId || hasAnswered || submitting) return;
     if (isEnded && !settings.allow_late) return;
