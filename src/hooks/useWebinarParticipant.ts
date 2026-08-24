@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  readCachedParticipant,
+  writeCachedParticipant,
+  clearCachedParticipant,
+} from '@/lib/webinarCache';
 
 interface Participant {
   id: string;
@@ -46,14 +51,17 @@ export const useWebinarParticipant = (webinarId: string | undefined) => {
     }
 
     localStorage.setItem(`webinar_phone_${webinarId}`, cleaned);
+    writeCachedParticipant(webinarId, data);
     setParticipant(data);
     return data;
   }, [webinarId]);
 
   useEffect(() => {
-    // Reset state when webinarId changes
-    setParticipant(null);
-    setLoading(true);
+    // Reset state when webinarId changes.
+    // Hydrate instantly from cache so the live page never waits on Supabase.
+    const cached = readCachedParticipant<Participant>(webinarId);
+    setParticipant(cached);
+    setLoading(!cached);
 
     const loadParticipant = async () => {
       if (!webinarId) {
@@ -111,10 +119,15 @@ export const useWebinarParticipant = (webinarId: string | undefined) => {
           // Phone in localStorage but not in DB — clear it
           if (error.code === 'PGRST116') {
             localStorage.removeItem(`webinar_phone_${webinarId}`);
+            clearCachedParticipant(webinarId);
+            setParticipant(null);
           }
         }
 
-        if (data) setParticipant(data);
+        if (data) {
+          writeCachedParticipant(webinarId, data);
+          setParticipant(data);
+        }
       } catch (err) {
         console.error('Error loading participant:', err);
       } finally {

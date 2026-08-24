@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Users, RefreshCw, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,40 +8,39 @@ import { useWebinarParticipant } from '@/hooks/useWebinarParticipant';
 import { useWebinarRealtime } from '@/hooks/useWebinarRealtime';
 import InteractionCard from '@/components/Webinar/InteractionCard';
 import WebinarChat from '@/components/Webinar/WebinarChat';
+import ConnectionStatusBanner from '@/components/Webinar/ConnectionStatusBanner';
+import {
+  readCachedWebinar,
+  writeCachedWebinar,
+  resolveIframeSrc,
+  type CachedWebinar,
+} from '@/lib/webinarCache';
 import { AnimatePresence } from 'framer-motion';
 
-interface Webinar {
-  id: string;
-  title: string;
-  slug: string;
-  start_date: string;
-  webinar_link: string;
-  iframe_embed_code: string | null;
-  status: string;
-  host_name: string | null;
-  description: string | null;
-  allow_late_responses: boolean;
-  chat_enabled: boolean;
-  chat_mode: string;
-}
+type Webinar = CachedWebinar;
 
 const WebinarWatch: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const [webinar, setWebinar] = useState<Webinar | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Hydrate synchronously from local cache: the page shell + iframe render
+  // with zero Supabase round-trips. Supabase only refreshes it in background.
+  const [webinar, setWebinar] = useState<Webinar | null>(() => readCachedWebinar(slug));
+  const [loading, setLoading] = useState(() => !readCachedWebinar(slug));
+  const [notFound, setNotFound] = useState(false);
   const [iframeFailed, setIframeFailed] = useState(false);
+  const [iframeKey, setIframeKey] = useState(0);
+  const retryRef = useRef(0);
 
   const { participant, loading: participantLoading } = useWebinarParticipant(webinar?.id);
   const {
     activeInteraction,
-    previousInteractions,
     responses,
     participantCount,
   } = useWebinarRealtime(webinar?.id);
 
   useEffect(() => {
     if (slug) fetchWebinar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   useEffect(() => {
@@ -52,24 +50,39 @@ const WebinarWatch: React.FC = () => {
     }
   }, [loading, participantLoading, webinar, participant, slug, navigate]);
 
-
   const fetchWebinar = async () => {
     try {
       const { data, error } = await supabase
         .from('webinar_entries')
         .select('*')
         .eq('slug', slug)
-        .single();
+        .maybeSingle();
+
       if (error) throw error;
-      setWebinar(data);
+
+      if (data) {
+        setWebinar(data as Webinar);
+        writeCachedWebinar(data as Webinar);
+        retryRef.current = 0;
+      } else if (!readCachedWebinar(slug)) {
+        // Definitive answer from the server: this webinar does not exist.
+        setNotFound(true);
+      }
     } catch {
-      setWebinar(null);
+      // Network/Supabase failure — keep whatever we already show and retry
+      // silently in the background with backoff. Never break the live page.
+      const attempt = retryRef.current++;
+      if (attempt < 8) {
+        setTimeout(fetchWebinar, Math.min(20000, 1500 * Math.pow(1.7, attempt)));
+      } else if (!readCachedWebinar(slug)) {
+        setNotFound(true);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading || participantLoading) {
+  if (loading || (participantLoading && !participant)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -77,17 +90,16 @@ const WebinarWatch: React.FC = () => {
     );
   }
 
-  if (!webinar) return <Navigate to="/404" replace />;
+  if (!webinar) return notFound ? <Navigate to="/404" replace /> : null;
   if (!participant) return null;
 
-  const isLive = webinar.status === 'live';
-  const isEnded = webinar.status === 'ended';
+  const getIframeSrc = () => resolveIframeSrc(webinar);
 
-  const getIframeSrc = () => {
-    if (!webinar.iframe_embed_code) return webinar.webinar_link;
-    const match = webinar.iframe_embed_code.match(/src="([^"]+)"/);
-    return match ? match[1] : webinar.webinar_link;
+  const retryIframe = () => {
+    setIframeFailed(false);
+    setIframeKey(k => k + 1);
   };
+
 
   return (
     <div className="h-[100dvh] flex flex-col bg-background overflow-hidden" dir="rtl">
@@ -122,16 +134,19 @@ const WebinarWatch: React.FC = () => {
             <Card className="overflow-hidden border-0 shadow-md rounded-xl">
               <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                 {iframeFailed ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted gap-3">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted gap-3 px-6 text-center">
                     <AlertCircle className="h-10 w-10 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">خطا در بارگذاری پخش زنده</p>
-                    <Button variant="outline" size="sm" onClick={() => setIframeFailed(false)}>
+                    <p className="text-sm text-muted-foreground">
+                      پخش زنده لحظه‌ای در دسترس نیست. لطفاً چند لحظه شکیبا باشید؛ در حال تلاش مجدد هستیم.
+                    </p>
+                    <Button variant="outline" size="sm" onClick={retryIframe}>
                       <RefreshCw className="h-3.5 w-3.5 ml-1.5" />
                       تلاش مجدد
                     </Button>
                   </div>
                 ) : (
                   <iframe
+                    key={iframeKey}
                     src={getIframeSrc()}
                     className="absolute inset-0 w-full h-full border-0"
                     allow="fullscreen; autoplay"
@@ -139,13 +154,17 @@ const WebinarWatch: React.FC = () => {
                     onError={() => setIframeFailed(true)}
                   />
                 )}
+
               </div>
             </Card>
           </div>
 
           {/* Right Panel: Active Interaction on top + Chat */}
           <div className="lg:col-span-1 flex flex-col gap-3 min-h-0 lg:h-full flex-1">
-            {/* Active Interaction - shows on top when active */}
+            {/* Realtime health (chat & engagement only — video is independent) */}
+            <ConnectionStatusBanner webinarId={webinar.id} />
+
+
             {activeInteraction && (
               <div className="shrink-0 max-h-[45vh] lg:max-h-[50%] overflow-y-auto">
                 <AnimatePresence mode="wait">

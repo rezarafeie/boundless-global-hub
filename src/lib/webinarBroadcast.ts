@@ -24,12 +24,19 @@ export type WebinarBroadcastEvent =
 
 type Handler = (payload: any) => void;
 
+export type WebinarConnectionStatus = 'connecting' | 'connected' | 'reconnecting';
+
 interface Entry {
   channel: RealtimeChannel;
   refs: number;
   handlers: Map<WebinarBroadcastEvent, Set<Handler>>;
   joined: boolean;
+  status: WebinarConnectionStatus;
+  statusListeners: Set<(s: WebinarConnectionStatus) => void>;
+  retries: number;
+  retryTimer: number | null;
 }
+
 
 const registry = new Map<string, Entry>();
 
@@ -42,20 +49,25 @@ const EVENTS: WebinarBroadcastEvent[] = [
   'response',
 ];
 
-function getEntry(webinarId: string): Entry {
-  let entry = registry.get(webinarId);
-  if (entry) return entry;
+function notifyStatus(webinarId: string, entry: Entry, status: WebinarConnectionStatus) {
+  entry.status = status;
+  entry.statusListeners.forEach(fn => {
+    try {
+      fn(status);
+    } catch (e) {
+      console.error('[webinarBroadcast] status listener error', e);
+    }
+  });
+}
 
-  const handlers = new Map<WebinarBroadcastEvent, Set<Handler>>();
-  EVENTS.forEach(e => handlers.set(e, new Set()));
-
+function bindChannel(webinarId: string, entry: Entry) {
   const channel = supabase.channel(`wb:${webinarId}`, {
     config: { broadcast: { self: false, ack: false } },
   });
 
   EVENTS.forEach(event => {
     channel.on('broadcast', { event }, ({ payload }) => {
-      handlers.get(event)?.forEach(fn => {
+      entry.handlers.get(event)?.forEach(fn => {
         try {
           fn(payload);
         } catch (e) {
@@ -65,14 +77,113 @@ function getEntry(webinarId: string): Entry {
     });
   });
 
-  entry = { channel, refs: 0, handlers, joined: false };
-  registry.set(webinarId, entry);
+  entry.channel = channel;
+  entry.joined = false;
 
   channel.subscribe(status => {
-    if (status === 'SUBSCRIBED') entry!.joined = true;
+    if (status === 'SUBSCRIBED') {
+      entry.joined = true;
+      entry.retries = 0;
+      notifyStatus(webinarId, entry, 'connected');
+      return;
+    }
+    if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+      entry.joined = false;
+      scheduleRejoin(webinarId, entry);
+    }
   });
+}
+
+function scheduleRejoin(webinarId: string, entry: Entry) {
+  if (entry.retryTimer || entry.refs <= 0) return;
+  notifyStatus(webinarId, entry, 'reconnecting');
+
+  const delay = Math.min(15000, 1000 * Math.pow(1.6, entry.retries)) + Math.random() * 500;
+  entry.retries += 1;
+
+  entry.retryTimer = window.setTimeout(() => {
+    entry.retryTimer = null;
+    if (entry.refs <= 0 || !registry.has(webinarId)) return;
+    try {
+      supabase.removeChannel(entry.channel);
+    } catch {
+      /* ignore */
+    }
+    bindChannel(webinarId, entry);
+  }, delay);
+}
+
+function getEntry(webinarId: string): Entry {
+  let entry = registry.get(webinarId);
+  if (entry) return entry;
+
+  const handlers = new Map<WebinarBroadcastEvent, Set<Handler>>();
+  EVENTS.forEach(e => handlers.set(e, new Set()));
+
+  entry = {
+    channel: null as unknown as RealtimeChannel,
+    refs: 0,
+    handlers,
+    joined: false,
+    status: 'connecting',
+    statusListeners: new Set(),
+    retries: 0,
+    retryTimer: null,
+  };
+  registry.set(webinarId, entry);
+  bindChannel(webinarId, entry);
 
   return entry;
+}
+
+/**
+ * Observe the realtime connection health for a webinar. Reconnection is
+ * automatic with exponential backoff — this is purely for UI feedback.
+ */
+export function subscribeWebinarConnection(
+  webinarId: string,
+  cb: (status: WebinarConnectionStatus) => void,
+): () => void {
+  const entry = getEntry(webinarId);
+  entry.refs += 1;
+  entry.statusListeners.add(cb);
+  cb(entry.status);
+
+  return () => {
+    entry.statusListeners.delete(cb);
+    releaseEntry(webinarId, entry);
+  };
+}
+
+/** Force an immediate reconnect attempt (used by "retry now" buttons). */
+export function reconnectWebinarBroadcast(webinarId: string) {
+  const entry = registry.get(webinarId);
+  if (!entry) return;
+  if (entry.retryTimer) {
+    clearTimeout(entry.retryTimer);
+    entry.retryTimer = null;
+  }
+  entry.retries = 0;
+  try {
+    supabase.removeChannel(entry.channel);
+  } catch {
+    /* ignore */
+  }
+  notifyStatus(webinarId, entry, 'reconnecting');
+  bindChannel(webinarId, entry);
+}
+
+function releaseEntry(webinarId: string, entry: Entry) {
+  entry.refs -= 1;
+  if (entry.refs <= 0) {
+    if (entry.retryTimer) clearTimeout(entry.retryTimer);
+    registry.delete(webinarId);
+    try {
+      supabase.removeChannel(entry.channel);
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 /**
@@ -96,13 +207,10 @@ export function subscribeWebinarBroadcast(
 
   return () => {
     registered.forEach(([event, fn]) => entry.handlers.get(event)?.delete(fn));
-    entry.refs -= 1;
-    if (entry.refs <= 0) {
-      registry.delete(webinarId);
-      supabase.removeChannel(entry.channel);
-    }
+    releaseEntry(webinarId, entry);
   };
 }
+
 
 /**
  * Emit an event to everyone listening on the webinar channel.
