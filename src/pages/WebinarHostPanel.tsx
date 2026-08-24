@@ -100,6 +100,7 @@ const WebinarHostPanel: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<InteractionForm>({ ...defaultForm });
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const {
     interactions,
