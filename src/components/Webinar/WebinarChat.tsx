@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, Trash2, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { subscribeWebinarBroadcast, broadcastWebinarEvent } from '@/lib/webinarBroadcast';
+import { subscribeWebinarBroadcast, broadcastWebinarEvent, subscribeWebinarConnection } from '@/lib/webinarBroadcast';
 
 interface ChatMessage {
   id: string;
@@ -28,6 +28,9 @@ interface WebinarChatProps {
 
 const MESSAGE_LIMIT = 50;
 const SEND_COOLDOWN_MS = 2000;
+const RECONCILE_MS = 30000;
+// Realtime down → poll the REST API so chat still updates.
+const DEGRADED_POLL_MS = 4000;
 
 const WebinarChat: React.FC<WebinarChatProps> = ({
   webinarId,
@@ -41,6 +44,7 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [realtimeDegraded, setRealtimeDegraded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastSentRef = useRef<number>(0);
 
@@ -76,6 +80,13 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
 
   // No polling loop: realtime carries new messages. We only re-sync when the
   // tab regains focus / the connection comes back (see subscribe handler).
+  useEffect(() => {
+    if (!webinarId || isHost) return;
+    return subscribeWebinarConnection(webinarId, status => {
+      setRealtimeDegraded(status !== 'connected');
+    });
+  }, [webinarId, isHost]);
+
   useEffect(() => {
     if (!webinarId) return;
     const onFocus = () => fetchMessages();
@@ -135,13 +146,16 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
     });
 
     // Safety net for missed broadcasts.
-    const reconcile = window.setInterval(fetchMessages, 30000);
+    const reconcile = window.setInterval(
+      fetchMessages,
+      realtimeDegraded ? DEGRADED_POLL_MS : RECONCILE_MS,
+    );
 
     return () => {
       unsubscribe();
       window.clearInterval(reconcile);
     };
-  }, [webinarId, chatMode, isHost, appendMessage, fetchMessages]);
+  }, [webinarId, chatMode, isHost, realtimeDegraded, appendMessage, fetchMessages]);
 
   useEffect(() => {
     // Auto-scroll to bottom
