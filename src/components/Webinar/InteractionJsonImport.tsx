@@ -94,7 +94,11 @@ const SAMPLES: { key: string; label: string; json: string }[] = [
     json: `{
   "type": "reaction",
   "title": "واکنش شما؟",
-  "settings": { "scale_max": 5 }
+  "question": "چه حسی دارید؟",
+  "settings": {
+    "emojis": ["❤️", "👏", "🔥", "😍", "👍", "😮"],
+    "show_results_immediately": true
+  }
 }`,
   },
   {

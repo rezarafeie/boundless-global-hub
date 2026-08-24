@@ -92,6 +92,7 @@ const defaultForm: InteractionForm = {
     banner_background: '',
     banner_text_color: '',
     countdown_to: '',
+    emojis: [],
   },
 };
 
@@ -190,7 +191,9 @@ const WebinarHostPanel: React.FC = () => {
       title: form.title,
       question: form.question || null,
       options: ['poll', 'quiz'].includes(form.type) ? form.options.filter(o => o.text.trim()) : null,
-      settings: form.settings,
+      settings: form.type === 'reaction'
+        ? { ...form.settings, emojis: form.settings.emojis.filter(Boolean) }
+        : form.settings,
     };
 
     let error;
@@ -471,6 +474,7 @@ const WebinarHostPanel: React.FC = () => {
                           <SelectItem value="checkin">✋ حضور</SelectItem>
                           <SelectItem value="task">📝 تکلیف</SelectItem>
                           <SelectItem value="cta">🔗 لینک</SelectItem>
+                          <SelectItem value="reaction">⚡ واکنش</SelectItem>
                           <SelectItem value="banner">📢 بنر اعلان</SelectItem>
                         </SelectContent>
                       </Select>
@@ -528,6 +532,49 @@ const WebinarHostPanel: React.FC = () => {
                         <div><Label>لینک</Label><Input value={form.settings.link_url} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, link_url: e.target.value } }))} placeholder="https://..." dir="ltr" /></div>
                         <div><Label>متن دکمه</Label><Input value={form.settings.button_label} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, button_label: e.target.value } }))} /></div>
                         <div><Label>توضیح</Label><Input value={form.settings.cta_description} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, cta_description: e.target.value } }))} /></div>
+                      </div>
+                    )}
+
+                    {/* Reaction settings — انتخاب ایموجی */}
+                    {form.type === 'reaction' && (
+                      <div className="space-y-2 border rounded-lg p-3">
+                        <Label>ایموجی‌های واکنش</Label>
+                        <div className="flex flex-wrap gap-1">
+                          {EMOJI_PALETTE.map(em => {
+                            const active = form.settings.emojis.includes(em);
+                            return (
+                              <button
+                                key={em}
+                                type="button"
+                                onClick={() => setForm(p => ({
+                                  ...p,
+                                  settings: {
+                                    ...p.settings,
+                                    emojis: active
+                                      ? p.settings.emojis.filter(x => x !== em)
+                                      : [...p.settings.emojis, em],
+                                  },
+                                }))}
+                                className={`text-xl rounded-md border px-2 py-1 transition ${active ? 'border-primary bg-primary/10' : 'border-border hover:bg-muted'}`}
+                              >
+                                {em}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">ایموجی‌های سفارشی (با فاصله یا کاما جدا کنید)</Label>
+                          <Input
+                            value={form.settings.emojis.join(' ')}
+                            onChange={e => setForm(p => ({
+                              ...p,
+                              settings: { ...p.settings, emojis: e.target.value.split(/[\s,،]+/).filter(Boolean) },
+                            }))}
+                            placeholder="❤️ 👏 🔥"
+                            dir="ltr"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">اگر خالی بماند، ایموجی‌های پیش‌فرض نمایش داده می‌شود.</p>
                       </div>
                     )}
 
