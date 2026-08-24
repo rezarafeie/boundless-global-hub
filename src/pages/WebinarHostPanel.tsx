@@ -52,6 +52,12 @@ interface InteractionForm {
     cta_description: string;
     scale_max: number;
     explanation: string;
+    banner_title: string;
+    banner_description: string;
+    banner_icon: string;
+    banner_background: string;
+    banner_text_color: string;
+    countdown_to: string;
   };
 }
 
