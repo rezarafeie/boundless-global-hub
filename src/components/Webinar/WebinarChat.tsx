@@ -25,6 +25,9 @@ interface WebinarChatProps {
   isHost?: boolean;
 }
 
+const MESSAGE_LIMIT = 50;
+const SEND_COOLDOWN_MS = 2000;
+
 const WebinarChat: React.FC<WebinarChatProps> = ({
   webinarId,
   participantId,
@@ -38,6 +41,7 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lastSentRef = useRef<number>(0);
 
   const fetchMessages = useCallback(async () => {
     if (!webinarId) return;
@@ -45,8 +49,8 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
       .from('webinar_messages')
       .select('*')
       .eq('webinar_id', webinarId)
-      .order('created_at', { ascending: true })
-      .limit(200);
+      .order('created_at', { ascending: false })
+      .limit(MESSAGE_LIMIT);
 
     // In private mode, only host sees private messages (non-host sees nothing when mode is private)
     if (chatMode === 'private' && !isHost) {
@@ -54,14 +58,14 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
     }
 
     const { data } = await query;
-    if (data) setMessages(data as ChatMessage[]);
+    if (data) setMessages(([...data] as ChatMessage[]).reverse());
   }, [webinarId, chatMode, isHost]);
 
   const appendMessage = useCallback((message: ChatMessage) => {
     setMessages(prev => {
       if (prev.some(m => m.id === message.id)) return prev;
       const next = [...prev, message];
-      return next.length > 200 ? next.slice(-200) : next;
+      return next.length > MESSAGE_LIMIT ? next.slice(-MESSAGE_LIMIT) : next;
     });
   }, []);
 
@@ -69,15 +73,19 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
     fetchMessages();
   }, [fetchMessages]);
 
+  // No polling loop: realtime carries new messages. We only re-sync when the
+  // tab regains focus / the connection comes back (see subscribe handler).
   useEffect(() => {
     if (!webinarId) return;
-
-    const pollInterval = window.setInterval(() => {
-      fetchMessages();
-    }, 3000);
-
-    return () => window.clearInterval(pollInterval);
+    const onFocus = () => fetchMessages();
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+    };
   }, [webinarId, fetchMessages]);
+
 
   useEffect(() => {
     if (!webinarId) return;
@@ -125,6 +133,14 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
   const sendMessage = async () => {
     const trimmedMessage = newMessage.trim();
     if (!trimmedMessage || sending) return;
+
+    // Client-side rate limit: max 1 message / 2s per participant.
+    const since = Date.now() - lastSentRef.current;
+    if (!isHost && since < SEND_COOLDOWN_MS) {
+      toast({ title: `کمی آهسته‌تر — ${Math.ceil((SEND_COOLDOWN_MS - since) / 1000)} ثانیه صبر کنید` });
+      return;
+    }
+    lastSentRef.current = Date.now();
 
     setSending(true);
     try {

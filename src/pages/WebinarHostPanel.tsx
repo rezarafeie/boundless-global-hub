@@ -111,7 +111,7 @@ const WebinarHostPanel: React.FC = () => {
     reactionCounts,
     participantCount,
     refetchInteractions,
-  } = useWebinarRealtime(webinar?.id);
+  } = useWebinarRealtime(webinar?.id, { isHost: true });
 
   useEffect(() => {
     if (slug) fetchWebinar();
