@@ -15,6 +15,7 @@ import {
   resolveIframeSrc,
   type CachedWebinar,
 } from '@/lib/webinarCache';
+import { startWebinarEntrySync } from '@/lib/webinarEntryQueue';
 import { AnimatePresence } from 'framer-motion';
 
 type Webinar = CachedWebinar;
@@ -49,6 +50,15 @@ const WebinarWatch: React.FC = () => {
       navigate(`/webinar/${slug}/login?redirect=live${wl ? `&wl=${encodeURIComponent(wl)}` : ''}`, { replace: true });
     }
   }, [loading, participantLoading, webinar, participant, slug, navigate]);
+
+  // Push locally-admitted viewers to the backend every 5 minutes until the
+  // webinar ends. The live page itself never waits on this.
+  const statusRef = useRef<string | undefined>(webinar?.status);
+  statusRef.current = webinar?.status;
+  useEffect(() => {
+    if (!webinar?.id) return;
+    return startWebinarEntrySync(() => statusRef.current === 'ended');
+  }, [webinar?.id]);
 
   const fetchWebinar = async () => {
     try {
