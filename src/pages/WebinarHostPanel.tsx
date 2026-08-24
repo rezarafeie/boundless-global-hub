@@ -431,12 +431,10 @@ const WebinarHostPanel: React.FC = () => {
                 currentMaxOrder={interactions.length > 0 ? Math.max(...interactions.map(i => i.order_index)) + 1 : 0}
                 onImported={refetchInteractions}
               />
-              <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-                <DialogTrigger asChild>
-                  <Button><Plus className="h-4 w-4 ml-2" />ایجاد تعامل</Button>
-                </DialogTrigger>
+              <Button onClick={openCreate}><Plus className="h-4 w-4 ml-2" />ایجاد تعامل</Button>
+              <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setEditingId(null); setForm({ ...defaultForm }); } }}>
                 <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-                  <DialogHeader><DialogTitle>ایجاد تعامل جدید</DialogTitle></DialogHeader>
+                  <DialogHeader><DialogTitle>{editingId ? 'ویرایش تعامل' : 'ایجاد تعامل جدید'}</DialogTitle></DialogHeader>
                   <div className="space-y-4">
                     <div>
                       <Label>نوع تعامل</Label>
