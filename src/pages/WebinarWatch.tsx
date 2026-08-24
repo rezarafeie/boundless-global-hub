@@ -144,10 +144,10 @@ const WebinarWatch: React.FC = () => {
           </div>
 
           {/* Right Panel: Active Interaction on top + Chat */}
-          <div className="lg:col-span-1 flex flex-col gap-3 min-h-0 h-[42vh] md:h-[46vh] lg:h-full">
+          <div className="lg:col-span-1 flex flex-col gap-3 min-h-0 lg:h-full">
             {/* Active Interaction - shows on top when active */}
             {activeInteraction && (
-              <div className="shrink-0">
+              <div className="shrink-0 max-h-[45vh] lg:max-h-[50%] overflow-y-auto">
                 <AnimatePresence mode="wait">
                   <InteractionCard
                     key={activeInteraction.id}
@@ -162,7 +162,7 @@ const WebinarWatch: React.FC = () => {
 
 
             {/* Chat Panel - fills remaining space */}
-            <Card className="flex-1 min-h-0 border rounded-xl overflow-hidden flex flex-col">
+            <Card className="flex-1 min-h-[280px] lg:min-h-0 border rounded-xl overflow-hidden flex flex-col">
               <WebinarChat
                 webinarId={webinar.id}
                 participantId={participant.id}
