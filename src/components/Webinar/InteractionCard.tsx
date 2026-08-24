@@ -25,6 +25,7 @@ const InteractionCard: React.FC<InteractionCardProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [textAnswer, setTextAnswer] = useState('');
   const [timerLeft, setTimerLeft] = useState<number | null>(null);
+  const [bannerCountdown, setBannerCountdown] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
 
   const myResponse = responses.find(r => r.participant_id === participantId && r.interaction_id === interaction.id);
   const allResponses = responses.filter(r => r.interaction_id === interaction.id);
