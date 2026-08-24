@@ -580,6 +580,9 @@ const WebinarHostPanel: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-muted-foreground">{stats.total} پاسخ</span>
+                            <Button size="sm" variant="outline" onClick={() => openEdit(interaction)}>
+                              <Pencil className="h-3 w-3 ml-1" />ویرایش
+                            </Button>
                             {interaction.status === 'draft' && (
                               <>
                                 <Button size="sm" onClick={() => pushLive(interaction.id)}>
