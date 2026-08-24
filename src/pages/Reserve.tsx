@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   CheckCircle2, CreditCard, Loader2, Upload, ShieldCheck, XCircle, Copy,
   CalendarClock, Headphones, Sparkles, Target, Lock, BadgeCheck, Users, Clock,
+  Phone, Send,
 } from 'lucide-react';
 
 type Settings = {
@@ -45,7 +46,7 @@ const STEPS = [
 ];
 
 const FAQS = [
-  { q: 'هزینه رزرو قابل بازگشت است؟', a: 'در صورتی که جلسه از سمت ما برگزار نشود، مبلغ به‌طور کامل بازگردانده می‌شود. این مبلغ صرفاً برای تضمین حضور شما در جلسه دریافت می‌شود.' },
+  { q: 'هزینه رزرو قابل بازگشت است؟', a: 'بله، تمام مبلغ رزرو بدون هیچ سؤالی بازگردانده می‌شود. چه بخواهید بعد از ثبت‌نام در دوره بدون مرز پول خود را پس بگیرید و چه تصمیم به ثبت‌نام نگیرید، بازپرداخت کامل انجام می‌شود. این مبلغ صرفاً برای تضمین حضور شما در جلسه دریافت می‌شود.' },
   { q: 'جلسه مشاوره چقدر طول می‌کشد؟', a: 'به‌طور میانگین بین ۲۰ تا ۳۰ دقیقه، به‌صورت تلفنی یا آنلاین و کاملاً اختصاصی.' },
   { q: 'بعد از پرداخت چه اتفاقی می‌افتد؟', a: 'رزرو شما ثبت می‌شود و کارشناسان ما در اولین فرصت کاری برای هماهنگی زمان جلسه با شما تماس می‌گیرند.' },
   { q: 'اگر پرداخت آنلاین انجام نشد چه کنم؟', a: 'می‌توانید از درگاه‌های جایگزین استفاده کنید یا با روش کارت‌به‌کارت مبلغ را واریز و تصویر رسید را بارگذاری کنید.' },
@@ -311,6 +312,38 @@ const Reserve: React.FC = () => {
                 </AccordionItem>
               ))}
             </Accordion>
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-lg font-bold">ارتباط با ما</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <a
+                href="tel:02128427131"
+                className="flex items-center gap-3 rounded-xl border bg-card p-4 hover:border-primary/40 transition-colors"
+              >
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Phone className="h-4.5 w-4.5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">تماس تلفنی</p>
+                  <p className="text-xs text-muted-foreground" dir="ltr">021-28427131</p>
+                </div>
+              </a>
+              <a
+                href="https://t.me/rafieiacademy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 rounded-xl border bg-card p-4 hover:border-primary/40 transition-colors"
+              >
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Send className="h-4.5 w-4.5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">تلگرام</p>
+                  <p className="text-xs text-muted-foreground" dir="ltr">@rafieiacademy</p>
+                </div>
+              </a>
+            </div>
           </div>
         </section>
 
