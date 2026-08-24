@@ -21,6 +21,7 @@ import { useWebinarRealtime } from '@/hooks/useWebinarRealtime';
 import { useUserRole } from '@/hooks/useUserRole';
 import QAPanel from '@/components/Webinar/QAPanel';
 import WebinarChat from '@/components/Webinar/WebinarChat';
+import InteractionJsonImport from '@/components/Webinar/InteractionJsonImport';
 
 interface Webinar {
   id: string;
