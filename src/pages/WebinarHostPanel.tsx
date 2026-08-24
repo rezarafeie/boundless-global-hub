@@ -52,6 +52,12 @@ interface InteractionForm {
     cta_description: string;
     scale_max: number;
     explanation: string;
+    banner_title: string;
+    banner_description: string;
+    banner_icon: string;
+    banner_background: string;
+    banner_text_color: string;
+    countdown_to: string;
   };
 }
 
@@ -75,6 +81,12 @@ const defaultForm: InteractionForm = {
     cta_description: '',
     scale_max: 5,
     explanation: '',
+    banner_title: '',
+    banner_description: '',
+    banner_icon: '',
+    banner_background: '',
+    banner_text_color: '',
+    countdown_to: '',
   },
 };
 
@@ -196,7 +208,7 @@ const WebinarHostPanel: React.FC = () => {
 
   const typeLabels: Record<string, string> = {
     poll: '📊 نظرسنجی', quiz: '🧠 کوییز', checkin: '✋ حضور',
-    task: '📝 تکلیف', cta: '🔗 لینک', reaction: '⚡ واکنش',
+    task: '📝 تکلیف', cta: '🔗 لینک', reaction: '⚡ واکنش', banner: '📢 بنر اعلان',
   };
 
   const getResponseStats = (interactionId: string) => {
@@ -392,6 +404,7 @@ const WebinarHostPanel: React.FC = () => {
                           <SelectItem value="checkin">✋ حضور</SelectItem>
                           <SelectItem value="task">📝 تکلیف</SelectItem>
                           <SelectItem value="cta">🔗 لینک</SelectItem>
+                          <SelectItem value="banner">📢 بنر اعلان</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -448,6 +461,21 @@ const WebinarHostPanel: React.FC = () => {
                         <div><Label>لینک</Label><Input value={form.settings.link_url} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, link_url: e.target.value } }))} placeholder="https://..." dir="ltr" /></div>
                         <div><Label>متن دکمه</Label><Input value={form.settings.button_label} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, button_label: e.target.value } }))} /></div>
                         <div><Label>توضیح</Label><Input value={form.settings.cta_description} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, cta_description: e.target.value } }))} /></div>
+                      </div>
+                    )}
+
+                    {/* Banner settings — همه فیلدها اختیاری */}
+                    {form.type === 'banner' && (
+                      <div className="space-y-2 border rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground">همه فیلدها اختیاری هستند</p>
+                        <div><Label>عنوان بنر</Label><Input value={form.settings.banner_title} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, banner_title: e.target.value } }))} placeholder="مثلا: تخفیف ویژه امشب" /></div>
+                        <div><Label>توضیحات</Label><Textarea rows={2} value={form.settings.banner_description} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, banner_description: e.target.value } }))} /></div>
+                        <div><Label>آیکن (ایموجی)</Label><Input value={form.settings.banner_icon} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, banner_icon: e.target.value } }))} placeholder="🎁" /></div>
+                        <div><Label>متن دکمه</Label><Input value={form.settings.button_label} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, button_label: e.target.value } }))} placeholder="ثبت‌نام کنید" /></div>
+                        <div><Label>لینک دکمه</Label><Input value={form.settings.link_url} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, link_url: e.target.value } }))} placeholder="https://..." dir="ltr" /></div>
+                        <div><Label>شمارش معکوس تا</Label><Input type="datetime-local" value={form.settings.countdown_to} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, countdown_to: e.target.value } }))} dir="ltr" /></div>
+                        <div><Label>پس‌زمینه (CSS)</Label><Input value={form.settings.banner_background} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, banner_background: e.target.value } }))} placeholder="linear-gradient(90deg,#7c3aed,#2563eb)" dir="ltr" /></div>
+                        <div><Label>رنگ متن</Label><Input value={form.settings.banner_text_color} onChange={e => setForm(p => ({ ...p, settings: { ...p.settings, banner_text_color: e.target.value } }))} placeholder="#ffffff" dir="ltr" /></div>
                       </div>
                     )}
 

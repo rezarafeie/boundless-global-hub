@@ -25,6 +25,7 @@ const InteractionCard: React.FC<InteractionCardProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [textAnswer, setTextAnswer] = useState('');
   const [timerLeft, setTimerLeft] = useState<number | null>(null);
+  const [bannerCountdown, setBannerCountdown] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
 
   const myResponse = responses.find(r => r.participant_id === participantId && r.interaction_id === interaction.id);
   const allResponses = responses.filter(r => r.interaction_id === interaction.id);
@@ -45,6 +46,31 @@ const InteractionCard: React.FC<InteractionCardProps> = ({
       return () => clearInterval(interval);
     }
   }, [interaction, isActive, hasAnswered, settings.timer_duration]);
+
+  // Countdown for announcement banners
+  useEffect(() => {
+    const target = settings.countdown_to;
+    if (interaction.type !== 'banner' || !target) {
+      setBannerCountdown(null);
+      return;
+    }
+    const tick = () => {
+      const diff = new Date(target).getTime() - Date.now();
+      if (isNaN(diff) || diff <= 0) {
+        setBannerCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+      setBannerCountdown({
+        days: Math.floor(diff / 86400000),
+        hours: Math.floor((diff / 3600000) % 24),
+        minutes: Math.floor((diff / 60000) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+      });
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [interaction.type, settings.countdown_to]);
 
   const submitResponse = async (answer: any) => {
     if (!participantId || hasAnswered || submitting) return;
@@ -227,6 +253,54 @@ const InteractionCard: React.FC<InteractionCardProps> = ({
           </div>
         );
 
+      case 'banner':
+        return (
+          <div
+            className="rounded-xl p-4 space-y-3 text-center"
+            style={{
+              background: settings.banner_background || undefined,
+              color: settings.banner_text_color || undefined,
+            }}
+          >
+            {settings.banner_icon && <div className="text-3xl">{settings.banner_icon}</div>}
+            {(settings.banner_title || interaction.question) && (
+              <p className="text-base font-bold leading-relaxed">
+                {settings.banner_title || interaction.question}
+              </p>
+            )}
+            {settings.banner_description && (
+              <p className="text-sm opacity-90 leading-relaxed">{settings.banner_description}</p>
+            )}
+            {bannerCountdown && (
+              <div className="flex justify-center gap-2" dir="ltr">
+                {[
+                  { v: bannerCountdown.days, l: 'روز' },
+                  { v: bannerCountdown.hours, l: 'ساعت' },
+                  { v: bannerCountdown.minutes, l: 'دقیقه' },
+                  { v: bannerCountdown.seconds, l: 'ثانیه' },
+                ].map(u => (
+                  <div key={u.l} className="min-w-[52px] rounded-lg bg-black/10 dark:bg-white/10 px-2 py-1">
+                    <div className="text-lg font-bold tabular-nums">{String(u.v).padStart(2, '0')}</div>
+                    <div className="text-[10px] opacity-80">{u.l}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {settings.button_label && (
+              <Button
+                className="px-8"
+                onClick={() => {
+                  if (settings.link_url) window.open(settings.link_url, '_blank');
+                  if (!hasAnswered) submitResponse({ clicked: true });
+                }}
+              >
+                {settings.link_url && <ExternalLink className="h-4 w-4 ml-2" />}
+                {settings.button_label}
+              </Button>
+            )}
+          </div>
+        );
+
       default:
         return <p className="text-sm text-muted-foreground">نوع تعامل پشتیبانی نمی‌شود</p>;
     }
@@ -240,6 +314,7 @@ const InteractionCard: React.FC<InteractionCardProps> = ({
     cta: '🔗 لینک',
     reaction: '⚡ واکنش',
     qa: '❓ پرسش و پاسخ',
+    banner: '📢 بنر اعلان',
   };
 
   return (
