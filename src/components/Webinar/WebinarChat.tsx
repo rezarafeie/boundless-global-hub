@@ -41,6 +41,7 @@ const WebinarChat: React.FC<WebinarChatProps> = ({
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lastSentRef = useRef<number>(0);
 
   const fetchMessages = useCallback(async () => {
     if (!webinarId) return;
