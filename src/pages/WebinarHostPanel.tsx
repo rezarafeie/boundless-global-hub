@@ -550,7 +550,7 @@ const WebinarHostPanel: React.FC = () => {
                       )}
                     </div>
 
-                    <Button onClick={createInteraction} className="w-full">ذخیره پیش‌نویس</Button>
+                    <Button onClick={createInteraction} className="w-full">{editingId ? 'ذخیره تغییرات' : 'ذخیره پیش‌نویس'}</Button>
                   </div>
                 </DialogContent>
               </Dialog>
