@@ -305,8 +305,54 @@ const InteractionCard: React.FC<InteractionCardProps> = ({
           </div>
         );
 
+      case 'reaction': {
+        const emojiList: any[] =
+          (Array.isArray(settings.emojis) && settings.emojis.length ? settings.emojis : null) ||
+          (Array.isArray(options) && options.length ? options : null) ||
+          (settings.scale_max ? Array.from({ length: settings.scale_max }, (_, i) => String(i + 1)) : null) ||
+          ['❤️', '👏', '🔥', '😍', '👍', '😮'];
+
+        const items = emojiList.map((e: any, i: number) => {
+          if (typeof e === 'string') return { id: e, label: e };
+          return { id: e.id || e.value || e.label || String(i), label: e.emoji || e.label || e.text || String(e.value ?? i) };
+        });
+
+        const countFor = (id: string) => allResponses.filter(r => r.answer?.reaction === id).length;
+
+        return (
+          <div className="space-y-3">
+            {interaction.question && (
+              <p className="text-sm text-foreground leading-relaxed">{interaction.question}</p>
+            )}
+            <div className="flex flex-wrap gap-2 justify-center">
+              {items.map(item => {
+                const mine = myResponse?.answer?.reaction === item.id;
+                return (
+                  <Button
+                    key={item.id}
+                    type="button"
+                    variant={mine ? 'default' : 'outline'}
+                    size="sm"
+                    disabled={submitting || (hasAnswered && !mine)}
+                    onClick={() => submitResponse({ reaction: item.id, label: item.label })}
+                    className="text-lg px-3 py-2 h-auto"
+                  >
+                    <span>{item.label}</span>
+                    {(showResults || hasAnswered) && countFor(item.id) > 0 && (
+                      <span className="text-xs ml-1 opacity-70 tabular-nums">{countFor(item.id)}</span>
+                    )}
+                  </Button>
+                );
+              })}
+            </div>
+            {hasAnswered && <p className="text-center text-xs text-green-600">واکنش شما ثبت شد ✅</p>}
+          </div>
+        );
+      }
+
       default:
         return <p className="text-sm text-muted-foreground">نوع تعامل پشتیبانی نمی‌شود</p>;
+
     }
   };
 
