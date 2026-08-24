@@ -10,7 +10,7 @@ import { useForm } from 'react-hook-form';
 import { enhancedWebhookManager } from '@/lib/enhancedWebhookManager';
 import { consumeWebinarLoginToken, getWlTokenFromUrl, clearWlFromUrl } from '@/lib/webinarAutoLogin';
 import { enterWebinarLocally, normalizeWebinarPhone } from '@/lib/webinarEntryQueue';
-import { readCachedParticipant, writeCachedWebinar } from '@/lib/webinarCache';
+import { readCachedParticipant, readCachedWebinar, writeCachedWebinar } from '@/lib/webinarCache';
 
 
 interface Webinar {
