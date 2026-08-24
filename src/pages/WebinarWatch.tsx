@@ -12,7 +12,8 @@ import ConnectionStatusBanner from '@/components/Webinar/ConnectionStatusBanner'
 import {
   readCachedWebinar,
   writeCachedWebinar,
-  resolveIframeSrc,
+  resolveWebinarEmbed,
+  buildEmbedDocument,
   type CachedWebinar,
 } from '@/lib/webinarCache';
 import { startWebinarEntrySync } from '@/lib/webinarEntryQueue';
