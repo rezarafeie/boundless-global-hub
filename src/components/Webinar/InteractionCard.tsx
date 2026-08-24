@@ -391,6 +391,7 @@ const InteractionCard: React.FC<InteractionCardProps> = ({
     reaction: '⚡ واکنش',
     qa: '❓ پرسش و پاسخ',
     banner: '📢 بنر اعلان',
+    reservation: '🎟️ رزرو مشاوره',
   };
 
   return (
