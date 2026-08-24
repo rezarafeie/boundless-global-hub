@@ -128,6 +128,18 @@ const WebinarHostPanel: React.FC = () => {
     setLoading(false);
   };
 
+  const broadcastInteractionSnapshot = async () => {
+    if (!webinar) return;
+    const { data } = await supabase
+      .from('webinar_interactions')
+      .select('*')
+      .eq('webinar_id', webinar.id)
+      .order('order_index', { ascending: true });
+    if (data) {
+      await broadcastWebinarEvent(webinar.id, 'interaction', { interactions: data });
+    }
+  };
+
   const updateWebinarStatus = async (status: string) => {
     if (!webinar) return;
     const updates: any = { status };
@@ -199,7 +211,7 @@ const WebinarHostPanel: React.FC = () => {
       setEditingId(null);
       setForm({ ...defaultForm });
       refetchInteractions();
-      broadcastWebinarEvent(webinar.id, 'interaction', { action: 'saved' });
+      broadcastInteractionSnapshot();
     }
   };
 
@@ -216,20 +228,20 @@ const WebinarHostPanel: React.FC = () => {
     }
     await supabase.from('webinar_interactions').update({ status: 'active', activated_at: new Date().toISOString(), ended_at: null }).eq('id', interactionId);
     refetchInteractions();
-    broadcastWebinarEvent(webinar.id, 'interaction', { action: 'activated', id: interactionId });
+    broadcastInteractionSnapshot();
     toast({ title: 'تعامل فعال شد 🚀' });
   };
 
   const endInteraction = async (interactionId: string) => {
     await supabase.from('webinar_interactions').update({ status: 'ended', ended_at: new Date().toISOString() }).eq('id', interactionId);
     refetchInteractions();
-    broadcastWebinarEvent(webinar.id, 'interaction', { action: 'ended', id: interactionId });
+    broadcastInteractionSnapshot();
   };
 
   const deleteInteraction = async (interactionId: string) => {
     await supabase.from('webinar_interactions').delete().eq('id', interactionId);
     refetchInteractions();
-    broadcastWebinarEvent(webinar.id, 'interaction', { action: 'deleted', id: interactionId });
+    broadcastInteractionSnapshot();
   };
 
   const addOption = () => {

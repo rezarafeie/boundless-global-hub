@@ -28,6 +28,7 @@ export type WebinarConnectionStatus = 'connecting' | 'connected' | 'reconnecting
 
 interface Entry {
   channel: RealtimeChannel;
+  generation: number;
   refs: number;
   handlers: Map<WebinarBroadcastEvent, Set<Handler>>;
   joined: boolean;
@@ -61,6 +62,8 @@ function notifyStatus(webinarId: string, entry: Entry, status: WebinarConnection
 }
 
 function bindChannel(webinarId: string, entry: Entry) {
+  const generation = entry.generation + 1;
+  entry.generation = generation;
   const channel = supabase.channel(`wb:${webinarId}`, {
     config: { broadcast: { self: false, ack: false } },
   });
@@ -81,9 +84,17 @@ function bindChannel(webinarId: string, entry: Entry) {
   entry.joined = false;
 
   channel.subscribe(status => {
+    // removeChannel() also emits CLOSED. Ignore callbacks from a channel that
+    // has already been replaced, otherwise an old channel can put a healthy
+    // replacement into a permanent reconnect loop.
+    if (entry.generation !== generation || entry.channel !== channel) return;
     if (status === 'SUBSCRIBED') {
       entry.joined = true;
       entry.retries = 0;
+      if (entry.retryTimer) {
+        window.clearTimeout(entry.retryTimer);
+        entry.retryTimer = null;
+      }
       notifyStatus(webinarId, entry, 'connected');
       return;
     }
@@ -122,6 +133,7 @@ function getEntry(webinarId: string): Entry {
 
   entry = {
     channel: null as unknown as RealtimeChannel,
+    generation: 0,
     refs: 0,
     handlers,
     joined: false,

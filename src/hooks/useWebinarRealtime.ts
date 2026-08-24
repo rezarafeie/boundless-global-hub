@@ -166,6 +166,10 @@ export const useWebinarRealtime = (webinarId: string | undefined, options: Optio
     fetchParticipantCount();
 
     if (isHost) {
+      // Keep the broadcast publisher joined for the lifetime of the host
+      // panel. Card activation can then fan out immediately instead of first
+      // waiting for a temporary channel to subscribe.
+      const unsubscribeBroadcast = subscribeWebinarBroadcast(webinarId, {});
       const channel = supabase
         .channel(`webinar-${webinarId}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_interactions', filter: `webinar_id=eq.${webinarId}` }, () => fetchInteractions())
@@ -178,11 +182,23 @@ export const useWebinarRealtime = (webinarId: string | undefined, options: Optio
         })
         .subscribe();
 
-      return () => { supabase.removeChannel(channel); };
+      return () => {
+        unsubscribeBroadcast();
+        supabase.removeChannel(channel);
+      };
     }
 
     const unsubscribe = subscribeWebinarBroadcast(webinarId, {
-      interaction: () => throttle('interactions', VIEWER_INTERACTION_THROTTLE_MS, fetchInteractions),
+      interaction: (payload: any) => {
+        // Host broadcasts the authoritative interaction snapshot. Applying it
+        // locally avoids hundreds of simultaneous REST reads when a card is
+        // activated. Older senders still fall back to a throttled refetch.
+        if (Array.isArray(payload?.interactions)) {
+          setInteractions(payload.interactions as Interaction[]);
+          return;
+        }
+        throttle('interactions', VIEWER_INTERACTION_THROTTLE_MS, fetchInteractions);
+      },
       question: () => throttle('questions', VIEWER_QUESTION_THROTTLE_MS, fetchQuestions),
       reaction: (payload: any) => {
         const type = payload?.type;
