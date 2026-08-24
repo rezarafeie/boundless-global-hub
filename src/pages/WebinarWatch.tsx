@@ -16,6 +16,7 @@ import {
   type CachedWebinar,
 } from '@/lib/webinarCache';
 import { startWebinarEntrySync } from '@/lib/webinarEntryQueue';
+import { subscribeWebinarBroadcast } from '@/lib/webinarBroadcast';
 import { AnimatePresence } from 'framer-motion';
 
 type Webinar = CachedWebinar;
