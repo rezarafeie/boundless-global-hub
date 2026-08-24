@@ -518,6 +518,7 @@ const WebinarHostPanel: React.FC = () => {
                   </div>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
 
             {/* Interaction list */}
