@@ -25,6 +25,9 @@ interface WebinarChatProps {
   isHost?: boolean;
 }
 
+const MESSAGE_LIMIT = 50;
+const SEND_COOLDOWN_MS = 2000;
+
 const WebinarChat: React.FC<WebinarChatProps> = ({
   webinarId,
   participantId,
