@@ -276,10 +276,10 @@ const WebinarHostPanel: React.FC = () => {
               <Users className="h-4 w-4" />
               <span>{participantCount} شرکت‌کننده</span>
             </div>
-            {webinar.status !== 'live' && webinar.status !== 'ended' && (
-              <Button className="bg-red-500 hover:bg-red-600" onClick={() => updateWebinarStatus('live')}>
+            {webinar.status !== 'live' && (
+              <Button className="bg-red-500 hover:bg-red-600 text-white" onClick={() => updateWebinarStatus('live')}>
                 <Radio className="h-4 w-4 ml-2" />
-                شروع پخش زنده
+                {webinar.status === 'ended' ? 'شروع مجدد پخش زنده' : 'شروع پخش زنده'}
               </Button>
             )}
             {webinar.status === 'live' && (
