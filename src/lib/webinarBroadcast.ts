@@ -20,7 +20,8 @@ export type WebinarBroadcastEvent =
   | 'reaction'
   | 'interaction'
   | 'question'
-  | 'response';
+  | 'response'
+  | 'settings';
 
 type Handler = (payload: any) => void;
 
