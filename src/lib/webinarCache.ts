@@ -75,8 +75,54 @@ export function resolveIframeSrc(webinar: {
   webinar_link: string;
 }): string {
   if (webinar.iframe_embed_code) {
-    const match = webinar.iframe_embed_code.match(/src="([^"]+)"/);
+    const match = webinar.iframe_embed_code.match(/src=["']([^"']+)["']/);
     if (match) return match[1];
   }
   return webinar.webinar_link;
+}
+
+/**
+ * Resolve any embed snippet (plain URL, <iframe>, <script>, <div>+<script>, …)
+ * into something renderable with zero network round-trips.
+ *  - `src`  → put directly on an <iframe src>
+ *  - `html` → arbitrary HTML/JS, must run inside a sandboxed <iframe srcDoc>
+ */
+export function resolveWebinarEmbed(webinar: {
+  iframe_embed_code: string | null;
+  webinar_link: string;
+}): { mode: 'src' | 'html'; value: string } {
+  const code = (webinar.iframe_embed_code || '').trim();
+
+  if (code) {
+    const hasHtml = /<[a-z!/]/i.test(code);
+    if (!hasHtml) {
+      // Raw URL pasted in the embed field
+      return { mode: 'src', value: code };
+    }
+    // A single plain <iframe> can be rendered natively (best perf + fullscreen)
+    const isSingleIframe =
+      /^<iframe[\s\S]*<\/iframe>$/i.test(code) || /^<iframe[^>]*\/?>$/i.test(code);
+    const srcMatch = code.match(/<iframe[^>]*\ssrc=["']([^"']+)["']/i);
+    if (isSingleIframe && srcMatch) {
+      return { mode: 'src', value: srcMatch[1] };
+    }
+    // Anything else (script embeds, wrappers, players) → run it as HTML
+    return { mode: 'html', value: code };
+  }
+
+  return { mode: 'src', value: webinar.webinar_link };
+}
+
+/** Wrap an arbitrary embed snippet into a full, responsive HTML document. */
+export function buildEmbedDocument(snippet: string): string {
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<base target="_blank" />
+<style>
+  html,body{margin:0;padding:0;height:100%;background:#000;overflow:hidden}
+  body>*{max-width:100%}
+  iframe,video,embed,object,canvas{position:absolute;inset:0;width:100%!important;height:100%!important;border:0}
+</style></head>
+<body>${snippet}</body></html>`;
 }
