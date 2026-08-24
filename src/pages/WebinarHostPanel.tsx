@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
   Play, Square, Plus, Users, BarChart3, Send, Trash2, Eye, Clock, Pin,
-  Check, EyeOff, Radio, ArrowRight, Copy
+  Check, EyeOff, Radio, ArrowRight, Copy, Pencil
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -100,6 +100,7 @@ const WebinarHostPanel: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<InteractionForm>({ ...defaultForm });
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const {
     interactions,
@@ -135,30 +136,66 @@ const WebinarHostPanel: React.FC = () => {
     toast({ title: status === 'live' ? '🔴 وبینار شروع شد' : 'وبینار پایان یافت' });
   };
 
+  const openCreate = () => {
+    setEditingId(null);
+    setForm({ ...defaultForm });
+    setCreateOpen(true);
+  };
+
+  const openEdit = (interaction: any) => {
+    const opts = Array.isArray(interaction.options) && interaction.options.length
+      ? interaction.options.map((o: any, i: number) => ({
+          id: String(o.id ?? i + 1),
+          text: o.text ?? '',
+          is_correct: !!o.is_correct,
+        }))
+      : [...defaultForm.options];
+    setForm({
+      type: interaction.type,
+      title: interaction.title || '',
+      question: interaction.question || '',
+      options: opts,
+      settings: { ...defaultForm.settings, ...(interaction.settings || {}) },
+    });
+    setEditingId(interaction.id);
+    setCreateOpen(true);
+  };
+
   const createInteraction = async () => {
     if (!webinar || !form.title) return;
-    const maxOrder = interactions.length > 0 ? Math.max(...interactions.map(i => i.order_index)) + 1 : 0;
 
-    const { error } = await supabase.from('webinar_interactions').insert({
-      webinar_id: webinar.id,
+    const payload = {
       type: form.type,
       title: form.title,
       question: form.question || null,
       options: ['poll', 'quiz'].includes(form.type) ? form.options.filter(o => o.text.trim()) : null,
       settings: form.settings,
-      status: 'draft',
-      order_index: maxOrder,
-    });
+    };
+
+    let error;
+    if (editingId) {
+      ({ error } = await supabase.from('webinar_interactions').update(payload).eq('id', editingId));
+    } else {
+      const maxOrder = interactions.length > 0 ? Math.max(...interactions.map(i => i.order_index)) + 1 : 0;
+      ({ error } = await supabase.from('webinar_interactions').insert({
+        webinar_id: webinar.id,
+        ...payload,
+        status: 'draft',
+        order_index: maxOrder,
+      }));
+    }
 
     if (error) {
-      toast({ title: 'خطا در ایجاد تعامل', variant: 'destructive' });
+      toast({ title: editingId ? 'خطا در ویرایش تعامل' : 'خطا در ایجاد تعامل', variant: 'destructive' });
     } else {
-      toast({ title: 'تعامل ایجاد شد ✅' });
+      toast({ title: editingId ? 'تعامل ویرایش شد ✅' : 'تعامل ایجاد شد ✅' });
       setCreateOpen(false);
+      setEditingId(null);
       setForm({ ...defaultForm });
       refetchInteractions();
     }
   };
+
 
   const pushLive = async (interactionId: string) => {
     // End any active interaction first
@@ -394,12 +431,10 @@ const WebinarHostPanel: React.FC = () => {
                 currentMaxOrder={interactions.length > 0 ? Math.max(...interactions.map(i => i.order_index)) + 1 : 0}
                 onImported={refetchInteractions}
               />
-              <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-                <DialogTrigger asChild>
-                  <Button><Plus className="h-4 w-4 ml-2" />ایجاد تعامل</Button>
-                </DialogTrigger>
+              <Button onClick={openCreate}><Plus className="h-4 w-4 ml-2" />ایجاد تعامل</Button>
+              <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setEditingId(null); setForm({ ...defaultForm }); } }}>
                 <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-                  <DialogHeader><DialogTitle>ایجاد تعامل جدید</DialogTitle></DialogHeader>
+                  <DialogHeader><DialogTitle>{editingId ? 'ویرایش تعامل' : 'ایجاد تعامل جدید'}</DialogTitle></DialogHeader>
                   <div className="space-y-4">
                     <div>
                       <Label>نوع تعامل</Label>
@@ -515,7 +550,7 @@ const WebinarHostPanel: React.FC = () => {
                       )}
                     </div>
 
-                    <Button onClick={createInteraction} className="w-full">ذخیره پیش‌نویس</Button>
+                    <Button onClick={createInteraction} className="w-full">{editingId ? 'ذخیره تغییرات' : 'ذخیره پیش‌نویس'}</Button>
                   </div>
                 </DialogContent>
               </Dialog>
@@ -545,6 +580,9 @@ const WebinarHostPanel: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-muted-foreground">{stats.total} پاسخ</span>
+                            <Button size="sm" variant="outline" onClick={() => openEdit(interaction)}>
+                              <Pencil className="h-3 w-3 ml-1" />ویرایش
+                            </Button>
                             {interaction.status === 'draft' && (
                               <>
                                 <Button size="sm" onClick={() => pushLive(interaction.id)}>
