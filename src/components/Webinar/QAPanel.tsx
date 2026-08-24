@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ThumbsUp, Pin, Check, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { broadcastWebinarEvent } from '@/lib/webinarBroadcast';
 import { useToast } from '@/hooks/use-toast';
 
 interface QAPanelProps {
@@ -35,6 +36,7 @@ const QAPanel: React.FC<QAPanelProps> = ({ webinarId, participantId, questions, 
         question_text: newQuestion.trim(),
       });
       if (error) throw error;
+      broadcastWebinarEvent(webinarId, 'question', { action: 'new' });
       setNewQuestion('');
       toast({ title: 'سوال شما ارسال شد ✅' });
     } catch (e) {
@@ -65,19 +67,23 @@ const QAPanel: React.FC<QAPanelProps> = ({ webinarId, participantId, questions, 
       upvotes: questions.find(q => q.id === questionId)!.upvotes + 1,
     }).eq('id', questionId);
 
+    broadcastWebinarEvent(webinarId, 'question', { action: 'upvote', id: questionId });
     setUpvotedIds(prev => new Set([...prev, questionId]));
   };
 
   const togglePin = async (questionId: string, isPinned: boolean) => {
     await supabase.from('webinar_questions').update({ is_pinned: !isPinned }).eq('id', questionId);
+    broadcastWebinarEvent(webinarId, 'question', { action: 'pin', id: questionId });
   };
 
   const markAnswered = async (questionId: string) => {
     await supabase.from('webinar_questions').update({ is_answered: true }).eq('id', questionId);
+    broadcastWebinarEvent(webinarId, 'question', { action: 'answered', id: questionId });
   };
 
   const hideQuestion = async (questionId: string) => {
     await supabase.from('webinar_questions').update({ is_hidden: true }).eq('id', questionId);
+    broadcastWebinarEvent(webinarId, 'question', { action: 'hidden', id: questionId });
   };
 
   return (

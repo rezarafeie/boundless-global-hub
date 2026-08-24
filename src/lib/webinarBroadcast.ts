@@ -1,0 +1,138 @@
+import { supabase } from '@/integrations/supabase/client';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+
+/**
+ * Realtime Broadcast layer for webinars.
+ *
+ * Why: `postgres_changes` re-runs RLS authorization per subscriber per row.
+ * At 500 concurrent viewers this saturates the Realtime workers and silently
+ * drops events (measured ~86% loss). Broadcast is a plain pub/sub fan-out with
+ * no per-row RLS evaluation, so it scales to thousands of subscribers.
+ *
+ * Database writes stay exactly the same — the writer simply also emits a
+ * broadcast event on the shared webinar channel. Viewers listen to broadcast
+ * only; light periodic refetches act as a safety net for missed events.
+ */
+
+export type WebinarBroadcastEvent =
+  | 'chat'
+  | 'chat_delete'
+  | 'reaction'
+  | 'interaction'
+  | 'question'
+  | 'response';
+
+type Handler = (payload: any) => void;
+
+interface Entry {
+  channel: RealtimeChannel;
+  refs: number;
+  handlers: Map<WebinarBroadcastEvent, Set<Handler>>;
+  joined: boolean;
+}
+
+const registry = new Map<string, Entry>();
+
+const EVENTS: WebinarBroadcastEvent[] = [
+  'chat',
+  'chat_delete',
+  'reaction',
+  'interaction',
+  'question',
+  'response',
+];
+
+function getEntry(webinarId: string): Entry {
+  let entry = registry.get(webinarId);
+  if (entry) return entry;
+
+  const handlers = new Map<WebinarBroadcastEvent, Set<Handler>>();
+  EVENTS.forEach(e => handlers.set(e, new Set()));
+
+  const channel = supabase.channel(`wb:${webinarId}`, {
+    config: { broadcast: { self: false, ack: false } },
+  });
+
+  EVENTS.forEach(event => {
+    channel.on('broadcast', { event }, ({ payload }) => {
+      handlers.get(event)?.forEach(fn => {
+        try {
+          fn(payload);
+        } catch (e) {
+          console.error('[webinarBroadcast] handler error', event, e);
+        }
+      });
+    });
+  });
+
+  entry = { channel, refs: 0, handlers, joined: false };
+  registry.set(webinarId, entry);
+
+  channel.subscribe(status => {
+    if (status === 'SUBSCRIBED') entry!.joined = true;
+  });
+
+  return entry;
+}
+
+/**
+ * Subscribe to broadcast events for a webinar. Returns an unsubscribe fn.
+ * The underlying channel is shared and ref-counted across all callers.
+ */
+export function subscribeWebinarBroadcast(
+  webinarId: string,
+  handlers: Partial<Record<WebinarBroadcastEvent, Handler>>,
+): () => void {
+  const entry = getEntry(webinarId);
+  entry.refs += 1;
+
+  const registered: Array<[WebinarBroadcastEvent, Handler]> = [];
+  (Object.keys(handlers) as WebinarBroadcastEvent[]).forEach(event => {
+    const fn = handlers[event];
+    if (!fn) return;
+    entry.handlers.get(event)?.add(fn);
+    registered.push([event, fn]);
+  });
+
+  return () => {
+    registered.forEach(([event, fn]) => entry.handlers.get(event)?.delete(fn));
+    entry.refs -= 1;
+    if (entry.refs <= 0) {
+      registry.delete(webinarId);
+      supabase.removeChannel(entry.channel);
+    }
+  };
+}
+
+/**
+ * Emit an event to everyone listening on the webinar channel.
+ * Safe to call even if this client has no active subscription — a short-lived
+ * channel is created for the send in that case.
+ */
+export async function broadcastWebinarEvent(
+  webinarId: string,
+  event: WebinarBroadcastEvent,
+  payload: unknown,
+): Promise<void> {
+  try {
+    const existing = registry.get(webinarId);
+    if (existing?.joined) {
+      await existing.channel.send({ type: 'broadcast', event, payload });
+      return;
+    }
+
+    const temp = supabase.channel(`wb:${webinarId}`, {
+      config: { broadcast: { self: false, ack: false } },
+    });
+    await new Promise<void>(resolve => {
+      temp.subscribe(status => {
+        if (status === 'SUBSCRIBED') resolve();
+      });
+      setTimeout(resolve, 3000);
+    });
+    await temp.send({ type: 'broadcast', event, payload });
+    supabase.removeChannel(temp);
+  } catch (e) {
+    console.error('[webinarBroadcast] send failed', event, e);
+  }
+}

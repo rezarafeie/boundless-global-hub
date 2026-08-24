@@ -16,6 +16,7 @@ import {
   Check, EyeOff, Radio, ArrowRight, Copy, Pencil
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { broadcastWebinarEvent } from '@/lib/webinarBroadcast';
 import { useToast } from '@/hooks/use-toast';
 import { useWebinarRealtime } from '@/hooks/useWebinarRealtime';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -198,6 +199,7 @@ const WebinarHostPanel: React.FC = () => {
       setEditingId(null);
       setForm({ ...defaultForm });
       refetchInteractions();
+      broadcastWebinarEvent(webinar.id, 'interaction', { action: 'saved' });
     }
   };
 
@@ -214,17 +216,20 @@ const WebinarHostPanel: React.FC = () => {
     }
     await supabase.from('webinar_interactions').update({ status: 'active', activated_at: new Date().toISOString(), ended_at: null }).eq('id', interactionId);
     refetchInteractions();
+    broadcastWebinarEvent(webinar.id, 'interaction', { action: 'activated', id: interactionId });
     toast({ title: 'تعامل فعال شد 🚀' });
   };
 
   const endInteraction = async (interactionId: string) => {
     await supabase.from('webinar_interactions').update({ status: 'ended', ended_at: new Date().toISOString() }).eq('id', interactionId);
     refetchInteractions();
+    broadcastWebinarEvent(webinar.id, 'interaction', { action: 'ended', id: interactionId });
   };
 
   const deleteInteraction = async (interactionId: string) => {
     await supabase.from('webinar_interactions').delete().eq('id', interactionId);
     refetchInteractions();
+    broadcastWebinarEvent(webinar.id, 'interaction', { action: 'deleted', id: interactionId });
   };
 
   const addOption = () => {

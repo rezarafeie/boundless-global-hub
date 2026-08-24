@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { subscribeWebinarBroadcast } from '@/lib/webinarBroadcast';
 
 interface Interaction {
   id: string;
@@ -51,6 +52,9 @@ interface Options {
 const REACTION_THROTTLE_MS = 5000;
 const PARTICIPANT_THROTTLE_MS = 10000;
 const HOST_RESPONSE_THROTTLE_MS = 2000;
+const VIEWER_INTERACTION_THROTTLE_MS = 400;
+const VIEWER_QUESTION_THROTTLE_MS = 4000;
+const VIEWER_RECONCILE_MS = 25000;
 
 export const useWebinarRealtime = (webinarId: string | undefined, options: Options = {}) => {
   const { isHost = false } = options;
@@ -137,7 +141,10 @@ export const useWebinarRealtime = (webinarId: string | undefined, options: Optio
     setParticipantCount(count || 0);
   }, [webinarId]);
 
-  // --- base subscriptions (cheap, one event per host action) --------------
+  // --- base subscriptions --------------------------------------------------
+  // Host (single client) keeps postgres_changes: authoritative and cheap.
+  // Viewers (up to thousands) use Realtime Broadcast — no per-row RLS
+  // authorization, so the fan-out does not saturate Realtime workers.
   useEffect(() => {
     if (!webinarId) return;
 
@@ -146,20 +153,44 @@ export const useWebinarRealtime = (webinarId: string | undefined, options: Optio
     fetchReactionCounts();
     fetchParticipantCount();
 
-    const channel = supabase
-      .channel(`webinar-${webinarId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_interactions', filter: `webinar_id=eq.${webinarId}` }, () => fetchInteractions())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_questions', filter: `webinar_id=eq.${webinarId}` }, () => fetchQuestions())
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'webinar_reactions', filter: `webinar_id=eq.${webinarId}` }, () => {
-        throttle('reactions', REACTION_THROTTLE_MS, fetchReactionCounts);
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_participants', filter: `webinar_id=eq.${webinarId}` }, () => {
-        throttle('participants', PARTICIPANT_THROTTLE_MS, fetchParticipantCount);
-      })
-      .subscribe();
+    if (isHost) {
+      const channel = supabase
+        .channel(`webinar-${webinarId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_interactions', filter: `webinar_id=eq.${webinarId}` }, () => fetchInteractions())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_questions', filter: `webinar_id=eq.${webinarId}` }, () => fetchQuestions())
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'webinar_reactions', filter: `webinar_id=eq.${webinarId}` }, () => {
+          throttle('reactions', REACTION_THROTTLE_MS, fetchReactionCounts);
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'webinar_participants', filter: `webinar_id=eq.${webinarId}` }, () => {
+          throttle('participants', PARTICIPANT_THROTTLE_MS, fetchParticipantCount);
+        })
+        .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, [webinarId, fetchInteractions, fetchQuestions, fetchReactionCounts, fetchParticipantCount, throttle]);
+      return () => { supabase.removeChannel(channel); };
+    }
+
+    const unsubscribe = subscribeWebinarBroadcast(webinarId, {
+      interaction: () => throttle('interactions', VIEWER_INTERACTION_THROTTLE_MS, fetchInteractions),
+      question: () => throttle('questions', VIEWER_QUESTION_THROTTLE_MS, fetchQuestions),
+      reaction: (payload: any) => {
+        const type = payload?.type;
+        if (!type) return;
+        setReactionCounts(prev => ({ ...prev, [type]: (prev[type] || 0) + 1 }));
+      },
+    });
+
+    // Safety net: broadcast is fire-and-forget, so reconcile periodically.
+    const reconcile = window.setInterval(() => {
+      fetchInteractions();
+      fetchReactionCounts();
+      fetchParticipantCount();
+    }, VIEWER_RECONCILE_MS);
+
+    return () => {
+      unsubscribe();
+      window.clearInterval(reconcile);
+    };
+  }, [webinarId, isHost, fetchInteractions, fetchQuestions, fetchReactionCounts, fetchParticipantCount, throttle]);
 
   const activeInteraction = interactions.find(i => i.status === 'active') || null;
   const previousInteractions = interactions.filter(i => i.status === 'ended');
@@ -188,9 +219,9 @@ export const useWebinarRealtime = (webinarId: string | undefined, options: Optio
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [webinarId, isHost, interactions.map(i => i.id).join(','), fetchResponses, throttle]);
 
-  // Viewer: only the currently active interaction, incremental updates only.
+  // Viewer: only the currently active interaction, via broadcast.
   useEffect(() => {
-    if (isHost) return;
+    if (isHost || !webinarId) return;
     if (!activeInteractionId) {
       setResponses([]);
       return;
@@ -199,20 +230,16 @@ export const useWebinarRealtime = (webinarId: string | undefined, options: Optio
     interactionIdsRef.current = [activeInteractionId];
     fetchResponses([activeInteractionId]);
 
-    const channel = supabase
-      .channel(`webinar-responses-${activeInteractionId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'webinar_responses',
-        filter: `interaction_id=eq.${activeInteractionId}`,
-      }, (payload: any) => {
-        if (payload?.new) appendResponse(payload.new as Response);
-      })
-      .subscribe();
+    const unsubscribe = subscribeWebinarBroadcast(webinarId, {
+      response: (payload: any) => {
+        if (!payload?.id || payload.interaction_id !== activeInteractionId) return;
+        appendResponse(payload as Response);
+      },
+    });
 
-    return () => { supabase.removeChannel(channel); };
-  }, [isHost, activeInteractionId, fetchResponses, appendResponse]);
+    return () => { unsubscribe(); };
+  }, [isHost, webinarId, activeInteractionId, fetchResponses, appendResponse]);
+
 
   return {
     interactions,

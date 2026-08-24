@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { broadcastWebinarEvent } from '@/lib/webinarBroadcast';
 import { motion } from 'framer-motion';
 
 interface ReactionBarProps {
@@ -42,6 +43,7 @@ const ReactionBar: React.FC<ReactionBarProps> = ({ webinarId, participantId, rea
       participant_id: participantId,
       reaction_type: type,
     });
+    broadcastWebinarEvent(webinarId, 'reaction', { type });
   }, [webinarId, participantId, cooldown, spamCount]);
 
   return (
