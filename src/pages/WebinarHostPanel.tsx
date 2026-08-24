@@ -385,8 +385,14 @@ const WebinarHostPanel: React.FC = () => {
 
           {/* Interactions Management */}
           <TabsContent value="interactions" className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-2 flex-wrap">
               <h2 className="font-semibold">مدیریت تعامل‌ها</h2>
+              <div className="flex items-center gap-2">
+              <InteractionJsonImport
+                webinarId={webinar.id}
+                currentMaxOrder={interactions.length > 0 ? Math.max(...interactions.map(i => i.order_index)) + 1 : 0}
+                onImported={refetchInteractions}
+              />
               <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                 <DialogTrigger asChild>
                   <Button><Plus className="h-4 w-4 ml-2" />ایجاد تعامل</Button>
