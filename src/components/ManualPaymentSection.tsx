@@ -579,7 +579,9 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
                 >
                   <div className="text-right">
                     <div className="font-medium text-foreground text-right">خرید اقساطی با اسنپ‌پی</div>
-                    <div className="text-sm text-muted-foreground text-right">پرداخت اقساطی با اعتبار اسنپ‌پی</div>
+                    <div className="text-sm text-muted-foreground text-right">
+                      پرداخت امروز: {formatPrice(snapppayFirstInstallment)} (قسط اول از ۴ قسط)
+                    </div>
                   </div>
                   <Zap className="h-5 w-5 text-primary" />
                 </Label>
