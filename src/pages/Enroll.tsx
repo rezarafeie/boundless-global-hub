@@ -1085,8 +1085,8 @@ const Enroll: React.FC = () => {
                          </>
                         ) : (
                            <>
-                               <CreditCard className="h-6 w-6 ml-2" />
-                               پرداخت آنلاین {(() => {
+                                <CreditCard className="h-6 w-6 ml-2" />
+                                {paymentMethod === 'snapppay' ? 'پرداخت اقساطی ' : 'پرداخت آنلاین '} {(() => {
                                  // For tests
                                  if (test) {
                                    return discountedPrice !== null ? formatPrice(discountedPrice) : formatPrice(test.price);
