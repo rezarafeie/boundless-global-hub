@@ -207,6 +207,9 @@ export type Database = {
           manual_payment_enabled: boolean
           quick_enroll_enabled: boolean
           rafieipay_enabled: boolean
+          snapppay_enabled: boolean
+          snapppay_max_amount_toman: number
+          snapppay_proxy_url: string | null
           telegram_ai_assistant_enabled: boolean
           telegram_bot_username: string | null
           telegram_bot_welcome_logged_in: string | null
@@ -236,6 +239,9 @@ export type Database = {
           manual_payment_enabled?: boolean
           quick_enroll_enabled?: boolean
           rafieipay_enabled?: boolean
+          snapppay_enabled?: boolean
+          snapppay_max_amount_toman?: number
+          snapppay_proxy_url?: string | null
           telegram_ai_assistant_enabled?: boolean
           telegram_bot_username?: string | null
           telegram_bot_welcome_logged_in?: string | null
@@ -265,6 +271,9 @@ export type Database = {
           manual_payment_enabled?: boolean
           quick_enroll_enabled?: boolean
           rafieipay_enabled?: boolean
+          snapppay_enabled?: boolean
+          snapppay_max_amount_toman?: number
+          snapppay_proxy_url?: string | null
           telegram_ai_assistant_enabled?: boolean
           telegram_bot_username?: string | null
           telegram_bot_welcome_logged_in?: string | null
@@ -2494,6 +2503,7 @@ export type Database = {
           slug: string
           smart_activation_enabled: boolean
           smart_activation_telegram_link: string | null
+          snapppay_enabled: boolean
           spotplayer_course_id: string | null
           support_activation_required: boolean | null
           support_followup_enabled: boolean
@@ -2568,6 +2578,7 @@ export type Database = {
           slug: string
           smart_activation_enabled?: boolean
           smart_activation_telegram_link?: string | null
+          snapppay_enabled?: boolean
           spotplayer_course_id?: string | null
           support_activation_required?: boolean | null
           support_followup_enabled?: boolean
@@ -2642,6 +2653,7 @@ export type Database = {
           slug?: string
           smart_activation_enabled?: boolean
           smart_activation_telegram_link?: string | null
+          snapppay_enabled?: boolean
           spotplayer_course_id?: string | null
           support_activation_required?: boolean | null
           support_followup_enabled?: boolean
@@ -5319,6 +5331,96 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      snapppay_payments: {
+        Row: {
+          amount: number
+          amount_rial: number
+          callback_payload: Json | null
+          cancelled_at: string | null
+          course_id: string | null
+          created_at: string
+          currency: string
+          enrollment_type: string
+          error_message: string | null
+          failed_at: string | null
+          id: string
+          mobile: string | null
+          order_id: string | null
+          paid_at: string | null
+          payment_page_url: string | null
+          provider: string
+          provider_payment_token: string | null
+          provider_reference_id: string | null
+          provider_transaction_id: string
+          redirected_at: string | null
+          refunded_at: string | null
+          settle_response: Json | null
+          status: string
+          status_response: Json | null
+          updated_at: string
+          user_id: number | null
+          verify_response: Json | null
+        }
+        Insert: {
+          amount: number
+          amount_rial: number
+          callback_payload?: Json | null
+          cancelled_at?: string | null
+          course_id?: string | null
+          created_at?: string
+          currency?: string
+          enrollment_type?: string
+          error_message?: string | null
+          failed_at?: string | null
+          id?: string
+          mobile?: string | null
+          order_id?: string | null
+          paid_at?: string | null
+          payment_page_url?: string | null
+          provider?: string
+          provider_payment_token?: string | null
+          provider_reference_id?: string | null
+          provider_transaction_id: string
+          redirected_at?: string | null
+          refunded_at?: string | null
+          settle_response?: Json | null
+          status?: string
+          status_response?: Json | null
+          updated_at?: string
+          user_id?: number | null
+          verify_response?: Json | null
+        }
+        Update: {
+          amount?: number
+          amount_rial?: number
+          callback_payload?: Json | null
+          cancelled_at?: string | null
+          course_id?: string | null
+          created_at?: string
+          currency?: string
+          enrollment_type?: string
+          error_message?: string | null
+          failed_at?: string | null
+          id?: string
+          mobile?: string | null
+          order_id?: string | null
+          paid_at?: string | null
+          payment_page_url?: string | null
+          provider?: string
+          provider_payment_token?: string | null
+          provider_reference_id?: string | null
+          provider_transaction_id?: string
+          redirected_at?: string | null
+          refunded_at?: string | null
+          settle_response?: Json | null
+          status?: string
+          status_response?: Json | null
+          updated_at?: string
+          user_id?: number | null
+          verify_response?: Json | null
+        }
+        Relationships: []
       }
       social_accounts: {
         Row: {
@@ -8443,6 +8545,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      finalize_snapppay_payment: {
+        Args: { p_payment_id: string }
+        Returns: Json
       }
       finalize_webinar_followup_delivery: {
         Args: {
