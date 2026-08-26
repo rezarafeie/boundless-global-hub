@@ -35,12 +35,22 @@ interface FormData {
   countryCode: string;
 }
 
+export type PaymentMethod =
+  | 'zarinpal'
+  | 'zibal'
+  | 'rafieipay'
+  | 'rafieipay_zibal'
+  | 'rafieipay_zarinpal'
+  | 'rafieipay_snapppay'
+  | 'snapppay'
+  | 'manual';
+
 interface ManualPaymentSectionProps {
   course?: Course;
   test?: Test;
   formData: FormData;
-  onPaymentMethodChange: (method: 'zarinpal' | 'zibal' | 'rafieipay' | 'snapppay' | 'manual') => void;
-  selectedMethod: 'zarinpal' | 'zibal' | 'rafieipay' | 'snapppay' | 'manual';
+  onPaymentMethodChange: (method: PaymentMethod) => void;
+  selectedMethod: PaymentMethod;
   finalRialPrice?: number | null;
   discountedPrice?: number | null;
   salePrice?: number | null;
@@ -432,7 +442,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
           <Label className="text-base font-medium text-foreground text-right">روش پرداخت</Label>
           <RadioGroup
             value={selectedMethod}
-            onValueChange={(value) => onPaymentMethodChange(value as 'zarinpal' | 'zibal' | 'rafieipay' | 'snapppay' | 'manual')}
+            onValueChange={(value) => onPaymentMethodChange(value as PaymentMethod)}
             className="space-y-3"
           >
             {zarinpalEnabled && (
