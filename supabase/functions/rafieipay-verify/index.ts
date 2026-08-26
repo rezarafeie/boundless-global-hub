@@ -161,8 +161,11 @@ serve(async (req) => {
     }
 
     console.error('❌ Rafiei Pay verification failed:', r);
-    const tableName = enrollmentType === 'test' ? 'test_enrollments' : 'enrollments';
-    await supabase.from(tableName).update({ payment_status: 'failed' }).eq('id', enrollmentId);
+    await supabase.from(tableName)
+      .update({ payment_status: 'failed' })
+      .eq('id', enrollmentId)
+      .neq('payment_status', 'completed');
+
 
     return new Response(JSON.stringify({
       error: r?.error?.message || 'Payment verification failed',
