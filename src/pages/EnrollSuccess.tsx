@@ -846,6 +846,13 @@ const EnrollSuccess: React.FC = () => {
       return;
     }
 
+    // SnappPay installment callback (gateway=snapppay)
+    if (isSnapppay && (snapppayPaymentId || enrollmentId)) {
+      verifySnapppayPayment();
+      return;
+    }
+
+
     if (authority && enrollmentId) {
       // Check if this is a free course
       if (authority === 'FREE_COURSE') {
