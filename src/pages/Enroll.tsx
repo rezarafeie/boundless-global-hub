@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { enrollmentAuthService, EnrollmentAuthData } from '@/lib/enrollmentAuthService';
 import MainLayout from '@/components/Layout/MainLayout';
-import ManualPaymentSection from '@/components/ManualPaymentSection';
+import ManualPaymentSection, { type PaymentMethod } from '@/components/ManualPaymentSection';
 import { TetherlandService } from '@/lib/tetherlandService';
 import DiscountSection from '@/components/DiscountSection';
 import { IPDetectionService } from '@/lib/ipDetectionService';
@@ -1104,7 +1104,7 @@ const Enroll: React.FC = () => {
                         ) : (
                            <>
                                 <CreditCard className="h-6 w-6 ml-2" />
-                                {paymentMethod === 'snapppay' ? 'پرداخت اقساطی ' : 'پرداخت آنلاین '} {(() => {
+                                {(paymentMethod === 'snapppay' || paymentMethod === 'rafieipay_snapppay') ? 'پرداخت اقساطی ' : 'پرداخت آنلاین '} {(() => {
                                  // For tests
                                  if (test) {
                                    return discountedPrice !== null ? formatPrice(discountedPrice) : formatPrice(test.price);
