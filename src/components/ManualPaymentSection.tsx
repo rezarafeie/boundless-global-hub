@@ -528,7 +528,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
                 >
                   <div className="text-right">
                     <div className="font-medium text-foreground text-right">پرداخت آنلاین با زیبال</div>
-                    <div className="text-sm text-muted-foreground text-right">درگاه زیبال از طریق رفیعی پی</div>
+                    <div className="text-sm text-muted-foreground text-right">پرداخت با تمام کارت های بانکی شتاب</div>
                   </div>
                   <CreditCard className="h-5 w-5 text-primary" />
                 </Label>
