@@ -90,9 +90,7 @@ export interface CartItem {
   name: string;
   count: number;
   amount: number;
-  // SnappPay's DTO requires a numeric product id. Academy course ids are UUIDs,
-  // so callers must provide a stable provider-facing numeric id instead.
-  id: number;
+  id: string;
   category: string;
 }
 
@@ -101,7 +99,7 @@ export interface CreatePaymentInput {
   returnURL: string;
   transactionId: string;
   mobile: string;
-  cartId: string;
+  cartId: number;
   items: CartItem[];
   discountAmount?: number;
 }
