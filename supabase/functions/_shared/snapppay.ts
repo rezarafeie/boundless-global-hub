@@ -87,8 +87,11 @@ export interface CartItem {
   name: string;
   count: number;
   amount: number;
-  id: string;
+  // SnappPay's DTO requires a numeric product id. Academy course ids are UUIDs,
+  // so callers must provide a stable provider-facing numeric id instead.
+  id: number;
   category: string;
+  commissionType: number;
 }
 
 export interface CreatePaymentInput {
@@ -110,10 +113,13 @@ export const snapppay = {
       paymentMethodTypeDto: "INSTALLMENT",
       returnURL: input.returnURL,
       transactionId: input.transactionId,
+      externalSourceAmount: 0,
       mobile: input.mobile,
       cartList: [
         {
-          cartId: input.cartId,
+          // The provider accepts its transaction id here, while a UUID cart id
+          // is rejected during DTO deserialization.
+          cartId: input.transactionId,
           totalAmount: input.amountRial,
           cartItems: input.items,
           taxAmount: 0,

@@ -169,8 +169,9 @@ serve(async (req) => {
         name: itemTitle,
         count: 1,
         amount: amountRial,
-        id: itemId,
+        id: 1,
         category: isTest ? "آزمون" : "دوره آموزشی",
+        commissionType: 1,
       }],
       discountAmount: 0,
     });
