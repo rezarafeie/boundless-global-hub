@@ -1071,8 +1071,8 @@ const Enroll: React.FC = () => {
                      </div>
                    )}
 
-                    {/* Submit Button - For online gateways (Zarinpal/Zibal) and paid tests/courses */}
-                    {(paymentMethod === 'zarinpal' || paymentMethod === 'zibal' || paymentMethod === 'rafieipay') && (test || course) && !isFree && (
+                     {/* Submit Button - For online gateways and paid tests/courses */}
+                     {(paymentMethod === 'zarinpal' || paymentMethod === 'zibal' || paymentMethod === 'rafieipay' || paymentMethod === 'snapppay') && (test || course) && !isFree && (
                      <Button
                        type="submit"
                        className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white h-14 text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
@@ -1085,8 +1085,8 @@ const Enroll: React.FC = () => {
                          </>
                         ) : (
                            <>
-                               <CreditCard className="h-6 w-6 ml-2" />
-                               پرداخت آنلاین {(() => {
+                                <CreditCard className="h-6 w-6 ml-2" />
+                                {paymentMethod === 'snapppay' ? 'پرداخت اقساطی ' : 'پرداخت آنلاین '} {(() => {
                                  // For tests
                                  if (test) {
                                    return discountedPrice !== null ? formatPrice(discountedPrice) : formatPrice(test.price);
