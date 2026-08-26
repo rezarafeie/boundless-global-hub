@@ -680,6 +680,10 @@ const EnrollSuccess: React.FC = () => {
   const snapppayPaymentId = searchParams.get('payment');
   const rafieipayTrackId = searchParams.get('track_id');
   const rafieipayTransactionId = searchParams.get('transaction_id');
+  // Rafiei Pay v2 returns the payment id on the callback; the server re-reads
+  // the authoritative state with payments-get (query params are never trusted).
+  const rafieipayPaymentId =
+    searchParams.get('payment_id') || searchParams.get('id') || searchParams.get('paymentId');
 
   const [verifying, setVerifying] = useState(true);
   const [result, setResult] = useState<VerificationResult | null>(null);
@@ -963,6 +967,7 @@ const EnrollSuccess: React.FC = () => {
           enrollmentType: isTestEnrollment ? 'test' : 'course',
           trackId: rafieipayTrackId,
           transactionId: rafieipayTransactionId,
+          paymentId: rafieipayPaymentId,
         }
       });
       if (response.error) throw response.error;

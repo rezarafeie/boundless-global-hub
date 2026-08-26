@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { rafieipayFetch } from "../_shared/rafieipay.ts"
+import { rafieipayFetch, rafieipayGet } from "../_shared/rafieipay.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,8 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    const { enrollmentId, enrollmentType, trackId, transactionId } = await req.json();
-    console.log('🔍 Rafiei Pay verify:', { enrollmentId, enrollmentType, trackId, transactionId });
+    const { enrollmentId, enrollmentType, trackId, transactionId, paymentId } = await req.json();
+    console.log('🔍 Rafiei Pay verify:', { enrollmentId, enrollmentType, trackId, transactionId, paymentId });
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -39,29 +39,86 @@ serve(async (req) => {
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Per Rafiei Pay docs: body must be { track_id } OR { transaction_id }. NOT order_id/reference.
-    const verifyBody: Record<string, any> = {};
-    if (trackId) verifyBody.track_id = String(trackId);
-    else if (transactionId) verifyBody.transaction_id = String(transactionId);
-    else {
-      return new Response(JSON.stringify({ error: 'Missing track_id or transaction_id' }),
+    const tableName = enrollmentType === 'test' ? 'test_enrollments' : 'enrollments';
+
+    // Idempotency: an already-completed enrollment is never activated twice.
+    if (enrollment.payment_status === 'completed') {
+      console.log('ℹ️ Enrollment already completed — returning existing result');
+      return new Response(JSON.stringify({
+        success: true,
+        alreadyProcessed: true,
+        refId: enrollment.zarinpal_ref_id || '',
+        course: enrollmentType === 'test' ? enrollment.tests : enrollment.courses,
+        enrollment,
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Preferred path (Rafiei Pay v2): read the authoritative payment state.
+    // Callback query params are never trusted as proof of payment.
+    const lookupId = paymentId || enrollment.zarinpal_authority;
+    let r: any = {};
+    let tx: any = {};
+    let isPaid = false;
+    let amountToman: number | null = null;
+
+    if (lookupId) {
+      const get = await rafieipayGet('/functions/v1/payments-get', { id: String(lookupId) }, { enrollmentId });
+      r = get.body || {};
+      tx = r?.payment || r?.transaction || r?.data || r;
+      const status = tx?.status;
+      amountToman = Number(tx?.amount_toman ?? r?.amount_toman ?? NaN);
+      isPaid = status === 'verified';
+    }
+
+    // Fallback for legacy callbacks that only carry track_id / transaction_id.
+    if (!isPaid && (trackId || transactionId)) {
+      const verifyBody: Record<string, any> = {};
+      if (trackId) verifyBody.track_id = String(trackId);
+      else verifyBody.transaction_id = String(transactionId);
+      const result = await rafieipayFetch('/functions/v1/payments-verify', verifyBody, { enrollmentId });
+      r = result.body || {};
+      tx = r?.transaction || {};
+      isPaid = r?.success === true && (tx.status === 'verified' || r?.already_verified === true);
+      const amt = Number(tx?.amount_toman ?? r?.amount_toman ?? NaN);
+      if (Number.isFinite(amt)) amountToman = amt;
+    }
+
+    if (!lookupId && !trackId && !transactionId) {
+      return new Response(JSON.stringify({ error: 'Missing payment id / track_id / transaction_id' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const result = await rafieipayFetch('/functions/v1/payments-verify', verifyBody, { enrollmentId });
-    const r = result.body || {};
+    // Amount check: the verified amount must match the order amount.
+    const expectedAmount = Math.round(Number(enrollment.payment_amount || 0));
+    if (isPaid && amountToman !== null && Number.isFinite(amountToman) && Math.round(amountToman) !== expectedAmount) {
+      console.error('❌ Amount mismatch', { amountToman, expectedAmount });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'مبلغ پرداخت با مبلغ سفارش مطابقت ندارد',
+        details: { paid: amountToman, expected: expectedAmount },
+      }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
-    // Success = success===true AND transaction.status === 'verified'. already_verified is also success.
-    const tx = r?.transaction || {};
-    const isPaid = r?.success === true && (tx.status === 'verified' || r?.already_verified === true);
-    const refId = tx.ref_id || r?.ref_id || '';
+    const refId = tx?.ref_id || r?.ref_id || tx?.id || '';
+
 
     if (isPaid) {
-      const tableName = enrollmentType === 'test' ? 'test_enrollments' : 'enrollments';
-      const { error: updateError } = await supabase.from(tableName)
-        .update({ payment_status: 'completed', zarinpal_ref_id: String(refId || tx.id || '') })
-        .eq('id', enrollmentId);
+      // Atomic, idempotent activation: only the transition from a non-completed row wins.
+      const { data: updatedRows, error: updateError } = await supabase.from(tableName)
+        .update({ payment_status: 'completed', zarinpal_ref_id: String(refId || '') })
+        .eq('id', enrollmentId)
+        .neq('payment_status', 'completed')
+        .select('id');
       if (updateError) throw new Error(`Database update failed: ${updateError.message}`);
+      const firstActivation = (updatedRows?.length || 0) > 0;
+      if (!firstActivation) {
+        return new Response(JSON.stringify({
+          success: true, alreadyProcessed: true, refId,
+          course: enrollmentType === 'test' ? enrollment.tests : enrollment.courses,
+          enrollment, transaction: tx,
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
 
       try {
         const webhookPayload = {
@@ -104,8 +161,11 @@ serve(async (req) => {
     }
 
     console.error('❌ Rafiei Pay verification failed:', r);
-    const tableName = enrollmentType === 'test' ? 'test_enrollments' : 'enrollments';
-    await supabase.from(tableName).update({ payment_status: 'failed' }).eq('id', enrollmentId);
+    await supabase.from(tableName)
+      .update({ payment_status: 'failed' })
+      .eq('id', enrollmentId)
+      .neq('payment_status', 'completed');
+
 
     return new Response(JSON.stringify({
       error: r?.error?.message || 'Payment verification failed',

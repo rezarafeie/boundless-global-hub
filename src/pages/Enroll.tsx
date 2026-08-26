@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { enrollmentAuthService, EnrollmentAuthData } from '@/lib/enrollmentAuthService';
 import MainLayout from '@/components/Layout/MainLayout';
-import ManualPaymentSection from '@/components/ManualPaymentSection';
+import ManualPaymentSection, { type PaymentMethod } from '@/components/ManualPaymentSection';
 import { TetherlandService } from '@/lib/tetherlandService';
 import DiscountSection from '@/components/DiscountSection';
 import { IPDetectionService } from '@/lib/ipDetectionService';
@@ -67,7 +67,18 @@ const Enroll: React.FC = () => {
   const [test, setTest] = useState<Test | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'zarinpal' | 'zibal' | 'rafieipay' | 'snapppay' | 'manual'>('zarinpal');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('zarinpal');
+
+  // Maps the selected method to the edge function + the Rafiei Pay sub-gateway (if any).
+  const resolvePaymentTarget = (method: PaymentMethod): { fnName: string; gateway?: string } => {
+    if (method === 'zibal') return { fnName: 'zibal-request' };
+    if (method === 'snapppay') return { fnName: 'snapppay-request' };
+    if (method === 'rafieipay') return { fnName: 'rafieipay-request' };
+    if (method === 'rafieipay_zibal') return { fnName: 'rafieipay-request', gateway: 'zibal' };
+    if (method === 'rafieipay_zarinpal') return { fnName: 'rafieipay-request', gateway: 'zarinpal' };
+    if (method === 'rafieipay_snapppay') return { fnName: 'rafieipay-request', gateway: 'snapppay' };
+    return { fnName: 'zarinpal-request' };
+  };
   const [finalRialPrice, setFinalRialPrice] = useState<number | null>(null);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [loadingExchangeRate, setLoadingExchangeRate] = useState(false);
@@ -227,7 +238,7 @@ const Enroll: React.FC = () => {
 
   // Check user's IP location for VPN warning
   useEffect(() => {
-    const isGatewayWithVPNIssue = paymentMethod === 'zarinpal' || paymentMethod === 'rafieipay';
+    const isGatewayWithVPNIssue = paymentMethod === 'zarinpal' || paymentMethod.startsWith('rafieipay');
     const checkIPLocation = async () => {
       try {
         const isIranian = await IPDetectionService.isIranianIP();
@@ -421,7 +432,7 @@ const Enroll: React.FC = () => {
           window.location.href = successUrl;
         } else {
           // For paid tests, proceed with online payment via selected gateway
-          const fnName = paymentMethod === 'zibal' ? 'zibal-request' : paymentMethod === 'rafieipay' ? 'rafieipay-request' : paymentMethod === 'snapppay' ? 'snapppay-request' : 'zarinpal-request';
+          const { fnName, gateway: rpGateway } = resolvePaymentTarget(paymentMethod);
           const response = await supabase.functions.invoke(fnName, {
             body: {
               testSlug: test.slug,
@@ -431,7 +442,8 @@ const Enroll: React.FC = () => {
               phone: formData.phone,
               countryCode: formData.countryCode,
               customAmount: finalTestPrice, // Use discounted price if available
-              enrollmentType: 'test'
+              enrollmentType: 'test',
+              gateway: rpGateway
             }
           });
 
@@ -529,7 +541,7 @@ const Enroll: React.FC = () => {
           console.log('💰 Using base price for payment:', basePrice);
         }
           
-        const fnName = paymentMethod === 'zibal' ? 'zibal-request' : paymentMethod === 'rafieipay' ? 'rafieipay-request' : paymentMethod === 'snapppay' ? 'snapppay-request' : 'zarinpal-request';
+        const { fnName, gateway: rpGateway } = resolvePaymentTarget(paymentMethod);
         const response = await supabase.functions.invoke(fnName, {
           body: {
             courseSlug: course.slug,
@@ -538,7 +550,8 @@ const Enroll: React.FC = () => {
             email: formData.email,
             phone: formData.phone,
             countryCode: formData.countryCode,
-            customAmount: paymentAmount // Pass the calculated amount
+            customAmount: paymentAmount, // Pass the calculated amount
+            gateway: rpGateway
           }
         });
 
@@ -1057,7 +1070,7 @@ const Enroll: React.FC = () => {
                      )}
 
                    {/* VPN Warning for non-Iranian IPs */}
-                   {showVPNWarning && (paymentMethod === 'zarinpal' || paymentMethod === 'rafieipay') && isIranianIP === false && (
+                   {showVPNWarning && (paymentMethod === 'zarinpal' || paymentMethod.startsWith('rafieipay')) && isIranianIP === false && (
                      <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
                        <div className="flex items-start gap-3">
                          <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
@@ -1067,7 +1080,7 @@ const Enroll: React.FC = () => {
                              <h4 className="font-medium text-orange-800 dark:text-orange-200">توجه به کاربران VPN</h4>
                            </div>
                            <p className="text-sm text-orange-700 dark:text-orange-300 leading-relaxed">
-                             {paymentMethod === 'rafieipay'
+                             {paymentMethod.startsWith('rafieipay')
                                ? 'درگاه رفیعی‌پی با VPN کار نمی‌کند. لطفا قبل از پرداخت، VPN خود را خاموش کنید.'
                                : 'درگاه شاپرک (زرین‌پال) با VPN کار نمی‌کند. لطفا قبل از پرداخت، VPN خود را خاموش کنید.'}
                            </p>
@@ -1077,7 +1090,7 @@ const Enroll: React.FC = () => {
                    )}
 
                      {/* Submit Button - For online gateways and paid tests/courses */}
-                     {(paymentMethod === 'zarinpal' || paymentMethod === 'zibal' || paymentMethod === 'rafieipay' || paymentMethod === 'snapppay') && (test || course) && !isFree && (
+                     {(paymentMethod !== 'manual') && (test || course) && !isFree && (
                      <Button
                        type="submit"
                        className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white h-14 text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
@@ -1091,7 +1104,7 @@ const Enroll: React.FC = () => {
                         ) : (
                            <>
                                 <CreditCard className="h-6 w-6 ml-2" />
-                                {paymentMethod === 'snapppay' ? 'پرداخت اقساطی ' : 'پرداخت آنلاین '} {(() => {
+                                {(paymentMethod === 'snapppay' || paymentMethod === 'rafieipay_snapppay') ? 'پرداخت اقساطی ' : 'پرداخت آنلاین '} {(() => {
                                  // For tests
                                  if (test) {
                                    return discountedPrice !== null ? formatPrice(discountedPrice) : formatPrice(test.price);

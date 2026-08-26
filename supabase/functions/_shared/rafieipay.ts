@@ -2,8 +2,9 @@
 // All amounts sent in Toman (amount_toman).
 import { supabase } from "./supabase.ts";
 
-const RAFIEIPAY_BASE = "https://buicdtvcecydwzornodw.supabase.co";
-export const RAFIEIPAY_API_KEY = "rp_live_a745ffab1cb6aa856f06b6eb52fbcddb08dd64e88761edd3";
+const RAFIEIPAY_BASE = (Deno.env.get("RAFIEIPAY_URL") || "https://buicdtvcecydwzornodw.supabase.co").replace(/\/+$/, "");
+export const RAFIEIPAY_API_KEY = Deno.env.get("RAFIEIPAY_API_KEY") ||
+  "rp_live_a745ffab1cb6aa856f06b6eb52fbcddb08dd64e88761edd3";
 
 export function getRafieipaySecret(): string {
   const secret = Deno.env.get("RAFIEIPAY_SECRET");
@@ -97,6 +98,71 @@ export async function rafieipayFetch(
       endpoint: path,
       request_payload: body as any,
       request_headers: redactedHeaders as any,
+      response_status: status,
+      response_body: json,
+      error_code: errorCode || null,
+      error_message: errorMessage || null,
+      enrollment_id: opts?.enrollmentId || null,
+      success: ok,
+    });
+  } catch (logErr) {
+    console.error("[rafieipay] failed to write debug log", logErr);
+  }
+
+  return { status, ok, body: json, errorCode, errorMessage };
+}
+
+/**
+ * Signed GET helper for Rafiei Pay read endpoints (e.g. /functions/v1/payments-get?id=...).
+ * The HMAC is computed over `${ts}.` + empty body, matching the POST scheme.
+ */
+export async function rafieipayGet(
+  path: string,
+  query: Record<string, string> = {},
+  opts?: { enrollmentId?: string },
+): Promise<RafieipayCallResult> {
+  const ts = Math.floor(Date.now() / 1000).toString();
+  const signature = await sign(ts, "", getRafieipaySecret());
+  const qs = new URLSearchParams(query).toString();
+  const url = `${RAFIEIPAY_BASE}${path.startsWith("/") ? path : `/${path}`}${qs ? `?${qs}` : ""}`;
+  console.log(`[rafieipay] GET -> ${url}`);
+
+  let status = 0;
+  let json: any = null;
+  let errorCode: string | undefined;
+  let errorMessage: string | undefined;
+
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+        "X-API-Key": RAFIEIPAY_API_KEY,
+        "X-Timestamp": ts,
+        "X-Signature": signature,
+      },
+    });
+    status = res.status;
+    const text = await res.text();
+    try { json = text ? JSON.parse(text) : {}; } catch { json = { raw: text }; }
+    console.log(`[rafieipay] GET <- ${status}`, json);
+    if (json && typeof json === "object") {
+      errorCode = json?.error?.code || (json?.success === false ? "unknown_error" : undefined);
+      errorMessage = json?.error?.message || json?.message;
+    }
+  } catch (e: any) {
+    errorCode = "network_error";
+    errorMessage = String(e?.message || e);
+    json = { error: { code: errorCode, message: errorMessage } };
+  }
+
+  const ok = status >= 200 && status < 300 && !errorCode;
+
+  try {
+    await supabase.from("rafieipay_debug_logs").insert({
+      endpoint: path,
+      request_payload: query as any,
+      request_headers: { "X-API-Key": redact(RAFIEIPAY_API_KEY), "X-Timestamp": ts, "X-Signature": redact(signature) } as any,
       response_status: status,
       response_body: json,
       error_code: errorCode || null,

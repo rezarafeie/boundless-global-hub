@@ -207,6 +207,9 @@ export type Database = {
           manual_payment_enabled: boolean
           quick_enroll_enabled: boolean
           rafieipay_enabled: boolean
+          rafieipay_snapppay_enabled: boolean
+          rafieipay_zarinpal_enabled: boolean
+          rafieipay_zibal_enabled: boolean
           snapppay_enabled: boolean
           snapppay_max_amount_toman: number
           snapppay_proxy_url: string | null
@@ -239,6 +242,9 @@ export type Database = {
           manual_payment_enabled?: boolean
           quick_enroll_enabled?: boolean
           rafieipay_enabled?: boolean
+          rafieipay_snapppay_enabled?: boolean
+          rafieipay_zarinpal_enabled?: boolean
+          rafieipay_zibal_enabled?: boolean
           snapppay_enabled?: boolean
           snapppay_max_amount_toman?: number
           snapppay_proxy_url?: string | null
@@ -271,6 +277,9 @@ export type Database = {
           manual_payment_enabled?: boolean
           quick_enroll_enabled?: boolean
           rafieipay_enabled?: boolean
+          rafieipay_snapppay_enabled?: boolean
+          rafieipay_zarinpal_enabled?: boolean
+          rafieipay_zibal_enabled?: boolean
           snapppay_enabled?: boolean
           snapppay_max_amount_toman?: number
           snapppay_proxy_url?: string | null
