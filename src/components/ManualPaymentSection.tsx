@@ -70,6 +70,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   const [zibalEnabled, setZibalEnabled] = useState(false);
   const [rafieipayEnabled, setRafieipayEnabled] = useState(false);
   const [snapppayEnabled, setSnapppayEnabled] = useState(false);
+  const [snapppayMaxToman, setSnapppayMaxToman] = useState(50000000);
   const [manualEnabled, setManualEnabled] = useState(true);
   const [methodsLoaded, setMethodsLoaded] = useState(false);
 
@@ -89,11 +90,8 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
       // SnappPay installments: enabled globally, allowed for this course,
       // and only for orders up to the configured maximum (default 50,000,000 تومان).
       const maxToman = Number((data as any)?.snapppay_max_amount_toman || 50000000);
-      const sp =
-        (data as any)?.snapppay_enabled === true &&
-        (course ? course.snapppay_enabled !== false : false) &&
-        effectiveAmount > 0 &&
-        effectiveAmount <= maxToman;
+      const sp = (data as any)?.snapppay_enabled === true;
+      setSnapppayMaxToman(maxToman);
       setZarinpalEnabled(z);
       setZibalEnabled(zb);
       setRafieipayEnabled(rp);
@@ -126,6 +124,14 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
     return Number(course.price || 0);
   })();
 
+  // SnappPay is only offered for allowed courses within the eligible amount range.
+  const snapppayAvailable =
+    snapppayEnabled &&
+    !!course &&
+    course.snapppay_enabled !== false &&
+    effectiveAmount > 0 &&
+    effectiveAmount <= snapppayMaxToman;
+
   const validateForm = () => {
     const errors: string[] = [];
     
@@ -145,6 +151,13 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
     setValidationErrors(errors);
     return errors.length === 0;
   };
+
+  useEffect(() => {
+    if (selectedMethod === 'snapppay' && methodsLoaded && !snapppayAvailable) {
+      onPaymentMethodChange(zarinpalEnabled ? 'zarinpal' : manualEnabled ? 'manual' : 'zarinpal');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMethod, methodsLoaded, snapppayAvailable]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
@@ -467,7 +480,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
                 <RadioGroupItem value="rafieipay" id="rafieipay" />
               </div>
             )}
-            {snapppayEnabled && (
+            {snapppayAvailable && (
               <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
                 <Label
                   htmlFor="snapppay"
