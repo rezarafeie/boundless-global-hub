@@ -103,11 +103,22 @@ serve(async (req) => {
 
 
     if (isPaid) {
-      const tableName = enrollmentType === 'test' ? 'test_enrollments' : 'enrollments';
-      const { error: updateError } = await supabase.from(tableName)
-        .update({ payment_status: 'completed', zarinpal_ref_id: String(refId || tx.id || '') })
-        .eq('id', enrollmentId);
+      // Atomic, idempotent activation: only the transition from a non-completed row wins.
+      const { data: updatedRows, error: updateError } = await supabase.from(tableName)
+        .update({ payment_status: 'completed', zarinpal_ref_id: String(refId || '') })
+        .eq('id', enrollmentId)
+        .neq('payment_status', 'completed')
+        .select('id');
       if (updateError) throw new Error(`Database update failed: ${updateError.message}`);
+      const firstActivation = (updatedRows?.length || 0) > 0;
+      if (!firstActivation) {
+        return new Response(JSON.stringify({
+          success: true, alreadyProcessed: true, refId,
+          course: enrollmentType === 'test' ? enrollment.tests : enrollment.courses,
+          enrollment, transaction: tx,
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
 
       try {
         const webhookPayload = {
