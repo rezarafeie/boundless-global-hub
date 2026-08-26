@@ -155,9 +155,18 @@ serve(async (req) => {
       return json({ success: false, error: "خطا در ثبت تراکنش" }, 500);
     }
 
-    const returnURL = isTest
-      ? `https://academy.rafiei.co/enroll/success?test=${itemSlug}&phone=${encodeURIComponent(phone || "")}&enrollment=${enrollment.id}&gateway=snapppay&payment=${payment.id}`
-      : `https://academy.rafiei.co/enroll/success?course=${itemSlug}&email=${encodeURIComponent(email || "")}&enrollment=${enrollment.id}&gateway=snapppay&payment=${payment.id}`;
+    // SnappPay validates this against the merchant's registered rafeie.com
+    // domain. The proxy callback forwards all query parameters to Academy.
+    const callbackParams = new URLSearchParams({
+      route: "callback",
+      enrollment: enrollment.id,
+      gateway: "snapppay",
+      payment: payment.id,
+      ...(isTest
+        ? { test: itemSlug, phone: phone || "" }
+        : { course: itemSlug, email: email || "" }),
+    });
+    const returnURL = `https://rafeie.com/snappay/?${callbackParams.toString()}`;
 
     const created = await snapppay.create({
       amountRial,

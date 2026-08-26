@@ -277,6 +277,17 @@ if ($route === 'health') {
     respond(200, ['successful' => true, 'service' => 'rafiei-snapppay-proxy', 'time' => gmdate('c')]);
 }
 
+// Public provider callback. SnappPay only accepts the merchant's whitelisted
+// rafeie.com domain, so forward its callback parameters to Academy checkout.
+if ($route === 'callback') {
+    $params = $_GET;
+    unset($params['route']);
+    $target = 'https://academy.rafiei.co/enroll/success';
+    if (!empty($params)) $target .= '?' . http_build_query($params);
+    header('Location: ' . $target, true, 302);
+    exit;
+}
+
 $provided = bearer_token();
 if ($provided === '' || !hash_equals($PROXY_SECRET, $provided)) {
     proxy_log('unauthorized request from ' . ($_SERVER['REMOTE_ADDR'] ?? '?') . ' route=' . $route);
