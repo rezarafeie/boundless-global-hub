@@ -60,6 +60,8 @@ const AdminSettingsPanel: React.FC = () => {
   const [zarinpalEnabled, setZarinpalEnabled] = useState(true);
   const [zibalEnabled, setZibalEnabled] = useState(false);
   const [rafieipayEnabled, setRafieipayEnabled] = useState(false);
+  const [snapppayEnabled, setSnapppayEnabled] = useState(false);
+  const [snapppayMaxToman, setSnapppayMaxToman] = useState<string>('50000000');
   const [manualPaymentEnabled, setManualPaymentEnabled] = useState(true);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
@@ -67,7 +69,7 @@ const AdminSettingsPanel: React.FC = () => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('admin_settings')
-        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url, zarinpal_enabled, zibal_enabled, manual_payment_enabled, rafieipay_enabled' as any)
+        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url, zarinpal_enabled, zibal_enabled, manual_payment_enabled, rafieipay_enabled, snapppay_enabled, snapppay_max_amount_toman' as any)
         .eq('id', 1)
         .single();
       
@@ -79,6 +81,8 @@ const AdminSettingsPanel: React.FC = () => {
         setZarinpalEnabled((data as any).zarinpal_enabled !== false);
         setZibalEnabled((data as any).zibal_enabled === true);
         setRafieipayEnabled((data as any).rafieipay_enabled === true);
+        setSnapppayEnabled((data as any).snapppay_enabled === true);
+        setSnapppayMaxToman(String((data as any).snapppay_max_amount_toman ?? 50000000));
         setManualPaymentEnabled((data as any).manual_payment_enabled !== false);
       }
       setLoadingSettings(false);
@@ -87,18 +91,20 @@ const AdminSettingsPanel: React.FC = () => {
   }, []);
 
   const handleTogglePaymentMethod = async (
-    method: 'zarinpal' | 'zibal' | 'rafieipay' | 'manual',
+    method: 'zarinpal' | 'zibal' | 'rafieipay' | 'snapppay' | 'manual',
     checked: boolean
   ) => {
     const column =
       method === 'zarinpal' ? 'zarinpal_enabled'
       : method === 'zibal' ? 'zibal_enabled'
       : method === 'rafieipay' ? 'rafieipay_enabled'
+      : method === 'snapppay' ? 'snapppay_enabled'
       : 'manual_payment_enabled';
     const setter =
       method === 'zarinpal' ? setZarinpalEnabled
       : method === 'zibal' ? setZibalEnabled
       : method === 'rafieipay' ? setRafieipayEnabled
+      : method === 'snapppay' ? setSnapppayEnabled
       : setManualPaymentEnabled;
     setter(checked);
     const { error } = await supabase
@@ -113,12 +119,27 @@ const AdminSettingsPanel: React.FC = () => {
         zarinpal: 'پرداخت آنلاین (زرین‌پال)',
         zibal: 'پرداخت آنلاین (زیبال)',
         rafieipay: 'پرداخت آنلاین (رفیعی پی)',
+        snapppay: 'خرید اقساطی با اسنپ‌پی',
         manual: 'کارت به کارت',
       };
       toast({
         title: 'ذخیره شد',
         description: `${labels[method]} ${checked ? 'فعال' : 'غیرفعال'} شد`,
       });
+    }
+  };
+
+  const handleSaveSnapppayMax = async () => {
+    const value = Math.max(0, Math.round(Number(snapppayMaxToman) || 0));
+    const { error } = await supabase
+      .from('admin_settings')
+      .update({ snapppay_max_amount_toman: value, updated_at: new Date().toISOString() } as any)
+      .eq('id', 1);
+    if (error) {
+      toast({ title: 'خطا', description: 'خطا در ذخیره سقف مبلغ اسنپ‌پی', variant: 'destructive' });
+    } else {
+      setSnapppayMaxToman(String(value));
+      toast({ title: 'ذخیره شد', description: 'سقف مبلغ پرداخت اقساطی به‌روزرسانی شد' });
     }
   };
 
@@ -320,6 +341,48 @@ const AdminSettingsPanel: React.FC = () => {
                   />
                 </div>
                 {rafieipayEnabled && <RafieipayDebugPanel />}
+                <div className="p-4 border rounded-lg space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label htmlFor="snapppay-enabled" className="text-base font-medium">
+                        خرید اقساطی با اسنپ‌پی
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        {snapppayEnabled
+                          ? 'کاربران می‌توانند دوره را با اعتبار اقساطی اسنپ‌پی خریداری کنند'
+                          : 'گزینه پرداخت اقساطی اسنپ‌پی در صفحه ثبت‌نام نمایش داده نمی‌شود'}
+                      </p>
+                    </div>
+                    <Switch
+                      id="snapppay-enabled"
+                      checked={snapppayEnabled}
+                      onCheckedChange={(c) => handleTogglePaymentMethod('snapppay', c)}
+                      disabled={loadingSettings}
+                    />
+                  </div>
+                  {snapppayEnabled && (
+                    <div className="space-y-2">
+                      <Label htmlFor="snapppay-max" className="text-sm">
+                        حداکثر مبلغ مجاز برای پرداخت اقساطی (تومان)
+                      </Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="snapppay-max"
+                          type="number"
+                          value={snapppayMaxToman}
+                          onChange={(e) => setSnapppayMaxToman(e.target.value)}
+                          className="max-w-xs"
+                          dir="ltr"
+                        />
+                        <Button onClick={handleSaveSnapppayMax} variant="outline">ذخیره</Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        سفارش‌های بالاتر از این مبلغ، گزینه اسنپ‌پی را نمایش نمی‌دهند (پیش‌فرض ۵۰٬۰۰۰٬۰۰۰ تومان).
+                        غیرفعال‌سازی اسنپ‌پی برای یک دوره خاص از تنظیمات همان دوره انجام می‌شود.
+                      </p>
+                    </div>
+                  )}
+                </div>
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-1">
                     <Label htmlFor="manual-enabled" className="text-base font-medium">
