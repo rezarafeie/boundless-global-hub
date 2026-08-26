@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { zarinpalFetch } from "../_shared/zarinpal.ts";
 import { zibalFetch, zibalStartUrl, getZibalMerchant } from "../_shared/zibal.ts";
-import { rafieipayFetch } from "../_shared/rafieipay.ts";
+import { rafieipayFetch, buildRafieipayCustomer } from "../_shared/rafieipay.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,6 +31,10 @@ serve(async (req) => {
       source = "landing",
       webinarId = null,
       origin,
+      userId = null,
+      firstName = null,
+      lastName = null,
+      nationalId = null,
     } = await req.json();
 
     if (!fullName || !String(fullName).trim() || !phone || !String(phone).trim()) {
@@ -144,7 +148,16 @@ serve(async (req) => {
       order_id: String(reservation.id),
       description,
       callback_url: callbackUrl,
-      customer: { phone: reservation.phone, email: reservation.email },
+      customer: await buildRafieipayCustomer({
+        userId,
+        firstName,
+        lastName,
+        name: fullName,
+        email: reservation.email,
+        phone: reservation.phone,
+        nationalId,
+        metadata: { source: "consultation_reservation", reservation_id: String(reservation.id) },
+      }),
     });
     const r = result.body || {};
     const paymentUrl = r?.payment_url || r?.paymentUrl;

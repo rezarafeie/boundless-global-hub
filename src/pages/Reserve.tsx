@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
+import { getCookie } from '@/lib/cookieUtils';
 import {
   CheckCircle2, CreditCard, Loader2, Upload, ShieldCheck, XCircle, Copy,
   CalendarClock, Headphones, Sparkles, Target, Lock, BadgeCheck, Users, Clock,
@@ -125,12 +126,21 @@ const Reserve: React.FC = () => {
     if (err) return toast({ title: err, variant: 'destructive' });
     setSubmitting(true);
     try {
+      let storedUser: any = null;
+      try {
+        const raw = getCookie('current_user');
+        if (raw) storedUser = JSON.parse(decodeURIComponent(raw));
+      } catch { /* ignore malformed cookie */ }
+
       const { data, error } = await supabase.functions.invoke('reserve-payment-request', {
         body: {
           fullName: fullName.trim(),
           phone: phone.trim(),
           email: email.trim() || null,
           gateway,
+          userId: storedUser?.id ?? null,
+          firstName: storedUser?.firstName || null,
+          lastName: storedUser?.lastName || null,
           source: 'landing',
           origin: window.location.origin,
         },

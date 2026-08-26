@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { supabase } from "../_shared/supabase.ts"
-import { rafieipayFetch } from "../_shared/rafieipay.ts"
+import { rafieipayFetch, buildRafieipayCustomer, normalizeIranMobile } from "../_shared/rafieipay.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { courseSlug, testSlug, firstName, lastName, email, phone, countryCode, customAmount, enrollmentType, gateway } = await req.json();
+    const { courseSlug, testSlug, firstName, lastName, email, phone, countryCode, customAmount, enrollmentType, gateway, userId, nationalId, customerMetadata } = await req.json();
 
     // Only these gateways may be forwarded to Rafiei Pay. Empty/undefined = Rafiei Pay Checkout
     // (customer picks the method inside Rafiei Pay).
@@ -21,16 +21,15 @@ serve(async (req) => {
     const rpGateway: string | undefined =
       typeof gateway === 'string' && allowedGateways.includes(gateway) ? gateway : undefined;
 
+    // Full customer profile (enriched from the platform account when available)
+    const customer = await buildRafieipayCustomer({
+      userId, firstName, lastName, email, phone, countryCode, nationalId,
+      metadata: { ...(customerMetadata || {}), source: 'enroll' },
+    });
+
     // Normalize Iranian mobile to 09xxxxxxxxx (required by SnappPay via Rafiei Pay)
-    const normalizeMobile = (raw?: string): string | undefined => {
-      if (!raw) return undefined;
-      let d = String(raw).replace(/\D/g, '');
-      if (d.startsWith('0098')) d = d.slice(4);
-      else if (d.startsWith('98') && d.length > 10) d = d.slice(2);
-      if (d.length === 10 && d.startsWith('9')) d = `0${d}`;
-      return /^09\d{9}$/.test(d) ? d : undefined;
-    };
-    const customerMobile = normalizeMobile(phone);
+    const customerMobile = normalizeIranMobile((customer.phone as string) || phone);
+
 
     if (rpGateway === 'snapppay' && !customerMobile) {
       return new Response(JSON.stringify({ error: 'برای پرداخت اقساطی، شماره موبایل ایرانی معتبر لازم است' }),
@@ -107,7 +106,15 @@ serve(async (req) => {
       order_id: String(enrollment.id),
       description: enrollmentType === 'test' ? `خرید آزمون: ${itemTitle}` : `خرید دوره: ${itemTitle}`,
       callback_url: callbackUrl,
-      customer: { phone, email, name: `${firstName || ''} ${lastName || ''}`.trim() },
+      customer: {
+        ...customer,
+        metadata: {
+          ...((customer.metadata as Record<string, unknown>) || {}),
+          enrollment_type: enrollmentType === 'test' ? 'test' : 'course',
+          item_slug: itemSlug,
+          enrollment_id: String(enrollment.id),
+        },
+      },
       metadata: {
         source: 'rafiei-academy',
         enrollment_type: enrollmentType === 'test' ? 'test' : 'course',
