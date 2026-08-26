@@ -18,6 +18,7 @@ interface Course {
   price: number;
   use_dollar_price?: boolean;
   usd_price?: number | null;
+  snapppay_enabled?: boolean;
 }
 
 interface Test {
@@ -38,8 +39,8 @@ interface ManualPaymentSectionProps {
   course?: Course;
   test?: Test;
   formData: FormData;
-  onPaymentMethodChange: (method: 'zarinpal' | 'zibal' | 'rafieipay' | 'manual') => void;
-  selectedMethod: 'zarinpal' | 'zibal' | 'rafieipay' | 'manual';
+  onPaymentMethodChange: (method: 'zarinpal' | 'zibal' | 'rafieipay' | 'snapppay' | 'manual') => void;
+  selectedMethod: 'zarinpal' | 'zibal' | 'rafieipay' | 'snapppay' | 'manual';
   finalRialPrice?: number | null;
   discountedPrice?: number | null;
   salePrice?: number | null;
@@ -68,6 +69,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   const [zarinpalEnabled, setZarinpalEnabled] = useState(true);
   const [zibalEnabled, setZibalEnabled] = useState(false);
   const [rafieipayEnabled, setRafieipayEnabled] = useState(false);
+  const [snapppayEnabled, setSnapppayEnabled] = useState(false);
   const [manualEnabled, setManualEnabled] = useState(true);
   const [methodsLoaded, setMethodsLoaded] = useState(false);
 
@@ -76,7 +78,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
     (async () => {
       const { data } = await supabase
         .from('admin_settings')
-        .select('zarinpal_enabled, zibal_enabled, manual_payment_enabled, rafieipay_enabled' as any)
+        .select('zarinpal_enabled, zibal_enabled, manual_payment_enabled, rafieipay_enabled, snapppay_enabled, snapppay_max_amount_toman' as any)
         .eq('id', 1)
         .single();
       if (cancelled) return;
@@ -84,17 +86,27 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
       const zb = (data as any)?.zibal_enabled === true;
       const rp = (data as any)?.rafieipay_enabled === true;
       const m = (data as any)?.manual_payment_enabled !== false;
+      // SnappPay installments: enabled globally, allowed for this course,
+      // and only for orders up to the configured maximum (default 50,000,000 تومان).
+      const maxToman = Number((data as any)?.snapppay_max_amount_toman || 50000000);
+      const sp =
+        (data as any)?.snapppay_enabled === true &&
+        (course ? course.snapppay_enabled !== false : false) &&
+        effectiveAmount > 0 &&
+        effectiveAmount <= maxToman;
       setZarinpalEnabled(z);
       setZibalEnabled(zb);
       setRafieipayEnabled(rp);
+      setSnapppayEnabled(sp);
       setManualEnabled(m);
       setMethodsLoaded(true);
       // Auto-switch if currently selected method is disabled
-      const enabled = { zarinpal: z, zibal: zb, rafieipay: rp, manual: m } as const;
+      const enabled = { zarinpal: z, zibal: zb, rafieipay: rp, snapppay: sp, manual: m } as const;
       if (!enabled[selectedMethod]) {
         if (z) onPaymentMethodChange('zarinpal');
         else if (zb) onPaymentMethodChange('zibal');
         else if (rp) onPaymentMethodChange('rafieipay');
+        else if (sp) onPaymentMethodChange('snapppay');
         else if (m) onPaymentMethodChange('manual');
       }
     })();
@@ -103,6 +115,16 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Best-effort client-side amount (server always re-computes the real price)
+  const effectiveAmount = (() => {
+    if (test) return Number(test.price || 0);
+    if (!course) return 0;
+    if (isOnSale && salePrice !== null && salePrice !== undefined) return Number(salePrice);
+    if (discountedPrice !== null && discountedPrice !== undefined) return Number(discountedPrice);
+    if (finalRialPrice) return Number(finalRialPrice);
+    return Number(course.price || 0);
+  })();
 
   const validateForm = () => {
     const errors: string[] = [];
@@ -397,7 +419,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
           <Label className="text-base font-medium text-foreground text-right">روش پرداخت</Label>
           <RadioGroup
             value={selectedMethod}
-            onValueChange={(value) => onPaymentMethodChange(value as 'zarinpal' | 'zibal' | 'rafieipay' | 'manual')}
+            onValueChange={(value) => onPaymentMethodChange(value as 'zarinpal' | 'zibal' | 'rafieipay' | 'snapppay' | 'manual')}
             className="space-y-3"
           >
             {zarinpalEnabled && (
@@ -443,6 +465,21 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
                   <CreditCard className="h-5 w-5 text-primary" />
                 </Label>
                 <RadioGroupItem value="rafieipay" id="rafieipay" />
+              </div>
+            )}
+            {snapppayEnabled && (
+              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
+                <Label
+                  htmlFor="snapppay"
+                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
+                >
+                  <div className="text-right">
+                    <div className="font-medium text-foreground text-right">خرید اقساطی با اسنپ‌پی</div>
+                    <div className="text-sm text-muted-foreground text-right">پرداخت اقساطی با اعتبار اسنپ‌پی</div>
+                  </div>
+                  <Zap className="h-5 w-5 text-primary" />
+                </Label>
+                <RadioGroupItem value="snapppay" id="snapppay" />
               </div>
             )}
             {manualEnabled && (
