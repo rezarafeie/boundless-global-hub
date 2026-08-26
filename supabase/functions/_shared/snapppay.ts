@@ -99,7 +99,7 @@ export interface CreatePaymentInput {
   returnURL: string;
   transactionId: string;
   mobile: string;
-  cartId: string;
+  cartId: number;
   items: CartItem[];
   discountAmount?: number;
 }
@@ -117,9 +117,7 @@ export const snapppay = {
       mobile: input.mobile,
       cartList: [
         {
-          // The provider accepts its transaction id here, while a UUID cart id
-          // is rejected during DTO deserialization.
-          cartId: input.transactionId,
+          cartId: input.cartId,
           totalAmount: input.amountRial,
           cartItems: input.items,
           taxAmount: 0,
