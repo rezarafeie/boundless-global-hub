@@ -80,7 +80,10 @@ export function normalizeMobile(phone?: string | null, countryCode?: string | nu
 }
 
 export function generateTransactionId(orderId: string): string {
-  return `academy_${orderId}_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
+  // SnappPay's token DTO accepts transactionId as a string but requires its
+  // value to be numeric. UUID/prefixed values fail with error 1005.
+  const random = crypto.getRandomValues(new Uint32Array(1))[0] % 10000;
+  return `${Date.now()}${String(random).padStart(4, "0")}`;
 }
 
 export interface CartItem {
