@@ -35,6 +35,7 @@ interface Course {
   is_active: boolean;
   spotplayer_course_id?: string | null;
   is_spotplayer_enabled?: boolean;
+  snapppay_enabled?: boolean;
   create_test_license?: boolean;
   woocommerce_create_access?: boolean;
   use_landing_page_merge?: boolean;
@@ -91,6 +92,7 @@ const CourseEdit: React.FC = () => {
     is_active: true,
     spotplayer_course_id: '',
     is_spotplayer_enabled: false,
+    snapppay_enabled: true,
     create_test_license: false,
     woocommerce_create_access: true,
     use_landing_page_merge: false,
@@ -195,6 +197,7 @@ const CourseEdit: React.FC = () => {
         is_active: data.is_active,
         spotplayer_course_id: data.spotplayer_course_id || '',
         is_spotplayer_enabled: data.is_spotplayer_enabled || false,
+        snapppay_enabled: (data as any).snapppay_enabled !== false,
         create_test_license: data.create_test_license || false,
         woocommerce_create_access: data.woocommerce_create_access !== false,
         use_landing_page_merge: data.use_landing_page_merge || false,
@@ -331,6 +334,7 @@ const CourseEdit: React.FC = () => {
         is_active: formData.is_active,
         spotplayer_course_id: formData.spotplayer_course_id.trim() || null,
         is_spotplayer_enabled: formData.is_spotplayer_enabled,
+        snapppay_enabled: formData.snapppay_enabled,
         create_test_license: formData.create_test_license,
         woocommerce_create_access: formData.woocommerce_create_access,
         use_landing_page_merge: formData.use_landing_page_merge,
@@ -1254,6 +1258,22 @@ mba
 
 
 
+
+              {/* SnappPay Section */}
+              <div className="border-t pt-6 space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">پرداخت اقساطی (اسنپ‌پی)</h3>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="snapppay_enabled"
+                    checked={formData.snapppay_enabled !== false}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, snapppay_enabled: checked }))}
+                  />
+                  <Label htmlFor="snapppay_enabled">نمایش گزینه خرید اقساطی اسنپ‌پی برای این دوره</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  در صورت غیرفعال بودن، اسنپ‌پی حتی اگر در تنظیمات کلی فعال باشد برای این دوره نمایش داده نمی‌شود.
+                </p>
+              </div>
 
               {/* SpotPlayer Section */}
               <div className="border-t pt-6 space-y-4">
