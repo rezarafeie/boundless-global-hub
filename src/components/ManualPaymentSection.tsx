@@ -171,6 +171,9 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
     effectiveAmount > 0 &&
     effectiveAmount <= snapppayMaxToman;
 
+  // SnappPay splits the order into 4 installments; the first one is paid today.
+  const snapppayFirstInstallment = Math.round(effectiveAmount / 4);
+
 
   const validateForm = () => {
     const errors: string[] = [];
