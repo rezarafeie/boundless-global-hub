@@ -435,7 +435,9 @@ const Enroll: React.FC = () => {
             }
           });
 
-          if (response.error) throw response.error;
+          if (response.error) {
+            throw new Error((response.data as { error?: string } | null)?.error || response.error.message);
+          }
 
           const { data } = response;
           
@@ -540,7 +542,9 @@ const Enroll: React.FC = () => {
           }
         });
 
-        if (response.error) throw response.error;
+        if (response.error) {
+          throw new Error((response.data as { error?: string } | null)?.error || response.error.message);
+        }
 
         const { data } = response;
         
@@ -553,9 +557,10 @@ const Enroll: React.FC = () => {
       }
     } catch (error) {
       console.error('Payment request error:', error);
+      const paymentError = error instanceof Error ? error.message : "خطا در ایجاد درخواست پرداخت";
       toast({
         title: "خطا در پرداخت",
-        description: "خطا در ایجاد درخواست پرداخت. لطفا مجددا تلاش کنید.",
+        description: paymentError,
         variant: "destructive"
       });
     } finally {
