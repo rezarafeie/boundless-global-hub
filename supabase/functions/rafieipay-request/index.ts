@@ -46,7 +46,10 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Test not found' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
-      paymentAmount = customAmount || test.price;
+      // Amount is decided server-side: a client value may only lower the price (discounts), never raise it.
+      const testBase = Number(test.price || 0);
+      const testRequested = Number(customAmount);
+      paymentAmount = Number.isFinite(testRequested) && testRequested > 0 && testRequested <= testBase ? testRequested : testBase;
       itemTitle = test.title; itemSlug = testSlug;
 
       const { data: te, error: teErr } = await supabase
@@ -69,7 +72,10 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Course not found' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
-      paymentAmount = customAmount || course.price;
+      // Amount is decided server-side: a client value may only lower the price (discounts), never raise it.
+      const courseBase = Number(course.price || 0);
+      const courseRequested = Number(customAmount);
+      paymentAmount = Number.isFinite(courseRequested) && courseRequested > 0 && courseRequested <= courseBase ? courseRequested : courseBase;
       itemTitle = course.title; itemSlug = courseSlug;
 
       const { data: ce, error: ceErr } = await supabase
