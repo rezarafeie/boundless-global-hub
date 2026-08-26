@@ -512,14 +512,60 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
                   className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
                 >
                   <div className="text-right">
-                    <div className="font-medium text-foreground text-right">پرداخت آنلاین</div>
-                    <div className="text-sm text-muted-foreground text-right">از طریق درگاه رفیعی پی</div>
+                    <div className="font-medium text-foreground text-right">پرداخت آنلاین (رفیعی پی)</div>
+                    <div className="text-sm text-muted-foreground text-right">انتخاب روش پرداخت در صفحه رفیعی پی</div>
                   </div>
                   <CreditCard className="h-5 w-5 text-primary" />
                 </Label>
                 <RadioGroupItem value="rafieipay" id="rafieipay" />
               </div>
             )}
+            {rpZibalEnabled && (
+              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
+                <Label
+                  htmlFor="rafieipay_zibal"
+                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
+                >
+                  <div className="text-right">
+                    <div className="font-medium text-foreground text-right">پرداخت آنلاین با زیبال</div>
+                    <div className="text-sm text-muted-foreground text-right">درگاه زیبال از طریق رفیعی پی</div>
+                  </div>
+                  <CreditCard className="h-5 w-5 text-primary" />
+                </Label>
+                <RadioGroupItem value="rafieipay_zibal" id="rafieipay_zibal" />
+              </div>
+            )}
+            {rpZarinpalEnabled && (
+              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
+                <Label
+                  htmlFor="rafieipay_zarinpal"
+                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
+                >
+                  <div className="text-right">
+                    <div className="font-medium text-foreground text-right">پرداخت آنلاین با زرین‌پال</div>
+                    <div className="text-sm text-muted-foreground text-right">درگاه زرین‌پال از طریق رفیعی پی</div>
+                  </div>
+                  <CreditCard className="h-5 w-5 text-primary" />
+                </Label>
+                <RadioGroupItem value="rafieipay_zarinpal" id="rafieipay_zarinpal" />
+              </div>
+            )}
+            {rpSnapppayAvailable && (
+              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
+                <Label
+                  htmlFor="rafieipay_snapppay"
+                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
+                >
+                  <div className="text-right">
+                    <div className="font-medium text-foreground text-right">خرید اقساطی با اسنپ‌پی</div>
+                    <div className="text-sm text-muted-foreground text-right">پرداخت اقساطی اسنپ‌پی از طریق رفیعی پی</div>
+                  </div>
+                  <Zap className="h-5 w-5 text-primary" />
+                </Label>
+                <RadioGroupItem value="rafieipay_snapppay" id="rafieipay_snapppay" />
+              </div>
+            )}
+
             {snapppayAvailable && (
               <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
                 <Label
