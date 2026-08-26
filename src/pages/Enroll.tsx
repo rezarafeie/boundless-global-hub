@@ -441,6 +441,7 @@ const Enroll: React.FC = () => {
               email: formData.email,
               phone: formData.phone,
               countryCode: formData.countryCode,
+              userId: user?.id ?? null,
               customAmount: finalTestPrice, // Use discounted price if available
               enrollmentType: 'test',
               gateway: rpGateway
@@ -550,6 +551,7 @@ const Enroll: React.FC = () => {
             email: formData.email,
             phone: formData.phone,
             countryCode: formData.countryCode,
+            userId: user?.id ?? null,
             customAmount: paymentAmount, // Pass the calculated amount
             gateway: rpGateway
           }
