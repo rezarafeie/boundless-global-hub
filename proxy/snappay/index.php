@@ -28,8 +28,6 @@
  * The same value is stored in Supabase as SNAPPPAY_PROXY_SECRET.
  */
 
-declare(strict_types=1);
-
 // ---------------------------------------------------------------
 // 1. CONFIGURATION  — fill these in on the server (or use env vars)
 // ---------------------------------------------------------------
