@@ -676,6 +676,8 @@ const EnrollSuccess: React.FC = () => {
   const gateway = searchParams.get('gateway');
   const isZibal = gateway === 'zibal' || !!zibalTrackId;
   const isRafieipay = gateway === 'rafieipay';
+  const isSnapppay = gateway === 'snapppay';
+  const snapppayPaymentId = searchParams.get('payment');
   const rafieipayTrackId = searchParams.get('track_id');
   const rafieipayTransactionId = searchParams.get('transaction_id');
 
@@ -896,6 +898,44 @@ const EnrollSuccess: React.FC = () => {
     } catch (error) {
       console.error('Zibal verification error:', error);
       setResult({ success: false, error: 'خطا در تایید پرداخت' });
+      toast({
+        title: 'خطا',
+        description: 'خطا در تایید پرداخت. لطفا با پشتیبانی تماس بگیرید.',
+        variant: 'destructive',
+      });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const verifySnapppayPayment = async () => {
+    try {
+      setVerifying(true);
+      const response = await supabase.functions.invoke('snapppay-callback', {
+        body: {
+          paymentId: snapppayPaymentId,
+          enrollmentId,
+          state: searchParams.get('state') || 'OK',
+        },
+      });
+      if (response.error) throw response.error;
+      const { data } = response;
+      setResult(data);
+      if (data.success) {
+        toast({
+          title: 'پرداخت اقساطی موفق',
+          description: `ثبت‌نام شما با موفقیت انجام شد. کد رهگیری: ${data.refId}`,
+        });
+      } else {
+        toast({
+          title: 'خطا در تایید پرداخت',
+          description: data.error || 'پرداخت تایید نشد',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('SnappPay verification error:', error);
+      setResult({ success: false, error: 'خطا در تایید پرداخت اسنپ‌پی' });
       toast({
         title: 'خطا',
         description: 'خطا در تایید پرداخت. لطفا با پشتیبانی تماس بگیرید.',
