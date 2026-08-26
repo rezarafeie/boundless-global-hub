@@ -1,4 +1,24 @@
-# SnappPay Installments for Rafiei Pay
+# Payment gateway integration plan for Rafiei Pay
+
+## Zarinpal (short)
+
+Zarinpal is the default card-payment gateway. Unlike SnappPay, it does **not** require a static egress IP, but because Supabase Edge Functions run outside Iran, a configurable proxy is supported when `zarinpal_use_proxy` is enabled.
+
+```text
+Rafiei Pay UI  ->  Edge Function (zarinpal-request / invoice-zarinpal-payment)
+                ->  either api.zarinpal.com directly, or an Iran-hosted proxy
+                ->  redirect user to https://www.zarinpal.com/pg/StartPay/{authority}
+                ->  return to Rafiei Pay success page  ->  verify edge function
+```
+
+Key points:
+- Amounts sent to Zarinpal are in **Rial** (Toman × 10).
+- Request returns an `authority`; the success page receives it back and calls the verify edge function.
+- Verify checks codes `100` (paid) and `101` (already verified / duplicate callback).
+- `merchant_id` is stored in the edge-function secret `ZARINPAL_MERCHANT_ID`.
+- The proxy URL and on/off flag live in `admin_settings` (`zarinpal_use_proxy`, `zarinpal_proxy_url`).
+
+## SnappPay Installments
 
 Port the SnappPay installment gateway (already live in Rafiei Academy) into the separate Rafiei Pay project, keeping the same proxy-based architecture that satisfies SnappPay's static-IP whitelist.
 
