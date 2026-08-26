@@ -96,34 +96,52 @@ serve(async (req) => {
       callbackUrl = `https://academy.rafiei.co/enroll/success?course=${itemSlug}&email=${encodeURIComponent(email || '')}&enrollment=${enrollment.id}&gateway=rafieipay`;
     }
 
-    const payload = {
+    const payload: Record<string, any> = {
       amount_toman: Math.round(Number(paymentAmount)),
       order_id: String(enrollment.id),
       description: enrollmentType === 'test' ? `خرید آزمون: ${itemTitle}` : `خرید دوره: ${itemTitle}`,
       callback_url: callbackUrl,
-      customer: { phone, email },
+      customer: { phone, email, name: `${firstName || ''} ${lastName || ''}`.trim() },
+      metadata: {
+        source: 'rafiei-academy',
+        enrollment_type: enrollmentType === 'test' ? 'test' : 'course',
+        item_slug: itemSlug,
+        enrollment_id: String(enrollment.id),
+      },
     };
+    if (customerMobile) payload.customer_mobile = customerMobile;
+    // Rafiei Pay Checkout = no gateway (customer chooses inside Rafiei Pay)
+    if (rpGateway) payload.gateway = rpGateway;
 
     const result = await rafieipayFetch('/functions/v1/payments-request', payload, { enrollmentId: enrollment.id });
     const r = result.body || {};
 
-    const paymentUrl = r?.payment_url || r?.paymentUrl;
-    const reference = r?.order_id || r?.token || r?.transaction_id || r?.reference;
+    // Checkout mode returns checkout_url; direct-gateway mode returns payment_url.
+    const redirectUrl = r?.payment_url || r?.paymentUrl || r?.checkout_url || r?.checkoutUrl;
+    const paymentId = r?.payment_id || r?.id || r?.payment?.id;
+    const reference = paymentId || r?.order_id || r?.token || r?.transaction_id || r?.reference;
 
-    if (paymentUrl) {
+    if (redirectUrl) {
       const tableName = enrollmentType === 'test' ? 'test_enrollments' : 'enrollments';
-      if (reference) {
-        await supabase.from(tableName)
-          .update({ zarinpal_authority: String(reference) })
-          .eq('id', enrollment.id);
+      const update: Record<string, any> = {};
+      if (reference) update.zarinpal_authority = String(reference);
+      if (enrollmentType !== 'test') {
+        update.payment_method = rpGateway ? `rafieipay_${rpGateway}` : 'rafieipay';
+      }
+      if (Object.keys(update).length) {
+        await supabase.from(tableName).update(update).eq('id', enrollment.id);
       }
       return new Response(JSON.stringify({
         success: true,
-        paymentUrl,
+        paymentUrl: redirectUrl,
+        checkoutUrl: r?.checkout_url || r?.checkoutUrl || null,
+        paymentId: paymentId || null,
+        gateway: rpGateway || 'checkout',
         reference,
         enrollmentId: enrollment.id,
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
+
 
     console.error('Rafiei Pay request failed:', r);
     return new Response(JSON.stringify({
