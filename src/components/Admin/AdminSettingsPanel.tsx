@@ -60,6 +60,9 @@ const AdminSettingsPanel: React.FC = () => {
   const [zarinpalEnabled, setZarinpalEnabled] = useState(true);
   const [zibalEnabled, setZibalEnabled] = useState(false);
   const [rafieipayEnabled, setRafieipayEnabled] = useState(false);
+  const [rpZibalEnabled, setRpZibalEnabled] = useState(false);
+  const [rpZarinpalEnabled, setRpZarinpalEnabled] = useState(false);
+  const [rpSnapppayEnabled, setRpSnapppayEnabled] = useState(false);
   const [snapppayEnabled, setSnapppayEnabled] = useState(false);
   const [snapppayMaxToman, setSnapppayMaxToman] = useState<string>('50000000');
   const [manualPaymentEnabled, setManualPaymentEnabled] = useState(true);
@@ -69,7 +72,7 @@ const AdminSettingsPanel: React.FC = () => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('admin_settings')
-        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url, zarinpal_enabled, zibal_enabled, manual_payment_enabled, rafieipay_enabled, snapppay_enabled, snapppay_max_amount_toman' as any)
+        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url, zarinpal_enabled, zibal_enabled, manual_payment_enabled, rafieipay_enabled, rafieipay_zibal_enabled, rafieipay_zarinpal_enabled, rafieipay_snapppay_enabled, snapppay_enabled, snapppay_max_amount_toman' as any)
         .eq('id', 1)
         .single();
       
@@ -81,6 +84,9 @@ const AdminSettingsPanel: React.FC = () => {
         setZarinpalEnabled((data as any).zarinpal_enabled !== false);
         setZibalEnabled((data as any).zibal_enabled === true);
         setRafieipayEnabled((data as any).rafieipay_enabled === true);
+        setRpZibalEnabled((data as any).rafieipay_zibal_enabled === true);
+        setRpZarinpalEnabled((data as any).rafieipay_zarinpal_enabled === true);
+        setRpSnapppayEnabled((data as any).rafieipay_snapppay_enabled === true);
         setSnapppayEnabled((data as any).snapppay_enabled === true);
         setSnapppayMaxToman(String((data as any).snapppay_max_amount_toman ?? 50000000));
         setManualPaymentEnabled((data as any).manual_payment_enabled !== false);
@@ -91,19 +97,25 @@ const AdminSettingsPanel: React.FC = () => {
   }, []);
 
   const handleTogglePaymentMethod = async (
-    method: 'zarinpal' | 'zibal' | 'rafieipay' | 'snapppay' | 'manual',
+    method: 'zarinpal' | 'zibal' | 'rafieipay' | 'rafieipay_zibal' | 'rafieipay_zarinpal' | 'rafieipay_snapppay' | 'snapppay' | 'manual',
     checked: boolean
   ) => {
     const column =
       method === 'zarinpal' ? 'zarinpal_enabled'
       : method === 'zibal' ? 'zibal_enabled'
       : method === 'rafieipay' ? 'rafieipay_enabled'
+      : method === 'rafieipay_zibal' ? 'rafieipay_zibal_enabled'
+      : method === 'rafieipay_zarinpal' ? 'rafieipay_zarinpal_enabled'
+      : method === 'rafieipay_snapppay' ? 'rafieipay_snapppay_enabled'
       : method === 'snapppay' ? 'snapppay_enabled'
       : 'manual_payment_enabled';
     const setter =
       method === 'zarinpal' ? setZarinpalEnabled
       : method === 'zibal' ? setZibalEnabled
       : method === 'rafieipay' ? setRafieipayEnabled
+      : method === 'rafieipay_zibal' ? setRpZibalEnabled
+      : method === 'rafieipay_zarinpal' ? setRpZarinpalEnabled
+      : method === 'rafieipay_snapppay' ? setRpSnapppayEnabled
       : method === 'snapppay' ? setSnapppayEnabled
       : setManualPaymentEnabled;
     setter(checked);
@@ -119,6 +131,9 @@ const AdminSettingsPanel: React.FC = () => {
         zarinpal: 'پرداخت آنلاین (زرین‌پال)',
         zibal: 'پرداخت آنلاین (زیبال)',
         rafieipay: 'پرداخت آنلاین (رفیعی پی)',
+        rafieipay_zibal: 'زیبال از طریق رفیعی پی',
+        rafieipay_zarinpal: 'زرین‌پال از طریق رفیعی پی',
+        rafieipay_snapppay: 'اسنپ‌پی از طریق رفیعی پی',
         snapppay: 'خرید اقساطی با اسنپ‌پی',
         manual: 'کارت به کارت',
       };
@@ -340,7 +355,61 @@ const AdminSettingsPanel: React.FC = () => {
                     disabled={loadingSettings}
                   />
                 </div>
-                {rafieipayEnabled && <RafieipayDebugPanel />}
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Label htmlFor="rafieipay-zibal-enabled" className="text-base font-medium">
+                      زیبال از طریق رفیعی پی
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {rpZibalEnabled
+                        ? 'کاربران مستقیماً به درگاه زیبال روی رفیعی پی هدایت می‌شوند'
+                        : 'این گزینه در صفحه ثبت‌نام نمایش داده نمی‌شود'}
+                    </p>
+                  </div>
+                  <Switch
+                    id="rafieipay-zibal-enabled"
+                    checked={rpZibalEnabled}
+                    onCheckedChange={(c) => handleTogglePaymentMethod('rafieipay_zibal', c)}
+                    disabled={loadingSettings}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Label htmlFor="rafieipay-zarinpal-enabled" className="text-base font-medium">
+                      زرین‌پال از طریق رفیعی پی
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {rpZarinpalEnabled
+                        ? 'کاربران مستقیماً به درگاه زرین‌پال روی رفیعی پی هدایت می‌شوند'
+                        : 'این گزینه در صفحه ثبت‌نام نمایش داده نمی‌شود'}
+                    </p>
+                  </div>
+                  <Switch
+                    id="rafieipay-zarinpal-enabled"
+                    checked={rpZarinpalEnabled}
+                    onCheckedChange={(c) => handleTogglePaymentMethod('rafieipay_zarinpal', c)}
+                    disabled={loadingSettings}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Label htmlFor="rafieipay-snapppay-enabled" className="text-base font-medium">
+                      اسنپ‌پی (اقساطی) از طریق رفیعی پی
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {rpSnapppayEnabled
+                        ? 'پرداخت اقساطی اسنپ‌پی از طریق رفیعی پی فعال است (تا سقف تعیین‌شده)'
+                        : 'این گزینه در صفحه ثبت‌نام نمایش داده نمی‌شود'}
+                    </p>
+                  </div>
+                  <Switch
+                    id="rafieipay-snapppay-enabled"
+                    checked={rpSnapppayEnabled}
+                    onCheckedChange={(c) => handleTogglePaymentMethod('rafieipay_snapppay', c)}
+                    disabled={loadingSettings}
+                  />
+                </div>
+                {(rafieipayEnabled || rpZibalEnabled || rpZarinpalEnabled || rpSnapppayEnabled) && <RafieipayDebugPanel />}
                 <div className="p-4 border rounded-lg space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
@@ -401,7 +470,7 @@ const AdminSettingsPanel: React.FC = () => {
                     disabled={loadingSettings}
                   />
                 </div>
-                {!zarinpalEnabled && !zibalEnabled && !rafieipayEnabled && !manualPaymentEnabled && (
+                {!zarinpalEnabled && !zibalEnabled && !rafieipayEnabled && !rpZibalEnabled && !rpZarinpalEnabled && !rpSnapppayEnabled && !snapppayEnabled && !manualPaymentEnabled && (
                   <div className="p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
                     هشدار: همه روش‌های پرداخت غیرفعال هستند. فقط دوره‌های رایگان قابل ثبت‌نام خواهند بود.
                   </div>
