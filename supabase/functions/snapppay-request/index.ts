@@ -165,7 +165,7 @@ serve(async (req) => {
       transactionId,
       mobile,
       // SnappPay declares cartId as an integer; Academy enrollment ids are UUIDs.
-      cartId: Date.now(),
+      cartId: Math.floor(Date.now() / 1000),
       items: [{
         name: itemTitle,
         count: 1,
