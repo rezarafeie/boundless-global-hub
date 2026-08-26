@@ -91,7 +91,6 @@ export interface CartItem {
   // so callers must provide a stable provider-facing numeric id instead.
   id: number;
   category: string;
-  commissionType: number;
 }
 
 export interface CreatePaymentInput {
@@ -99,7 +98,7 @@ export interface CreatePaymentInput {
   returnURL: string;
   transactionId: string;
   mobile: string;
-  cartId: number;
+  cartId: string;
   items: CartItem[];
   discountAmount?: number;
 }
@@ -117,7 +116,7 @@ export const snapppay = {
       mobile: input.mobile,
       cartList: [
         {
-          cartId: input.cartId,
+          cartId: input.transactionId,
           totalAmount: input.amountRial,
           cartItems: input.items,
           taxAmount: 0,
