@@ -106,7 +106,15 @@ serve(async (req) => {
       order_id: String(enrollment.id),
       description: enrollmentType === 'test' ? `خرید آزمون: ${itemTitle}` : `خرید دوره: ${itemTitle}`,
       callback_url: callbackUrl,
-      customer: { phone, email, name: `${firstName || ''} ${lastName || ''}`.trim() },
+      customer: {
+        ...customer,
+        metadata: {
+          ...((customer.metadata as Record<string, unknown>) || {}),
+          enrollment_type: enrollmentType === 'test' ? 'test' : 'course',
+          item_slug: itemSlug,
+          enrollment_id: String(enrollment.id),
+        },
+      },
       metadata: {
         source: 'rafiei-academy',
         enrollment_type: enrollmentType === 'test' ? 'test' : 'course',
