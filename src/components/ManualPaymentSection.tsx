@@ -79,6 +79,9 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   const [zarinpalEnabled, setZarinpalEnabled] = useState(true);
   const [zibalEnabled, setZibalEnabled] = useState(false);
   const [rafieipayEnabled, setRafieipayEnabled] = useState(false);
+  const [rpZibalEnabled, setRpZibalEnabled] = useState(false);
+  const [rpZarinpalEnabled, setRpZarinpalEnabled] = useState(false);
+  const [rpSnapppayEnabled, setRpSnapppayEnabled] = useState(false);
   const [snapppayEnabled, setSnapppayEnabled] = useState(false);
   const [snapppayMaxToman, setSnapppayMaxToman] = useState(50000000);
   const [manualEnabled, setManualEnabled] = useState(true);
@@ -89,13 +92,16 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
     (async () => {
       const { data } = await supabase
         .from('admin_settings')
-        .select('zarinpal_enabled, zibal_enabled, manual_payment_enabled, rafieipay_enabled, snapppay_enabled, snapppay_max_amount_toman' as any)
+        .select('zarinpal_enabled, zibal_enabled, manual_payment_enabled, rafieipay_enabled, rafieipay_zibal_enabled, rafieipay_zarinpal_enabled, rafieipay_snapppay_enabled, snapppay_enabled, snapppay_max_amount_toman' as any)
         .eq('id', 1)
         .single();
       if (cancelled) return;
       const z = (data as any)?.zarinpal_enabled !== false;
       const zb = (data as any)?.zibal_enabled === true;
       const rp = (data as any)?.rafieipay_enabled === true;
+      const rpZb = (data as any)?.rafieipay_zibal_enabled === true;
+      const rpZp = (data as any)?.rafieipay_zarinpal_enabled === true;
+      const rpSp = (data as any)?.rafieipay_snapppay_enabled === true;
       const m = (data as any)?.manual_payment_enabled !== false;
       // SnappPay installments: enabled globally, allowed for this course,
       // and only for orders up to the configured maximum (default 50,000,000 تومان).
@@ -105,15 +111,30 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
       setZarinpalEnabled(z);
       setZibalEnabled(zb);
       setRafieipayEnabled(rp);
+      setRpZibalEnabled(rpZb);
+      setRpZarinpalEnabled(rpZp);
+      setRpSnapppayEnabled(rpSp);
       setSnapppayEnabled(sp);
       setManualEnabled(m);
       setMethodsLoaded(true);
       // Auto-switch if currently selected method is disabled
-      const enabled = { zarinpal: z, zibal: zb, rafieipay: rp, snapppay: sp, manual: m } as const;
+      const enabled: Record<PaymentMethod, boolean> = {
+        zarinpal: z,
+        zibal: zb,
+        rafieipay: rp,
+        rafieipay_zibal: rpZb,
+        rafieipay_zarinpal: rpZp,
+        rafieipay_snapppay: rpSp,
+        snapppay: sp,
+        manual: m,
+      };
       if (!enabled[selectedMethod]) {
         if (z) onPaymentMethodChange('zarinpal');
         else if (zb) onPaymentMethodChange('zibal');
         else if (rp) onPaymentMethodChange('rafieipay');
+        else if (rpZb) onPaymentMethodChange('rafieipay_zibal');
+        else if (rpZp) onPaymentMethodChange('rafieipay_zarinpal');
+        else if (rpSp) onPaymentMethodChange('rafieipay_snapppay');
         else if (sp) onPaymentMethodChange('snapppay');
         else if (m) onPaymentMethodChange('manual');
       }
@@ -141,6 +162,15 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
     course.snapppay_enabled !== false &&
     effectiveAmount > 0 &&
     effectiveAmount <= snapppayMaxToman;
+
+  // SnappPay via Rafiei Pay follows the same course/amount eligibility rules.
+  const rpSnapppayAvailable =
+    rpSnapppayEnabled &&
+    !!course &&
+    course.snapppay_enabled !== false &&
+    effectiveAmount > 0 &&
+    effectiveAmount <= snapppayMaxToman;
+
 
   const validateForm = () => {
     const errors: string[] = [];
