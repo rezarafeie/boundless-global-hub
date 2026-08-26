@@ -2,8 +2,9 @@
 // All amounts sent in Toman (amount_toman).
 import { supabase } from "./supabase.ts";
 
-const RAFIEIPAY_BASE = "https://buicdtvcecydwzornodw.supabase.co";
-export const RAFIEIPAY_API_KEY = "rp_live_a745ffab1cb6aa856f06b6eb52fbcddb08dd64e88761edd3";
+const RAFIEIPAY_BASE = (Deno.env.get("RAFIEIPAY_URL") || "https://buicdtvcecydwzornodw.supabase.co").replace(/\/+$/, "");
+export const RAFIEIPAY_API_KEY = Deno.env.get("RAFIEIPAY_API_KEY") ||
+  "rp_live_a745ffab1cb6aa856f06b6eb52fbcddb08dd64e88761edd3";
 
 export function getRafieipaySecret(): string {
   const secret = Deno.env.get("RAFIEIPAY_SECRET");
