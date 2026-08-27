@@ -145,6 +145,7 @@ serve(async (req) => {
     // rafieipay
     const result = await rafieipayFetch("/functions/v1/payments-request", {
       amount_toman: amount,
+      ...(await buildFxFields(amount)),
       order_id: String(reservation.id),
       description,
       callback_url: callbackUrl,
