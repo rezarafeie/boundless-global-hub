@@ -30,6 +30,54 @@ async function sign(ts: string, rawBody: string, secret: string): Promise<string
   return Array.from(new Uint8Array(sigBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/**
+ * Fresh USD -> Toman rate (no caching): Rafiei Pay needs per-payment FX for crypto.
+ * Source: Tetherland USDT price (Toman). Returns null when unavailable.
+ */
+export async function fetchUsdTomanRate(): Promise<number | null> {
+  const sources: Array<() => Promise<number | null>> = [
+    async () => {
+      const res = await fetch("https://api.tetherland.com/currencies", { headers: { Accept: "application/json" } });
+      if (!res.ok) return null;
+      const j = await res.json();
+      const v = Number(j?.data?.currencies?.USDT?.price);
+      return Number.isFinite(v) && v > 0 ? v : null;
+    },
+    async () => {
+      const res = await fetch("https://api.nobitex.ir/v2/orderbook/USDTIRT", { headers: { Accept: "application/json" } });
+      if (!res.ok) return null;
+      const j = await res.json();
+      const v = Number(j?.lastTradePrice);
+      return Number.isFinite(v) && v > 0 ? v : null;
+    },
+  ];
+  for (const src of sources) {
+    try {
+      const v = await src();
+      if (v) return v;
+    } catch (e) {
+      console.error("[rafieipay] fx source failed", e);
+    }
+  }
+  console.error("[rafieipay] unable to fetch USD rate");
+  return null;
+}
+
+/**
+ * FX fields to merge into every /payments-request body so crypto payments
+ * (nowpayments / checkout_method=crypto) are not rejected with `missing_fx`.
+ */
+export async function buildFxFields(amountToman: number): Promise<Record<string, number>> {
+  const usdToman = await fetchUsdTomanRate();
+  if (!usdToman) return {};
+  const amountUsd = Math.round((Number(amountToman) / usdToman) * 100) / 100;
+  return {
+    usd_toman_rate: Math.round(usdToman),
+    usd_rate: Math.round(usdToman * 10), // USD -> Rial
+    amount_usd: amountUsd,
+  };
+}
+
 export interface RafieipayCallResult {
   status: number;
   ok: boolean;

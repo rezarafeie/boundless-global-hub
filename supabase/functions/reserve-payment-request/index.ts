@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { zarinpalFetch } from "../_shared/zarinpal.ts";
 import { zibalFetch, zibalStartUrl, getZibalMerchant } from "../_shared/zibal.ts";
-import { rafieipayFetch, buildRafieipayCustomer } from "../_shared/rafieipay.ts";
+import { rafieipayFetch, buildRafieipayCustomer, buildFxFields } from "../_shared/rafieipay.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -145,6 +145,7 @@ serve(async (req) => {
     // rafieipay
     const result = await rafieipayFetch("/functions/v1/payments-request", {
       amount_toman: amount,
+      ...(await buildFxFields(amount)),
       order_id: String(reservation.id),
       description,
       callback_url: callbackUrl,
