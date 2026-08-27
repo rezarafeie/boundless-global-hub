@@ -101,8 +101,12 @@ serve(async (req) => {
       callbackUrl = `https://academy.rafiei.co/enroll/success?course=${itemSlug}&email=${encodeURIComponent(email || '')}&enrollment=${enrollment.id}&gateway=rafieipay`;
     }
 
+    const amountTomanFinal = Math.round(Number(paymentAmount));
+    const fx = await buildFxFields(amountTomanFinal);
+
     const payload: Record<string, any> = {
-      amount_toman: Math.round(Number(paymentAmount)),
+      amount_toman: amountTomanFinal,
+      ...fx,
       order_id: String(enrollment.id),
       description: enrollmentType === 'test' ? `خرید آزمون: ${itemTitle}` : `خرید دوره: ${itemTitle}`,
       callback_url: callbackUrl,
