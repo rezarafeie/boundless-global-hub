@@ -869,7 +869,11 @@ const WebinarHostPanel: React.FC = () => {
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm" onClick={captureTimeline}>
                     <Clock className="h-3.5 w-3.5 ml-1.5" />
-                    ثبت زمان‌بندی از پخش زنده قبلی
+                    ثبت تایم‌لاین زنده
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={copyLiveToPlayback}>
+                    <Clock className="h-3.5 w-3.5 ml-1.5" />
+                    کپی تایم‌لاین زنده روی بازپخش
                   </Button>
                   <Button size="sm" onClick={startPlayback}>
                     <Play className="h-3.5 w-3.5 ml-1.5" />
@@ -886,56 +890,110 @@ const WebinarHostPanel: React.FC = () => {
             </Card>
 
             <Card>
-              <CardHeader><CardTitle className="text-sm">زمان‌بندی کارت‌ها</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-sm">زمان‌بندی کارت‌ها (زنده / بازپخش)</CardTitle></CardHeader>
               <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  ستون «زنده» زمان‌بندی اصلی پخش زنده است و تغییر نمی‌کند. ستون «بازپخش» فقط برای این بازپخش استفاده می‌شود؛
+                  اگر خالی باشد، همان زمان‌بندی زنده اجرا می‌شود.
+                </p>
                 {interactions.length === 0 ? (
                   <p className="text-center text-sm text-muted-foreground py-6">هنوز تعاملی ثبت نشده</p>
                 ) : (
                   interactions.map(i => {
-                    const offset = (i as any).auto_offset_seconds as number | null | undefined;
+                    const liveOffset = (i as any).auto_offset_seconds as number | null | undefined;
+                    const pbOffset = (i as any).playback_offset_seconds as number | null | undefined;
+                    const offset = effectiveOffset(i as any);
                     const elapsed = webinar.playback_started_at ? playbackElapsedSeconds(webinar.playback_started_at, playbackNow) : null;
                     const duration = interactionDuration(i as any);
-                    const isOn = webinar.auto_interactions_enabled && elapsed !== null && typeof offset === 'number'
+                    const isOn = webinar.auto_interactions_enabled && elapsed !== null && offset !== null
                       && elapsed >= offset && elapsed < offset + duration;
                     return (
-                      <div key={i.id} className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 ${isOn ? 'border-primary ring-1 ring-primary/20' : ''}`}>
-                        <div className="flex-1 min-w-[160px]">
-                          <p className="text-sm font-medium">{i.title}</p>
-                          <p className="text-xs text-muted-foreground">{typeLabels[i.type]}</p>
+                      <div key={i.id} className={`rounded-lg border p-3 space-y-2 ${isOn ? 'border-primary ring-1 ring-primary/20' : ''}`}>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 min-w-[160px]">
+                            <p className="text-sm font-medium">{i.title}</p>
+                            <p className="text-xs text-muted-foreground">{typeLabels[i.type]}</p>
+                          </div>
+                          {isOn && <Badge className="bg-green-500 text-white">در حال نمایش</Badge>}
                         </div>
-                        {isOn && <Badge className="bg-green-500 text-white">در حال نمایش</Badge>}
-                        <div className="flex items-center gap-1.5">
-                          <Label className="text-xs whitespace-nowrap">زمان نمایش</Label>
-                          <Input
-                            className="w-24 text-center"
-                            dir="ltr"
-                            defaultValue={typeof offset === 'number' ? formatOffset(offset) : ''}
-                            placeholder="mm:ss"
-                            onBlur={e => {
-                              const parsed = parseOffset(e.target.value);
-                              updateInteractionTiming(i.id, { auto_offset_seconds: parsed });
-                            }}
-                          />
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Label className="text-xs whitespace-nowrap">مدت (ثانیه)</Label>
-                          <Input
-                            type="number"
-                            className="w-24 text-center"
-                            dir="ltr"
-                            defaultValue={(i as any).auto_duration_seconds ?? ''}
-                            placeholder={String(duration)}
-                            onBlur={e => {
-                              const v = e.target.value.trim();
-                              updateInteractionTiming(i.id, { auto_duration_seconds: v ? Math.max(5, Number(v)) : null });
-                            }}
-                          />
+
+                        <div className="grid gap-2 md:grid-cols-2">
+                          {/* LIVE timeline */}
+                          <div className="rounded-md bg-muted/40 p-2 space-y-2">
+                            <p className="text-xs font-medium">تایم‌لاین زنده</p>
+                            <div className="flex items-center gap-1.5">
+                              <Label className="text-xs whitespace-nowrap">زمان</Label>
+                              <Input
+                                key={`live-o-${i.id}-${liveOffset ?? 'x'}`}
+                                className="w-24 text-center"
+                                dir="ltr"
+                                defaultValue={typeof liveOffset === 'number' ? formatOffset(liveOffset) : ''}
+                                placeholder="mm:ss"
+                                onBlur={e => updateInteractionTiming(i.id, { auto_offset_seconds: parseOffset(e.target.value) })}
+                              />
+                              <Label className="text-xs whitespace-nowrap">مدت</Label>
+                              <Input
+                                type="number"
+                                className="w-20 text-center"
+                                dir="ltr"
+                                defaultValue={(i as any).auto_duration_seconds ?? ''}
+                                placeholder="ثانیه"
+                                onBlur={e => {
+                                  const v = e.target.value.trim();
+                                  updateInteractionTiming(i.id, { auto_duration_seconds: v ? Math.max(5, Number(v)) : null });
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* PLAYBACK timeline */}
+                          <div className="rounded-md bg-primary/5 p-2 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs font-medium">تایم‌لاین بازپخش</p>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-[11px]"
+                                onClick={() => updateInteractionTiming(i.id, {
+                                  playback_offset_seconds: typeof liveOffset === 'number' ? liveOffset : null,
+                                  playback_duration_seconds: (i as any).auto_duration_seconds ?? null,
+                                })}
+                              >
+                                برابر با زنده
+                              </Button>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Label className="text-xs whitespace-nowrap">زمان</Label>
+                              <Input
+                                key={`pb-o-${i.id}-${pbOffset ?? 'x'}`}
+                                className="w-24 text-center"
+                                dir="ltr"
+                                defaultValue={typeof pbOffset === 'number' ? formatOffset(pbOffset) : ''}
+                                placeholder="mm:ss"
+                                onBlur={e => updateInteractionTiming(i.id, { playback_offset_seconds: parseOffset(e.target.value) })}
+                              />
+                              <Label className="text-xs whitespace-nowrap">مدت</Label>
+                              <Input
+                                type="number"
+                                className="w-20 text-center"
+                                dir="ltr"
+                                key={`pb-d-${i.id}-${(i as any).playback_duration_seconds ?? 'x'}`}
+                                defaultValue={(i as any).playback_duration_seconds ?? ''}
+                                placeholder={String(duration)}
+                                onBlur={e => {
+                                  const v = e.target.value.trim();
+                                  updateInteractionTiming(i.id, { playback_duration_seconds: v ? Math.max(5, Number(v)) : null });
+                                }}
+                              />
+                            </div>
+                          </div>
                         </div>
                       </div>
                     );
                   })
                 )}
               </CardContent>
+
             </Card>
           </TabsContent>
 
