@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { subscribeWebinarBroadcast, subscribeWebinarConnection } from '@/lib/webinarBroadcast';
-import { resolveAutoInteraction, playbackElapsedSeconds } from '@/lib/webinarPlayback';
+import { resolveAutoInteraction, playbackElapsedSeconds, effectiveOffset } from '@/lib/webinarPlayback';
 
 interface Interaction {
   id: string;
@@ -18,6 +18,8 @@ interface Interaction {
   created_at: string;
   auto_offset_seconds?: number | null;
   auto_duration_seconds?: number | null;
+  playback_offset_seconds?: number | null;
+  playback_duration_seconds?: number | null;
 }
 
 interface Response {
@@ -245,9 +247,11 @@ export const useWebinarRealtime = (webinarId: string | undefined, options: Optio
     ? (resolveAutoInteraction(interactions as any, playbackStartedAt, nowTs) as Interaction | null)
     : interactions.find(i => i.status === 'active') || null;
   const previousInteractions = autoActive
-    ? interactions.filter(i =>
-        typeof i.auto_offset_seconds === 'number' && i.id !== activeInteraction?.id &&
-        i.auto_offset_seconds < playbackElapsedSeconds(playbackStartedAt, nowTs))
+    ? interactions.filter(i => {
+        const off = effectiveOffset(i as any);
+        return off !== null && i.id !== activeInteraction?.id &&
+          off < playbackElapsedSeconds(playbackStartedAt, nowTs);
+      })
     : interactions.filter(i => i.status === 'ended');
   const activeInteractionId = activeInteraction?.id ?? null;
 
