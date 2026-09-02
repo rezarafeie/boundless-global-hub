@@ -25,7 +25,7 @@ import WebinarChat from '@/components/Webinar/WebinarChat';
 import InteractionJsonImport from '@/components/Webinar/InteractionJsonImport';
 import {
   buildTimelineFromLive, formatOffset, parseOffset, interactionDuration, playbackElapsedSeconds,
-  effectiveOffset,
+  effectiveOffset, resolveAutoInteraction,
 } from '@/lib/webinarPlayback';
 
 interface Webinar {
@@ -263,6 +263,53 @@ const WebinarHostPanel: React.FC = () => {
     toast({ title: status === 'live' ? '🔴 وبینار شروع شد' : 'وبینار پایان یافت' });
   };
 
+  // --- keep the "interactive cards" tab in sync with the playback timeline ---
+  // While auto playback is running, the card resolved from the playback
+  // timeline is mirrored into the real `status` column, so the engage tab shows
+  // exactly the same active/inactive state as the viewers see.
+  const syncingRef = React.useRef(false);
+  const lastAutoIdRef = React.useRef<string | null>(null);
+  useEffect(() => {
+    if (!webinar?.auto_interactions_enabled || !webinar?.playback_started_at) {
+      lastAutoIdRef.current = null;
+      return;
+    }
+    const target = resolveAutoInteraction(interactions as any, webinar.playback_started_at, playbackNow);
+    const targetId = target?.id ?? null;
+    if (targetId === lastAutoIdRef.current) return;
+    if (syncingRef.current) return;
+    const stale = (interactions as any[]).filter(i => i.status === 'active' && i.id !== targetId);
+    if (!stale.length && !targetId) {
+      lastAutoIdRef.current = null;
+      return;
+    }
+    if (!stale.length && targetId && (interactions as any[]).find(i => i.id === targetId)?.status === 'active') {
+      lastAutoIdRef.current = targetId;
+      return;
+    }
+    syncingRef.current = true;
+    (async () => {
+      try {
+        for (const s of stale) {
+          await supabase.from('webinar_interactions')
+            .update({ status: 'ended', ended_at: new Date().toISOString() })
+            .eq('id', s.id);
+        }
+        if (targetId) {
+          await supabase.from('webinar_interactions')
+            .update({ status: 'active', ended_at: null })
+            .eq('id', targetId);
+        }
+        lastAutoIdRef.current = targetId;
+        refetchInteractions();
+        broadcastInteractionSnapshot();
+      } finally {
+        syncingRef.current = false;
+      }
+    })();
+  }, [interactions, playbackNow, webinar?.auto_interactions_enabled, webinar?.playback_started_at]);
+
+
   const openCreate = () => {
     setEditingId(null);
     setForm({ ...defaultForm });
@@ -333,24 +380,56 @@ const WebinarHostPanel: React.FC = () => {
   };
 
 
+  /** Is auto playback currently running? */
+  const playbackRunning = !!(webinar?.auto_interactions_enabled && webinar?.playback_started_at);
+  const currentPlaybackElapsed = () => playbackElapsedSeconds(webinar?.playback_started_at, Date.now());
+
   const pushLive = async (interactionId: string) => {
+    const elapsed = currentPlaybackElapsed();
     // End any active interaction first
     if (activeInteraction && activeInteraction.id !== interactionId) {
       await supabase.from('webinar_interactions').update({ status: 'ended', ended_at: new Date().toISOString() }).eq('id', activeInteraction.id);
+      // Manual override while replaying: close the previous card's playback window right here.
+      if (playbackRunning) {
+        const prevOffset = effectiveOffset(activeInteraction as any);
+        if (typeof prevOffset === 'number') {
+          await supabase.from('webinar_interactions')
+            .update({ playback_duration_seconds: Math.max(5, elapsed - prevOffset) } as any)
+            .eq('id', activeInteraction.id);
+        }
+      }
     }
     // Reset previous responses so users can answer again on reactivation
     const target = interactions.find(i => i.id === interactionId);
     if (target?.status === 'ended') {
       await supabase.from('webinar_responses').delete().eq('interaction_id', interactionId);
     }
-    await supabase.from('webinar_interactions').update({ status: 'active', activated_at: new Date().toISOString(), ended_at: null }).eq('id', interactionId);
+    const patch: any = { status: 'active', activated_at: new Date().toISOString(), ended_at: null };
+    // Manual activation rewrites the playback timeline so the timeline and the
+    // engage tab never disagree.
+    if (playbackRunning) {
+      patch.playback_offset_seconds = elapsed;
+      patch.playback_duration_seconds = interactionDuration(target as any);
+    }
+    await supabase.from('webinar_interactions').update(patch).eq('id', interactionId);
+    if (playbackRunning) lastAutoIdRef.current = interactionId;
     refetchInteractions();
     broadcastInteractionSnapshot();
-    toast({ title: 'تعامل فعال شد 🚀' });
+    toast({ title: playbackRunning ? 'تعامل فعال شد و تایم‌لاین بازپخش به‌روزرسانی شد 🚀' : 'تعامل فعال شد 🚀' });
   };
 
   const endInteraction = async (interactionId: string) => {
-    await supabase.from('webinar_interactions').update({ status: 'ended', ended_at: new Date().toISOString() }).eq('id', interactionId);
+    const elapsed = currentPlaybackElapsed();
+    const patch: any = { status: 'ended', ended_at: new Date().toISOString() };
+    if (playbackRunning) {
+      const target = interactions.find(i => i.id === interactionId);
+      const offset = target ? effectiveOffset(target as any) : null;
+      if (typeof offset === 'number' && elapsed > offset) {
+        patch.playback_duration_seconds = Math.max(5, elapsed - offset);
+      }
+    }
+    await supabase.from('webinar_interactions').update(patch).eq('id', interactionId);
+    if (playbackRunning) lastAutoIdRef.current = null;
     refetchInteractions();
     broadcastInteractionSnapshot();
   };
