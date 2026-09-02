@@ -25,6 +25,7 @@ import WebinarChat from '@/components/Webinar/WebinarChat';
 import InteractionJsonImport from '@/components/Webinar/InteractionJsonImport';
 import {
   buildTimelineFromLive, formatOffset, parseOffset, interactionDuration, playbackElapsedSeconds,
+  effectiveOffset,
 } from '@/lib/webinarPlayback';
 
 interface Webinar {
