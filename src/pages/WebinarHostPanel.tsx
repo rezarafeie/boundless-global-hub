@@ -977,8 +977,14 @@ const WebinarHostPanel: React.FC = () => {
                   </Button>
                   <Button size="sm" onClick={startPlayback}>
                     <Play className="h-3.5 w-3.5 ml-1.5" />
-                    {webinar.playback_started_at ? 'شروع مجدد از ابتدا' : 'شروع بازپخش'}
+                    {webinar.playback_started_at ? 'ادامه از کارت فعلی' : 'شروع بازپخش'}
                   </Button>
+                  {webinar.playback_started_at && (
+                    <Button size="sm" variant="outline" onClick={restartPlaybackFromStart}>
+                      <RotateCcw className="h-3.5 w-3.5 ml-1.5" />
+                      شروع مجدد از ابتدا
+                    </Button>
+                  )}
                   {webinar.auto_interactions_enabled && (
                     <Button size="sm" variant="destructive" onClick={stopPlayback}>
                       <Square className="h-3.5 w-3.5 ml-1.5" />
