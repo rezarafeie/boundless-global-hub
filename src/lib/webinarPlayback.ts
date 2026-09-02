@@ -15,13 +15,31 @@ export interface PlaybackInteraction {
   id: string;
   status: string;
   settings?: any;
+  /** Original LIVE timeline (captured from the live run) — never used for playback if a playback value exists. */
   auto_offset_seconds?: number | null;
   auto_duration_seconds?: number | null;
+  /** Separate PLAYBACK timeline (editable per replay, independent from the live one). */
+  playback_offset_seconds?: number | null;
+  playback_duration_seconds?: number | null;
   activated_at?: string | null;
   ended_at?: string | null;
 }
 
+/** Offset used while replaying: the playback timeline wins, live is the fallback. */
+export function effectiveOffset(i: PlaybackInteraction): number | null {
+  if (typeof i.playback_offset_seconds === 'number' && i.playback_offset_seconds >= 0) {
+    return i.playback_offset_seconds;
+  }
+  if (typeof i.auto_offset_seconds === 'number' && i.auto_offset_seconds >= 0) {
+    return i.auto_offset_seconds;
+  }
+  return null;
+}
+
 export function interactionDuration(i: PlaybackInteraction): number {
+  if (typeof i.playback_duration_seconds === 'number' && i.playback_duration_seconds > 0) {
+    return i.playback_duration_seconds;
+  }
   if (typeof i.auto_duration_seconds === 'number' && i.auto_duration_seconds > 0) {
     return i.auto_duration_seconds;
   }
@@ -52,8 +70,8 @@ export function resolveAutoInteraction<T extends PlaybackInteraction>(
   let best: T | null = null;
   let bestOffset = -1;
   for (const i of interactions) {
-    const offset = i.auto_offset_seconds;
-    if (typeof offset !== 'number' || offset < 0) continue;
+    const offset = effectiveOffset(i);
+    if (offset === null) continue;
     const end = offset + interactionDuration(i);
     if (elapsed >= offset && elapsed < end && offset >= bestOffset) {
       best = i;
