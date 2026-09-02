@@ -263,6 +263,53 @@ const WebinarHostPanel: React.FC = () => {
     toast({ title: status === 'live' ? '🔴 وبینار شروع شد' : 'وبینار پایان یافت' });
   };
 
+  // --- keep the "interactive cards" tab in sync with the playback timeline ---
+  // While auto playback is running, the card resolved from the playback
+  // timeline is mirrored into the real `status` column, so the engage tab shows
+  // exactly the same active/inactive state as the viewers see.
+  const syncingRef = React.useRef(false);
+  const lastAutoIdRef = React.useRef<string | null>(null);
+  useEffect(() => {
+    if (!webinar?.auto_interactions_enabled || !webinar?.playback_started_at) {
+      lastAutoIdRef.current = null;
+      return;
+    }
+    const target = resolveAutoInteraction(interactions as any, webinar.playback_started_at, playbackNow);
+    const targetId = target?.id ?? null;
+    if (targetId === lastAutoIdRef.current) return;
+    if (syncingRef.current) return;
+    const stale = (interactions as any[]).filter(i => i.status === 'active' && i.id !== targetId);
+    if (!stale.length && !targetId) {
+      lastAutoIdRef.current = null;
+      return;
+    }
+    if (!stale.length && targetId && (interactions as any[]).find(i => i.id === targetId)?.status === 'active') {
+      lastAutoIdRef.current = targetId;
+      return;
+    }
+    syncingRef.current = true;
+    (async () => {
+      try {
+        for (const s of stale) {
+          await supabase.from('webinar_interactions')
+            .update({ status: 'ended', ended_at: new Date().toISOString() })
+            .eq('id', s.id);
+        }
+        if (targetId) {
+          await supabase.from('webinar_interactions')
+            .update({ status: 'active', ended_at: null })
+            .eq('id', targetId);
+        }
+        lastAutoIdRef.current = targetId;
+        refetchInteractions();
+        broadcastInteractionSnapshot();
+      } finally {
+        syncingRef.current = false;
+      }
+    })();
+  }, [interactions, playbackNow, webinar?.auto_interactions_enabled, webinar?.playback_started_at]);
+
+
   const openCreate = () => {
     setEditingId(null);
     setForm({ ...defaultForm });
