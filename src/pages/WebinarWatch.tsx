@@ -35,10 +35,26 @@ const WebinarWatch: React.FC = () => {
 
   const { participant, loading: participantLoading } = useWebinarParticipant(webinar?.id);
   const {
-    activeInteraction,
+    interactions,
+    activeInteraction: manualInteraction,
     responses,
     participantCount,
   } = useWebinarRealtime(webinar?.id);
+
+  // Playback mode: interaction cards appear/disappear automatically, driven by
+  // the timeline captured during the original live session.
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  const autoMode = !!webinar?.auto_interactions_enabled && !!webinar?.playback_started_at;
+  useEffect(() => {
+    if (!autoMode) return;
+    const t = window.setInterval(() => setNowTs(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, [autoMode]);
+
+  const autoInteraction = autoMode
+    ? resolveAutoInteraction(interactions as any, webinar?.playback_started_at, nowTs)
+    : null;
+  const activeInteraction = autoMode ? (autoInteraction as any) : manualInteraction;
 
   useEffect(() => {
     if (slug) fetchWebinar();
