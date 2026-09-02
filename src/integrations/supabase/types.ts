@@ -7610,6 +7610,7 @@ export type Database = {
       webinar_entries: {
         Row: {
           allow_late_responses: boolean
+          auto_interactions_enabled: boolean
           chat_enabled: boolean
           chat_mode: string
           created_at: string
@@ -7619,6 +7620,7 @@ export type Database = {
           id: string
           iframe_embed_code: string | null
           login_method: string
+          playback_started_at: string | null
           slug: string
           start_date: string
           status: string
@@ -7636,6 +7638,7 @@ export type Database = {
         }
         Insert: {
           allow_late_responses?: boolean
+          auto_interactions_enabled?: boolean
           chat_enabled?: boolean
           chat_mode?: string
           created_at?: string
@@ -7645,6 +7648,7 @@ export type Database = {
           id?: string
           iframe_embed_code?: string | null
           login_method?: string
+          playback_started_at?: string | null
           slug: string
           start_date: string
           status?: string
@@ -7662,6 +7666,7 @@ export type Database = {
         }
         Update: {
           allow_late_responses?: boolean
+          auto_interactions_enabled?: boolean
           chat_enabled?: boolean
           chat_mode?: string
           created_at?: string
@@ -7671,6 +7676,7 @@ export type Database = {
           id?: string
           iframe_embed_code?: string | null
           login_method?: string
+          playback_started_at?: string | null
           slug?: string
           start_date?: string
           status?: string
@@ -7895,6 +7901,8 @@ export type Database = {
       webinar_interactions: {
         Row: {
           activated_at: string | null
+          auto_duration_seconds: number | null
+          auto_offset_seconds: number | null
           created_at: string
           ended_at: string | null
           id: string
@@ -7910,6 +7918,8 @@ export type Database = {
         }
         Insert: {
           activated_at?: string | null
+          auto_duration_seconds?: number | null
+          auto_offset_seconds?: number | null
           created_at?: string
           ended_at?: string | null
           id?: string
@@ -7925,6 +7935,8 @@ export type Database = {
         }
         Update: {
           activated_at?: string | null
+          auto_duration_seconds?: number | null
+          auto_offset_seconds?: number | null
           created_at?: string
           ended_at?: string | null
           id?: string
