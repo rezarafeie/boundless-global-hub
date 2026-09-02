@@ -167,6 +167,8 @@ const WebinarHostPanel: React.FC = () => {
     await broadcastPlaybackSettings(patch);
   };
 
+  // Captures the LIVE timeline only (auto_*). The playback timeline is kept
+  // separate so replay edits never destroy the original live timing.
   const captureTimeline = async () => {
     const rows = buildTimelineFromLive(interactions as any);
     if (!rows.length) {
@@ -179,14 +181,41 @@ const WebinarHostPanel: React.FC = () => {
         .eq('id', r.id);
     }
     refetchInteractions();
-    toast({ title: `زمان‌بندی ${rows.length} کارت از پخش زنده قبلی ثبت شد ✅` });
+    toast({ title: `تایم‌لاین زنده ${rows.length} کارت ثبت شد ✅` });
   };
 
-  const updateInteractionTiming = async (id: string, patch: { auto_offset_seconds?: number | null; auto_duration_seconds?: number | null }) => {
+  // Copies the live timeline into the (editable) playback timeline.
+  const copyLiveToPlayback = async () => {
+    let n = 0;
+    for (const i of interactions as any[]) {
+      if (typeof i.auto_offset_seconds !== 'number') continue;
+      await supabase.from('webinar_interactions')
+        .update({
+          playback_offset_seconds: i.auto_offset_seconds,
+          playback_duration_seconds: i.auto_duration_seconds ?? null,
+        } as any)
+        .eq('id', i.id);
+      n++;
+    }
+    refetchInteractions();
+    broadcastInteractionSnapshot();
+    toast({ title: `تایم‌لاین زنده روی تایم‌لاین بازپخش کپی شد (${n} کارت)` });
+  };
+
+  const updateInteractionTiming = async (
+    id: string,
+    patch: {
+      auto_offset_seconds?: number | null;
+      auto_duration_seconds?: number | null;
+      playback_offset_seconds?: number | null;
+      playback_duration_seconds?: number | null;
+    },
+  ) => {
     await supabase.from('webinar_interactions').update(patch as any).eq('id', id);
     refetchInteractions();
     broadcastInteractionSnapshot();
   };
+
 
   const startPlayback = async () => {
     // Clear manual state so nothing is stuck "active" from the live run.
