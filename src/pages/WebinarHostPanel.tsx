@@ -133,7 +133,7 @@ const WebinarHostPanel: React.FC = () => {
       .select('*')
       .eq('slug', slug)
       .single();
-    setWebinar(data);
+    setWebinar(data as any);
     setLoading(false);
   };
 
@@ -175,7 +175,7 @@ const WebinarHostPanel: React.FC = () => {
     }
     for (const r of rows) {
       await supabase.from('webinar_interactions')
-        .update({ auto_offset_seconds: r.auto_offset_seconds, auto_duration_seconds: r.auto_duration_seconds })
+        .update({ auto_offset_seconds: r.auto_offset_seconds, auto_duration_seconds: r.auto_duration_seconds } as any)
         .eq('id', r.id);
     }
     refetchInteractions();
@@ -183,7 +183,7 @@ const WebinarHostPanel: React.FC = () => {
   };
 
   const updateInteractionTiming = async (id: string, patch: { auto_offset_seconds?: number | null; auto_duration_seconds?: number | null }) => {
-    await supabase.from('webinar_interactions').update(patch).eq('id', id);
+    await supabase.from('webinar_interactions').update(patch as any).eq('id', id);
     refetchInteractions();
     broadcastInteractionSnapshot();
   };
