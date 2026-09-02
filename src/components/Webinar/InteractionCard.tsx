@@ -408,8 +408,6 @@ const InteractionCard: React.FC<InteractionCardProps> = ({
               <Badge variant={isActive ? 'default' : 'secondary'} className="text-xs">
                 {typeLabels[interaction.type] || interaction.type}
               </Badge>
-              {isActive && <Badge variant="outline" className="text-xs text-green-600 border-green-300">فعال</Badge>}
-              {isEnded && <Badge variant="outline" className="text-xs">پایان‌یافته</Badge>}
             </div>
           )}
           {renderContent()}
