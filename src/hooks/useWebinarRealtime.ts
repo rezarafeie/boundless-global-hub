@@ -47,6 +47,13 @@ interface Options {
    * every webinar — at 500 concurrent viewers that is a quadratic explosion.
    */
   isHost?: boolean;
+  /**
+   * Playback mode: the active card is derived locally from each interaction's
+   * recorded timeline offset instead of its DB status. No writes, so it scales
+   * to any number of viewers.
+   */
+  autoTimeline?: boolean;
+  playbackStartedAt?: string | null;
 }
 
 const REACTION_THROTTLE_MS = 5000;
