@@ -228,8 +228,24 @@ export const useWebinarRealtime = (webinarId: string | undefined, options: Optio
     };
   }, [webinarId, isHost, realtimeDegraded, fetchInteractions, fetchQuestions, fetchReactionCounts, fetchParticipantCount, throttle]);
 
-  const activeInteraction = interactions.find(i => i.status === 'active') || null;
-  const previousInteractions = interactions.filter(i => i.status === 'ended');
+  // Tick once per second while playback mode is on so timeline windows open
+  // and close on their own.
+  const autoActive = autoTimeline && !!playbackStartedAt;
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  useEffect(() => {
+    if (!autoActive) return;
+    const t = window.setInterval(() => setNowTs(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, [autoActive]);
+
+  const activeInteraction = autoActive
+    ? (resolveAutoInteraction(interactions as any, playbackStartedAt, nowTs) as Interaction | null)
+    : interactions.find(i => i.status === 'active') || null;
+  const previousInteractions = autoActive
+    ? interactions.filter(i =>
+        typeof i.auto_offset_seconds === 'number' && i.id !== activeInteraction?.id &&
+        i.auto_offset_seconds < playbackElapsedSeconds(playbackStartedAt, nowTs))
+    : interactions.filter(i => i.status === 'ended');
   const activeInteractionId = activeInteraction?.id ?? null;
 
   // --- answers -------------------------------------------------------------
