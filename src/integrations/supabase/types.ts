@@ -7908,6 +7908,8 @@ export type Database = {
           id: string
           options: Json | null
           order_index: number
+          playback_duration_seconds: number | null
+          playback_offset_seconds: number | null
           question: string | null
           settings: Json
           status: string
@@ -7925,6 +7927,8 @@ export type Database = {
           id?: string
           options?: Json | null
           order_index?: number
+          playback_duration_seconds?: number | null
+          playback_offset_seconds?: number | null
           question?: string | null
           settings?: Json
           status?: string
@@ -7942,6 +7946,8 @@ export type Database = {
           id?: string
           options?: Json | null
           order_index?: number
+          playback_duration_seconds?: number | null
+          playback_offset_seconds?: number | null
           question?: string | null
           settings?: Json
           status?: string
