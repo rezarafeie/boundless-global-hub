@@ -16,6 +16,7 @@ import {
   type CachedWebinar,
 } from '@/lib/webinarCache';
 import { startWebinarEntrySync } from '@/lib/webinarEntryQueue';
+import { resolveAutoInteraction } from '@/lib/webinarPlayback';
 import { subscribeWebinarBroadcast } from '@/lib/webinarBroadcast';
 import { AnimatePresence } from 'framer-motion';
 
@@ -38,7 +39,12 @@ const WebinarWatch: React.FC = () => {
     activeInteraction,
     responses,
     participantCount,
-  } = useWebinarRealtime(webinar?.id);
+  } = useWebinarRealtime(webinar?.id, {
+    // Playback mode: cards appear/disappear automatically, driven by the
+    // timeline captured during the original live session.
+    autoTimeline: !!webinar?.auto_interactions_enabled,
+    playbackStartedAt: webinar?.playback_started_at ?? null,
+  });
 
   useEffect(() => {
     if (slug) fetchWebinar();
@@ -65,6 +71,9 @@ const WebinarWatch: React.FC = () => {
             ...prev,
             chat_enabled: payload.chat_enabled ?? prev.chat_enabled,
             chat_mode: payload.chat_mode ?? prev.chat_mode,
+            auto_interactions_enabled: payload.auto_interactions_enabled ?? prev.auto_interactions_enabled,
+            playback_started_at:
+              payload.playback_started_at !== undefined ? payload.playback_started_at : prev.playback_started_at,
           };
           writeCachedWebinar(next);
           return next;

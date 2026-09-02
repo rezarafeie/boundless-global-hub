@@ -23,6 +23,9 @@ import { useUserRole } from '@/hooks/useUserRole';
 import QAPanel from '@/components/Webinar/QAPanel';
 import WebinarChat from '@/components/Webinar/WebinarChat';
 import InteractionJsonImport from '@/components/Webinar/InteractionJsonImport';
+import {
+  buildTimelineFromLive, formatOffset, parseOffset, interactionDuration, playbackElapsedSeconds,
+} from '@/lib/webinarPlayback';
 
 interface Webinar {
   id: string;
@@ -35,6 +38,8 @@ interface Webinar {
   allow_late_responses: boolean;
   chat_enabled: boolean;
   chat_mode: string;
+  auto_interactions_enabled: boolean;
+  playback_started_at: string | null;
 }
 
 interface InteractionForm {
@@ -128,8 +133,78 @@ const WebinarHostPanel: React.FC = () => {
       .select('*')
       .eq('slug', slug)
       .single();
-    setWebinar(data);
+    setWebinar(data as any);
     setLoading(false);
+  };
+
+  // --- automatic playback timeline ---------------------------------------
+  const [playbackNow, setPlaybackNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!webinar?.auto_interactions_enabled || !webinar?.playback_started_at) return;
+    const t = window.setInterval(() => setPlaybackNow(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, [webinar?.auto_interactions_enabled, webinar?.playback_started_at]);
+
+  const broadcastPlaybackSettings = async (patch: Partial<Webinar>) => {
+    if (!webinar) return;
+    await broadcastWebinarEvent(webinar.id, 'settings', {
+      chat_enabled: patch.chat_enabled ?? webinar.chat_enabled,
+      chat_mode: patch.chat_mode ?? webinar.chat_mode,
+      auto_interactions_enabled: patch.auto_interactions_enabled ?? webinar.auto_interactions_enabled,
+      playback_started_at:
+        patch.playback_started_at !== undefined ? patch.playback_started_at : webinar.playback_started_at,
+    });
+  };
+
+  const savePlayback = async (patch: Partial<Webinar>) => {
+    if (!webinar) return;
+    const { error } = await supabase.from('webinar_entries').update(patch as any).eq('id', webinar.id);
+    if (error) {
+      toast({ title: 'خطا در ذخیره تنظیمات پخش', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setWebinar(prev => (prev ? { ...prev, ...patch } as Webinar : prev));
+    await broadcastPlaybackSettings(patch);
+  };
+
+  const captureTimeline = async () => {
+    const rows = buildTimelineFromLive(interactions as any);
+    if (!rows.length) {
+      toast({ title: 'زمان‌بندی قابل استخراج نیست', description: 'هیچ کارتی در پخش زنده قبلی فعال نشده بود.', variant: 'destructive' });
+      return;
+    }
+    for (const r of rows) {
+      await supabase.from('webinar_interactions')
+        .update({ auto_offset_seconds: r.auto_offset_seconds, auto_duration_seconds: r.auto_duration_seconds } as any)
+        .eq('id', r.id);
+    }
+    refetchInteractions();
+    toast({ title: `زمان‌بندی ${rows.length} کارت از پخش زنده قبلی ثبت شد ✅` });
+  };
+
+  const updateInteractionTiming = async (id: string, patch: { auto_offset_seconds?: number | null; auto_duration_seconds?: number | null }) => {
+    await supabase.from('webinar_interactions').update(patch as any).eq('id', id);
+    refetchInteractions();
+    broadcastInteractionSnapshot();
+  };
+
+  const startPlayback = async () => {
+    // Clear manual state so nothing is stuck "active" from the live run.
+    if (webinar) {
+      await supabase.from('webinar_interactions')
+        .update({ status: 'draft' })
+        .eq('webinar_id', webinar.id)
+        .eq('status', 'active');
+    }
+    await savePlayback({ auto_interactions_enabled: true, playback_started_at: new Date().toISOString() });
+    refetchInteractions();
+    broadcastInteractionSnapshot();
+    toast({ title: 'پخش خودکار شروع شد ▶️' });
+  };
+
+  const stopPlayback = async () => {
+    await savePlayback({ auto_interactions_enabled: false, playback_started_at: null });
+    toast({ title: 'پخش خودکار متوقف شد' });
   };
 
   const broadcastInteractionSnapshot = async () => {
@@ -333,6 +408,7 @@ const WebinarHostPanel: React.FC = () => {
             <TabsTrigger value="interactions">تعامل‌ها</TabsTrigger>
              <TabsTrigger value="qa">پرسش و پاسخ</TabsTrigger>
             <TabsTrigger value="chat">چت</TabsTrigger>
+            <TabsTrigger value="playback">پخش خودکار</TabsTrigger>
             <TabsTrigger value="timeline">تایم‌لاین</TabsTrigger>
           </TabsList>
 
@@ -732,6 +808,104 @@ const WebinarHostPanel: React.FC = () => {
                   chatMode="public"
                   isHost={true}
                 />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Automatic playback */}
+          <TabsContent value="playback" className="space-y-4">
+            <Card>
+              <CardHeader><CardTitle className="text-sm">پخش خودکار کارت‌های تعاملی (بازپخش)</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  با شروع بازپخش، کارت‌های تعاملی دقیقاً بر اساس زمان‌بندی پخش زنده قبلی، خودکار نمایش داده و بسته می‌شوند.
+                  ابتدا زمان‌بندی را از پخش زنده قبلی ثبت کنید، در صورت نیاز ویرایش کنید و سپس پخش را شروع کنید.
+                </p>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>پخش خودکار فعال</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {webinar.auto_interactions_enabled && webinar.playback_started_at
+                        ? `در حال پخش • زمان سپری‌شده ${formatOffset(playbackElapsedSeconds(webinar.playback_started_at, playbackNow))}`
+                        : 'غیرفعال — کارت‌ها دستی فعال می‌شوند'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={!!webinar.auto_interactions_enabled}
+                    onCheckedChange={v => (v ? startPlayback() : stopPlayback())}
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" onClick={captureTimeline}>
+                    <Clock className="h-3.5 w-3.5 ml-1.5" />
+                    ثبت زمان‌بندی از پخش زنده قبلی
+                  </Button>
+                  <Button size="sm" onClick={startPlayback}>
+                    <Play className="h-3.5 w-3.5 ml-1.5" />
+                    {webinar.playback_started_at ? 'شروع مجدد از ابتدا' : 'شروع بازپخش'}
+                  </Button>
+                  {webinar.auto_interactions_enabled && (
+                    <Button size="sm" variant="destructive" onClick={stopPlayback}>
+                      <Square className="h-3.5 w-3.5 ml-1.5" />
+                      توقف پخش خودکار
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-sm">زمان‌بندی کارت‌ها</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                {interactions.length === 0 ? (
+                  <p className="text-center text-sm text-muted-foreground py-6">هنوز تعاملی ثبت نشده</p>
+                ) : (
+                  interactions.map(i => {
+                    const offset = (i as any).auto_offset_seconds as number | null | undefined;
+                    const elapsed = webinar.playback_started_at ? playbackElapsedSeconds(webinar.playback_started_at, playbackNow) : null;
+                    const duration = interactionDuration(i as any);
+                    const isOn = webinar.auto_interactions_enabled && elapsed !== null && typeof offset === 'number'
+                      && elapsed >= offset && elapsed < offset + duration;
+                    return (
+                      <div key={i.id} className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 ${isOn ? 'border-primary ring-1 ring-primary/20' : ''}`}>
+                        <div className="flex-1 min-w-[160px]">
+                          <p className="text-sm font-medium">{i.title}</p>
+                          <p className="text-xs text-muted-foreground">{typeLabels[i.type]}</p>
+                        </div>
+                        {isOn && <Badge className="bg-green-500 text-white">در حال نمایش</Badge>}
+                        <div className="flex items-center gap-1.5">
+                          <Label className="text-xs whitespace-nowrap">زمان نمایش</Label>
+                          <Input
+                            className="w-24 text-center"
+                            dir="ltr"
+                            defaultValue={typeof offset === 'number' ? formatOffset(offset) : ''}
+                            placeholder="mm:ss"
+                            onBlur={e => {
+                              const parsed = parseOffset(e.target.value);
+                              updateInteractionTiming(i.id, { auto_offset_seconds: parsed });
+                            }}
+                          />
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Label className="text-xs whitespace-nowrap">مدت (ثانیه)</Label>
+                          <Input
+                            type="number"
+                            className="w-24 text-center"
+                            dir="ltr"
+                            defaultValue={(i as any).auto_duration_seconds ?? ''}
+                            placeholder={String(duration)}
+                            onBlur={e => {
+                              const v = e.target.value.trim();
+                              updateInteractionTiming(i.id, { auto_duration_seconds: v ? Math.max(5, Number(v)) : null });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </CardContent>
             </Card>
           </TabsContent>

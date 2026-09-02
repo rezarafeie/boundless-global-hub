@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { subscribeWebinarBroadcast, subscribeWebinarConnection } from '@/lib/webinarBroadcast';
+import { resolveAutoInteraction, playbackElapsedSeconds } from '@/lib/webinarPlayback';
 
 interface Interaction {
   id: string;
@@ -15,6 +16,8 @@ interface Interaction {
   activated_at: string | null;
   ended_at: string | null;
   created_at: string;
+  auto_offset_seconds?: number | null;
+  auto_duration_seconds?: number | null;
 }
 
 interface Response {
@@ -47,6 +50,13 @@ interface Options {
    * every webinar — at 500 concurrent viewers that is a quadratic explosion.
    */
   isHost?: boolean;
+  /**
+   * Playback mode: the active card is derived locally from each interaction's
+   * recorded timeline offset instead of its DB status. No writes, so it scales
+   * to any number of viewers.
+   */
+  autoTimeline?: boolean;
+  playbackStartedAt?: string | null;
 }
 
 const REACTION_THROTTLE_MS = 5000;
@@ -60,7 +70,7 @@ const VIEWER_RECONCILE_MS = 25000;
 const VIEWER_DEGRADED_POLL_MS = 5000;
 
 export const useWebinarRealtime = (webinarId: string | undefined, options: Options = {}) => {
-  const { isHost = false } = options;
+  const { isHost = false, autoTimeline = false, playbackStartedAt = null } = options;
   const [realtimeDegraded, setRealtimeDegraded] = useState(false);
 
   const [interactions, setInteractions] = useState<Interaction[]>([]);
@@ -221,8 +231,24 @@ export const useWebinarRealtime = (webinarId: string | undefined, options: Optio
     };
   }, [webinarId, isHost, realtimeDegraded, fetchInteractions, fetchQuestions, fetchReactionCounts, fetchParticipantCount, throttle]);
 
-  const activeInteraction = interactions.find(i => i.status === 'active') || null;
-  const previousInteractions = interactions.filter(i => i.status === 'ended');
+  // Tick once per second while playback mode is on so timeline windows open
+  // and close on their own.
+  const autoActive = autoTimeline && !!playbackStartedAt;
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  useEffect(() => {
+    if (!autoActive) return;
+    const t = window.setInterval(() => setNowTs(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, [autoActive]);
+
+  const activeInteraction = autoActive
+    ? (resolveAutoInteraction(interactions as any, playbackStartedAt, nowTs) as Interaction | null)
+    : interactions.find(i => i.status === 'active') || null;
+  const previousInteractions = autoActive
+    ? interactions.filter(i =>
+        typeof i.auto_offset_seconds === 'number' && i.id !== activeInteraction?.id &&
+        i.auto_offset_seconds < playbackElapsedSeconds(playbackStartedAt, nowTs))
+    : interactions.filter(i => i.status === 'ended');
   const activeInteractionId = activeInteraction?.id ?? null;
 
   // --- answers -------------------------------------------------------------
