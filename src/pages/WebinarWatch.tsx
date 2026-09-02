@@ -16,6 +16,7 @@ import {
   type CachedWebinar,
 } from '@/lib/webinarCache';
 import { startWebinarEntrySync } from '@/lib/webinarEntryQueue';
+import { resolveAutoInteraction } from '@/lib/webinarPlayback';
 import { subscribeWebinarBroadcast } from '@/lib/webinarBroadcast';
 import { AnimatePresence } from 'framer-motion';
 
