@@ -82,6 +82,9 @@ const WebinarWatch: React.FC = () => {
             ...prev,
             chat_enabled: payload.chat_enabled ?? prev.chat_enabled,
             chat_mode: payload.chat_mode ?? prev.chat_mode,
+            auto_interactions_enabled: payload.auto_interactions_enabled ?? prev.auto_interactions_enabled,
+            playback_started_at:
+              payload.playback_started_at !== undefined ? payload.playback_started_at : prev.playback_started_at,
           };
           writeCachedWebinar(next);
           return next;
