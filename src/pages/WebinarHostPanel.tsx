@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
   Play, Square, Plus, Users, BarChart3, Send, Trash2, Eye, Clock, Pin,
-  Check, EyeOff, Radio, ArrowRight, Copy, Pencil
+  Check, EyeOff, Radio, ArrowRight, Copy, Pencil, RotateCcw
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { broadcastWebinarEvent } from '@/lib/webinarBroadcast';
@@ -218,8 +218,28 @@ const WebinarHostPanel: React.FC = () => {
   };
 
 
+  // Starts (or restarts) automatic playback. If a card is currently active in
+  // the engage tab, playback continues from that card's position on the
+  // timeline instead of jumping back to the beginning: the start timestamp is
+  // back-dated so `elapsed == effectiveOffset(activeCard)` right now.
   const startPlayback = async () => {
-    // Clear manual state so nothing is stuck "active" from the live run.
+    const active = (interactions as any[]).find(i => i.status === 'active');
+    const anchorOffset = active ? effectiveOffset(active) : null;
+    const startedAt = new Date(Date.now() - (anchorOffset ?? 0) * 1000).toISOString();
+    // Keep the currently active card as-is — the timeline sync effect mirrors
+    // the resolved card into the engage tab and ends cards as windows close.
+    await savePlayback({ auto_interactions_enabled: true, playback_started_at: startedAt });
+    refetchInteractions();
+    broadcastInteractionSnapshot();
+    toast({
+      title: anchorOffset !== null
+        ? `پخش خودکار از کارت فعلی («${active?.title}») ادامه می‌یابد ▶️`
+        : 'پخش خودکار از ابتدا شروع شد ▶️',
+    });
+  };
+
+  // Forces playback back to the very first card regardless of live state.
+  const restartPlaybackFromStart = async () => {
     if (webinar) {
       await supabase.from('webinar_interactions')
         .update({ status: 'draft' })
@@ -229,7 +249,7 @@ const WebinarHostPanel: React.FC = () => {
     await savePlayback({ auto_interactions_enabled: true, playback_started_at: new Date().toISOString() });
     refetchInteractions();
     broadcastInteractionSnapshot();
-    toast({ title: 'پخش خودکار شروع شد ▶️' });
+    toast({ title: 'پخش خودکار از ابتدا شروع شد ▶️' });
   };
 
   const stopPlayback = async () => {
@@ -957,8 +977,14 @@ const WebinarHostPanel: React.FC = () => {
                   </Button>
                   <Button size="sm" onClick={startPlayback}>
                     <Play className="h-3.5 w-3.5 ml-1.5" />
-                    {webinar.playback_started_at ? 'شروع مجدد از ابتدا' : 'شروع بازپخش'}
+                    {webinar.playback_started_at ? 'ادامه از کارت فعلی' : 'شروع بازپخش'}
                   </Button>
+                  {webinar.playback_started_at && (
+                    <Button size="sm" variant="outline" onClick={restartPlaybackFromStart}>
+                      <RotateCcw className="h-3.5 w-3.5 ml-1.5" />
+                      شروع مجدد از ابتدا
+                    </Button>
+                  )}
                   {webinar.auto_interactions_enabled && (
                     <Button size="sm" variant="destructive" onClick={stopPlayback}>
                       <Square className="h-3.5 w-3.5 ml-1.5" />
