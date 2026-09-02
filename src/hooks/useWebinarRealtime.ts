@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { subscribeWebinarBroadcast, subscribeWebinarConnection } from '@/lib/webinarBroadcast';
+import { resolveAutoInteraction, playbackElapsedSeconds } from '@/lib/webinarPlayback';
 
 interface Interaction {
   id: string;
@@ -15,6 +16,8 @@ interface Interaction {
   activated_at: string | null;
   ended_at: string | null;
   created_at: string;
+  auto_offset_seconds?: number | null;
+  auto_duration_seconds?: number | null;
 }
 
 interface Response {
@@ -67,7 +70,7 @@ const VIEWER_RECONCILE_MS = 25000;
 const VIEWER_DEGRADED_POLL_MS = 5000;
 
 export const useWebinarRealtime = (webinarId: string | undefined, options: Options = {}) => {
-  const { isHost = false } = options;
+  const { isHost = false, autoTimeline = false, playbackStartedAt = null } = options;
   const [realtimeDegraded, setRealtimeDegraded] = useState(false);
 
   const [interactions, setInteractions] = useState<Interaction[]>([]);
