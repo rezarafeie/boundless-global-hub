@@ -1,98 +1,72 @@
-# Payment gateway integration plan for Rafiei Pay
+# Gamified Course Access (7-Day Sprint)
 
-## Zarinpal (short)
+Opt-in per course. Courses without the feature enabled keep today's behaviour exactly.
+Target courses: طعم بی‌مرزی، مینی دوره ایران، کلاس رایگان هوش مصنوعی.
 
-Zarinpal is the default card-payment gateway. Unlike SnappPay, it does **not** require a static egress IP, but because Supabase Edge Functions run outside Iran, a configurable proxy is supported when `zarinpal_use_proxy` is enabled.
+## 1. What the student experiences
 
-```text
-Rafiei Pay UI  ->  Edge Function (zarinpal-request / invoice-zarinpal-payment)
-                ->  either api.zarinpal.com directly, or an Iran-hosted proxy
-                ->  redirect user to https://www.zarinpal.com/pg/StartPay/{authority}
-                ->  return to Rafiei Pay success page  ->  verify edge function
-```
+**Access window**
+- On enrollment, a 7-day access window starts at the exact enrollment time.
+- A slim fixed bar at the top of the course/lesson pages shows "۶ روز و ۱۴ ساعت باقی‌مانده".
+- Welcome message goes out on Telegram bot, email, SMS, and Telegram Business (once support is activated).
+- When the window ends, lesson content is locked but all progress is kept, and a reactivation page appears offering a $10 payment for another 7 days. After payment the student resumes exactly where they stopped.
 
-Key points:
-- Amounts sent to Zarinpal are in **Rial** (Toman × 10).
-- Request returns an `authority`; the success page receives it back and calls the verify edge function.
-- Verify checks codes `100` (paid) and `101` (already verified / duplicate callback).
-- `merchant_id` is stored in the edge-function secret `ZARINPAL_MERCHANT_ID`.
-- The proxy URL and on/off flag live in `admin_settings` (`zarinpal_use_proxy`, `zarinpal_proxy_url`).
+**Daily missions**
+- Every lesson is a mission. When it unlocks, the student has 24 hours to finish it and keep their streak.
+- Reminder message on all four channels; the course page shows the mission's remaining time.
+- Completing a mission unlocks the next one and shows a short motivational note ("🔥 ماموریت انجام شد… هنوز واجد شرایط جایزه سریع هستی").
+- A missed 24-hour deadline only breaks the streak — the lesson stays open until the 7-day window ends.
 
-## SnappPay Installments
+**Rewards**
+- Finish in 7 days → نشان Boundless Finisher
+- Finish in 5 days → Finisher + bonus
+- Finish in 3 days → Fast Finisher + یک ماه اشتراک رایگان Rafiei Store
+- Rewards are rows in a table, so admins can later add BNETS access, AI Coach credits, Rafiei Studio/Builder credits, or any other bonus without new code.
 
-Port the SnappPay installment gateway (already live in Rafiei Academy) into the separate Rafiei Pay project, keeping the same proxy-based architecture that satisfies SnappPay's static-IP whitelist.
+**Dashboard card (LMS app + course page)**
+Streak, progress %, remaining access time, current mission and its deadline, earned rewards, and the still-locked reward with its condition — in the compact style of the example.
 
-## Why a proxy is required
+## 2. Admin controls
 
-SnappPay only accepts API traffic from the whitelisted IP `45.139.11.73`. Supabase Edge Functions have dynamic egress IPs, so they can never call `api.snapppay.ir` directly. All traffic goes:
+New "دسترسی گیمیفای" section on the course settings page:
+- Enable/disable per course
+- Free access duration (7 days), reactivation price ($10), reactivation duration (7 days)
+- Mission deadline (24h), fast-finish deadline (3 days)
+- Reward list: title, condition (finish within N days), reward type, value, active toggle
 
-```text
-Rafiei Pay UI  ->  Edge Function (snapppay-request / snapppay-callback)
-                ->  PHP proxy at rafeie.com/snappay/index.php  (fixed IP)
-                ->  https://api.snapppay.ir
-```
+Per-student actions from the enrollment/user view: extend access, reactivate/unlock, grant a reward, remove a reward.
 
-The same proxy instance can serve both projects; requests are authenticated with a shared bearer secret.
+## 3. Technical notes
 
-## What gets built in Rafiei Pay
+**Database**
+- `course_gamification_settings` (course_id, enabled, free_days, reactivation_price_usd, reactivation_days, mission_hours, fast_finish_days)
+- `course_gamification_rewards` (course_id, title, description, within_days, reward_type, reward_value, is_active)
+- `course_access_windows` (user_id, course_id, enrollment_id, started_at, expires_at, status, source, completed_at)
+- `course_missions` (user_id, course_id, lesson_id, unlocked_at, due_at, completed_at, streak_kept)
+- `user_rewards` (user_id, course_id, reward_id, granted_at, granted_by, revoked_at)
+- `course_gamification_notifications` (idempotency log per user/course/kind)
+All with grants + RLS: students read their own rows, admins manage everything, service_role full.
 
-1. **Shared client** `supabase/functions/_shared/snapppay.ts`
-   - `proxyCall(route, method, payload)` -> proxy with `Authorization: Bearer SNAPPPAY_PROXY_SECRET`.
-   - Routes: `eligibility`, `create`, `verify`, `settle`, `cancel`, `status`.
-   - Helpers: `tomanToRial` (x10), `normalizeMobile` (must yield `+989XXXXXXXXX`, reject non-Iranian), `generateTransactionId` (digits only — non-numeric IDs fail with SnappPay error 1005).
+**Backend**
+- `course-access-status` — single read endpoint returning window, missions, streak, rewards; used by the header countdown and dashboard card.
+- `course-mission-complete` — called from the existing lesson-completion path; closes the mission, opens the next, evaluates rewards, returns the motivational payload.
+- `course-access-reminders` — cron (hourly): mission-deadline reminders, access-expiry warnings, expiry lock; sends via the existing Telegram bot / Telegram Business / email / SMS helpers in `_shared`.
+- `course-reactivation-payment` + verify — reuses the existing Rafiei Pay / Zarinpal flow with the live USD→Toman rate helper (`buildFxFields`), then extends the window.
 
-2. **`snapppay-request` edge function**
-   - Reads the order/product from the Rafiei Pay database and computes the amount server-side; client may only lower the price, never raise it.
-   - Blocks when the gateway is disabled globally, disabled for that product, or the amount exceeds the max (default 50,000,000 تومان).
-   - Supports `checkOnly: true` so the checkout UI can probe eligibility before showing the option.
-   - Creates a pending local order, calls `eligibility` then `create`, stores `paymentToken` + `transactionId`, returns the redirect URL.
+**Frontend**
+- `useCourseAccess` hook wrapping the status endpoint.
+- `CourseAccessBar` (fixed countdown), `MissionCard`, `RewardsCard`, `ReactivationPage`.
+- Wired into `src/pages/CourseAccess.tsx`, `src/pages/App/AppCourseDetail.tsx`, `AppLessonView.tsx`, `AppDashboard.tsx` — all guarded so nothing renders when the course has the feature off.
 
-3. **`snapppay-callback` edge function**
-   - Called on return; runs `verify` then `settle`, and only marks the order paid when settle succeeds. `cancel` on failure.
-   - Idempotent: re-running for an already-settled token must not double-activate.
+**Assumptions**
+- Reactivation is charged in Toman using the live USD rate at payment time.
+- SMS uses the existing SMS sender; if no provider is wired for this flow, the other three channels still go out.
 
-4. **Return-URL handling**
-   - SnappPay validates the return domain, so `returnURL` points at the whitelisted domain (`rafeie.com/snappay/?route=callback`), and the proxy 302-redirects to the Rafiei Pay success page with the query string intact.
-
-5. **Checkout UI**
-   - SnappPay option shown only when eligible (enabled + under cap + Iranian mobile); auto-switch to another gateway if a discount/price change makes it ineligible.
-   - Pay button must include `snapppay` in its visibility condition (label: «پرداخت اقساطی»).
-
-6. **Admin settings**
-   - Global on/off toggle + configurable max amount (Toman).
-   - Per-product `snapppay_enabled` flag.
-
-## Database changes (Rafiei Pay)
-
-- `admin_settings`: `snapppay_enabled boolean default false`, `snapppay_max_amount_toman integer default 50000000`.
-- Products/courses table: `snapppay_enabled boolean default true`.
-- Orders table: `snapppay_payment_token text`, `snapppay_transaction_id text`, plus `payment_method = 'snapppay'` support.
-- Grants + RLS follow the project's existing pattern for these tables.
-
-## Secrets
-
-Edge Functions:
-- `SNAPPPAY_PROXY_URL` (defaults to `https://rafeie.com/snappay/`)
-- `SNAPPPAY_PROXY_SECRET`
-
-Proxy server only (never in Supabase):
-- `SNAPPPAY_CLIENT_ID`, `SNAPPPAY_CLIENT_SECRET`, `SNAPPPAY_USERNAME`, `SNAPPPAY_PASSWORD`
-
-Proxy config also needs the Rafiei Pay success URL added to its callback redirect map.
-
-## Config
-
-`supabase/config.toml`: `verify_jwt = false` for `snapppay-request` and `snapppay-callback` (guest checkout + external return).
-
-## Known pitfalls carried over from Academy
-
-- `cartId` / `transactionId` must be numeric strings; optional fields like `commissionType` break deserialization (error 1005).
-- `returnURL` on a non-whitelisted domain -> error 1051.
-- `declare(strict_types=1)` in the PHP proxy must be the very first statement — it is omitted entirely to survive BOM/whitespace on upload.
-- Amounts to SnappPay are in Rial (Toman x10).
-
-## Verification
-
-- `checkOnly` probe returns `eligible: true` for a small test amount.
-- Full sandbox purchase: request -> SnappPay page -> return -> verify + settle -> order marked paid exactly once.
-- Amount above the cap and a product with the flag off both hide the option.
+## 4. Build order
+1. Database tables + admin settings/rewards UI
+2. Status endpoint + access window creation on enrollment + header countdown
+3. Missions + completion hook + motivational message
+4. Rewards evaluation + dashboard card
+5. Expiry lock + reactivation page + payment
+6. Reminder cron across the four channels
+7. Per-student admin actions
