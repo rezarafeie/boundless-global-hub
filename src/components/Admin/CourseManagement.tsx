@@ -495,6 +495,15 @@ const CourseManagement: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {gamCourse && (
+        <CourseGamificationDialog
+          open={!!gamCourse}
+          onOpenChange={(v) => !v && setGamCourse(null)}
+          courseId={gamCourse.id}
+          courseTitle={gamCourse.title}
+        />
+      )}
     </div>
   );
 };
