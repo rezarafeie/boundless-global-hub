@@ -66,7 +66,7 @@ const AppCourseDetail = () => {
   const [course, setCourse] = useState<CourseData | null>(null);
   const [sections, setSections] = useState<CourseSection[]>([]);
   const [showReactivate, setShowReactivate] = useState(false);
-  const gam = useCourseGamification(course?.id, courseSlug);
+  const gam = useCourseGamification(course?.id, slug);
 
   useEffect(() => {
     if (authLoading) return;
