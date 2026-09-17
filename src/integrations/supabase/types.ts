@@ -2251,6 +2251,72 @@ export type Database = {
           },
         ]
       }
+      course_access_windows: {
+        Row: {
+          best_streak: number
+          completed_at: string | null
+          completion_days: number | null
+          course_id: string
+          created_at: string
+          enrollment_id: string | null
+          expires_at: string
+          id: string
+          source: string
+          started_at: string
+          status: string
+          streak_count: number
+          updated_at: string
+          user_id: number
+        }
+        Insert: {
+          best_streak?: number
+          completed_at?: string | null
+          completion_days?: number | null
+          course_id: string
+          created_at?: string
+          enrollment_id?: string | null
+          expires_at: string
+          id?: string
+          source?: string
+          started_at?: string
+          status?: string
+          streak_count?: number
+          updated_at?: string
+          user_id: number
+        }
+        Update: {
+          best_streak?: number
+          completed_at?: string | null
+          completion_days?: number | null
+          course_id?: string
+          created_at?: string
+          enrollment_id?: string | null
+          expires_at?: string
+          id?: string
+          source?: string
+          started_at?: string
+          status?: string
+          streak_count?: number
+          updated_at?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_access_windows_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_access_windows_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_click_logs: {
         Row: {
           action_type: string
@@ -2281,6 +2347,136 @@ export type Database = {
             foreignKeyName: "course_click_logs_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_gamification_notifications: {
+        Row: {
+          channels: Json
+          course_id: string
+          id: string
+          kind: string
+          ref_id: string | null
+          sent_at: string
+          user_id: number
+        }
+        Insert: {
+          channels?: Json
+          course_id: string
+          id?: string
+          kind: string
+          ref_id?: string | null
+          sent_at?: string
+          user_id: number
+        }
+        Update: {
+          channels?: Json
+          course_id?: string
+          id?: string
+          kind?: string
+          ref_id?: string | null
+          sent_at?: string
+          user_id?: number
+        }
+        Relationships: []
+      }
+      course_gamification_rewards: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          emoji: string | null
+          id: string
+          is_active: boolean
+          reward_type: string
+          reward_value: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+          within_days: number
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          is_active?: boolean
+          reward_type?: string
+          reward_value?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+          within_days?: number
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          is_active?: boolean
+          reward_type?: string
+          reward_value?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          within_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_gamification_rewards_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_gamification_settings: {
+        Row: {
+          course_id: string
+          created_at: string
+          enabled: boolean
+          fast_finish_days: number
+          free_days: number
+          mission_hours: number
+          notifications_enabled: boolean
+          reactivation_days: number
+          reactivation_price_usd: number
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          enabled?: boolean
+          fast_finish_days?: number
+          free_days?: number
+          mission_hours?: number
+          notifications_enabled?: boolean
+          reactivation_days?: number
+          reactivation_price_usd?: number
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          enabled?: boolean
+          fast_finish_days?: number
+          free_days?: number
+          mission_hours?: number
+          notifications_enabled?: boolean
+          reactivation_days?: number
+          reactivation_price_usd?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_gamification_settings_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: true
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
@@ -2389,6 +2585,63 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_missions: {
+        Row: {
+          completed_at: string | null
+          course_id: string
+          created_at: string
+          due_at: string
+          id: string
+          lesson_id: string
+          reminder_sent_at: string | null
+          streak_kept: boolean | null
+          unlocked_at: string
+          updated_at: string
+          user_id: number
+        }
+        Insert: {
+          completed_at?: string | null
+          course_id: string
+          created_at?: string
+          due_at: string
+          id?: string
+          lesson_id: string
+          reminder_sent_at?: string | null
+          streak_kept?: boolean | null
+          unlocked_at?: string
+          updated_at?: string
+          user_id: number
+        }
+        Update: {
+          completed_at?: string | null
+          course_id?: string
+          created_at?: string
+          due_at?: string
+          id?: string
+          lesson_id?: string
+          reminder_sent_at?: string | null
+          streak_kept?: boolean | null
+          unlocked_at?: string
+          updated_at?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_missions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_missions_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "course_lessons"
             referencedColumns: ["id"]
           },
         ]
@@ -7380,6 +7633,63 @@ export type Database = {
           user_id?: number
         }
         Relationships: []
+      }
+      user_course_rewards: {
+        Row: {
+          course_id: string
+          created_at: string
+          granted_at: string
+          granted_by: string
+          id: string
+          revoked_at: string | null
+          reward_id: string | null
+          reward_type: string
+          reward_value: string | null
+          title: string
+          user_id: number
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          granted_at?: string
+          granted_by?: string
+          id?: string
+          revoked_at?: string | null
+          reward_id?: string | null
+          reward_type?: string
+          reward_value?: string | null
+          title: string
+          user_id: number
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          granted_at?: string
+          granted_by?: string
+          id?: string
+          revoked_at?: string | null
+          reward_id?: string | null
+          reward_type?: string
+          reward_value?: string | null
+          title?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_course_rewards_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_course_rewards_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "course_gamification_rewards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_lesson_progress: {
         Row: {
