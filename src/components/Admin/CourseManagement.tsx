@@ -364,6 +364,14 @@ const CourseManagement: React.FC = () => {
                           <Button
                             size="sm"
                             variant="outline"
+                            onClick={() => setGamCourse(course)}
+                            title="دسترسی گیمیفای (۷ روزه)"
+                          >
+                            <Trophy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => {
                               const url = `/enroll?course=${course.slug}`;
                               window.open(url, '_blank');

@@ -59,6 +59,17 @@ export function useCourseGamification(courseId?: string | null, courseSlug?: str
       return;
     }
     try {
+      // finish a returning reactivation payment first
+      const params = new URLSearchParams(window.location.search);
+      const authority = params.get('Authority') || params.get('authority');
+      if (params.get('reactivate') === '1' && authority && params.get('course')) {
+        await supabase.functions.invoke('course-reactivation-payment', {
+          body: { action: 'verify', userId: Number(user.id), courseId: params.get('course'), authority },
+        });
+        const clean = window.location.pathname;
+        window.history.replaceState({}, '', clean);
+      }
+
       const { data, error } = await supabase.functions.invoke('course-access-status', {
         body: { userId: Number(user.id), courseId, courseSlug },
       });
