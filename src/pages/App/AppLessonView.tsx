@@ -25,6 +25,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TelegramEnrollmentActivation } from "@/components/TelegramEnrollmentActivation";
 import { useIsIranianIP } from "@/hooks/useIsIranianIP";
 import { AssignmentSection } from "@/components/Assignment/AssignmentSection";
+import CourseAccessBar from "@/components/Gamification/CourseAccessBar";
+import ReactivationDialog from "@/components/Gamification/ReactivationDialog";
+import { useCourseGamification, formatRemaining } from "@/hooks/useCourseGamification";
+import { useToast } from "@/hooks/use-toast";
+import { Lock } from "lucide-react";
 
 interface LessonData {
   id: string;
@@ -54,6 +59,9 @@ const AppLessonView = () => {
   const [lesson, setLesson] = useState<LessonData | null>(null);
   const [loading, setLoading] = useState(true);
   const [courseSlug, setCourseSlug] = useState<string>("");
+  const [showReactivate, setShowReactivate] = useState(false);
+  const { toast } = useToast();
+  const gam = useCourseGamification(lesson?.course_id, paramCourseSlug);
 
   useEffect(() => {
     if (authLoading) return;
@@ -216,9 +224,36 @@ const AppLessonView = () => {
     setIsPlaying(!isPlaying);
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
+    if (!lesson || !user?.id) return;
     setIsCompleted(true);
-    // Here you would call Supabase to mark lesson as completed
+    try {
+      await (supabase as any).from('user_lesson_progress').upsert(
+        {
+          user_id: Number(user.id),
+          course_id: lesson.course_id,
+          lesson_id: lesson.id,
+          is_opened: true,
+          is_completed: true,
+          completed_at: new Date().toISOString(),
+          last_accessed_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id,lesson_id' },
+      );
+    } catch (e) {
+      console.error('progress save error', e);
+    }
+
+    if (gam.status?.enabled) {
+      try {
+        const res = await gam.completeMission(lesson.id);
+        if (res?.message) {
+          toast({ title: '🔥 ماموریت انجام شد!', description: res.message });
+        }
+      } catch (e) {
+        console.error('mission complete error', e);
+      }
+    }
   };
 
   const handleNextLesson = () => {
@@ -295,9 +330,51 @@ const AppLessonView = () => {
     );
   }
 
+  if (gam.status?.enabled && gam.status.locked) {
+    return (
+      <AppLayout title={lesson.title} rightAction={rightAction}>
+        <CourseAccessBar status={gam.status} onReactivate={() => setShowReactivate(true)} />
+        <div className="p-4" dir="rtl">
+          <Card>
+            <CardContent className="space-y-3 p-6 text-center">
+              <Lock className="mx-auto h-10 w-10 text-destructive" />
+              <h3 className="text-lg font-semibold">دسترسی شما به پایان رسیده است</h3>
+              <p className="text-sm text-muted-foreground">
+                پیشرفت شما کامل ذخیره شده است. با تمدید دسترسی، دقیقاً از همین‌جا ادامه می‌دهید.
+              </p>
+              <Button className="w-full" onClick={() => setShowReactivate(true)}>
+                تمدید دسترسی
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+        <ReactivationDialog
+          open={showReactivate}
+          onOpenChange={setShowReactivate}
+          courseId={lesson.course_id}
+          courseTitle={lesson.courseTitle}
+        />
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout title={lesson.title} rightAction={rightAction}>
+      <CourseAccessBar status={gam.status} onReactivate={() => setShowReactivate(true)} />
       <div className="space-y-4">
+        {gam.status?.enabled && gam.status.mission?.lesson_id === lesson.id && (
+          <div className="px-4 pt-2">
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-2 text-center text-xs" dir="rtl">
+              ⏱ مهلت این ماموریت: {formatRemaining(gam.status.mission.remainingMs)} دیگر
+            </div>
+          </div>
+        )}
+        <ReactivationDialog
+          open={showReactivate}
+          onOpenChange={setShowReactivate}
+          courseId={lesson.course_id}
+          courseTitle={lesson.courseTitle}
+        />
         {/* Course Context */}
         <div className="px-4 pt-2 flex items-center justify-between gap-2 flex-wrap">
           <Badge variant="outline" className="text-xs">

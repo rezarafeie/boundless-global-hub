@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import AppLayout from "@/components/Layout/AppLayout";
+import CourseAccessBar from "@/components/Gamification/CourseAccessBar";
+import CourseGamificationCard from "@/components/Gamification/CourseGamificationCard";
+import ReactivationDialog from "@/components/Gamification/ReactivationDialog";
+import { useCourseGamification } from "@/hooks/useCourseGamification";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +65,8 @@ const AppCourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState<CourseData | null>(null);
   const [sections, setSections] = useState<CourseSection[]>([]);
+  const [showReactivate, setShowReactivate] = useState(false);
+  const gam = useCourseGamification(course?.id, slug);
 
   useEffect(() => {
     if (authLoading) return;
@@ -313,7 +319,23 @@ const AppCourseDetail = () => {
 
   return (
     <AppLayout title={course.title} rightAction={rightAction}>
+      <CourseAccessBar status={gam.status} onReactivate={() => setShowReactivate(true)} />
       <div className="space-y-6">
+        {gam.status?.enabled && (
+          <div className="p-4 pb-0">
+            <CourseGamificationCard
+              status={gam.status}
+              onOpenMission={(_lid, ln) => ln && navigate(`/app/course/${course.slug}/lesson/${ln}`)}
+              onReactivate={() => setShowReactivate(true)}
+            />
+          </div>
+        )}
+        <ReactivationDialog
+          open={showReactivate}
+          onOpenChange={setShowReactivate}
+          courseId={course.id}
+          courseTitle={course.title}
+        />
         {/* Course Header */}
         <div className="p-4 pb-0">
           <Card>

@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash2, ExternalLink, Users, TrendingUp, DollarSign, Search, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, ExternalLink, Users, TrendingUp, DollarSign, Search, ChevronLeft, ChevronRight, Download, Trophy } from 'lucide-react';
+import CourseGamificationDialog from '@/components/Admin/CourseGamificationDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -53,6 +54,7 @@ const CourseManagement: React.FC = () => {
   const [enrollmentSearchTerm, setEnrollmentSearchTerm] = useState('');
   const [enrollmentTotal, setEnrollmentTotal] = useState(0);
   const [enrollmentPage, setEnrollmentPage] = useState(1);
+  const [gamCourse, setGamCourse] = useState<Course | null>(null);
   
   const debouncedEnrollmentSearch = useDebounce(enrollmentSearchTerm, 300);
   const enrollmentsPerPage = 50;
@@ -360,6 +362,14 @@ const CourseManagement: React.FC = () => {
                             title="ویرایش دوره"
                           >
                             <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setGamCourse(course)}
+                            title="دسترسی گیمیفای (۷ روزه)"
+                          >
+                            <Trophy className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
