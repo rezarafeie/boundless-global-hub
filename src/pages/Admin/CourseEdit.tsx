@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, DollarSign, RefreshCw, Percent, Clock, Link as LinkIcon, MessageCircle, Gift, Rocket } from 'lucide-react';
+import CourseGamificationSettings from '@/components/Admin/CourseGamificationSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { TetherlandService } from '@/lib/tetherlandService';
@@ -1417,6 +1418,19 @@ mba
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Gamified Access Section */}
+              <div className="border-t pt-6 space-y-4">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Gift className="h-5 w-5" />
+                  دسترسی گیمیفای (۷ روزه)
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  روشن/خاموش کردن سیستم برای این دوره و تنظیم مدت دسترسی، هزینه و مدت تمدید، مهلت ماموریت‌ها و جوایز.
+                  این تنظیمات جدا از فرم دوره ذخیره می‌شود.
+                </p>
+                {courseId && <CourseGamificationSettings courseId={courseId} />}
               </div>
 
               <div className="flex items-center space-x-2">
