@@ -25,6 +25,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TelegramEnrollmentActivation } from "@/components/TelegramEnrollmentActivation";
 import { useIsIranianIP } from "@/hooks/useIsIranianIP";
 import { AssignmentSection } from "@/components/Assignment/AssignmentSection";
+import CourseAccessBar from "@/components/Gamification/CourseAccessBar";
+import ReactivationDialog from "@/components/Gamification/ReactivationDialog";
+import { useCourseGamification, formatRemaining } from "@/hooks/useCourseGamification";
+import { useToast } from "@/hooks/use-toast";
+import { Lock } from "lucide-react";
 
 interface LessonData {
   id: string;
@@ -54,6 +59,9 @@ const AppLessonView = () => {
   const [lesson, setLesson] = useState<LessonData | null>(null);
   const [loading, setLoading] = useState(true);
   const [courseSlug, setCourseSlug] = useState<string>("");
+  const [showReactivate, setShowReactivate] = useState(false);
+  const { toast } = useToast();
+  const gam = useCourseGamification(lesson?.course_id, paramCourseSlug);
 
   useEffect(() => {
     if (authLoading) return;
@@ -216,9 +224,36 @@ const AppLessonView = () => {
     setIsPlaying(!isPlaying);
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
+    if (!lesson || !user?.id) return;
     setIsCompleted(true);
-    // Here you would call Supabase to mark lesson as completed
+    try {
+      await (supabase as any).from('user_lesson_progress').upsert(
+        {
+          user_id: Number(user.id),
+          course_id: lesson.course_id,
+          lesson_id: lesson.id,
+          is_opened: true,
+          is_completed: true,
+          completed_at: new Date().toISOString(),
+          last_accessed_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id,lesson_id' },
+      );
+    } catch (e) {
+      console.error('progress save error', e);
+    }
+
+    if (gam.status?.enabled) {
+      try {
+        const res = await gam.completeMission(lesson.id);
+        if (res?.message) {
+          toast({ title: '🔥 ماموریت انجام شد!', description: res.message });
+        }
+      } catch (e) {
+        console.error('mission complete error', e);
+      }
+    }
   };
 
   const handleNextLesson = () => {
