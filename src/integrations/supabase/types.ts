@@ -5658,10 +5658,17 @@ export type Database = {
       }
       smart_test_v2_submissions: {
         Row: {
+          adaptive_answers: Json
+          adaptive_questions: Json
+          ai_checkpoints: Json
+          ai_confidence: string | null
+          ai_diagnosis: Json | null
           ai_reality_check: string | null
+          ai_status: string | null
           alternative_match: number | null
           alternative_path: string | null
           answers: Json
+          best_starting_path: string | null
           chat_user_id: number | null
           completed_at: string | null
           confidence: string | null
@@ -5675,7 +5682,9 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          long_term_fit: string | null
           maza_progress: number | null
+          next_action: string | null
           not_now_match: number | null
           not_now_path: string | null
           path_scores: Json
@@ -5698,10 +5707,17 @@ export type Database = {
           viewed_objection_blocks: Json
         }
         Insert: {
+          adaptive_answers?: Json
+          adaptive_questions?: Json
+          ai_checkpoints?: Json
+          ai_confidence?: string | null
+          ai_diagnosis?: Json | null
           ai_reality_check?: string | null
+          ai_status?: string | null
           alternative_match?: number | null
           alternative_path?: string | null
           answers?: Json
+          best_starting_path?: string | null
           chat_user_id?: number | null
           completed_at?: string | null
           confidence?: string | null
@@ -5715,7 +5731,9 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          long_term_fit?: string | null
           maza_progress?: number | null
+          next_action?: string | null
           not_now_match?: number | null
           not_now_path?: string | null
           path_scores?: Json
@@ -5738,10 +5756,17 @@ export type Database = {
           viewed_objection_blocks?: Json
         }
         Update: {
+          adaptive_answers?: Json
+          adaptive_questions?: Json
+          ai_checkpoints?: Json
+          ai_confidence?: string | null
+          ai_diagnosis?: Json | null
           ai_reality_check?: string | null
+          ai_status?: string | null
           alternative_match?: number | null
           alternative_path?: string | null
           answers?: Json
+          best_starting_path?: string | null
           chat_user_id?: number | null
           completed_at?: string | null
           confidence?: string | null
@@ -5755,7 +5780,9 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          long_term_fit?: string | null
           maza_progress?: number | null
+          next_action?: string | null
           not_now_match?: number | null
           not_now_path?: string | null
           path_scores?: Json
