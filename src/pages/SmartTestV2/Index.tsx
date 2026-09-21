@@ -13,7 +13,7 @@ import { PATH_LABELS, type Answers } from '@/data/smartTestV2/types';
 import { buildFlow, TOTAL_QUESTIONS, type Step } from '@/lib/smartTestV2/flow';
 import { collectEvidence, scoreFromEvidence, buildProfile, computeResult, detectContradictions } from '@/lib/smartTestV2/engine';
 import {
-  clearLocalState, createSubmission, getSessionKey, loadContent, loadLocalState,
+  clearLocalState, createSubmission, getSessionKey, identityFields, loadContent, loadLocalState,
   saveLocalState, trackEvent, updateSubmission,
 } from '@/lib/smartTestV2/store';
 import { useAuth } from '@/contexts/AuthContext';
@@ -89,13 +89,7 @@ const SmartTestV2: React.FC = () => {
     clearLocalState();
     getSessionKey();
     startedAtRef.current = Date.now();
-    const id = await createSubmission({
-      user_id: (user as any)?.id ?? null,
-      full_name: (user as any)?.name ?? null,
-      phone: (user as any)?.phone ?? null,
-      email: (user as any)?.email ?? null,
-      status: 'in_progress',
-    });
+    const id = await createSubmission({ ...identityFields(user), status: 'in_progress' });
     setSubmissionId(id);
     setAnswers({});
     setStepIndex(0);
@@ -174,13 +168,7 @@ const SmartTestV2: React.FC = () => {
 
     let id = submissionId;
     if (!id) {
-      id = await createSubmission({
-        user_id: (user as any)?.id ?? null,
-        full_name: (user as any)?.name ?? null,
-        phone: (user as any)?.phone ?? null,
-        email: (user as any)?.email ?? null,
-        ...payload,
-      });
+      id = await createSubmission({ ...identityFields(user), ...payload });
     } else {
       await updateSubmission(id, payload);
     }
