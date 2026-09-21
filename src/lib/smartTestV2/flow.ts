@@ -113,6 +113,7 @@ export function buildFlow(answers: Answers): Step[] {
   }
 
   steps.push(q('q11_tech'));
+  steps.push({ kind: 'ai_checkpoint', key: 'cp3', stage: 'work_model', checkpoint: 3 });
   steps.push({ kind: 'profile', key: 'profile', stage: 'work_model' });
   steps.push(q('q12_objections'));
 
@@ -121,6 +122,10 @@ export function buildFlow(answers: Answers): Step[] {
     const blockKey = OBJECTION_BLOCK_KEY[o];
     if (blockKey) steps.push({ kind: 'block', key: `obj_${o}`, stage: 'blockers', blockKey });
   }
+  if (objections.length > 0) {
+    steps.push({ kind: 'ai_checkpoint', key: 'cp4', stage: 'blockers', checkpoint: 4 });
+  }
+
 
   steps.push(q('q13_goal'));
   steps.push(q('q14_tradeoff'));
