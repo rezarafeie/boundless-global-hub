@@ -156,6 +156,8 @@ const SmartTestV2Admin: React.FC = () => {
     if (filter === 'abandoned' && r.status === 'completed') return false;
     if (filter === 'completed_no_click' && !(r.status === 'completed' && !r.cta_clicked)) return false;
     if (filter === 'ai_path' && r.recommended_path !== 'ai') return false;
+    if (filter === 'ai_ready' && r.ai_status !== 'ready') return false;
+    if (filter === 'ai_failed' && r.ai_status === 'ready') return false;
     if (!q.trim()) return true;
     const s = q.toLowerCase();
     return [r.full_name, r.phone, r.email, r.recommended_path].some((v) => (v || '').toLowerCase().includes(s));
@@ -238,6 +240,8 @@ const SmartTestV2Admin: React.FC = () => {
                   <option value="high_match_no_click">تطابق بالا بدون اقدام</option>
                   <option value="abandoned">رهاشده</option>
                   <option value="completed_no_click">کامل ولی بدون کلیک</option>
+                  <option value="ai_ready">تحلیل هوشمند آماده</option>
+                  <option value="ai_failed">تحلیل هوشمند ناموفق</option>
                 </select>
                 <span className="text-sm text-muted-foreground mr-auto">{filtered.length} مورد</span>
               </div>
@@ -413,9 +417,31 @@ const SmartTestV2Admin: React.FC = () => {
                   مشاهده صفحه نتیجه
                 </Button>
               )}
-              <pre className="p-3 rounded-lg bg-muted text-xs overflow-x-auto whitespace-pre-wrap">
-{JSON.stringify({ answers: viewing.answers, reasons: viewing.score_evidence, contradictions: viewing.contradictions }, null, 2)}
-              </pre>
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                <div><b>وضعیت تحلیل هوشمند:</b> {viewing.ai_status || '—'}</div>
+                <div><b>اطمینان AI:</b> {viewing.ai_confidence || '—'}</div>
+                <div><b>مسیر بلندمدت:</b> {viewing.long_term_fit || '—'}</div>
+                <div><b>نقطه شروع:</b> {viewing.best_starting_path || '—'}</div>
+                <div><b>اقدام پیشنهادی AI:</b> {viewing.next_action || '—'}</div>
+                <div><b>سؤالات تکمیلی:</b> {(viewing.adaptive_questions || []).length}</div>
+              </div>
+
+              {[
+                ['پاسخ‌های خام', viewing.answers],
+                ['امتیاز قطعی مسیرها', viewing.path_scores],
+                ['شواهد امتیازدهی', viewing.score_evidence],
+                ['تناقض‌ها', viewing.contradictions],
+                ['تحلیل‌های میان‌راه (checkpoints)', viewing.ai_checkpoints],
+                ['سؤالات تکمیلی و جواب‌ها', { questions: viewing.adaptive_questions, answers: viewing.adaptive_answers }],
+                ['تشخیص نهایی AI', viewing.ai_diagnosis],
+              ].map(([label, value]) => (
+                <details key={label as string} className="rounded-lg border border-border p-3">
+                  <summary className="cursor-pointer text-xs font-bold">{label as string}</summary>
+                  <pre className="mt-2 p-3 rounded-lg bg-muted text-[11px] overflow-x-auto whitespace-pre-wrap">
+{JSON.stringify(value ?? null, null, 2)}
+                  </pre>
+                </details>
+              ))}
             </div>
           )}
         </DialogContent>

@@ -5678,6 +5678,7 @@ export type Database = {
           cta_clicked_at: string | null
           cta_shown: string | null
           current_step: string | null
+          discount_code: Json | null
           duration_seconds: number | null
           email: string | null
           full_name: string | null
@@ -5727,6 +5728,7 @@ export type Database = {
           cta_clicked_at?: string | null
           cta_shown?: string | null
           current_step?: string | null
+          discount_code?: Json | null
           duration_seconds?: number | null
           email?: string | null
           full_name?: string | null
@@ -5776,6 +5778,7 @@ export type Database = {
           cta_clicked_at?: string | null
           cta_shown?: string | null
           current_step?: string | null
+          discount_code?: Json | null
           duration_seconds?: number | null
           email?: string | null
           full_name?: string | null

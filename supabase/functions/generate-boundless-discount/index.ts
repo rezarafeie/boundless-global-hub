@@ -19,12 +19,32 @@ function genCode(): string {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
-    const { submissionId } = await req.json().catch(() => ({}));
+    const body = await req.json().catch(() => ({}));
+    const { submissionId } = body;
+    // Smart Test V2 keeps its own submissions table; V1 behaviour is unchanged when `source` is absent.
+    const isV2 = body?.source === 'smart_test_v2';
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
+
+    if (isV2 && submissionId) {
+      const { data: v2 } = await supabase
+        .from('smart_test_v2_submissions')
+        .select('discount_code')
+        .eq('id', submissionId)
+        .maybeSingle();
+      const stored = v2?.discount_code as any;
+      if (stored?.code && stored?.valid_until && new Date(stored.valid_until) > new Date()) {
+        const { data: c } = await supabase.from('courses').select('price').eq('id', BOUNDLESS_COURSE_ID).single();
+        const p = Number(c?.price || 0);
+        return new Response(
+          JSON.stringify({ ...stored, percentage: PERCENTAGE, price: p, savings: Math.round((p * PERCENTAGE) / 100) }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+    }
 
     // Get course price
     const { data: course } = await supabase
@@ -36,7 +56,7 @@ Deno.serve(async (req) => {
     const savings = Math.round((price * PERCENTAGE) / 100);
 
     // If submission already has a code, return it
-    if (submissionId) {
+    if (submissionId && !isV2) {
       const { data: existing } = await supabase
         .from('discount_codes')
         .select('code, valid_until, percentage')
@@ -85,7 +105,12 @@ Deno.serve(async (req) => {
     if (insErr) throw insErr;
 
     // Save back on submission for idempotency
-    if (submissionId) {
+    if (submissionId && isV2) {
+      await supabase
+        .from("smart_test_v2_submissions")
+        .update({ discount_code: { code, valid_until: validUntil } })
+        .eq("id", submissionId);
+    } else if (submissionId) {
       const { data: sub } = await supabase
         .from('boundless_smart_test_submissions')
         .select('answers')

@@ -55,13 +55,13 @@ const QuestionStep: React.FC<Props> = ({ question, value, onChange, onAutoAdvanc
   const isCompactGrid = ['q1_stage', 'q4_interest', 'q6_skills', 'q13_goal', 'q14_tradeoff'].includes(question.id);
 
   return (
-    <section dir="rtl" className="space-y-7 sm:space-y-9 animate-fade-in">
-      <header className="max-w-3xl space-y-3">
+    <section dir="rtl" className="space-y-6 animate-fade-in">
+      <header className="space-y-2.5">
         <span className="text-xs font-bold text-primary">{question.kind === 'multi' ? 'چند انتخاب ممکنه درست باشه' : isScenario ? 'خودت رو در این موقعیت بذار' : 'بدون زیاد فکر کردن جواب بده'}</span>
-        <h2 className="text-2xl sm:text-4xl font-black leading-[1.55] tracking-normal">{question.title}</h2>
-        {question.hint && <p className="text-sm sm:text-base text-muted-foreground">{question.hint}</p>}
+        <h2 className="text-xl sm:text-2xl font-black leading-9">{question.title}</h2>
+        {question.hint && <p className="text-sm text-muted-foreground leading-7">{question.hint}</p>}
       </header>
-      <div className={cn('grid gap-3 sm:gap-4', isCompactGrid && 'sm:grid-cols-2', isScenario && 'sm:grid-cols-5')}>
+      <div className={cn('grid gap-3', isCompactGrid && 'sm:grid-cols-2', isScenario && 'sm:grid-cols-2')}>
         {question.options.map((o) => {
           const active = selected.includes(o.value);
           const index = question.options.indexOf(o);
@@ -72,19 +72,18 @@ const QuestionStep: React.FC<Props> = ({ question, value, onChange, onAutoAdvanc
               variant="outline"
               onClick={() => toggle(o.value)}
               className={cn(
-                'relative w-full h-auto min-h-[72px] justify-start whitespace-normal text-right rounded-lg p-4 transition-all duration-200',
+                'relative w-full h-auto min-h-[64px] justify-start whitespace-normal text-right rounded-xl p-3.5 transition-all duration-200',
                 'hover:border-primary active:scale-[0.99]',
-                isScenario && 'sm:min-h-[190px] sm:flex-col sm:items-start sm:justify-between sm:p-5',
                 active ? 'border-primary bg-primary/10 ring-1 ring-primary text-foreground' : 'border-border bg-background text-foreground',
               )}
             >
-              <span className={cn('w-10 h-10 shrink-0 rounded-md flex items-center justify-center', active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
+              <span className={cn('w-9 h-9 shrink-0 rounded-md flex items-center justify-center', active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
                 <Icon index={index} />
               </span>
-              <span className={cn('flex-1 text-sm sm:text-base leading-relaxed', isScenario && 'sm:flex-none sm:min-h-[76px]')}>{o.label}</span>
+              <span className="flex-1 text-sm sm:text-base leading-7">{o.label}</span>
               <span
                 className={cn(
-                  'shrink-0 w-6 h-6 rounded-full border flex items-center justify-center mr-auto',
+                  'shrink-0 w-5 h-5 rounded-full border flex items-center justify-center mr-auto',
                   active ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30',
                 )}
               >
