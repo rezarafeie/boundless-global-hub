@@ -5594,6 +5594,191 @@ export type Database = {
           },
         ]
       }
+      smart_test_v2_config: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      smart_test_v2_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json
+          session_key: string | null
+          step_key: string | null
+          submission_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json
+          session_key?: string | null
+          step_key?: string | null
+          submission_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          session_key?: string | null
+          step_key?: string | null
+          submission_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smart_test_v2_events_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "smart_test_v2_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      smart_test_v2_submissions: {
+        Row: {
+          ai_reality_check: string | null
+          alternative_match: number | null
+          alternative_path: string | null
+          answers: Json
+          chat_user_id: number | null
+          completed_at: string | null
+          confidence: string | null
+          contradictions: Json
+          created_at: string
+          cta_clicked: string | null
+          cta_clicked_at: string | null
+          cta_shown: string | null
+          current_step: string | null
+          duration_seconds: number | null
+          email: string | null
+          full_name: string | null
+          id: string
+          maza_progress: number | null
+          not_now_match: number | null
+          not_now_path: string | null
+          path_scores: Json
+          phone: string | null
+          primary_objection: string | null
+          profile_dimensions: Json
+          profile_type: string | null
+          readiness_score: number | null
+          recommended_match: number | null
+          recommended_path: string | null
+          remaining_objections: Json
+          score_evidence: Json
+          secondary_objection: string | null
+          session_key: string
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string | null
+          version: string
+          viewed_objection_blocks: Json
+        }
+        Insert: {
+          ai_reality_check?: string | null
+          alternative_match?: number | null
+          alternative_path?: string | null
+          answers?: Json
+          chat_user_id?: number | null
+          completed_at?: string | null
+          confidence?: string | null
+          contradictions?: Json
+          created_at?: string
+          cta_clicked?: string | null
+          cta_clicked_at?: string | null
+          cta_shown?: string | null
+          current_step?: string | null
+          duration_seconds?: number | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          maza_progress?: number | null
+          not_now_match?: number | null
+          not_now_path?: string | null
+          path_scores?: Json
+          phone?: string | null
+          primary_objection?: string | null
+          profile_dimensions?: Json
+          profile_type?: string | null
+          readiness_score?: number | null
+          recommended_match?: number | null
+          recommended_path?: string | null
+          remaining_objections?: Json
+          score_evidence?: Json
+          secondary_objection?: string | null
+          session_key: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          version?: string
+          viewed_objection_blocks?: Json
+        }
+        Update: {
+          ai_reality_check?: string | null
+          alternative_match?: number | null
+          alternative_path?: string | null
+          answers?: Json
+          chat_user_id?: number | null
+          completed_at?: string | null
+          confidence?: string | null
+          contradictions?: Json
+          created_at?: string
+          cta_clicked?: string | null
+          cta_clicked_at?: string | null
+          cta_shown?: string | null
+          current_step?: string | null
+          duration_seconds?: number | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          maza_progress?: number | null
+          not_now_match?: number | null
+          not_now_path?: string | null
+          path_scores?: Json
+          phone?: string | null
+          primary_objection?: string | null
+          profile_dimensions?: Json
+          profile_type?: string | null
+          readiness_score?: number | null
+          recommended_match?: number | null
+          recommended_path?: string | null
+          remaining_objections?: Json
+          score_evidence?: Json
+          secondary_objection?: string | null
+          session_key?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          version?: string
+          viewed_objection_blocks?: Json
+        }
+        Relationships: []
+      }
       snapppay_payments: {
         Row: {
           amount: number
