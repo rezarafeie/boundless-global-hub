@@ -29,6 +29,17 @@ export const DEFAULT_CONTENT: Record<string, ContentBlock> = {
     media: [],
     cta: 'خب؛ برگردیم سراغ خودت',
   },
+  analysis_media: {
+    key: 'analysis_media',
+    title: 'این چند ثانیه رو ببین.',
+    body: ['تا نتیجه آماده می‌شه، یک نمونه واقعی از چیزی که در اکوسیستم بدون مرز ساخته شده می‌تونه تصویر دقیق‌تری بهت بده.'],
+    media: [],
+  },
+  result_proof_dropshipping: { key: 'result_proof_dropshipping', title: 'نمونه‌ای نزدیک به مسیر تو', body: [], media: [] },
+  result_proof_drop_service: { key: 'result_proof_drop_service', title: 'نمونه‌ای نزدیک به مسیر تو', body: [], media: [] },
+  result_proof_digital_product: { key: 'result_proof_digital_product', title: 'نمونه‌ای نزدیک به مسیر تو', body: [], media: [] },
+  result_proof_ai: { key: 'result_proof_ai', title: 'نمونه‌ای نزدیک به مسیر تو', body: [], media: [] },
+  result_proof_vibe_coding: { key: 'result_proof_vibe_coding', title: 'نمونه‌ای نزدیک به مسیر تو', body: [], media: [] },
   objection_time: {
     key: 'objection_time',
     title: 'واقعاً وقت نداری؟',

@@ -163,3 +163,38 @@ img {
 .highlight-message {
   @apply bg-yellow-100 dark:bg-yellow-900/30 transition-colors duration-500;
 }
+
+@layer components {
+  .stv2 {
+    --stv2-ink: 221 39% 11%;
+    --stv2-paper: 210 40% 98%;
+    --stv2-signal: 221 83% 53%;
+    --stv2-positive: 142 71% 45%;
+    font-family: 'Vazir', 'Tahoma', sans-serif;
+  }
+
+  .stv2 h1,
+  .stv2 h2,
+  .stv2 h3 {
+    letter-spacing: 0;
+  }
+
+  .stv2-scene {
+    min-height: calc(100dvh - 10rem);
+  }
+
+  .stv2-statement {
+    text-wrap: balance;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stv2 *,
+  .stv2 *::before,
+  .stv2 *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
