@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     const savings = Math.round((price * PERCENTAGE) / 100);
 
     // If submission already has a code, return it
-    if (submissionId) {
+    if (submissionId && !isV2) {
       const { data: existing } = await supabase
         .from('discount_codes')
         .select('code, valid_until, percentage')
@@ -105,7 +105,12 @@ Deno.serve(async (req) => {
     if (insErr) throw insErr;
 
     // Save back on submission for idempotency
-    if (submissionId) {
+    if (submissionId && isV2) {
+      await supabase
+        .from("smart_test_v2_submissions")
+        .update({ discount_code: { code, valid_until: validUntil } })
+        .eq("id", submissionId);
+    } else if (submissionId) {
       const { data: sub } = await supabase
         .from('boundless_smart_test_submissions')
         .select('answers')
