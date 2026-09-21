@@ -1,0 +1,1 @@
+ALTER TABLE public.smart_test_v2_submissions ADD COLUMN IF NOT EXISTS discount_code jsonb;
