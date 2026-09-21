@@ -70,6 +70,9 @@ const FINAL_SCHEMA = strObj({
   first_90_days_direction: { type: 'string' },
   personalized_next_step: { type: 'string' },
   recommended_next_action: { type: 'string', enum: ['continue_maza', 'start_course', 'consultation', 'boundless'] },
+  path_comparison: { type: 'array', items: strObj({ path: { type: 'string', enum: PATHS as unknown as string[] }, fit: { type: 'string' }, friction: { type: 'string' } }) },
+  execution_gaps: { type: 'array', items: strObj({ area: { type: 'string' }, gap: { type: 'string' }, next_step: { type: 'string' } }) },
+  personalized_stack: { type: 'array', items: strObj({ name: { type: 'string' }, purpose: { type: 'string' } }) },
 });
 
 /* ------------------------------ prompts ------------------------------ */
@@ -105,7 +108,10 @@ const MODE_PROMPT: Record<string, string> = {
 - why_not_secondary_yet باید دلیل واقعی بده، نه «امتیازش کمتر بود».
 - objection_response: اگر کاربر اعتراضی داشته، شخصی‌سازی‌شده جوابش رو بده و اگر با جواب‌های قبلیش تناقض داره همون رو رک بگو؛ اگر اعتراضی نداشت null.
 - readiness_interpretation: عدد آمادگی رو تفسیر کن و بگو دقیقاً چی اون رو پایین یا بالا برده.
-- first_30_days دقیقاً ۴ آیتم (هفته به هفته) و قابل اجرا.`,
+- first_30_days دقیقاً ۴ آیتم (هفته به هفته) و قابل اجرا.
+- path_comparison فقط برای دو مسیر اول و با تفاوت واقعی fit و friction نوشته شود.
+- execution_gaps شکاف‌های واقعی آموزش، فروش، تحویل، ابزار یا پرداخت را از جواب‌ها استخراج کند؛ حداکثر ۵ مورد.
+- personalized_stack فقط ابزارهایی را پیشنهاد دهد که برای مسیر و شکاف‌های همین کاربر لازم‌اند؛ قیمت یا تخفیف نسازد.`,
 };
 
 /* ------------------------------ gateway ------------------------------ */
@@ -183,6 +189,9 @@ function validateFinal(d: any, fallbackPrimary: PathId, fallbackSecondary: PathI
   d.why_this_path = Array.isArray(d.why_this_path) ? d.why_this_path.slice(0, 5) : [];
   d.contradictions = Array.isArray(d.contradictions) ? d.contradictions.slice(0, 4) : [];
   d.first_30_days = Array.isArray(d.first_30_days) ? d.first_30_days.slice(0, 4) : [];
+  d.path_comparison = Array.isArray(d.path_comparison) ? d.path_comparison.filter((item: any) => isPath(item?.path)).slice(0, 2) : [];
+  d.execution_gaps = Array.isArray(d.execution_gaps) ? d.execution_gaps.slice(0, 5) : [];
+  d.personalized_stack = Array.isArray(d.personalized_stack) ? d.personalized_stack.slice(0, 7) : [];
   if (!['continue_maza', 'start_course', 'consultation', 'boundless'].includes(d.recommended_next_action)) {
     d.recommended_next_action = 'start_course';
   }

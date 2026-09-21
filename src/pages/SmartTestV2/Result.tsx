@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, Check, ChevronDown, CircleAlert, Compass, Loader2, RotateCcw, Send, ShieldCheck, Sparkles, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, ChevronDown, CircleAlert, Compass, Loader2, RotateCcw, Send, ShieldCheck, BrainCircuit, TriangleAlert, Wrench, Scale } from 'lucide-react';
 import { fetchSubmission, loadContent, trackEvent, updateSubmission } from '@/lib/smartTestV2/store';
 import { DEFAULT_CONTENT, ROADMAPS, type ContentBlock } from '@/data/smartTestV2/content';
 import { PATH_FA, PATH_LABELS, type PathId } from '@/data/smartTestV2/types';
@@ -136,6 +136,7 @@ const SmartTestV2Result: React.FC = () => {
   const proof = content[`result_proof_${path}`];
   const hasProof = proof?.media?.some((item) => (item.kind === 'text' ? item.caption : item.url || item.urls?.length));
   const showOffer = ctaKey === 'direct' || ai?.recommended_next_action === 'boundless';
+  const preferredName = typeof row.answers?.meta_name === 'string' ? row.answers.meta_name : '';
 
   const clickCta = (label: string, to: string) => {
     if (id) updateSubmission(id, { cta_clicked: label, cta_clicked_at: new Date().toISOString() });
@@ -156,7 +157,7 @@ const SmartTestV2Result: React.FC = () => {
       <div dir="rtl" className="max-w-3xl mx-auto px-4 sm:px-6 pb-20">
         {/* diagnosis first */}
         <section className="pt-10 pb-8 border-b border-border space-y-5">
-          <Label>مسیر پیشنهادی تو</Label>
+           <Label>{preferredName ? `${preferredName}، تشخیص نهایی تو` : 'تشخیص نهایی تو'}</Label>
           <div className="space-y-2">
             <h1 className="text-3xl sm:text-5xl font-black leading-tight" dir="ltr">{PATH_LABELS[path]}</h1>
             <p className="text-base text-muted-foreground">{PATH_FA[path]}</p>
@@ -171,9 +172,9 @@ const SmartTestV2Result: React.FC = () => {
             </div>
           )}
 
-          {aiState === 'ready' && ai && (
-            <div className="rounded-xl border border-primary/40 bg-primary/5 p-5 sm:p-6 space-y-3">
-              <p className="flex items-center gap-2 text-xs font-bold text-primary"><Sparkles className="w-4 h-4" /> تشخیص اختصاصی بر اساس جواب‌های تو</p>
+           {aiState === 'ready' && ai && (
+             <div className="border-r-2 border-primary pr-5 py-2 space-y-3">
+               <p className="flex items-center gap-2 text-xs font-bold text-primary"><BrainCircuit className="w-4 h-4" /> تشخیص اختصاصی بر اساس جواب‌های تو</p>
               <p className="text-base sm:text-lg font-semibold leading-8 whitespace-pre-line">{ai.diagnosis}</p>
               {ai.hybrid_label && <p className="text-sm text-muted-foreground">ترکیب پیشنهادی: {ai.hybrid_label}</p>}
             </div>
@@ -197,7 +198,7 @@ const SmartTestV2Result: React.FC = () => {
               ? ai.why_this_path.map((item) => ({ text: item.point, evidence: item.evidence }))
               : result.reasonsForRecommended.map((item) => ({ text: item.reason, evidence: [] as string[] }))
             ).map((item, index) => (
-              <div key={`${item.text}-${index}`} className="flex gap-3 rounded-xl border border-border p-4">
+               <div key={`${item.text}-${index}`} className="flex gap-3 py-4 border-b border-border last:border-b-0">
                 <span className="w-6 h-6 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center"><Check className="w-3.5 h-3.5" /></span>
                 <div className="space-y-1.5">
                   <p className="text-sm sm:text-base leading-8">{item.text}</p>
@@ -207,12 +208,26 @@ const SmartTestV2Result: React.FC = () => {
             ))}
           </div>
           {ai?.why_not_secondary_yet && (
-            <div className="rounded-xl bg-muted/50 p-4">
+             <div className="border-r-2 border-muted-foreground/30 pr-4 py-1">
               <p className="text-xs font-bold text-muted-foreground mb-1.5">چرا {PATH_LABELS[secondary]} دوم شد؟</p>
               <p className="text-sm leading-8">{ai.why_not_secondary_yet}</p>
             </div>
           )}
         </Section>
+
+        {ai?.path_comparison && ai.path_comparison.length > 0 && (
+          <Section>
+            <div className="flex items-center gap-2"><Scale className="w-5 h-5 text-primary" /><Label>مقایسه‌ای که تصمیم را روشن کرد</Label></div>
+            <div className="divide-y divide-border border-y border-border">
+              {ai.path_comparison.map((item) => (
+                <div key={item.path} className="py-5 grid sm:grid-cols-[150px_1fr] gap-3">
+                  <p className="font-black" dir="ltr">{PATH_LABELS[item.path]}</p>
+                  <div className="space-y-2 text-sm leading-7"><p><b>تناسب:</b> {item.fit}</p><p className="text-muted-foreground"><b>اصطکاک:</b> {item.friction}</p></div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
 
         {/* long-term vs starting point */}
         {ai && (ai.long_term_fit !== ai.best_starting_path) && (
@@ -271,6 +286,22 @@ const SmartTestV2Result: React.FC = () => {
         )}
 
         {/* 30 days */}
+        {ai?.execution_gaps && ai.execution_gaps.length > 0 && (
+          <Section>
+            <Label>فاصله تو تا اجرا</Label>
+            <h2 className="text-xl sm:text-2xl font-black leading-9">قبل از ابزار، این شکاف‌ها باید بسته بشن.</h2>
+            <div className="space-y-4">
+              {ai.execution_gaps.map((gap, index) => (
+                <div key={`${gap.area}-${index}`} className="grid grid-cols-[32px_1fr] gap-3">
+                  <span className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-black">{index + 1}</span>
+                  <div><p className="font-black text-sm">{gap.area}</p><p className="text-sm text-muted-foreground leading-7">{gap.gap}</p><p className="text-sm leading-7 mt-1"><b>حرکت بعدی:</b> {gap.next_step}</p></div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* 30 days */}
         <Section>
           <Label>۳۰ روز اول</Label>
           <p className="text-sm text-muted-foreground">هدف این ۳۰ روز: {roadmap.goal}</p>
@@ -324,9 +355,15 @@ const SmartTestV2Result: React.FC = () => {
               </div>
             ))}
             <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border">
-              {roadmap.tools.map((tool) => <span key={tool} className="px-2.5 py-1.5 bg-muted text-xs font-bold rounded-md">{tool}</span>)}
+               {(ai?.personalized_stack?.length ? ai.personalized_stack.map((tool) => tool.name) : roadmap.tools).map((tool) => <span key={tool} className="px-2.5 py-1.5 bg-muted text-xs font-bold rounded-md">{tool}</span>)}
             </div>
           </div>
+           {ai?.personalized_stack && ai.personalized_stack.length > 0 && (
+             <div className="space-y-3">
+               <p className="flex items-center gap-2 text-xs font-bold text-primary"><Wrench className="w-4 h-4" />چرا این منابع برای تو انتخاب شدن؟</p>
+               {ai.personalized_stack.map((tool) => <p key={tool.name} className="text-sm leading-7"><b>{tool.name}:</b> <span className="text-muted-foreground">{tool.purpose}</span></p>)}
+             </div>
+           )}
         </Section>
 
         {hasProof && <Section><BlockCard block={proof} /></Section>}

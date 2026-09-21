@@ -34,6 +34,9 @@ export type AiDiagnosis = {
   first_90_days_direction: string;
   personalized_next_step: string;
   recommended_next_action: 'continue_maza' | 'start_course' | 'consultation' | 'boundless';
+  path_comparison?: { path: PathId; fit: string; friction: string }[];
+  execution_gaps?: { area: string; gap: string; next_step: string }[];
+  personalized_stack?: { name: string; purpose: string }[];
 };
 
 const asArray = (v: string | string[] | undefined): string[] => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
@@ -67,6 +70,12 @@ export function buildContext(answers: Answers, extra: Record<string, unknown> = 
     goal_12_months: labelFor('q13_goal', answers.q13_goal),
     priority_tradeoff: labelFor('q14_tradeoff', answers.q14_tradeoff),
     final_scenario: labelFor('q15_notification', answers.q15_notification),
+    preferred_name: answers.meta_name || '',
+    prior_experience: answers.meta_experience || '',
+    commitment_90_days: answers.commit_90 || '',
+    weekly_execution_hours: answers.commit_hours || '',
+    action_readiness: answers.action_readiness || '',
+    objection_resolution: Object.fromEntries(Object.entries(answers).filter(([key]) => key.startsWith('resolve_'))),
     raw_answers: answers,
     path_scores: Object.fromEntries(scored.map((s) => [s.path, s.match])),
     profile_dimensions: profile,
