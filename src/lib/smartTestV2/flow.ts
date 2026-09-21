@@ -10,6 +10,7 @@ export type Step =
   | { kind: 'block'; key: string; stage: StageId; blockKey: string }
   | { kind: 'profile'; key: string; stage: StageId }
   | { kind: 'final_micro'; key: string; stage: StageId }
+  | { kind: 'ai_checkpoint'; key: string; stage: StageId; checkpoint: number }
   | { kind: 'analysis'; key: string; stage: StageId };
 
 const asArray = (v: string | string[] | undefined): string[] =>
@@ -63,6 +64,7 @@ export function buildFlow(answers: Answers): Step[] {
   }
 
   steps.push({ kind: 'mini1', key: 'mini1', stage: 'conditions' });
+  steps.push({ kind: 'ai_checkpoint', key: 'cp1', stage: 'conditions', checkpoint: 1 });
   steps.push(q('q4_interest'));
 
   const interests = asArray(answers['q4_interest']).filter((v) => v !== 'unknown');
@@ -84,6 +86,7 @@ export function buildFlow(answers: Answers): Step[] {
 
   steps.push(q('q7_scenario'));
   steps.push({ kind: 'mini2', key: 'mini2', stage: 'work_model' });
+  steps.push({ kind: 'ai_checkpoint', key: 'cp2', stage: 'work_model', checkpoint: 2 });
   steps.push({ kind: 'block', key: 'trust', stage: 'work_model', blockKey: 'trust_block' });
 
   steps.push(q('q8_risk'));
@@ -110,6 +113,7 @@ export function buildFlow(answers: Answers): Step[] {
   }
 
   steps.push(q('q11_tech'));
+  steps.push({ kind: 'ai_checkpoint', key: 'cp3', stage: 'work_model', checkpoint: 3 });
   steps.push({ kind: 'profile', key: 'profile', stage: 'work_model' });
   steps.push(q('q12_objections'));
 
@@ -118,6 +122,10 @@ export function buildFlow(answers: Answers): Step[] {
     const blockKey = OBJECTION_BLOCK_KEY[o];
     if (blockKey) steps.push({ kind: 'block', key: `obj_${o}`, stage: 'blockers', blockKey });
   }
+  if (objections.length > 0) {
+    steps.push({ kind: 'ai_checkpoint', key: 'cp4', stage: 'blockers', checkpoint: 4 });
+  }
+
 
   steps.push(q('q13_goal'));
   steps.push(q('q14_tradeoff'));
