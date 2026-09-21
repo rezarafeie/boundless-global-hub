@@ -238,6 +238,8 @@ const SmartTestV2Admin: React.FC = () => {
                   <option value="high_match_no_click">تطابق بالا بدون اقدام</option>
                   <option value="abandoned">رهاشده</option>
                   <option value="completed_no_click">کامل ولی بدون کلیک</option>
+                  <option value="ai_ready">تحلیل هوشمند آماده</option>
+                  <option value="ai_failed">تحلیل هوشمند ناموفق</option>
                 </select>
                 <span className="text-sm text-muted-foreground mr-auto">{filtered.length} مورد</span>
               </div>
