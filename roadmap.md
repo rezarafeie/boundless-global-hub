@@ -1,7 +1,6 @@
-# Smart Test V2 Redesign
-
-- [x] Build the new diagnostic visual system and varied question interactions
-- [x] Redesign intro, insights, narrowing, profile, objections, and analysis sequence
-- [x] Redesign result reveal, evidence, actions, risk, roadmap, Boundless transition, and CTAs
-- [x] Extend admin-configurable media/content moments without changing storage contracts
-- [x] Verify desktop/mobile, resume, completion, result, media-empty states, and V1 isolation
+## Boundless Smart Test V2 conversational rebuild
+- [ ] Audit complete V1 journey, content, and reusable media
+- [ ] Audit V2 contracts, AI flow, persistence, result, and admin
+- [ ] Approve implementation plan for conversational journey
+- [ ] Implement dynamic scenes, reactions, education, objections, commitments, diagnosis, and offer
+- [ ] Verify five materially different personas on mobile and desktop
