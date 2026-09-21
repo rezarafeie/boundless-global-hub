@@ -18,6 +18,15 @@ export type ContentBlock = {
 
 /** Default copy — every block can be overridden from Smart Test V2 admin. */
 export const DEFAULT_CONTENT: Record<string, ContentBlock> = {
+  conversation_intro: {
+    key: 'conversation_intro',
+    title: 'این یک تست شخصیت نیست.',
+    body: [
+      'من جواب‌هات رو کنار هم می‌ذارم، بعضی فرض‌هات رو به چالش می‌کشم و اگر لازم باشه وسط مسیر یک سؤال تازه می‌پرسم.',
+      'آخرش هم فقط اسم یک مسیر رو نمی‌گم؛ می‌گم اگر جای تو بودم از کجا شروع می‌کردم، چه چیزی ممکنه متوقفم کنه و قدم اولم چی بود.',
+    ],
+    cta: 'بیا از واقعیت امروزت شروع کنیم',
+  },
   trust_block: {
     key: 'trust_block',
     title: 'چرا فقط این ۵ مسیر رو بررسی می‌کنیم؟',
@@ -68,7 +77,7 @@ export const DEFAULT_CONTENT: Record<string, ContentBlock> = {
       'ولی «محدودیت وجود داره» با «نمی‌شه» یکی نیست.',
       'زیرساختی که ما ساختیم دقیقاً برای همین فاصله‌ست.',
     ],
-    media: [],
+    media: [{ kind: 'video', url: 'https://rafiei.arvanvod.ir/d7maAb4xV6/L3GK8LKN4r/origin_config.json', caption: 'توضیح زیرساخت بین‌المللی؛ محدودیت‌ها حذف نمی‌شوند، اما مسیر اجرای آن‌ها روشن می‌شود.' }],
     cta: 'ادامه',
   },
   objection_dream_selling: {
@@ -141,6 +150,41 @@ export const DEFAULT_CONTENT: Record<string, ContentBlock> = {
       'مسیر → آموزش → اجرا → تمرین → فیدبک → پشتیبانی → ابزار → زیرساخت',
     ],
     media: [],
+  },
+};
+
+export const PATH_EDUCATION: Record<PathId, ContentBlock & { transaction: string[]; reality: string }> = {
+  dropshipping: {
+    key: 'education_dropshipping', title: 'Dropshipping یعنی ساخت یک سیستم فروش محصول، نه پیدا کردن یک محصول جادویی.',
+    body: ['تو محصول را انتخاب و عرضه می‌کنی؛ تأمین‌کننده بعد از سفارش آن را ارسال می‌کند. کار اصلی تو تحقیق بازار، ساخت پیشنهاد، صفحه فروش و جذب مشتری است.'],
+    transaction: ['نیاز بازار', 'محصول و فروشگاه', 'جذب مشتری', 'سفارش و ارسال'],
+    reality: 'تست محصول و تبلیغ هزینه و تحمل ریسک می‌خواهد؛ برای سرمایه و زمان خیلی محدود، نقطه شروع ساده‌ای نیست.',
+    media: [{ kind: 'video', url: 'https://rafiei.arvanvod.ir/d7maAb4xV6/Q6KR1rW03n/origin_config.json', caption: 'توضیح واقعی مدل Dropshipping از تجربه آموزشی بدون مرز' }],
+  },
+  drop_service: {
+    key: 'education_drop_service', title: 'Drop Service یعنی تو مسئله مشتری را می‌فروشی و اجرای آن را مدیریت می‌کنی.',
+    body: ['لازم نیست همه کار را خودت انجام بدهی؛ اما باید فروش، تعریف خروجی، کنترل کیفیت و ارتباط با مشتری را جدی بگیری.'],
+    transaction: ['مسئله مشتری', 'پیشنهاد خدمت', 'تیم یا ابزار اجرا', 'تحویل و دریافت پول'],
+    reality: 'شروعش می‌تواند کم‌هزینه باشد، اما بدون مذاکره و مسئولیت تحویل، مدل راحتی نیست.',
+    media: [{ kind: 'video', url: 'https://rafiei.arvanvod.ir/d7maAb4xV6/jMWgm1gql9/origin_config.json', caption: 'تصویر عملی مدل فروش و تحویل خدمت' }],
+  },
+  digital_product: {
+    key: 'education_digital_product', title: 'محصول دیجیتال یعنی دانشت را به یک دارایی قابل‌فروش تبدیل کنی.',
+    body: ['فایل، قالب، آموزش یا ابزار کوچک زمانی محصول می‌شود که یک مسئله مشخص را برای مخاطب مشخص حل کند.'],
+    transaction: ['مسئله تکرارشونده', 'محصول قابل تحویل', 'صفحه فروش', 'فروش و بازخورد'],
+    reality: 'ساخت محصول کافی نیست؛ توزیع، اعتماد و شناخت مخاطب بخش سخت ماجراست.', media: [],
+  },
+  ai: {
+    key: 'education_ai', title: 'AI Business یعنی حل مسئله با هوش مصنوعی؛ نه صرفاً بلد بودن چند ابزار.',
+    body: ['ارزش از جایی می‌آید که یک فرایند پرهزینه یا کند را برای یک مشتری سریع‌تر، دقیق‌تر یا ارزان‌تر کنی.'],
+    transaction: ['مسئله کسب‌وکار', 'راه‌حل AI', 'نمونه اولیه', 'فروش و بهبود'],
+    reality: 'ابزارها سریع عوض می‌شوند؛ مزیت پایدار تو فهم مسئله و توان فروش راه‌حل است.', media: [],
+  },
+  vibe_coding: {
+    key: 'education_vibe_coding', title: 'Vibe Coding یعنی با کمک AI ابزار واقعی بسازی؛ نه اینکه فقط کد تولید کنی.',
+    body: ['از یک مسئله کوچک شروع می‌کنی، نسخه اولیه می‌سازی و با کاربر واقعی بررسی می‌کنی آیا ارزش پرداخت دارد یا نه.'],
+    transaction: ['مسئله کاربر', 'MVP', 'تست واقعی', 'اشتراک یا فروش'],
+    reality: 'ساختن امروز آسان‌تر شده؛ پیدا کردن مسئله درست، توزیع و نگهداری هنوز کار واقعی‌اند.', media: [],
   },
 };
 

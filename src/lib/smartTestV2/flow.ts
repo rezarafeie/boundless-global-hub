@@ -3,6 +3,7 @@ import { OBJECTION_BLOCK_KEY } from '@/data/smartTestV2/content';
 import type { Answers, StageId } from '@/data/smartTestV2/types';
 
 export type Step =
+  | { kind: 'profile_question'; key: string; stage: StageId; title: string; prompt: string; options?: { value: string; label: string }[]; input?: 'text' }
   | { kind: 'question'; key: string; qid: string; stage: StageId }
   | { kind: 'insight'; key: string; stage: StageId; title: string; body: string[] }
   | { kind: 'mini1'; key: string; stage: StageId }
@@ -11,6 +12,8 @@ export type Step =
   | { kind: 'profile'; key: string; stage: StageId }
   | { kind: 'final_micro'; key: string; stage: StageId }
   | { kind: 'ai_checkpoint'; key: string; stage: StageId; checkpoint: number }
+  | { kind: 'education'; key: string; stage: StageId }
+  | { kind: 'commitment'; key: string; stage: StageId; title: string; prompt: string; options: { value: string; label: string }[] }
   | { kind: 'analysis'; key: string; stage: StageId };
 
 const asArray = (v: string | string[] | undefined): string[] =>
@@ -45,6 +48,10 @@ export function buildFlow(answers: Answers): Step[] {
   });
 
   const steps: Step[] = [];
+  steps.push({
+    kind: 'profile_question', key: 'meta_name', stage: 'self', input: 'text',
+    title: 'اول از همه، اسمت چیه؟', prompt: 'می‌خوام این تحلیل رو برای خودت بسازم؛ نه برای یک کاربر ناشناس.',
+  });
   steps.push(q('q1_stage'));
 
   const stage1 = String(answers['q1_stage'] || '');
@@ -72,6 +79,18 @@ export function buildFlow(answers: Answers): Step[] {
 
   steps.push(q('q6_skills'));
 
+  if (answers.q1_stage === 'freelancer' || answers.q1_stage === 'business_owner' || answers.q1_stage === 'tried_failed') {
+    steps.push({
+      kind: 'profile_question', key: 'meta_experience', stage: 'work_model',
+      title: 'تجربه قبلیت بیشتر کجا بوده؟', prompt: 'این جواب کمک می‌کنه تجربه‌ات رو از علاقه‌ات جدا کنیم.',
+      options: [
+        { value: 'selling', label: 'فروش و مذاکره' }, { value: 'building', label: 'ساخت محصول یا فنی' },
+        { value: 'content', label: 'محتوا و بازاریابی' }, { value: 'delivery', label: 'خدمت‌رسانی و اجرا' },
+        { value: 'mixed', label: 'ترکیبی یا هنوز نامشخص' },
+      ],
+    });
+  }
+
   if (asArray(answers['q6_skills']).includes('none')) {
     steps.push({
       kind: 'insight', key: 'i_skill_none', stage: 'work_model',
@@ -87,6 +106,7 @@ export function buildFlow(answers: Answers): Step[] {
   steps.push(q('q7_scenario'));
   steps.push({ kind: 'mini2', key: 'mini2', stage: 'work_model' });
   steps.push({ kind: 'ai_checkpoint', key: 'cp2', stage: 'work_model', checkpoint: 2 });
+  steps.push({ kind: 'education', key: 'path_education', stage: 'work_model' });
   steps.push({ kind: 'block', key: 'trust', stage: 'work_model', blockKey: 'trust_block' });
 
   steps.push(q('q8_risk'));
@@ -121,6 +141,16 @@ export function buildFlow(answers: Answers): Step[] {
   for (const o of objections.slice(0, 2)) {
     const blockKey = OBJECTION_BLOCK_KEY[o];
     if (blockKey) steps.push({ kind: 'block', key: `obj_${o}`, stage: 'blockers', blockKey });
+    if (blockKey) steps.push({
+      kind: 'commitment', key: `resolve_${o}`, stage: 'blockers',
+      title: 'بعد از این توضیح، الان کجای ماجرا ایستادی؟', prompt: 'جواب درست وجود نداره؛ این پاسخ روی تشخیص آمادگی تو اثر توضیحی داره، نه روی امتیاز مسیر.',
+      options: [
+        { value: 'resolved', label: 'این مانع برام روشن‌تر شد' },
+        { value: 'execution', label: 'هنوز درباره اجرا نگرانم' },
+        { value: 'still_blocked', label: 'هنوز مانع جدی منه' },
+        { value: 'changed', label: 'نگرانیم عوض شد' },
+      ],
+    });
   }
   if (objections.length > 0) {
     steps.push({ kind: 'ai_checkpoint', key: 'cp4', stage: 'blockers', checkpoint: 4 });
@@ -130,6 +160,27 @@ export function buildFlow(answers: Answers): Step[] {
   steps.push(q('q13_goal'));
   steps.push(q('q14_tradeoff'));
   steps.push(q('q15_notification'));
+  steps.push({
+    kind: 'commitment', key: 'commit_90', stage: 'goal', title: 'اگر مسیر منطقی پیدا بشه، برای ۹۰ روز بهش فرصت می‌دی؟',
+    prompt: 'نه قول هیجانی؛ یک تصمیم واقع‌بینانه.', options: [
+      { value: 'yes', label: 'بله، ۹۰ روز منظم اجرا می‌کنم' }, { value: 'try', label: 'شروع می‌کنم ولی هنوز مطمئن نیستم' },
+      { value: 'explore', label: 'فعلاً فقط می‌خوام بررسی کنم' },
+    ],
+  });
+  steps.push({
+    kind: 'commitment', key: 'commit_hours', stage: 'goal', title: 'در عمل، هفته‌ای چند ساعت پای اجرا می‌ایستی؟',
+    prompt: 'این عدد باید از تقویمت بیاد، نه از انگیزه همین لحظه.', options: [
+      { value: 'lt3', label: 'کمتر از ۳ ساعت' }, { value: '3_7', label: '۳ تا ۷ ساعت' },
+      { value: '7_14', label: '۷ تا ۱۴ ساعت' }, { value: 'gt14', label: 'بیشتر از ۱۴ ساعت' },
+    ],
+  });
+  steps.push({
+    kind: 'commitment', key: 'action_readiness', stage: 'goal', title: 'الان نسبت به شروع چه حسی داری؟',
+    prompt: 'این پاسخ پیشنهاد بعدی رو تعیین می‌کنه؛ نه مسیر تشخیصی رو.', options: [
+      { value: 'curious', label: 'هنوز کنجکاوم' }, { value: 'start', label: 'می‌خوام شروع کنم' },
+      { value: 'serious', label: 'برای تصمیم جدی آماده‌ام' }, { value: 'action', label: 'آماده اقدامم' },
+    ],
+  });
   steps.push({ kind: 'final_micro', key: 'final_micro', stage: 'goal' });
   steps.push({ kind: 'analysis', key: 'analysis', stage: 'analysis' });
 
