@@ -55,13 +55,13 @@ const QuestionStep: React.FC<Props> = ({ question, value, onChange, onAutoAdvanc
   const isCompactGrid = ['q1_stage', 'q4_interest', 'q6_skills', 'q13_goal', 'q14_tradeoff'].includes(question.id);
 
   return (
-    <section dir="rtl" className="space-y-7 sm:space-y-9 animate-fade-in">
-      <header className="max-w-3xl space-y-3">
+    <section dir="rtl" className="space-y-6 animate-fade-in">
+      <header className="space-y-2.5">
         <span className="text-xs font-bold text-primary">{question.kind === 'multi' ? 'چند انتخاب ممکنه درست باشه' : isScenario ? 'خودت رو در این موقعیت بذار' : 'بدون زیاد فکر کردن جواب بده'}</span>
-        <h2 className="text-2xl sm:text-4xl font-black leading-[1.55] tracking-normal">{question.title}</h2>
-        {question.hint && <p className="text-sm sm:text-base text-muted-foreground">{question.hint}</p>}
+        <h2 className="text-xl sm:text-2xl font-black leading-9">{question.title}</h2>
+        {question.hint && <p className="text-sm text-muted-foreground leading-7">{question.hint}</p>}
       </header>
-      <div className={cn('grid gap-3 sm:gap-4', isCompactGrid && 'sm:grid-cols-2', isScenario && 'sm:grid-cols-5')}>
+      <div className={cn('grid gap-3', isCompactGrid && 'sm:grid-cols-2', isScenario && 'sm:grid-cols-2')}>
         {question.options.map((o) => {
           const active = selected.includes(o.value);
           const index = question.options.indexOf(o);
