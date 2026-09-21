@@ -402,7 +402,7 @@ const SmartTestV2: React.FC = () => {
                 <p className="text-xs font-bold text-primary">مدل {index + 1} از ۲</p>
                 <BlockCard block={education} />
                 <div className="flex flex-wrap items-center gap-2 text-xs font-bold" dir="ltr">
-                  {education.transaction.map((item, itemIndex) => <React.Fragment key={item}><span className="px-2.5 py-1.5 bg-muted rounded-md">{item}</span>{itemIndex < education.transaction.length - 1 && <ArrowLeft className="w-3.5 h-3.5 text-muted-foreground" />}</React.Fragment>)}
+                  {education.transaction.map((item, itemIndex) => <span key={item} className="inline-flex items-center gap-2"><span className="px-2.5 py-1.5 bg-muted rounded-md">{item}</span>{itemIndex < education.transaction.length - 1 && <ArrowLeft className="w-3.5 h-3.5 text-muted-foreground" />}</span>)}
                 </div>
                 <p className="text-sm leading-7 border-r-2 border-destructive/60 pr-3"><b>واقعیت این مدل:</b> {education.reality}</p>
               </div>
