@@ -77,13 +77,13 @@ const QuestionStep: React.FC<Props> = ({ question, value, onChange, onAutoAdvanc
                 active ? 'border-primary bg-primary/10 ring-1 ring-primary text-foreground' : 'border-border bg-background text-foreground',
               )}
             >
-              <span className={cn('w-10 h-10 shrink-0 rounded-md flex items-center justify-center', active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
+              <span className={cn('w-9 h-9 shrink-0 rounded-md flex items-center justify-center', active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
                 <Icon index={index} />
               </span>
-              <span className={cn('flex-1 text-sm sm:text-base leading-relaxed', isScenario && 'sm:flex-none sm:min-h-[76px]')}>{o.label}</span>
+              <span className="flex-1 text-sm sm:text-base leading-7">{o.label}</span>
               <span
                 className={cn(
-                  'shrink-0 w-6 h-6 rounded-full border flex items-center justify-center mr-auto',
+                  'shrink-0 w-5 h-5 rounded-full border flex items-center justify-center mr-auto',
                   active ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30',
                 )}
               >
