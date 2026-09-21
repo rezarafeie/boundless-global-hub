@@ -174,6 +174,7 @@ const SmartTestV2: React.FC = () => {
       primary_objection: objections[0] ?? null, secondary_objection: objections[1] ?? null,
       remaining_objections: objections.slice(2), viewed_objection_blocks: objections.slice(0, 2),
       adaptive_questions: adaptiveQuestions, adaptive_answers: extraAdaptive,
+      ai_checkpoints: readyInsights,
       ai_status: 'pending',
       completed_at: new Date().toISOString(), duration_seconds: duration,
     };

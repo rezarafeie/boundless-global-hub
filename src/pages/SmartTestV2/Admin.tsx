@@ -16,6 +16,7 @@ import { PATH_LABELS, type PathId } from '@/data/smartTestV2/types';
 import { loadContent, saveContentBlock } from '@/lib/smartTestV2/store';
 
 const BLOCK_TITLES: Record<string, string> = {
+  conversation_intro: 'شروع گفت‌وگویی و معرفی تحلیل',
   trust_block: 'بلوک اعتماد (۵ مسیر)',
   objection_time: 'اعتراض: وقت ندارم',
   objection_money: 'اعتراض: پول ندارم',
