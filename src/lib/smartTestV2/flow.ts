@@ -10,6 +10,7 @@ export type Step =
   | { kind: 'block'; key: string; stage: StageId; blockKey: string }
   | { kind: 'profile'; key: string; stage: StageId }
   | { kind: 'final_micro'; key: string; stage: StageId }
+  | { kind: 'ai_checkpoint'; key: string; stage: StageId; checkpoint: number }
   | { kind: 'analysis'; key: string; stage: StageId };
 
 const asArray = (v: string | string[] | undefined): string[] =>
