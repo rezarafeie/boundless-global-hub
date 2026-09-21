@@ -172,8 +172,8 @@ const SmartTestV2Result: React.FC = () => {
             </div>
           )}
 
-          {aiState === 'ready' && ai && (
-            <div className="rounded-xl border border-primary/40 bg-primary/5 p-5 sm:p-6 space-y-3">
+           {aiState === 'ready' && ai && (
+             <div className="border-r-2 border-primary pr-5 py-2 space-y-3">
                <p className="flex items-center gap-2 text-xs font-bold text-primary"><BrainCircuit className="w-4 h-4" /> تشخیص اختصاصی بر اساس جواب‌های تو</p>
               <p className="text-base sm:text-lg font-semibold leading-8 whitespace-pre-line">{ai.diagnosis}</p>
               {ai.hybrid_label && <p className="text-sm text-muted-foreground">ترکیب پیشنهادی: {ai.hybrid_label}</p>}
@@ -198,7 +198,7 @@ const SmartTestV2Result: React.FC = () => {
               ? ai.why_this_path.map((item) => ({ text: item.point, evidence: item.evidence }))
               : result.reasonsForRecommended.map((item) => ({ text: item.reason, evidence: [] as string[] }))
             ).map((item, index) => (
-              <div key={`${item.text}-${index}`} className="flex gap-3 rounded-xl border border-border p-4">
+               <div key={`${item.text}-${index}`} className="flex gap-3 py-4 border-b border-border last:border-b-0">
                 <span className="w-6 h-6 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center"><Check className="w-3.5 h-3.5" /></span>
                 <div className="space-y-1.5">
                   <p className="text-sm sm:text-base leading-8">{item.text}</p>
@@ -208,7 +208,7 @@ const SmartTestV2Result: React.FC = () => {
             ))}
           </div>
           {ai?.why_not_secondary_yet && (
-            <div className="rounded-xl bg-muted/50 p-4">
+             <div className="border-r-2 border-muted-foreground/30 pr-4 py-1">
               <p className="text-xs font-bold text-muted-foreground mb-1.5">چرا {PATH_LABELS[secondary]} دوم شد؟</p>
               <p className="text-sm leading-8">{ai.why_not_secondary_yet}</p>
             </div>
