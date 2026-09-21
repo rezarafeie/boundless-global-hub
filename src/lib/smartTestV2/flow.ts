@@ -86,6 +86,7 @@ export function buildFlow(answers: Answers): Step[] {
 
   steps.push(q('q7_scenario'));
   steps.push({ kind: 'mini2', key: 'mini2', stage: 'work_model' });
+  steps.push({ kind: 'ai_checkpoint', key: 'cp2', stage: 'work_model', checkpoint: 2 });
   steps.push({ kind: 'block', key: 'trust', stage: 'work_model', blockKey: 'trust_block' });
 
   steps.push(q('q8_risk'));
