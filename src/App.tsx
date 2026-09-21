@@ -191,6 +191,10 @@ import InvoicePaymentCallback from "./pages/InvoicePaymentCallback";
 
 // Consultation pages
 import ConsultationBooking from "./pages/ConsultationBooking";
+import SmartTestV2 from "./pages/SmartTestV2/Index";
+import SmartTestV2Result from "./pages/SmartTestV2/Result";
+import SmartTestV2Admin from "./pages/SmartTestV2/Admin";
+
 import Reserve from "./pages/Reserve";
 import LeadRequest from "./pages/LeadRequest";
 import FormView from "./pages/FormView";
