@@ -60,17 +60,43 @@ export async function saveContentBlock(block: ContentBlock) {
   if (error) throw error;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Accounts in this platform can be Supabase users, chat users (numeric ids) or guests. */
+export function identityFields(user: any): Record<string, any> {
+  const rawId = user?.id;
+  const out: Record<string, any> = {
+    full_name: user?.name ?? user?.full_name ?? null,
+    phone: user?.phone ?? null,
+    email: user?.email ?? null,
+  };
+  if (typeof rawId === 'string' && UUID_RE.test(rawId)) out.user_id = rawId;
+  else if (rawId !== undefined && rawId !== null && !Number.isNaN(Number(rawId))) out.chat_user_id = Number(rawId);
+  return out;
+}
+
 export async function createSubmission(payload: Record<string, any>): Promise<string | null> {
+  const base = { version: V2_VERSION, session_key: getSessionKey(), ...payload };
   const { data, error } = await supabase
     .from('smart_test_v2_submissions' as any)
-    .insert({ version: V2_VERSION, session_key: getSessionKey(), ...payload })
+    .insert(base)
     .select('id')
     .maybeSingle();
-  if (error) {
-    console.error('stv2 create failed', error);
+  if (!error) return (data as any)?.id ?? null;
+
+  console.error('stv2 create failed', error);
+  // Retry without identity fields so a bad/foreign user id never loses the result.
+  const { user_id, chat_user_id, ...anonymous } = base as any;
+  const retry = await supabase
+    .from('smart_test_v2_submissions' as any)
+    .insert(anonymous)
+    .select('id')
+    .maybeSingle();
+  if (retry.error) {
+    console.error('stv2 create retry failed', retry.error);
     return null;
   }
-  return (data as any)?.id ?? null;
+  return (retry.data as any)?.id ?? null;
 }
 
 export async function updateSubmission(id: string, payload: Record<string, any>) {
