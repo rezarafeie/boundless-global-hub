@@ -324,6 +324,12 @@ const App = () => {
                     {/* Smart Test routes */}
                     <Route path="/smart-test" element={<SmartTest />} />
                     <Route path="/smart-test/results" element={<SmartTestResults />} />
+
+                    {/* Smart Test V2 (boundless_smart_test_v2) — fully separate from V1 */}
+                    <Route path="/smart-test-v2" element={<SmartTestV2 />} />
+                    <Route path="/smart-test-v2/result/:id" element={<SmartTestV2Result />} />
+                    <Route path="/enroll/admin/smart-test-v2" element={<SmartTestV2Admin />} />
+
                     
                     {/* User Management routes */}
                     <Route path="/enroll/admin/users" element={<UsersOverview />} />
