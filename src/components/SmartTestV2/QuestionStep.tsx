@@ -72,9 +72,8 @@ const QuestionStep: React.FC<Props> = ({ question, value, onChange, onAutoAdvanc
               variant="outline"
               onClick={() => toggle(o.value)}
               className={cn(
-                'relative w-full h-auto min-h-[72px] justify-start whitespace-normal text-right rounded-lg p-4 transition-all duration-200',
+                'relative w-full h-auto min-h-[64px] justify-start whitespace-normal text-right rounded-xl p-3.5 transition-all duration-200',
                 'hover:border-primary active:scale-[0.99]',
-                isScenario && 'sm:min-h-[190px] sm:flex-col sm:items-start sm:justify-between sm:p-5',
                 active ? 'border-primary bg-primary/10 ring-1 ring-primary text-foreground' : 'border-border bg-background text-foreground',
               )}
             >
