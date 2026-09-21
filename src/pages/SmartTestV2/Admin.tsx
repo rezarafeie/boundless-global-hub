@@ -27,6 +27,12 @@ const BLOCK_TITLES: Record<string, string> = {
   objection_later: 'اعتراض: بعداً',
   objection_confusion: 'اعتراض: سردرگمی',
   boundless_bridge: 'پل ورود به بدون مرز',
+  analysis_media: 'رسانه هنگام تحلیل',
+  result_proof_dropshipping: 'اثبات مسیر Dropshipping',
+  result_proof_drop_service: 'اثبات مسیر Drop Service',
+  result_proof_digital_product: 'اثبات مسیر Digital Product',
+  result_proof_ai: 'اثبات مسیر AI Business',
+  result_proof_vibe_coding: 'اثبات مسیر Vibe Coding',
 };
 
 /* ---------------- content editor ---------------- */

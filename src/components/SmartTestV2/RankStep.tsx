@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
 import { QUESTION_BY_ID } from '@/data/smartTestV2/questions';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   title: string;
@@ -30,12 +31,13 @@ const RankStep: React.FC<Props> = ({ title, hint, items, value, onChange }) => {
   };
 
   return (
-    <div dir="rtl" className="space-y-5">
-      <div className="space-y-1">
-        <h2 className="text-xl sm:text-2xl font-bold leading-relaxed">{title}</h2>
+    <section dir="rtl" className="space-y-8 animate-fade-in">
+      <div className="space-y-3 max-w-3xl">
+        <span className="text-xs font-bold text-primary">اولویت‌ها همیشه از علاقه مهم‌ترن</span>
+        <h2 className="text-2xl sm:text-4xl font-black leading-[1.55]">{title}</h2>
         {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2 max-w-3xl">
         {order.map((v, i) => (
           <div
             key={v}
@@ -43,25 +45,25 @@ const RankStep: React.FC<Props> = ({ title, hint, items, value, onChange }) => {
             onDragStart={() => setDragIdx(i)}
             onDragOver={(e) => e.preventDefault()}
             onDrop={() => { if (dragIdx !== null) move(dragIdx, i); setDragIdx(null); }}
-            className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 min-h-[56px]"
+            className="group flex items-center gap-3 border-b border-border bg-background px-1 py-4 min-h-[68px] transition-colors hover:bg-muted/40"
           >
-            <span className="w-7 h-7 shrink-0 rounded-full bg-primary/10 text-primary text-sm font-bold flex items-center justify-center">
+            <span className="w-9 h-9 shrink-0 bg-foreground text-background text-sm font-black flex items-center justify-center">
               {i + 1}
             </span>
             <span className="flex-1 text-sm sm:text-base leading-relaxed">{labelOf(v)}</span>
             <div className="flex flex-col gap-1">
-              <button type="button" aria-label="بالا" onClick={() => move(i, i - 1)} className="p-1 rounded hover:bg-muted">
+              <Button type="button" variant="ghost" size="icon" aria-label="بالا" onClick={() => move(i, i - 1)} className="w-7 h-7">
                 <ChevronUp className="w-4 h-4" />
-              </button>
-              <button type="button" aria-label="پایین" onClick={() => move(i, i + 1)} className="p-1 rounded hover:bg-muted">
+              </Button>
+              <Button type="button" variant="ghost" size="icon" aria-label="پایین" onClick={() => move(i, i + 1)} className="w-7 h-7">
                 <ChevronDown className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
             <GripVertical className="w-4 h-4 text-muted-foreground/50 hidden sm:block" />
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 };
 
