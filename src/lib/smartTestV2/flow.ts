@@ -64,6 +64,7 @@ export function buildFlow(answers: Answers): Step[] {
   }
 
   steps.push({ kind: 'mini1', key: 'mini1', stage: 'conditions' });
+  steps.push({ kind: 'ai_checkpoint', key: 'cp1', stage: 'conditions', checkpoint: 1 });
   steps.push(q('q4_interest'));
 
   const interests = asArray(answers['q4_interest']).filter((v) => v !== 'unknown');
