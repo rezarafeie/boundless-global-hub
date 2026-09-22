@@ -40,8 +40,8 @@ Deno.serve(async (req) => {
       const { data: lesson } = await supabase
         .from("course_lessons").select("title").eq("id", m.lesson_id).maybeSingle();
       await notifyStudent(m.user_id, m.course_id, "mission_due", m.id, {
-        title: "⏳ ماموریت امروزت در حال اتمام است",
-        text: `درس «${lesson?.title ?? ""}» را تا ${humanRemaining(new Date(m.due_at).getTime() - now)} دیگر کامل کن تا استریک‌ات حفظ شود.`,
+        lesson_title: lesson?.title ?? "",
+        remaining: humanRemaining(new Date(m.due_at).getTime() - now),
       });
       await supabase.from("course_missions").update({ reminder_sent_at: new Date().toISOString() }).eq("id", m.id);
       result.missionReminders++;
@@ -59,8 +59,7 @@ Deno.serve(async (req) => {
 
     for (const w of warn ?? []) {
       await notifyStudent(w.user_id, w.course_id, "access_expiring", w.id, {
-        title: "⏱ دسترسی دوره‌ات رو به پایان است",
-        text: `تنها ${humanRemaining(new Date(w.expires_at).getTime() - now)} از دسترسی رایگان تو باقی مانده. همین حالا ادامه بده!`,
+        remaining: humanRemaining(new Date(w.expires_at).getTime() - now),
       });
       result.expiryWarnings++;
     }
@@ -76,10 +75,7 @@ Deno.serve(async (req) => {
 
     for (const w of gone ?? []) {
       await supabase.from("course_access_windows").update({ status: "expired" }).eq("id", w.id);
-      await notifyStudent(w.user_id, w.course_id, "access_expired", w.id, {
-        title: "🔒 دسترسی دوره بسته شد",
-        text: "پیشرفت تو کامل ذخیره شده است. با تمدید دسترسی، دقیقاً از همان‌جا ادامه می‌دهی.",
-      });
+      await notifyStudent(w.user_id, w.course_id, "access_expired", w.id, {});
       result.expired++;
     }
 
