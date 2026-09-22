@@ -9,3 +9,8 @@
 - [x] Make lesson assignments prominent directly below video in both lesson experiences
 - [x] Correct Persian single-choice direction and alignment
 - [x] Keep AI-reviewed assignments open, scroll to feedback, and play a notification sound
+
+## Academy lesson accuracy
+- [x] Sort course sections and lessons by their configured order
+- [x] Use saved lesson progress instead of generated completion states
+- [x] Keep completed lesson titles readable in dark mode

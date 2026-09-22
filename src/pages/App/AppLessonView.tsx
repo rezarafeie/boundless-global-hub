@@ -204,9 +204,15 @@ const AppLessonView = () => {
 
       setCourseSlug(foundCourse.slug);
 
-      // Check if lesson is completed (you can implement this based on your progress tracking)
-      // For now, we'll use a simple check
-      setIsCompleted(false);
+      const { data: savedProgress, error: progressError } = await supabase
+        .from('user_lesson_progress')
+        .select('is_completed')
+        .eq('user_id', Number(user.id))
+        .eq('lesson_id', foundLesson.id)
+        .maybeSingle();
+
+      if (progressError) console.error('Error fetching lesson completion:', progressError);
+      setIsCompleted(savedProgress?.is_completed === true);
 
     } catch (error) {
       console.error('Error fetching lesson data:', error);

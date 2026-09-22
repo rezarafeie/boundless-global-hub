@@ -9,6 +9,7 @@ import AppLayout from "@/components/Layout/AppLayout";
 import { TelegramEnrollmentActivation } from "@/components/TelegramEnrollmentActivation";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { emptyCourseProgress, fetchCourseProgressSummaries } from "@/lib/courseProgress";
 import { 
   Play, 
   Clock, 
@@ -76,20 +77,23 @@ const AppMyCourses = () => {
         return;
       }
 
+      const progressByCourse = await fetchCourseProgressSummaries(
+        Number(user.id),
+        (enrollments || []).map((enrollment) => enrollment.course_id),
+      );
+
       const coursesData: EnrolledCourse[] = enrollments?.map(enrollment => {
-        const progress = Math.floor(Math.random() * 100); // TODO: Calculate real progress
-        const totalLessons = Math.floor(Math.random() * 20) + 5; // TODO: Get real lesson count
-        const completedLessons = Math.floor((progress / 100) * totalLessons); // TODO: Get real completed count
+        const summary = progressByCourse[enrollment.course_id] || emptyCourseProgress();
         
         return {
           id: enrollment.id,
           course_id: enrollment.course_id,
           title: enrollment.courses?.title || 'نامشخص',
           description: enrollment.courses?.description,
-          progress: progress,
-          status: progress === 100 ? 'completed' : progress > 0 ? 'in_progress' : 'not_started',
-          totalLessons: totalLessons,
-          completedLessons: completedLessons,
+          progress: summary.progress,
+          status: summary.progress === 100 ? 'completed' : summary.progress > 0 ? 'in_progress' : 'not_started',
+          totalLessons: summary.totalLessons,
+          completedLessons: summary.completedLessons,
           enrollmentDate: new Date(enrollment.created_at).toLocaleDateString('fa-IR'),
           payment_status: enrollment.payment_status,
           slug: enrollment.courses?.slug

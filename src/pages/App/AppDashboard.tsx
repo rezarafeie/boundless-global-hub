@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import AppLayout from "@/components/Layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { emptyCourseProgress, fetchCourseProgressSummaries } from "@/lib/courseProgress";
 import { 
   BookOpen, 
   Trophy, 
@@ -96,18 +97,25 @@ const AppDashboard = () => {
         return;
       }
 
-      // Transform enrollment data
-      const coursesData: EnrolledCourse[] = enrollments?.map(enrollment => ({
+      const progressByCourse = await fetchCourseProgressSummaries(
+        Number(user.id),
+        (enrollments || []).map((enrollment) => enrollment.course_id),
+      );
+
+      // Transform enrollment data using saved lesson progress
+      const coursesData: EnrolledCourse[] = enrollments?.map(enrollment => {
+        const summary = progressByCourse[enrollment.course_id] || emptyCourseProgress();
+        return {
         id: enrollment.course_id,
         title: enrollment.courses?.title || 'نامشخص',
         description: enrollment.courses?.description,
-        progress: Math.floor(Math.random() * 100), // TODO: Calculate real progress
-        totalLessons: Math.floor(Math.random() * 20) + 5, // TODO: Get real lesson count
-        completedLessons: Math.floor(Math.random() * 10), // TODO: Get real completed count
+        progress: summary.progress,
+        totalLessons: summary.totalLessons,
+        completedLessons: summary.completedLessons,
         enrollment_date: enrollment.created_at,
         payment_status: enrollment.payment_status,
         slug: enrollment.courses?.slug
-      })) || [];
+      };}) || [];
 
       setEnrolledCourses(coursesData);
       
