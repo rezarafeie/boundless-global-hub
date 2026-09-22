@@ -236,10 +236,13 @@ export async function completeMission(userId: number, courseId: string, lessonId
     rewards,
     nextMission,
     message: finished
-      ? "🎉 دوره را کامل کردی! جوایز شما در داشبورد فعال شد."
-      : `🔥 ماموریت انجام شد!\n${fastRemaining > 0
-        ? `هنوز واجد شرایط جایزه سریع هستی.\n${humanRemaining(fastRemaining)} باقی مانده.`
-        : "به مسیرت ادامه بده."}`,
+      ? gamText(s.messages, "course_completed", {
+        days: w ? ((Date.now() - new Date(w.started_at).getTime()) / DAY).toFixed(1) : "",
+      })
+      : gamText(s.messages, fastRemaining > 0 ? "mission_completed" : "mission_completed_late", {
+        remaining: humanRemaining(fastRemaining),
+        streak,
+      }),
   };
 }
 
