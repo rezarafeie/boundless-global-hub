@@ -351,6 +351,15 @@ Deno.serve(async (req) => {
 
     console.log('✅ Enrollment created successfully:', createdEnrollment);
 
+    // Start the gamified free-access window (sends the welcome message) for opted-in courses
+    if (createdEnrollment.payment_status === 'completed' && resolvedChatUserId) {
+      try {
+        await ensureAccessWindow(Number(resolvedChatUserId), course_id, createdEnrollment.id);
+      } catch (gamErr) {
+        console.error('⚠️ ensureAccessWindow failed:', gamErr);
+      }
+    }
+
     // Get course details for webhook
     const { data: courseData } = await supabase
       .from('courses')
