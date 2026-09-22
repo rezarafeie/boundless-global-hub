@@ -46,12 +46,16 @@ Deno.serve(async (req) => {
       if (window?.status !== "active") continue;
       const { data: lesson } = await supabase
         .from("course_lessons").select("title").eq("id", m.lesson_id).maybeSingle();
-      await notifyStudent(m.user_id, m.course_id, "mission_due", m.id, {
+      const delivery = await notifyStudent(m.user_id, m.course_id, "mission_due", m.id, {
         lesson_title: lesson?.title ?? "",
         remaining: humanRemaining(new Date(m.due_at).getTime() - now),
       });
-      await supabase.from("course_missions").update({ reminder_sent_at: new Date().toISOString() }).eq("id", m.id);
-      result.missionReminders++;
+      if ((delivery.channels?.length ?? 0) > 0) {
+        await supabase.from("course_missions").update({ reminder_sent_at: new Date().toISOString() }).eq("id", m.id);
+        result.missionReminders++;
+      } else {
+        console.error("mission reminder had no successful delivery", { missionId: m.id, userId: m.user_id, errors: delivery.errors });
+      }
     }
 
     // 2. access windows expiring within 24h

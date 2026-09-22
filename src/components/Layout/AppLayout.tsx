@@ -77,6 +77,7 @@ const AppLayout = ({ children, title, showBackButton = true, rightAction }: AppL
 
   return (
     <div className="min-h-screen bg-muted/30" dir={direction}>
+      <GlobalAccessCountdownBanner />
       {/* ============ DESKTOP LAYOUT (md+) ============ */}
       <div className="hidden md:flex min-h-screen">
         {/* Sidebar */}
@@ -183,8 +184,6 @@ const AppLayout = ({ children, title, showBackButton = true, rightAction }: AppL
               </div>
             </div>
           </header>
-          <GlobalAccessCountdownBanner />
-
           <main className="flex-1 overflow-y-auto">
             <div className="max-w-6xl mx-auto px-6 lg:px-8 py-6 lg:py-8">
               {children}
@@ -231,8 +230,6 @@ const AppLayout = ({ children, title, showBackButton = true, rightAction }: AppL
               </div>
             </div>
           </header>
-          <GlobalAccessCountdownBanner />
-
           <main className="flex-1 pb-20 overflow-y-auto">{children}</main>
 
           <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border/50 backdrop-blur-sm mx-auto max-w-md">

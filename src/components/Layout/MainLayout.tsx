@@ -75,7 +75,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         <BlackFridayBanner endDate={blackFridaySettings.end_date} />
       )}
       
-      <GlobalAccessCountdownBanner />
+      <GlobalAccessCountdownBanner className="top-16" />
 
       <NotificationErrorBoundary>
         <LiveWarModeBanner />
