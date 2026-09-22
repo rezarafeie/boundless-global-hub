@@ -9,9 +9,16 @@ const json = (b: unknown, s = 200) =>
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const now = Date.now();
-  const result = { missionReminders: 0, expiryWarnings: 0, expired: 0 };
+  const result = { windowsStarted: 0, missionReminders: 0, expiryWarnings: 0, expired: 0 };
 
   try {
+    // 0. start the free-access window (+ welcome message) for students who enrolled but never opened the course
+    try {
+      result.windowsStarted = await startWindowsForNewEnrollments(50);
+    } catch (e) {
+      console.error("startWindowsForNewEnrollments failed", e);
+    }
+
     // Only courses with the system enabled
     const { data: enabled } = await supabase
       .from("course_gamification_settings").select("course_id").eq("enabled", true);
