@@ -91,14 +91,14 @@ export const BlockRenderer: React.FC<Props> = ({ block, value, onChange, disable
 
     case 'single_choice':
       return (
-        <div>
+        <div dir="rtl" className="text-right">
           {label}
-          <RadioGroup value={(value as string) || ''} onValueChange={onChange} disabled={disabled}>
-            <div className="space-y-2">
+          <RadioGroup dir="rtl" value={(value as string) || ''} onValueChange={onChange} disabled={disabled}>
+            <div className="space-y-2" dir="rtl">
               {(block.options || []).map((opt, i) => (
-                <label key={i} className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-muted/50">
+                <label key={i} className="flex w-full flex-row items-center justify-start gap-2 rounded-md border p-3 text-right cursor-pointer hover:bg-muted/50">
                   <RadioGroupItem value={opt} id={`${block.id}-${i}`} />
-                  <span className="text-sm">{opt}</span>
+                  <span className="min-w-0 flex-1 text-sm leading-6">{opt}</span>
                 </label>
               ))}
             </div>
@@ -114,7 +114,7 @@ export const BlockRenderer: React.FC<Props> = ({ block, value, onChange, disable
       return (
         <div>
           {label}
-          <div className="space-y-2">
+          <div className="space-y-2" dir="rtl">
             {(block.options || []).map((opt, i) => (
               <label key={i} className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-muted/50">
                 <Checkbox checked={arr.includes(opt)} onCheckedChange={() => !disabled && toggle(opt)} disabled={disabled} />
@@ -134,7 +134,7 @@ export const BlockRenderer: React.FC<Props> = ({ block, value, onChange, disable
       return (
         <div>
           {label}
-          <div className="space-y-2">
+          <div className="space-y-2" dir="rtl">
             {(block.options || []).map((opt, i) => (
               <label key={i} className="flex items-center gap-2 text-sm cursor-pointer">
                 <Checkbox checked={arr.includes(opt)} onCheckedChange={() => !disabled && toggle(opt)} disabled={disabled} />
