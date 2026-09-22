@@ -850,29 +850,42 @@ const CourseAccess: React.FC = () => {
     const nextLesson = findNextLesson(lesson);
     
     return (
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Back to Course Menu Button */}
-        <div className="flex justify-start">
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              setSelectedLesson(null);
-              if (isMobile) setShowMobileLessonView(false);
-            }}
-            className="flex items-center gap-2"
-          >
-            <ChevronRight className="h-4 w-4 rotate-180" />
-            بازگشت به فهرست دروس
-          </Button>
-        </div>
-
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Lesson Header */}
-        <div className="text-center lg:text-right space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-            <CheckCircle className="h-4 w-4" />
-            درس در حال پخش
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="secondary" className="gap-1 rounded-full font-normal">
+                <PlayCircle className="h-3.5 w-3.5" />
+                در حال پخش
+              </Badge>
+              {lesson.duration > 0 && (
+                <Badge variant="outline" className="gap-1 rounded-full font-normal text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5" />
+                  {lesson.duration} دقیقه
+                </Badge>
+              )}
+              {completedLessons.has(lesson.id) && (
+                <Badge className="gap-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/15">
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  تکمیل شده
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedLesson(null);
+                if (isMobile) setShowMobileLessonView(false);
+              }}
+              className="gap-1 text-muted-foreground shrink-0"
+            >
+              <List className="h-4 w-4" />
+              فهرست دروس
+            </Button>
           </div>
-          <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">{lesson.title}</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground leading-tight">{lesson.title}</h1>
         </div>
 
         {/* VPN Warning */}
