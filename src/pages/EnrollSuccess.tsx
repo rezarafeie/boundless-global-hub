@@ -1443,11 +1443,11 @@ const EnrollSuccess: React.FC = () => {
                             <Clock className="h-4 w-4 animate-pulse flex-shrink-0" />
                             {activationSecondsLeft > 0 ? (
                               <span>
-                                دسترسی شما هنوز فعال نشده — فعال‌سازی تا{' '}
+                                فقط{' '}
                                 <span dir="ltr" className="inline-block font-mono tabular-nums text-base text-red-600 dark:text-red-400">
                                   {faDigits(`${timerMM}:${timerSS}`)}
                                 </span>{' '}
-                                دیگر
+                                تا فعال‌سازی رایگان و دسترسی به دوره فرصت دارید
                               </span>
                             ) : (
                               <span className="text-red-600 dark:text-red-400">
