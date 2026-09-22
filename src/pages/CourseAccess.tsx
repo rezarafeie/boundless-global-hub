@@ -997,92 +997,47 @@ const CourseAccess: React.FC = () => {
               </Card>
             )}
 
-            {/* Mark as Complete Button */}
+            {/* Mark as Complete */}
             {selectedLesson && (
-              <Card className={`border-2 transition-all duration-300 ${
-                completedLessons.has(selectedLesson.id)
-                  ? 'border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20'
-                  : 'border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20'
-              }`}>
-                <CardContent className="p-6">
-                  <div className="text-center space-y-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto ${
-                      completedLessons.has(selectedLesson.id)
-                        ? 'bg-emerald-500'
-                        : 'bg-blue-500'
+              <Card className="border-border/60 shadow-sm">
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                      completedLessons.has(selectedLesson.id) ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-primary/10 text-primary'
                     }`}>
-                      <CheckCircle className="h-6 w-6 text-white" />
+                      <CheckCircle className="h-5 w-5" />
                     </div>
-                    <div>
-                      <h4 className={`font-semibold mb-2 ${
-                        completedLessons.has(selectedLesson.id)
-                          ? 'text-emerald-800 dark:text-emerald-300'
-                          : 'text-blue-800 dark:text-blue-300'
-                      }`}>
-                        {completedLessons.has(selectedLesson.id) ? 'درس تکمیل شده' : 'تکمیل درس'}
+                    <div className="text-right">
+                      <h4 className="font-semibold text-sm mb-1">
+                        {completedLessons.has(selectedLesson.id) ? 'این درس تکمیل شد' : 'وضعیت این درس'}
                       </h4>
-                      <p className={`text-sm mb-4 ${
-                        completedLessons.has(selectedLesson.id)
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-blue-600 dark:text-blue-400'
-                      }`}>
-                        {completedLessons.has(selectedLesson.id) 
-                          ? 'این درس با موفقیت تکمیل شده است'
-                          : 'درس را به عنوان تکمیل شده علامت‌گذاری کنید'
-                        }
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {completedLessons.has(selectedLesson.id)
+                          ? 'پیشرفت شما ذخیره شده است'
+                          : 'با دیدن کامل ویدیو به‌صورت خودکار، یا با زدن دکمه زیر تکمیل می‌شود'}
                       </p>
                     </div>
-                    <Button
-                      onClick={async () => {
-                        if (!selectedLesson || !user?.id || !course) return;
-                        
-                        setIsMarkingComplete(true);
-                        
-                        try {
-                          if (markLessonComplete) {
-                            await markLessonComplete();
-                            
-                            // Update local state immediately
-                            setCompletedLessons(prev => new Set([...prev, selectedLesson.id]));
-                            
-                            toast({
-                              title: "تبریک!",
-                              description: "درس با موفقیت تکمیل شد",
-                            });
-                          } else {
-                            toast({
-                              title: "خطا",
-                              description: "خطا در سیستم تکمیل درس",
-                              variant: "destructive"
-                            });
-                          }
-                        } catch (error) {
-                          console.error('Error marking lesson as complete:', error);
-                          toast({
-                            title: "خطا",
-                            description: "خطا در تکمیل درس",
-                            variant: "destructive"
-                          });
-                        } finally {
-                          setIsMarkingComplete(false);
-                        }
-                      }}
-                      disabled={completedLessons.has(selectedLesson.id) || isMarkingComplete}
-                      className={`w-full text-white shadow-lg transition-all duration-300 ${
-                        completedLessons.has(selectedLesson.id)
-                          ? 'bg-emerald-600 hover:bg-emerald-700 cursor-default'
-                          : 'bg-blue-600 hover:bg-blue-700'
-                      }`}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      {isMarkingComplete 
-                        ? 'در حال تکمیل...'
-                        : completedLessons.has(selectedLesson.id) 
-                          ? 'تکمیل شده' 
-                          : 'تکمیل درس'
-                      }
-                    </Button>
                   </div>
+
+                  <LessonWatchProgress
+                    secondsRef={secondsRef}
+                    requiredRef={requiredRef}
+                    completed={completedLessons.has(selectedLesson.id)}
+                  />
+
+                  <Button
+                    onClick={() => completeSelectedLesson(false)}
+                    disabled={completedLessons.has(selectedLesson.id) || isMarkingComplete}
+                    variant={completedLessons.has(selectedLesson.id) ? 'outline' : 'default'}
+                    className="w-full gap-2"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    {isMarkingComplete
+                      ? 'در حال ثبت...'
+                      : completedLessons.has(selectedLesson.id)
+                        ? 'تکمیل شده'
+                        : 'تکمیل کردم'}
+                  </Button>
                 </CardContent>
               </Card>
             )}
