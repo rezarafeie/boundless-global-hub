@@ -44,7 +44,7 @@ const GlobalAccessCountdownBanner: React.FC<Props> = ({ className }) => {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, user?.email]);
 
   if (dismissed || !status?.enabled || !status.window || status.completed || (status.progressPercent ?? 0) >= 100) return null;
 

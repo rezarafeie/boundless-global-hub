@@ -461,6 +461,9 @@ export async function notifyStudent(
       .select("telegram_id, status")
       .eq("user_id", userId).eq("course_id", courseId)
       .eq("status", "activated")
+      .not("telegram_id", "is", null)
+      .order("activated_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
     if (act?.telegram_id && !channels.has("telegram_business")) {
       const { data: settings } = await supabase
