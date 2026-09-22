@@ -439,7 +439,9 @@ const AppLessonView = () => {
         )}
 
         {/* Assignments for this lesson */}
-        <AssignmentSection lessonId={lesson.id} />
+        <div className="py-2">
+          <AssignmentSection lessonId={lesson.id} />
+        </div>
 
 
 

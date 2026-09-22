@@ -1030,7 +1030,7 @@ const CourseAccess: React.FC = () => {
                 </div>
               </section>
             )}
-            <div className="-mx-4"><AssignmentSection lessonId={lesson.id} /></div>
+            <AssignmentSection lessonId={lesson.id} />
           </div>
 
           <aside className="space-y-5 lg:border-r lg:border-border/70 lg:pr-6">

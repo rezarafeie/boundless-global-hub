@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, ClipboardList, Clock, Loader2, Save, Send } from 'lucide-react';
+import { ChevronDown, ClipboardCheck, ClipboardList, Clock, Loader2, Save, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { BlockRenderer } from './blocks';
 import { FeedbackReport } from './FeedbackReport';
@@ -101,18 +101,31 @@ export const AssignmentSection: React.FC<Props> = ({ lessonId }) => {
     );
   }
 
+  if (!studentId) return null;
+
   return (
-    <div className="px-4 space-y-3">
-      {assignments.map((a) => (
-        <AssignmentCard
-          key={a.id}
-          assignment={a}
-          submission={submissions[a.id]}
-          studentId={studentId!}
-          onSaved={load}
-        />
-      ))}
-    </div>
+    <section className="px-4" aria-labelledby={`lesson-assignments-${lessonId}`}>
+      <div className="mb-3 flex items-center gap-3 border-t border-border pt-6">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <ClipboardCheck className="h-5 w-5" />
+        </div>
+        <div>
+          <h2 id={`lesson-assignments-${lessonId}`} className="font-semibold text-foreground">تمرین این درس</h2>
+          <p className="text-xs text-muted-foreground">پاسخ بدهید و بازخورد هوشمند دریافت کنید</p>
+        </div>
+      </div>
+      <div className="space-y-3">
+        {assignments.map((a) => (
+          <AssignmentCard
+            key={a.id}
+            assignment={a}
+            submission={submissions[a.id]}
+            studentId={studentId}
+            onSaved={load}
+          />
+        ))}
+      </div>
+    </section>
   );
 };
 
@@ -133,6 +146,7 @@ const AssignmentCard: React.FC<{
   const status: SubmissionStatus | 'not_started' = effectiveSubmission?.status || 'not_started';
   const readonly = ['submitted', 'reviewed', 'completed'].includes(status);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const feedbackRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setAnswers(submission?.answers || {});
@@ -220,9 +234,13 @@ const AssignmentCard: React.FC<{
               .maybeSingle();
             if (data && (data as any).ai_feedback) {
               setLocalSubmission(data as unknown as AssignmentSubmission);
+              setOpen(true);
               playSuccessSound();
               setAwaitingFeedback(false);
-              onSaved();
+              window.setTimeout(() => {
+                feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                feedbackRef.current?.focus({ preventScroll: true });
+              }, 150);
               return;
             }
           }
@@ -310,7 +328,9 @@ const AssignmentCard: React.FC<{
             )}
 
             {effectiveSubmission?.ai_feedback && (
-              <FeedbackReport feedback={effectiveSubmission.ai_feedback} adminFeedback={effectiveSubmission.admin_feedback} />
+              <div ref={feedbackRef} tabIndex={-1} className="scroll-mt-24 animate-fade-in rounded-lg outline-none ring-2 ring-primary/20 ring-offset-2 ring-offset-background">
+                <FeedbackReport feedback={effectiveSubmission.ai_feedback} adminFeedback={effectiveSubmission.admin_feedback} />
+              </div>
             )}
 
             <CTASection ctas={assignment.cta_config?.ctas} />
