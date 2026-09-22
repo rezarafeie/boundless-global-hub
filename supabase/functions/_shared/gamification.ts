@@ -3,6 +3,7 @@
 import { supabase } from "./supabase.ts";
 import { sendMessage, tgCall } from "./telegram.ts";
 import { sendEmail, sendSms } from "./support-followup.ts";
+import { gamMessage, gamText } from "./gamificationMessages.ts";
 
 export const HOUR = 3600_000;
 export const DAY = 24 * HOUR;
