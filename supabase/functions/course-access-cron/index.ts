@@ -1,6 +1,6 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { supabase } from "../_shared/supabase.ts";
-import { notifyStudent, humanRemaining, startWindowsForNewEnrollments, HOUR, DAY } from "../_shared/gamification.ts";
+import { notifyStudent, humanRemaining, startWindowsForNewEnrollments, retryIncompleteWelcomeNotifications, HOUR, DAY } from "../_shared/gamification.ts";
 
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -9,7 +9,7 @@ const json = (b: unknown, s = 200) =>
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const now = Date.now();
-  const result = { windowsStarted: 0, missionReminders: 0, expiryWarnings: 0, expired: 0 };
+  const result = { windowsStarted: 0, welcomeRetries: 0, missionReminders: 0, expiryWarnings: 0, expired: 0 };
 
   try {
     // 0. start the free-access window (+ welcome message) for students who enrolled but never opened the course
@@ -17,6 +17,13 @@ Deno.serve(async (req) => {
       result.windowsStarted = await startWindowsForNewEnrollments(50);
     } catch (e) {
       console.error("startWindowsForNewEnrollments failed", e);
+    }
+
+    // 0b. complete welcome deliveries for students who activated Telegram after enrolling
+    try {
+      result.welcomeRetries = await retryIncompleteWelcomeNotifications(100);
+    } catch (e) {
+      console.error("retryIncompleteWelcomeNotifications failed", e);
     }
 
     // Only courses with the system enabled
