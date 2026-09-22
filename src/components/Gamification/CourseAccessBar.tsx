@@ -1,6 +1,6 @@
 import React from 'react';
 import { Clock, Flame, Lock } from 'lucide-react';
-import { GamStatus, formatRemaining } from '@/hooks/useCourseGamification';
+import { GamStatus, formatRemaining, useLiveGamStatus } from '@/hooks/useCourseGamification';
 import { cn } from '@/lib/utils';
 import { gamText } from '@/lib/gamificationMessages';
 
@@ -10,7 +10,8 @@ interface Props {
   className?: string;
 }
 
-const CourseAccessBar: React.FC<Props> = ({ status, onReactivate, className }) => {
+const CourseAccessBar: React.FC<Props> = ({ status: rawStatus, onReactivate, className }) => {
+  const status = useLiveGamStatus(rawStatus);
   if (!status?.enabled || !status.window) return null;
 
   const locked = status.locked;

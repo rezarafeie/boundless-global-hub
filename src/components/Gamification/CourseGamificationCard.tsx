@@ -4,7 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Flame, Zap, Clock, Gift, Lock, Target } from 'lucide-react';
-import { GamStatus, formatRemaining } from '@/hooks/useCourseGamification';
+import { GamStatus, formatRemaining, useLiveGamStatus } from '@/hooks/useCourseGamification';
 import { gamText } from '@/lib/gamificationMessages';
 
 interface Props {
@@ -13,7 +13,8 @@ interface Props {
   onReactivate?: () => void;
 }
 
-const CourseGamificationCard: React.FC<Props> = ({ status, onOpenMission, onReactivate }) => {
+const CourseGamificationCard: React.FC<Props> = ({ status: rawStatus, onOpenMission, onReactivate }) => {
+  const status = useLiveGamStatus(rawStatus);
   if (!status?.enabled || !status.window) return null;
   const m = status.settings?.messages ?? {};
   const tvars = {

@@ -27,7 +27,13 @@ import { useIsIranianIP } from "@/hooks/useIsIranianIP";
 import { AssignmentSection } from "@/components/Assignment/AssignmentSection";
 import CourseAccessBar from "@/components/Gamification/CourseAccessBar";
 import ReactivationDialog from "@/components/Gamification/ReactivationDialog";
-import { useCourseGamification, formatRemaining } from "@/hooks/useCourseGamification";
+import { useCourseGamification, formatRemaining, useLiveGamStatus, GamStatus } from "@/hooks/useCourseGamification";
+
+const MissionDeadline: React.FC<{ status: GamStatus | null }> = ({ status: raw }) => {
+  const live = useLiveGamStatus(raw);
+  if (!live?.mission) return null;
+  return <>⏱ مهلت این ماموریت: {formatRemaining(live.mission.remainingMs)} دیگر</>;
+};
 import { useToast } from "@/hooks/use-toast";
 import { Lock } from "lucide-react";
 
@@ -365,7 +371,7 @@ const AppLessonView = () => {
         {gam.status?.enabled && gam.status.mission?.lesson_id === lesson.id && (
           <div className="px-4 pt-2">
             <div className="rounded-lg border border-primary/30 bg-primary/5 p-2 text-center text-xs" dir="rtl">
-              ⏱ مهلت این ماموریت: {formatRemaining(gam.status.mission.remainingMs)} دیگر
+              <MissionDeadline status={gam.status} />
             </div>
           </div>
         )}

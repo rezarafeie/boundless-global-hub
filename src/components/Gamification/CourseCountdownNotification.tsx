@@ -3,7 +3,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Flame, Lock, Zap } from 'lucide-react';
-import { GamStatus } from '@/hooks/useCourseGamification';
+import { GamStatus, useLiveGamStatus } from '@/hooks/useCourseGamification';
 import { cn } from '@/lib/utils';
 import { gamText } from '@/lib/gamificationMessages';
 
@@ -33,7 +33,8 @@ const Unit: React.FC<{ value: number; label: string; urgent?: boolean }> = ({ va
  * Top notification-style banner showing the live free-access countdown.
  * Rendered next to the other course notifications on the course access page.
  */
-const CourseCountdownNotification: React.FC<Props> = ({ status, onReactivate, className }) => {
+const CourseCountdownNotification: React.FC<Props> = ({ status: rawStatus, onReactivate, className }) => {
+  const status = useLiveGamStatus(rawStatus);
   if (!status?.enabled || !status.window) return null;
 
   const locked = status.locked || (status.remainingMs ?? 0) <= 0;
