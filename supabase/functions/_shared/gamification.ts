@@ -370,6 +370,16 @@ export async function notifyStudent(
 
   const { data: course } = await supabase.from("courses").select("title, slug").eq("id", courseId).maybeSingle();
   const courseTitle = course?.title ?? "";
+  const msg = gamMessage(s?.messages ?? {}, kind, {
+    course_title: courseTitle,
+    name: user.full_name ?? user.name ?? "",
+    free_days: s?.free_days,
+    mission_hours: s?.mission_hours,
+    fast_finish_days: s?.fast_finish_days,
+    price_usd: s?.reactivation_price_usd,
+    reactivation_days: s?.reactivation_days,
+    ...vars,
+  });
   const body = `${msg.title}\n\n${msg.text}\n\n${courseTitle}`;
   const channels: string[] = [];
 
