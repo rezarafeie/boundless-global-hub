@@ -1,6 +1,6 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { supabase } from "../_shared/supabase.ts";
-import { notifyStudent, humanRemaining, HOUR, DAY } from "../_shared/gamification.ts";
+import { notifyStudent, humanRemaining, startWindowsForNewEnrollments, HOUR, DAY } from "../_shared/gamification.ts";
 
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
