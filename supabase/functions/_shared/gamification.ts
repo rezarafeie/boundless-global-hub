@@ -320,9 +320,13 @@ export async function buildStatus(userId: number, courseId: string) {
   const startedMs = new Date(w.started_at).getTime();
   const fastDeadline = startedMs + s.fast_finish_days * DAY;
 
+  const { data: courseRow } = await supabase
+    .from("courses").select("title, slug").eq("id", courseId).maybeSingle();
+
   return {
     enabled: true,
     settings: s,
+    course: { id: courseId, title: courseRow?.title ?? "", slug: courseRow?.slug ?? "" },
     window: w,
     locked: expired,
     remainingMs: Math.max(0, new Date(w.expires_at).getTime() - now),

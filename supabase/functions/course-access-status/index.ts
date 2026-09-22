@@ -17,7 +17,20 @@ Deno.serve(async (req) => {
       const { data } = await supabase.from("courses").select("id").eq("slug", courseSlug).maybeSingle();
       cid = data?.id;
     }
-    if (!cid) return json({ success: false, error: "دوره یافت نشد" }, 404);
+    // no course given: pick the user's most urgent active access window (global banner)
+    if (!cid) {
+      const { data: w } = await supabase
+        .from("course_access_windows")
+        .select("course_id, expires_at, status")
+        .eq("user_id", uid)
+        .eq("status", "active")
+        .order("expires_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (!w) return json({ success: true, enabled: false });
+      const status = await buildStatus(uid, w.course_id);
+      return json({ success: true, ...status });
+    }
 
     await ensureAccessWindow(uid, cid, enrollmentId ?? null);
     const status = await buildStatus(uid, cid);

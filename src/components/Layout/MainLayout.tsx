@@ -12,6 +12,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useNotificationHeight } from "@/hooks/useNotificationHeight";
 import { useBlackFridayContext } from "@/contexts/BlackFridayContext";
 import BlackFridayBanner from "@/components/BlackFriday/BlackFridayBanner";
+import GlobalAccessCountdownBanner from "@/components/Gamification/GlobalAccessCountdownBanner";
 
 
 interface MainLayoutProps {
@@ -74,6 +75,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         <BlackFridayBanner endDate={blackFridaySettings.end_date} />
       )}
       
+      <GlobalAccessCountdownBanner />
+
       <NotificationErrorBoundary>
         <LiveWarModeBanner />
         <PopupNotification />
