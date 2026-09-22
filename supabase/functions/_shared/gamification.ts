@@ -3,6 +3,7 @@
 import { supabase } from "./supabase.ts";
 import { sendMessage, tgCall } from "./telegram.ts";
 import { sendEmail, sendSms } from "./support-followup.ts";
+import { gamMessage, gamText } from "./gamificationMessages.ts";
 
 export const HOUR = 3600_000;
 export const DAY = 24 * HOUR;
@@ -16,6 +17,7 @@ export type GamSettings = {
   mission_hours: number;
   fast_finish_days: number;
   notifications_enabled: boolean;
+  messages: Record<string, { title?: string; text?: string }>;
 };
 
 export const DEFAULT_SETTINGS = {
@@ -26,6 +28,7 @@ export const DEFAULT_SETTINGS = {
   mission_hours: 24,
   fast_finish_days: 3,
   notifications_enabled: true,
+  messages: {} as Record<string, { title?: string; text?: string }>,
 };
 
 export async function getGamSettings(courseId: string): Promise<GamSettings | null> {
@@ -80,12 +83,9 @@ export async function ensureAccessWindow(userId: number, courseId: string, enrol
   if (created) {
     await ensureNextMission(userId, courseId, s);
     await notifyStudent(userId, courseId, "welcome", created.id, {
-      title: "دسترسی ۷ روزه شما فعال شد 🚀",
-      text:
-        `دسترسی شما به دوره فعال شد.\n` +
-        `شما ${s.free_days} روز فرصت دارید دوره را کامل کنید.\n` +
-        `هر درس یک ماموریت است و ${s.mission_hours} ساعت برای انجام آن وقت دارید.\n` +
-        `اگر دوره را ظرف ${s.fast_finish_days} روز تمام کنی، جایزه ویژه می‌گیری 🎁`,
+      free_days: s.free_days,
+      mission_hours: s.mission_hours,
+      fast_finish_days: s.fast_finish_days,
     });
   }
   return created;
@@ -236,10 +236,13 @@ export async function completeMission(userId: number, courseId: string, lessonId
     rewards,
     nextMission,
     message: finished
-      ? "🎉 دوره را کامل کردی! جوایز شما در داشبورد فعال شد."
-      : `🔥 ماموریت انجام شد!\n${fastRemaining > 0
-        ? `هنوز واجد شرایط جایزه سریع هستی.\n${humanRemaining(fastRemaining)} باقی مانده.`
-        : "به مسیرت ادامه بده."}`,
+      ? gamText(s.messages, "course_completed", {
+        days: w ? ((Date.now() - new Date(w.started_at).getTime()) / DAY).toFixed(1) : "",
+      })
+      : gamText(s.messages, fastRemaining > 0 ? "mission_completed" : "mission_completed_late", {
+        remaining: humanRemaining(fastRemaining),
+        streak,
+      }),
   };
 }
 
@@ -270,9 +273,8 @@ export async function grantRewards(userId: number, courseId: string, completionD
 
   if (granted.length) {
     await notifyStudent(userId, courseId, "rewards", null, {
-      title: "جایزه شما فعال شد 🎁",
-      text: `تبریک! دوره را در ${completionDays.toFixed(1)} روز تمام کردی.\nجوایز شما:\n` +
-        granted.map((g) => `• ${g.title}`).join("\n"),
+      days: completionDays.toFixed(1),
+      rewards: granted.map((g) => `• ${g.title}`).join("\n"),
     });
   }
   return granted;
@@ -350,7 +352,7 @@ export async function notifyStudent(
   courseId: string,
   kind: string,
   refId: string | null,
-  msg: { title: string; text: string },
+  vars: Record<string, string | number | null | undefined> = {},
 ) {
   const s = await getGamSettings(courseId);
   if (s && !s.notifications_enabled) return { skipped: true };
@@ -368,6 +370,16 @@ export async function notifyStudent(
 
   const { data: course } = await supabase.from("courses").select("title, slug").eq("id", courseId).maybeSingle();
   const courseTitle = course?.title ?? "";
+  const msg = gamMessage(s?.messages ?? {}, kind, {
+    course_title: courseTitle,
+    name: user.full_name ?? user.name ?? "",
+    free_days: s?.free_days,
+    mission_hours: s?.mission_hours,
+    fast_finish_days: s?.fast_finish_days,
+    price_usd: s?.reactivation_price_usd,
+    reactivation_days: s?.reactivation_days,
+    ...vars,
+  });
   const body = `${msg.title}\n\n${msg.text}\n\n${courseTitle}`;
   const channels: string[] = [];
 

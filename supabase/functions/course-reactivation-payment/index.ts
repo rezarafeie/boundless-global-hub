@@ -89,8 +89,7 @@ Deno.serve(async (req) => {
         const s = await getGamSettings(courseId);
         await extendAccess(uid, courseId, s?.reactivation_days ?? 7, "reactivation_paid");
         await notifyStudent(uid, courseId, "reactivated", String(data.data.ref_id ?? authority), {
-          title: "✅ دسترسی دوره تمدید شد",
-          text: `دسترسی تو برای ${s?.reactivation_days ?? 7} روز دیگر باز شد و دقیقاً از همان‌جا که بودی ادامه می‌دهی.`,
+          reactivation_days: s?.reactivation_days ?? 7,
         });
         return json({ success: true, refId: data.data.ref_id });
       }

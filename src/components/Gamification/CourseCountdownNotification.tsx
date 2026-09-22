@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, Flame, Lock, Zap } from 'lucide-react';
 import { GamStatus } from '@/hooks/useCourseGamification';
 import { cn } from '@/lib/utils';
+import { gamText } from '@/lib/gamificationMessages';
 
 interface Props {
   status: GamStatus | null;
@@ -36,6 +37,13 @@ const CourseCountdownNotification: React.FC<Props> = ({ status, onReactivate, cl
   if (!status?.enabled || !status.window) return null;
 
   const locked = status.locked || (status.remainingMs ?? 0) <= 0;
+  const m = status.settings?.messages ?? {};
+  const tvars = {
+    percent: Math.round(status.progressPercent ?? 0),
+    streak: status.streak ?? 0,
+    price_usd: status.settings?.reactivation_price_usd,
+    reactivation_days: status.settings?.reactivation_days,
+  };
 
   if (locked) {
     return (
@@ -43,14 +51,12 @@ const CourseCountdownNotification: React.FC<Props> = ({ status, onReactivate, cl
         <Lock className="h-4 w-4 text-destructive" />
         <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-bold text-destructive">دسترسی رایگان شما به پایان رسید 🔒</p>
-            <p className="text-sm text-muted-foreground">
-              پیشرفت شما ذخیره شده است. با تمدید دسترسی، دقیقاً از همان‌جا ادامه می‌دهید.
-            </p>
+            <p className="font-bold text-destructive">{gamText(m, 'locked_title', tvars)}</p>
+            <p className="text-sm text-muted-foreground">{gamText(m, 'locked_text', tvars)}</p>
           </div>
           {onReactivate && (
             <Button size="sm" variant="destructive" onClick={onReactivate} className="shrink-0">
-              تمدید دسترسی
+              {gamText(m, 'reactivate_button', tvars)}
             </Button>
           )}
         </AlertDescription>
@@ -80,7 +86,7 @@ const CourseCountdownNotification: React.FC<Props> = ({ status, onReactivate, cl
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={urgent ? 'destructive' : 'default'} className="gap-1">
               <Zap className="h-3 w-3" />
-              دسترسی رایگان محدود
+              {gamText(m, 'banner_title', tvars)}
             </Badge>
             {!!status.streak && (
               <Badge variant="outline" className="gap-1 text-orange-600">
@@ -93,9 +99,7 @@ const CourseCountdownNotification: React.FC<Props> = ({ status, onReactivate, cl
             </span>
           </div>
           <p className={cn('text-sm font-bold', urgent ? 'text-destructive' : 'text-foreground')}>
-            {urgent
-              ? 'کمتر از یک روز تا بسته‌شدن دسترسی شما باقی مانده — همین الان یک درس جلو بروید!'
-              : 'بعد از پایان این زمان، دسترسی شما بسته می‌شود؛ هر روز تعللی یعنی یک درس عقب‌ماندگی.'}
+            {gamText(m, urgent ? 'banner_text_urgent' : 'banner_text', tvars)}
           </p>
         </div>
 

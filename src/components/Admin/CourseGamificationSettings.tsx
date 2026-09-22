@@ -4,9 +4,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
-import { Trash2, Plus, Loader2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Trash2, Plus, Loader2, RotateCcw, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { GAM_MESSAGES } from '@/lib/gamificationMessages';
 
 interface Reward {
   id?: string;
@@ -28,6 +31,7 @@ export const GAM_DEFAULTS = {
   mission_hours: 24,
   fast_finish_days: 3,
   notifications_enabled: true,
+  messages: {} as Record<string, { title?: string; text?: string }>,
 };
 
 interface Props {
@@ -73,6 +77,7 @@ const CourseGamificationSettings: React.FC<Props> = ({ courseId, onSaved }) => {
           mission_hours: Number(settings.mission_hours) || 24,
           fast_finish_days: Number(settings.fast_finish_days) || 3,
           notifications_enabled: settings.notifications_enabled,
+          messages: settings.messages ?? {},
         },
         { onConflict: 'course_id' },
       );
@@ -151,6 +156,69 @@ const CourseGamificationSettings: React.FC<Props> = ({ courseId, onSaved }) => {
           checked={!!settings.notifications_enabled}
           onCheckedChange={(v) => setSettings({ ...settings, notifications_enabled: v })}
         />
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 font-medium">
+          <MessageSquare className="h-4 w-4" /> متن پیام‌ها
+        </div>
+        <p className="text-xs text-muted-foreground">
+          این متن‌ها در ایمیل، پیام بات تلگرام، پیام تلگرام بیزینس، پیامک و داخل سایت نمایش داده می‌شوند. اگر خالی
+          بماند، متن پیش‌فرض استفاده می‌شود. متغیرهای قابل استفاده در هر بخش ذکر شده است.
+        </p>
+
+        <Accordion type="multiple" className="rounded-lg border">
+          {(['notification', 'site'] as const).map((group) => (
+            <AccordionItem key={group} value={group}>
+              <AccordionTrigger className="px-3 text-sm">
+                {group === 'notification' ? 'پیام‌های ارسالی (ایمیل / بات / تلگرام بیزینس / پیامک)' : 'متن‌های داخل سایت'}
+              </AccordionTrigger>
+              <AccordionContent className="space-y-4 px-3">
+                {GAM_MESSAGES.filter((d) => d.group === group).map((d) => {
+                  const current = (settings.messages ?? {})[d.key] ?? {};
+                  const setMsg = (patch: any) =>
+                    setSettings({
+                      ...settings,
+                      messages: { ...(settings.messages ?? {}), [d.key]: { ...current, ...patch } },
+                    });
+                  const reset = () => {
+                    const next = { ...(settings.messages ?? {}) };
+                    delete next[d.key];
+                    setSettings({ ...settings, messages: next });
+                  };
+                  return (
+                    <div key={d.key} className="space-y-2 rounded-lg border p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <Label className="text-xs font-medium">{d.label}</Label>
+                        <Button type="button" size="sm" variant="ghost" onClick={reset} title="بازگشت به متن پیش‌فرض">
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      {d.hasTitle && (
+                        <Input
+                          placeholder={d.title}
+                          value={current.title ?? ''}
+                          onChange={(e) => setMsg({ title: e.target.value })}
+                        />
+                      )}
+                      <Textarea
+                        rows={d.text.split('\n').length + 1}
+                        placeholder={d.text}
+                        value={current.text ?? ''}
+                        onChange={(e) => setMsg({ text: e.target.value })}
+                      />
+                      {!!d.vars.length && (
+                        <div className="text-[11px] text-muted-foreground">
+                          متغیرها: {d.vars.map((v) => `{${v}}`).join(' ، ')}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
       </div>
 
       <div className="space-y-3">

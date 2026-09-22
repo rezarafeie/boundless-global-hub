@@ -2,6 +2,7 @@ import React from 'react';
 import { Clock, Flame, Lock } from 'lucide-react';
 import { GamStatus, formatRemaining } from '@/hooks/useCourseGamification';
 import { cn } from '@/lib/utils';
+import { gamText } from '@/lib/gamificationMessages';
 
 interface Props {
   status: GamStatus | null;
@@ -13,6 +14,7 @@ const CourseAccessBar: React.FC<Props> = ({ status, onReactivate, className }) =
   if (!status?.enabled || !status.window) return null;
 
   const locked = status.locked;
+  const m = status.settings?.messages ?? {};
 
   return (
     <div
@@ -28,7 +30,7 @@ const CourseAccessBar: React.FC<Props> = ({ status, onReactivate, className }) =
           {locked ? <Lock size={14} className="text-destructive" /> : <Clock size={14} className="text-primary" />}
           <span>
             {locked
-              ? 'دسترسی شما به پایان رسیده است'
+              ? gamText(m, 'locked_title')
               : `${formatRemaining(status.remainingMs)} تا پایان دسترسی`}
           </span>
         </div>
@@ -44,7 +46,7 @@ const CourseAccessBar: React.FC<Props> = ({ status, onReactivate, className }) =
               onClick={onReactivate}
               className="rounded-md bg-destructive px-2 py-1 text-[11px] font-medium text-destructive-foreground"
             >
-              تمدید دسترسی
+              {gamText(m, 'reactivate_button')}
             </button>
           )}
         </div>
