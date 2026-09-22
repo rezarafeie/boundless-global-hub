@@ -38,6 +38,24 @@ const playSuccessSound = (audioCtx: AudioContext | null) => {
 };
 
 
+// Turn the partially streamed JSON into readable Persian text
+const KEY_LABELS: Record<string, string> = {
+  summary: 'خلاصه بازخورد',
+  strengths: 'نقاط قوت',
+  weaknesses: 'نکات قابل بهبود',
+  next_steps: 'قدم‌های بعدی',
+  score: 'امتیاز',
+};
+
+const prettifyStream = (raw: string): string =>
+  raw
+    .replace(/```(?:json)?/gi, '')
+    .replace(/"(summary|strengths|weaknesses|next_steps|score)"\s*:/g, (_m, k: string) => `\n${KEY_LABELS[k]}: `)
+    .replace(/[{}[\]"]/g, '')
+    .replace(/,\s*/g, '\n• ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
 const SUPABASE_URL = 'https://ihhetvwuhqohbfgkqoxw.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloaGV0dnd1aHFvaGJmZ2txb3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNjk0NTIsImV4cCI6MjA2NTk0NTQ1Mn0.91gRPO_ApEGQF2EtTAQLcqA-mIj7lqF29M1OZcGW4BI';
 
