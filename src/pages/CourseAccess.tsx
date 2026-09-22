@@ -987,9 +987,10 @@ const CourseAccess: React.FC = () => {
                         }
                         window.open(lesson.file_url!, '_blank');
                       }}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
+                      variant="outline"
+                      className="w-full gap-2"
                     >
-                      <Download className="h-4 w-4 mr-2" />
+                      <Download className="h-4 w-4" />
                       دانلود منابع
                     </Button>
                   </div>
