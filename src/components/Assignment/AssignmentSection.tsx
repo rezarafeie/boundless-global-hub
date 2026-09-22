@@ -178,6 +178,7 @@ const AssignmentCard: React.FC<{
           .single();
         if (!error && data) setCurrentSubId(data.id);
       }
+      setSavedAt(Date.now());
     } finally {
       setSaving(false);
     }
@@ -187,9 +188,15 @@ const AssignmentCard: React.FC<{
     const next = { ...answers, [blockId]: value };
     setAnswers(next);
     if (readonly) return;
+    setSavedAt(null);
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => upsertDraft(next), 800);
   };
+
+  // Flush any pending autosave when the card unmounts
+  useEffect(() => () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+  }, []);
 
   useEffect(() => { setLocalSubmission(submission); }, [submission?.id, submission?.ai_feedback]);
 
