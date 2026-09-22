@@ -766,7 +766,66 @@ const CourseAccess: React.FC = () => {
     } : undefined
   );
   
-  console.log('CourseAccess render - markLessonComplete:', markLessonComplete);
+  // All lessons in order + overall progress
+  const allCourseLessons = React.useMemo(() => {
+    const list: Lesson[] = [];
+    titleGroups.forEach(group => group.sections.forEach(section => list.push(...section.lessons)));
+    sections.forEach(section => list.push(...section.lessons));
+    return list;
+  }, [titleGroups, sections]);
+
+  const totalLessonsCount = allCourseLessons.length;
+  const completedLessonsCount = allCourseLessons.filter(l => completedLessons.has(l.id)).length;
+  const courseProgressPercent = totalLessonsCount > 0
+    ? Math.round((completedLessonsCount / totalLessonsCount) * 100)
+    : 0;
+
+  // Shared completion handler (manual click or automatic after enough watch time)
+  const completeSelectedLesson = async (auto = false) => {
+    if (!selectedLesson || !user?.id || !course) return;
+    if (completedLessons.has(selectedLesson.id)) return;
+
+    if (!auto) setIsMarkingComplete(true);
+    const lessonId = selectedLesson.id;
+
+    try {
+      if (markLessonComplete) {
+        await markLessonComplete();
+      }
+      setCompletedLessons(prev => new Set([...prev, lessonId]));
+
+      if (gam.status?.enabled) {
+        try {
+          await gam.completeMission(lessonId);
+        } catch (e) {
+          console.error('mission complete error', e);
+        }
+      }
+
+      toast({
+        title: auto ? 'آفرین! 🎉' : 'تبریک!',
+        description: auto ? 'این درس را تا انتها دیدید و تکمیل شد' : 'درس با موفقیت تکمیل شد',
+      });
+    } catch (error) {
+      console.error('Error marking lesson as complete:', error);
+      if (!auto) {
+        toast({ title: 'خطا', description: 'خطا در تکمیل درس', variant: 'destructive' });
+      }
+    } finally {
+      if (!auto) setIsMarkingComplete(false);
+    }
+  };
+
+  // Real time-on-lesson tracking with automatic completion
+  const { secondsRef, requiredRef } = useLessonWatchTime({
+    userId: user?.id ? Number(user.id) : null,
+    courseId: course?.id,
+    lessonId: selectedLesson?.id,
+    durationMinutes: selectedLesson?.duration || 0,
+    isCompleted: selectedLesson ? completedLessons.has(selectedLesson.id) : true,
+    onAutoComplete: () => { completeSelectedLesson(true); },
+  });
+
 
   // Helper function to find next lesson
   const findNextLesson = (currentLesson: Lesson): Lesson | null => {
