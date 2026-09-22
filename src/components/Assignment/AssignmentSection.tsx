@@ -12,6 +12,25 @@ import { FeedbackReport } from './FeedbackReport';
 import { CTASection } from './CTASection';
 import type { Assignment, AssignmentSubmission, SubmissionStatus } from '@/types/assignment';
 import { STATUS_LABELS_FA } from '@/types/assignment';
+const playSuccessSound = () => {
+  try {
+    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+    oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15);
+    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.3);
+  } catch (e) {
+    console.warn("Audio feedback failed", e);
+  }
+};
+
 
 interface Props {
   lessonId: string;
@@ -173,6 +192,7 @@ const AssignmentCard: React.FC<{
         subId = data.id;
         setCurrentSubId(subId);
         setLocalSubmission(data as unknown as AssignmentSubmission);
+              playSuccessSound();
       } else {
         const { error } = await supabase
           .from('assignment_submissions')
@@ -201,6 +221,7 @@ const AssignmentCard: React.FC<{
               .maybeSingle();
             if (data && (data as any).ai_feedback) {
               setLocalSubmission(data as unknown as AssignmentSubmission);
+              playSuccessSound();
               setAwaitingFeedback(false);
               onSaved();
               return;
