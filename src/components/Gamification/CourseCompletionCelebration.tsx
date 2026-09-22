@@ -10,6 +10,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   status: GamStatus | null;
+  onOpenGifts?: () => void;
 }
 
 const PARTICLES = [
@@ -19,7 +20,7 @@ const PARTICLES = [
   'left-[63%] top-[81%]', 'left-[74%] top-[6%]', 'left-[85%] top-[43%]', 'left-[94%] top-[27%]',
 ];
 
-const CourseCompletionCelebration: React.FC<Props> = ({ open, onOpenChange, status }) => {
+const CourseCompletionCelebration: React.FC<Props> = ({ open, onOpenChange, status, onOpenGifts }) => {
   if (!status?.completed) return null;
   const giftsLink = status.course?.gifts_link;
   const messages = status.settings?.messages ?? {};
@@ -61,8 +62,15 @@ const CourseCompletionCelebration: React.FC<Props> = ({ open, onOpenChange, stat
             ))}
           </div>
         )}
-        {giftsLink && (
-          <Button className="relative w-full gap-2" onClick={() => openInNewTab(giftsLink)}>
+        {(giftsLink || onOpenGifts) && (
+          <Button
+            className="relative w-full gap-2"
+            onClick={() => {
+              if (giftsLink) openInNewTab(giftsLink);
+              else onOpenGifts?.();
+              onOpenChange(false);
+            }}
+          >
             <Gift className="h-4 w-4" />
             {gamText(messages, 'completion_gifts_button')}
           </Button>

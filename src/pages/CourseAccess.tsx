@@ -1200,6 +1200,12 @@ const CourseAccess: React.FC = () => {
               open={showCompletionCelebration}
               onOpenChange={setShowCompletionCelebration}
               status={gam.status}
+              onOpenGifts={() => {
+                const giftLesson = titleGroups
+                  .find((group) => group.title.includes('هدیه') || group.title.includes('هدایا'))
+                  ?.sections.flatMap((section) => section.lessons)[0];
+                if (giftLesson) handleLessonSelect(giftLesson);
+              }}
             />
 
             <div className="mx-auto max-w-[1600px] px-0 lg:px-8 lg:pb-8">
