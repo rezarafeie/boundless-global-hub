@@ -38,6 +38,9 @@ const playSuccessSound = (audioCtx: AudioContext | null) => {
 };
 
 
+const SUPABASE_URL = 'https://ihhetvwuhqohbfgkqoxw.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloaGV0dnd1aHFvaGJmZ2txb3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNjk0NTIsImV4cCI6MjA2NTk0NTQ1Mn0.91gRPO_ApEGQF2EtTAQLcqA-mIj7lqF29M1OZcGW4BI';
+
 interface Props {
   lessonId: string;
 }
