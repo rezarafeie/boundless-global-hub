@@ -38,6 +38,7 @@ import { AssignmentSection } from '@/components/Assignment/AssignmentSection';
 import { Progress } from '@/components/ui/progress';
 import { useLessonWatchTime } from '@/hooks/useLessonWatchTime';
 import LessonWatchProgress from '@/components/Course/LessonWatchProgress';
+import CourseCompletionCelebration from '@/components/Gamification/CourseCompletionCelebration';
 
 interface Course {
   id: string;
@@ -154,6 +155,7 @@ const CourseAccess: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileLessonView, setShowMobileLessonView] = useState(false);
   const [, setOpenTitleGroups] = useState<Set<string>>(new Set());
+  const [showCompletionCelebration, setShowCompletionCelebration] = useState(false);
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
   
@@ -791,7 +793,8 @@ const CourseAccess: React.FC = () => {
 
       if (gam.status?.enabled) {
         try {
-          await gam.completeMission(lessonId);
+          const result = await gam.completeMission(lessonId);
+          if (result?.finished) setShowCompletionCelebration(true);
         } catch (e) {
           console.error('mission complete error', e);
         }
@@ -1192,6 +1195,17 @@ const CourseAccess: React.FC = () => {
               onOpenChange={setShowReactivate}
               courseId={course.id}
               courseTitle={course.title}
+            />
+            <CourseCompletionCelebration
+              open={showCompletionCelebration}
+              onOpenChange={setShowCompletionCelebration}
+              status={gam.status}
+              onOpenGifts={() => {
+                const giftLesson = titleGroups
+                  .find((group) => group.title.includes('هدیه') || group.title.includes('هدایا'))
+                  ?.sections.flatMap((section) => section.lessons)[0];
+                if (giftLesson) handleLessonSelect(giftLesson);
+              }}
             />
 
             <div className="mx-auto max-w-[1600px] px-0 lg:px-8 lg:pb-8">

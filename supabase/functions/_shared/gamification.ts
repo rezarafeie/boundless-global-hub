@@ -176,7 +176,9 @@ export async function completeMission(userId: number, courseId: string, lessonId
   const now = new Date();
   let streakKept = true;
   if (mission) {
-    if (mission.completed_at) return { alreadyDone: true };
+    if (mission.completed_at) {
+      return { alreadyDone: true, status: await buildStatus(userId, courseId) };
+    }
     streakKept = now.getTime() <= new Date(mission.due_at).getTime();
     await supabase.from("course_missions")
       .update({ completed_at: now.toISOString(), streak_kept: streakKept })
@@ -223,6 +225,10 @@ export async function completeMission(userId: number, courseId: string, lessonId
       status: "completed",
     }).eq("id", w.id);
     rewards = await grantRewards(userId, courseId, days);
+    await notifyStudent(userId, courseId, "course_completed", w.id, {
+      days: days.toFixed(1),
+      rewards: rewards.length ? rewards.map((r) => `• ${r.title}`).join("\n") : "هدایای دوره فعال شد",
+    });
   }
 
   const fastDeadline = w ? new Date(new Date(w.started_at).getTime() + s.fast_finish_days * DAY) : null;
@@ -236,9 +242,9 @@ export async function completeMission(userId: number, courseId: string, lessonId
     rewards,
     nextMission,
     message: finished
-      ? gamText(s.messages, "course_completed", {
+      ? gamMessage(s.messages, "course_completed", {
         days: w ? ((Date.now() - new Date(w.started_at).getTime()) / DAY).toFixed(1) : "",
-      })
+      }).text
       : gamText(s.messages, fastRemaining > 0 ? "mission_completed" : "mission_completed_late", {
         remaining: humanRemaining(fastRemaining),
         streak,
@@ -306,6 +312,25 @@ export async function buildStatus(userId: number, courseId: string) {
   const completed = (progress ?? []).filter((p: any) => p.is_completed).length;
   const percent = lessons.length ? Math.round((completed / lessons.length) * 100) : 0;
 
+  // Reconcile legacy or externally-completed progress so a 100% course can never
+  // keep an active countdown or receive reminder messages.
+  if (lessons.length > 0 && completed >= lessons.length && w.status !== "completed") {
+    const days = Math.max(0, (now - new Date(w.started_at).getTime()) / DAY);
+    await supabase.from("course_access_windows").update({
+      completed_at: w.completed_at ?? new Date().toISOString(),
+      completion_days: w.completion_days ?? Number(days.toFixed(2)),
+      status: "completed",
+    }).eq("id", w.id);
+    w.status = "completed";
+    w.completed_at = w.completed_at ?? new Date().toISOString();
+    w.completion_days = w.completion_days ?? Number(days.toFixed(2));
+    const granted = await grantRewards(userId, courseId, days);
+    await notifyStudent(userId, courseId, "course_completed", w.id, {
+      days: days.toFixed(1),
+      rewards: granted.length ? granted.map((r) => `• ${r.title}`).join("\n") : "هدایای دوره فعال شد",
+    });
+  }
+
   let mission = null as any;
   if (!expired && w.status !== "completed") {
     mission = await ensureNextMission(userId, courseId, s);
@@ -321,15 +346,19 @@ export async function buildStatus(userId: number, courseId: string) {
   const fastDeadline = startedMs + s.fast_finish_days * DAY;
 
   const { data: courseRow } = await supabase
-    .from("courses").select("title, slug").eq("id", courseId).maybeSingle();
+    .from("courses").select("title, slug, gifts_link").eq("id", courseId).maybeSingle();
 
   return {
     enabled: true,
     settings: s,
-    course: { id: courseId, title: courseRow?.title ?? "", slug: courseRow?.slug ?? "" },
+    course: { id: courseId, title: courseRow?.title ?? "", slug: courseRow?.slug ?? "", gifts_link: courseRow?.gifts_link ?? null },
     window: w,
-    locked: expired,
-    remainingMs: Math.max(0, new Date(w.expires_at).getTime() - now),
+    completed: w.status === "completed" || percent >= 100,
+    completionMessage: gamMessage(s.messages, "course_completed", {
+      days: w.completion_days ?? Math.max(0, (now - new Date(w.started_at).getTime()) / DAY).toFixed(1),
+    }),
+    locked: expired && w.status !== "completed",
+    remainingMs: w.status === "completed" ? 0 : Math.max(0, new Date(w.expires_at).getTime() - now),
     progressPercent: percent,
     completedLessons: completed,
     totalLessons: lessons.length,

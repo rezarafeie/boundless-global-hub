@@ -12,7 +12,7 @@ interface Props {
 
 const CourseAccessBar: React.FC<Props> = ({ status: rawStatus, onReactivate, className }) => {
   const status = useLiveGamStatus(rawStatus);
-  if (!status?.enabled || !status.window) return null;
+  if (!status?.enabled || !status.window || status.completed || (status.progressPercent ?? 0) >= 100) return null;
 
   const locked = status.locked;
   const m = status.settings?.messages ?? {};

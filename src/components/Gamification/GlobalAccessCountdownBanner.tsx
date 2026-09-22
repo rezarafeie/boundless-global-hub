@@ -42,7 +42,7 @@ const GlobalAccessCountdownBanner: React.FC = () => {
     };
   }, [user?.id]);
 
-  if (dismissed || !status?.enabled || !status.window) return null;
+  if (dismissed || !status?.enabled || !status.window || status.completed || (status.progressPercent ?? 0) >= 100) return null;
 
   const remaining = status.remainingMs ?? 0;
   const locked = status.locked || remaining <= 0;

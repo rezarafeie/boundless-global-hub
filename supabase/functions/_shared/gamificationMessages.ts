@@ -75,6 +75,15 @@ export const GAM_MESSAGES: GamMessageDef[] = [
     text: 'دسترسی تو برای {reactivation_days} روز دیگر باز شد و دقیقاً از همان‌جا که بودی ادامه می‌دهی.',
     vars: ['reactivation_days', 'course_title', 'name'],
   },
+  {
+    key: 'course_completed',
+    label: 'پیام تبریک تکمیل کل دوره',
+    group: 'notification',
+    hasTitle: true,
+    title: 'دوره را با موفقیت کامل کردی 🎉',
+    text: 'تبریک {name}! دوره «{course_title}» را در {days} روز کامل کردی. هدایا و امتیازهای شما فعال شدند.',
+    vars: ['days', 'rewards', 'course_title', 'name'],
+  },
 
   // ---------- on-site texts ----------
   {
@@ -150,12 +159,12 @@ export const GAM_MESSAGES: GamMessageDef[] = [
     vars: ['lesson_title', 'streak'],
   },
   {
-    key: 'course_completed',
-    label: 'پیام تکمیل کل دوره',
+    key: 'completion_gifts_button',
+    label: 'متن دکمه هدایا پس از تکمیل دوره',
     group: 'site',
     hasTitle: false,
-    text: '🎉 دوره را کامل کردی! جوایز شما در داشبورد فعال شد.',
-    vars: ['days'],
+    text: 'مشاهده و دریافت هدایا',
+    vars: [],
   },
   {
     key: 'all_missions_done',

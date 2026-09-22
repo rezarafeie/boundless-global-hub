@@ -18,6 +18,7 @@ Deno.serve(async (req) => {
       cid = data?.id;
     }
     // no course given: pick the user's most urgent active access window (global banner)
+    // Completed courses are intentionally excluded so countdowns disappear site-wide.
     if (!cid) {
       const { data: w } = await supabase
         .from("course_access_windows")

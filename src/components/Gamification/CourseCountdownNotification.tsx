@@ -35,7 +35,7 @@ const Unit: React.FC<{ value: number; label: string; urgent?: boolean }> = ({ va
  */
 const CourseCountdownNotification: React.FC<Props> = ({ status: rawStatus, onReactivate, className }) => {
   const status = useLiveGamStatus(rawStatus);
-  if (!status?.enabled || !status.window) return null;
+  if (!status?.enabled || !status.window || status.completed || (status.progressPercent ?? 0) >= 100) return null;
 
   const locked = status.locked || (status.remainingMs ?? 0) <= 0;
   const m = status.settings?.messages ?? {};

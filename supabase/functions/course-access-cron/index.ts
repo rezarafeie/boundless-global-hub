@@ -37,6 +37,13 @@ Deno.serve(async (req) => {
       .limit(200);
 
     for (const m of missions ?? []) {
+      const { data: window } = await supabase
+        .from("course_access_windows")
+        .select("status")
+        .eq("user_id", m.user_id)
+        .eq("course_id", m.course_id)
+        .maybeSingle();
+      if (window?.status !== "active") continue;
       const { data: lesson } = await supabase
         .from("course_lessons").select("title").eq("id", m.lesson_id).maybeSingle();
       await notifyStudent(m.user_id, m.course_id, "mission_due", m.id, {
