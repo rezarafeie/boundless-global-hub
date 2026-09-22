@@ -69,10 +69,11 @@ Deno.serve(async (req) => {
       .limit(200);
 
     for (const w of warn ?? []) {
-      await notifyStudent(w.user_id, w.course_id, "access_expiring", w.id, {
+      const delivery = await notifyStudent(w.user_id, w.course_id, "access_expiring", w.id, {
         remaining: humanRemaining(new Date(w.expires_at).getTime() - now),
       });
-      result.expiryWarnings++;
+      if ((delivery.channels?.length ?? 0) > 0) result.expiryWarnings++;
+      else console.error("expiry warning had no successful delivery", { windowId: w.id, userId: w.user_id, errors: delivery.errors });
     }
 
     // 3. lock expired windows
@@ -86,7 +87,10 @@ Deno.serve(async (req) => {
 
     for (const w of gone ?? []) {
       await supabase.from("course_access_windows").update({ status: "expired" }).eq("id", w.id);
-      await notifyStudent(w.user_id, w.course_id, "access_expired", w.id, {});
+      const delivery = await notifyStudent(w.user_id, w.course_id, "access_expired", w.id, {});
+      if ((delivery.channels?.length ?? 0) === 0) {
+        console.error("expiry notice had no successful delivery", { windowId: w.id, userId: w.user_id, errors: delivery.errors });
+      }
       result.expired++;
     }
 
