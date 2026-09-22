@@ -2356,8 +2356,10 @@ export type Database = {
         Row: {
           channels: Json
           course_id: string
+          delivery_errors: Json
           id: string
           kind: string
+          last_attempt_at: string | null
           ref_id: string | null
           sent_at: string
           user_id: number
@@ -2365,8 +2367,10 @@ export type Database = {
         Insert: {
           channels?: Json
           course_id: string
+          delivery_errors?: Json
           id?: string
           kind: string
+          last_attempt_at?: string | null
           ref_id?: string | null
           sent_at?: string
           user_id: number
@@ -2374,8 +2378,10 @@ export type Database = {
         Update: {
           channels?: Json
           course_id?: string
+          delivery_errors?: Json
           id?: string
           kind?: string
+          last_attempt_at?: string | null
           ref_id?: string | null
           sent_at?: string
           user_id?: number
