@@ -846,6 +846,129 @@ const CourseAccess: React.FC = () => {
     return currentIndex >= 0 && currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
   };
 
+  const renderLessonRow = (lesson: Lesson, index: number) => {
+    const isSelected = selectedLesson?.id === lesson.id;
+    const isCompleted = completedLessons.has(lesson.id);
+
+    return (
+      <Button
+        key={lesson.id}
+        variant="ghost"
+        onClick={() => handleLessonSelect(lesson)}
+        className={`h-auto w-full justify-start gap-3 rounded-lg px-3 py-3 text-right font-normal ${
+          isSelected ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'hover:bg-accent'
+        }`}
+      >
+        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs ${
+          isSelected
+            ? 'border-primary-foreground/25 bg-primary-foreground/10'
+            : isCompleted
+              ? 'border-primary/20 bg-primary/10 text-primary'
+              : 'border-border bg-background text-muted-foreground'
+        }`}>
+          {isCompleted ? <CheckCircle className="h-3.5 w-3.5" /> : index + 1}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium">{lesson.title}</span>
+          <span className={`mt-1 flex items-center gap-2 text-[11px] ${isSelected ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+            {lesson.duration > 0 && <span>{lesson.duration} دقیقه</span>}
+            {isSelected && <span>در حال پخش</span>}
+            {!isSelected && isCompleted && <span>تکمیل شده</span>}
+          </span>
+        </span>
+      </Button>
+    );
+  };
+
+  const renderCurriculum = () => {
+    let lessonIndex = 0;
+
+    return (
+      <div className="flex h-full min-h-0 flex-col bg-muted/30">
+        <div className="border-b border-border/70 px-5 py-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-foreground">فهرست دوره</p>
+              <p className="mt-1 text-xs text-muted-foreground">{completedLessonsCount} از {totalLessonsCount} درس تکمیل شده</p>
+            </div>
+            <span className="text-sm font-semibold text-primary">{courseProgressPercent}٪</span>
+          </div>
+          <Progress value={courseProgressPercent} className="h-1.5" />
+        </div>
+
+        <div className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
+          {titleGroups.map((group) => (
+            <section key={group.id}>
+              <div className="mb-2 flex items-center gap-2 px-3">
+                <span aria-hidden="true" className="text-base">{group.icon}</span>
+                <h3 className="text-xs font-semibold text-muted-foreground">{group.title}</h3>
+              </div>
+              <div className="space-y-4">
+                {group.sections.map((section) => (
+                  <div key={section.id}>
+                    <p className="mb-1 px-3 text-[11px] text-muted-foreground">{section.title}</p>
+                    <div className="space-y-0.5">
+                      {section.lessons.map((lesson) => {
+                        const row = renderLessonRow(lesson, lessonIndex);
+                        lessonIndex += 1;
+                        return row;
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+
+          {sections.map((section) => (
+            <section key={section.id}>
+              <p className="mb-2 px-3 text-xs font-semibold text-muted-foreground">{section.title}</p>
+              <div className="space-y-0.5">
+                {section.lessons.map((lesson) => {
+                  const row = renderLessonRow(lesson, lessonIndex);
+                  lessonIndex += 1;
+                  return row;
+                })}
+              </div>
+            </section>
+          ))}
+
+          {totalLessonsCount === 0 && (
+            <div className="py-12 text-center text-sm text-muted-foreground">هنوز درسی اضافه نشده است</div>
+          )}
+        </div>
+
+        {course && (course.support_link || course.telegram_channel_link || course.gifts_link) && enrollment && (
+          <div className="border-t border-border/70 p-4">
+            <CourseActionLinks
+              course={{
+                id: course.id,
+                title: course.title,
+                support_link: course.support_link,
+                telegram_channel_link: course.telegram_channel_link,
+                gifts_link: course.gifts_link,
+                support_activation_required: course.support_activation_required || false,
+                telegram_activation_required: course.telegram_activation_required || false,
+                smart_activation_enabled: false,
+                telegram_support_activation_enabled: course.telegram_support_activation_enabled || false,
+                telegram_course_access_via_bot_enabled: course.telegram_course_access_via_bot_enabled || false
+              }}
+              enrollment={{
+                id: enrollment.id,
+                full_name: user?.name || user?.firstName || 'کاربر',
+                email: user?.email || ''
+              }}
+              userEmail={user?.email || ''}
+              userId={user?.id ? parseInt(user.id) : null}
+              onSupportActivated={() => {}}
+              onTelegramActivated={() => {}}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderLessonContent = (lesson: Lesson) => {
     const nextLesson = findNextLesson(lesson);
     const lessonNumber = Math.max(1, allCourseLessons.findIndex(item => item.id === lesson.id) + 1);
