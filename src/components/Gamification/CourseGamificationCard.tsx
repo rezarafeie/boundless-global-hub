@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Flame, Zap, Clock, Gift, Lock, Target } from 'lucide-react';
 import { GamStatus, formatRemaining } from '@/hooks/useCourseGamification';
+import { gamText } from '@/lib/gamificationMessages';
 
 interface Props {
   status: GamStatus | null;
@@ -14,6 +15,13 @@ interface Props {
 
 const CourseGamificationCard: React.FC<Props> = ({ status, onOpenMission, onReactivate }) => {
   if (!status?.enabled || !status.window) return null;
+  const m = status.settings?.messages ?? {};
+  const tvars = {
+    percent: Math.round(status.progressPercent ?? 0),
+    streak: status.streak ?? 0,
+    price_usd: status.settings?.reactivation_price_usd,
+    reactivation_days: status.settings?.reactivation_days,
+  };
 
   return (
     <Card dir="rtl" className="border-primary/20">
@@ -36,19 +44,19 @@ const CourseGamificationCard: React.FC<Props> = ({ status, onOpenMission, onReac
         {status.locked ? (
           <div className="space-y-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
             <div className="flex items-center gap-2 font-medium text-destructive">
-              <Lock size={15} /> دسترسی بسته شده است
+              <Lock size={15} /> {gamText(m, 'locked_title', tvars)}
             </div>
-            <p className="text-muted-foreground">پیشرفت شما ذخیره شده و پس از تمدید دقیقاً از همان‌جا ادامه می‌دهید.</p>
+            <p className="text-muted-foreground">{gamText(m, 'locked_text', tvars)}</p>
             {onReactivate && (
               <Button size="sm" onClick={onReactivate} className="w-full">
-                تمدید دسترسی
+                {gamText(m, 'reactivate_button', tvars)}
               </Button>
             )}
           </div>
         ) : status.mission ? (
           <div className="space-y-2 rounded-lg border bg-muted/40 p-3">
             <div className="flex items-center gap-2 text-sm font-medium">
-              <Target size={15} className="text-primary" /> ماموریت فعلی
+              <Target size={15} className="text-primary" /> {gamText(m, 'mission_current', tvars)}
             </div>
             <p className="text-sm">{status.mission.lesson_title}</p>
             <p className="text-xs text-muted-foreground">
@@ -66,7 +74,7 @@ const CourseGamificationCard: React.FC<Props> = ({ status, onOpenMission, onReac
           </div>
         ) : (
           <div className="rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground">
-            🎉 همه ماموریت‌های این دوره را کامل کرده‌اید!
+            {gamText(m, 'all_missions_done', tvars)}
           </div>
         )}
 
