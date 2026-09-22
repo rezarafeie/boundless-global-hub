@@ -28,6 +28,9 @@ export interface GamStatus {
   locked?: boolean;
   remainingMs?: number;
   progressPercent?: number;
+  completed?: boolean;
+  completionMessage?: { title: string; text: string };
+  course?: { id: string; title: string; slug: string; gifts_link?: string | null };
   completedLessons?: number;
   totalLessons?: number;
   streak?: number;

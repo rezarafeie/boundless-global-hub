@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Flame, Zap, Clock, Gift, Lock, Target } from 'lucide-react';
+import { Flame, Zap, Clock, Gift, Lock, Target, PartyPopper } from 'lucide-react';
 import { GamStatus, formatRemaining, useLiveGamStatus } from '@/hooks/useCourseGamification';
 import { gamText } from '@/lib/gamificationMessages';
 
@@ -23,6 +23,18 @@ const CourseGamificationCard: React.FC<Props> = ({ status: rawStatus, onOpenMiss
     price_usd: status.settings?.reactivation_price_usd,
     reactivation_days: status.settings?.reactivation_days,
   };
+
+  if (status.completed || (status.progressPercent ?? 0) >= 100) {
+    return (
+      <Card dir="rtl" className="border-primary/30 bg-primary/5 animate-fade-in">
+        <CardContent className="space-y-3 p-5 text-center">
+          <PartyPopper className="mx-auto h-8 w-8 text-primary" />
+          <p className="font-bold">{status.completionMessage?.title}</p>
+          <p className="whitespace-pre-line text-sm text-muted-foreground">{status.completionMessage?.text}</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card dir="rtl" className="border-primary/20">
