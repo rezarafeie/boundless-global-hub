@@ -49,6 +49,18 @@ const CourseCompletionCelebration: React.FC<Props> = ({ open, onOpenChange, stat
         <div className="relative flex items-center justify-center gap-2 text-sm font-medium text-primary">
           <Sparkles className="h-4 w-4" /> صددرصد دوره تکمیل شد
         </div>
+        {!!status.earnedRewards?.length && (
+          <div className="relative space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-4 text-right">
+            <p className="flex items-center gap-2 text-sm font-bold text-foreground">
+              <Gift className="h-4 w-4 text-primary" /> هدایای فعال‌شده شما
+            </p>
+            {status.earnedRewards.map((reward) => (
+              <div key={reward.id} className="text-sm text-muted-foreground">
+                • {reward.title}
+              </div>
+            ))}
+          </div>
+        )}
         {giftsLink && (
           <Button className="relative w-full gap-2" onClick={() => openInNewTab(giftsLink)}>
             <Gift className="h-4 w-4" />
