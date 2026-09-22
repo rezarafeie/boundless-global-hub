@@ -75,6 +75,7 @@ export function useCourseGamification(courseId?: string | null, courseSlug?: str
       });
       if (error) throw error;
       setStatus(data as GamStatus);
+      setTick(0);
     } catch (e) {
       console.error('gamification status error', e);
       setStatus({ enabled: false });
