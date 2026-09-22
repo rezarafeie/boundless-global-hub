@@ -513,6 +513,61 @@ export async function notifyStudent(
   return { channels: channelList, errors };
 }
 
+/* ---------------- retry of incomplete deliveries ---------------- */
+
+// Re-sends the welcome message on channels that were not delivered the first time.
+// Typical case: the student activated Telegram support AFTER enrolling, so only the
+// email channel succeeded at enrollment time. Channels already delivered are skipped
+// by notifyStudent, so no student is ever messaged twice on the same channel.
+export async function retryIncompleteWelcomeNotifications(limit = 100) {
+  const since = new Date(Date.now() - 14 * DAY).toISOString();
+  const { data: rows } = await supabase
+    .from("course_gamification_notifications")
+    .select("id, user_id, course_id, kind, ref_id, channels")
+    .eq("kind", "welcome")
+    .gte("sent_at", since)
+    .order("sent_at", { ascending: false })
+    .limit(500);
+
+  if (!rows?.length) return 0;
+
+  const pending = rows.filter((r: any) => {
+    const ch = Array.isArray(r.channels) ? r.channels : [];
+    return !ch.includes("telegram_bot") || !ch.includes("telegram_business");
+  });
+  if (!pending.length) return 0;
+
+  const userIds = [...new Set(pending.map((r: any) => Number(r.user_id)))];
+  const { data: users } = await supabase
+    .from("chat_users").select("id, telegram_chat_id").in("id", userIds);
+  const withBot = new Set((users ?? []).filter((u: any) => u.telegram_chat_id).map((u: any) => Number(u.id)));
+
+  const { data: activations } = await supabase
+    .from("support_activations")
+    .select("user_id, course_id, status, telegram_id")
+    .in("user_id", userIds)
+    .eq("status", "activated")
+    .not("telegram_id", "is", null);
+  const activated = new Set((activations ?? []).map((a: any) => `${a.user_id}:${a.course_id}`));
+
+  let retried = 0;
+  for (const r of pending) {
+    if (retried >= limit) break;
+    const uid = Number(r.user_id);
+    const hasNewChannel = withBot.has(uid) || activated.has(`${uid}:${r.course_id}`);
+    if (!hasNewChannel) continue;
+    const s = await getGamSettings(r.course_id);
+    if (!s?.enabled) continue;
+    await notifyStudent(uid, r.course_id, "welcome", r.ref_id, {
+      free_days: s.free_days,
+      mission_hours: s.mission_hours,
+      fast_finish_days: s.fast_finish_days,
+    });
+    retried++;
+  }
+  return retried;
+}
+
 /* ---------------- enrollment backfill ---------------- */
 
 // Starts access windows (and the welcome notification) for students who enrolled in a

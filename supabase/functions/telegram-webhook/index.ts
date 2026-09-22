@@ -15,6 +15,20 @@ import {
 
 
 } from '../_shared/telegram.ts';
+import { ensureAccessWindow as gamEnsureAccessWindow } from '../_shared/gamification.ts';
+
+// After a student activates Telegram support, complete any gamification welcome
+// channels that could not be delivered at enrollment time (Telegram was not linked yet).
+async function gamificationWelcomeAfterActivation(userId: unknown, courseId: unknown) {
+  try {
+    const uid = Number(userId);
+    const cid = String(courseId ?? '');
+    if (!Number.isInteger(uid) || uid <= 0 || !cid) return;
+    await gamEnsureAccessWindow(uid, cid);
+  } catch (e) {
+    console.warn('gamification welcome after activation failed', e);
+  }
+}
 import {
   getFields as getReportFields,
   saveDailyReport,
@@ -3240,6 +3254,8 @@ async function handleUpdate(update: any) {
           });
         }
 
+        await gamificationWelcomeAfterActivation(cur.user_id, cur.course_id);
+
         // Load course + user, build welcome + buttons
         const [{ data: course }, { data: cu }] = await Promise.all([
           supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activated_media_url, telegram_bot_activated_media_type, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', cur.course_id).maybeSingle(),
@@ -3980,6 +3996,7 @@ async function handleUpdate(update: any) {
           });
         }
 
+        await gamificationWelcomeAfterActivation(act.user_id, act.course_id);
 
         const targetChat = (act as any).telegram_id;
         if (targetChat) {
