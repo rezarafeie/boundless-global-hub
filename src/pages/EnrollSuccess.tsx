@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, CheckCircle, XCircle, ExternalLink, RefreshCw, MessageSquare, Send, Phone, Zap, Brain, User, CreditCard } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, ExternalLink, RefreshCw, MessageSquare, Send, Phone, Zap, Brain, User, CreditCard, Clock, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -692,6 +692,17 @@ const EnrollSuccess: React.FC = () => {
   const [coachOpen, setCoachOpen] = useState(false);
   const [coachFlags, setCoachFlags] = useState<{ enabled: boolean; required: boolean; supportLink?: string | null } | null>(null);
 
+  // FOMO countdown for the activation CTA — starts ticking once the page loads successfully
+  const ACTIVATION_WINDOW_SECONDS = 15 * 60;
+  const [activationSecondsLeft, setActivationSecondsLeft] = useState(ACTIVATION_WINDOW_SECONDS);
+  useEffect(() => {
+    if (!result?.success) return;
+    const timer = setInterval(() => {
+      setActivationSecondsLeft((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [result?.success]);
+
   // Pull telegram coach flags from the course once we have a successful enrollment.
   // Some success paths (Zarinpal verify) don't include these columns in result.course,
   // so we fetch them defensively to drive the wizard launcher.
@@ -1352,174 +1363,134 @@ const EnrollSuccess: React.FC = () => {
                   </button>
                 )}
 
-                {/* Activation Requirements (if activated) */}
+                {/* 🚨 FINAL ACTIVATION — the only way into the course */}
                 {result.course && ((result.course.support_activation_required && !result.course.smart_activation_enabled) || result.course.smart_activation_enabled || result.course.telegram_activation_required || result.course.telegram_support_activation_enabled) && (
-                  <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
-                    <h3 className="font-semibold text-amber-800 dark:text-amber-400 mb-3 flex items-center gap-2">
-                      ⚠️ فعال‌سازی‌های مهم
-                    </h3>
-                    <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
-                      برای دسترسی کامل به محتوای دوره، لطفاً موارد زیر را انجام دهید:
-                    </p>
-                    <div className="space-y-3">
-                      {/* Bot-based Support Activation (when smart activation is off) */}
-                      {!result.course.smart_activation_enabled && result.course.telegram_support_activation_enabled && (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const finalUrl = await resolveTelegramUrl('', 'support');
-                            if (finalUrl) openInNewTab(finalUrl);
-                          }}
-                          className="flex items-center gap-3 p-3 sm:p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 border-2 border-green-300 dark:border-green-700 hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] cursor-pointer text-right w-full group"
-                        >
-                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                            <Send className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sm sm:text-base leading-tight flex items-center gap-2 flex-wrap">
-                              <span>🚀 فعال‌سازی پشتیبانی دوره (اجباری)</span>
-                              <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 text-xs px-2 py-0.5 font-bold animate-pulse">
-                                ضروری
-                              </Badge>
-                            </p>
-                            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                              👆 کلیک کنید تا در ربات تلگرام فعال شود
-                            </p>
-                          </div>
-                          <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-                        </button>
-                      )}
-
-                      {/* Regular Support Activation (legacy indicator) */}
-                      {result.course.support_activation_required && !result.course.smart_activation_enabled && !result.course.telegram_support_activation_enabled && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                          <span>فعال‌سازی پشتیبانی (اجباری)</span>
-                        </div>
-                      )}
-                      
-                       {/* Smart Activation */}
-                      {result.course.smart_activation_enabled && result.course.smart_activation_telegram_link && (
-                        <div 
-          className={`flex items-start gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl transition-all duration-300 border-2 group relative ${
-            smartActivated 
-              ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-300 dark:border-green-700 cursor-default shadow-lg'
-              : 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 border-green-300 dark:border-green-700 hover:shadow-xl cursor-pointer transform hover:scale-105'
-          }`}
-                          onClick={async () => {
-                            if (!smartActivated) {
-                              // Mark smart activation as clicked in localStorage
-                              if (result.enrollment?.id) {
-                                const activationKey = `activations_${result.enrollment.id}`;
-                                const savedActivations = localStorage.getItem(activationKey);
-                                let activations = { support: false, telegram: false, smart: false };
-                                
-                                if (savedActivations) {
-                                  try {
-                                    activations = JSON.parse(savedActivations);
-                                  } catch (error) {
-                                    console.error('Error parsing saved activations:', error);
-                                  }
-                                }
-                                
-                                activations.smart = true;
-                                localStorage.setItem(activationKey, JSON.stringify(activations));
-                                setSmartActivated(true);
-                                
-                                const rawUrl = replacePlaceholders(result.course.smart_activation_telegram_link, result.enrollment);
-                                const finalUrl = await resolveTelegramUrl(rawUrl, 'support');
-                                if (finalUrl) window.location.href = finalUrl;
-                              }
-                            }
-                          }}
-                        >
-                          {/* Smart Badge */}
-                          <div className={`absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center ${
-                            smartActivated 
-                              ? 'bg-gradient-to-r from-green-500 to-emerald-500'
-                              : 'bg-gradient-to-r from-green-500 to-emerald-500'
-                          }`}>
-                            {smartActivated ? (
-                              <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
-                            ) : (
-                              <Zap className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
-                            )}
-                          </div>
-                          <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-transform flex-shrink-0 ${
-                            smartActivated 
-                              ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10'
-                              : 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 group-hover:scale-110'
-                          }`}>
-                            {smartActivated ? (
-                              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 dark:text-green-400" />
-                            ) : (
-                              <Send className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 dark:text-green-400" />
-                            )}
-                          </div>
-                           <div className="flex-1 min-w-0">
-                              <p className="font-bold text-base sm:text-lg flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 leading-tight">
-                                <span className="break-words">
-                                  {result.course?.telegram_only_access 
-                                    ? `⚡ فعال سازی پشتیبانی و دسترسی به محتوای دوره ${smartActivated ? '(فعال شده)' : '(اجباری)'}`
-                                    : `⚡ فعال‌سازی هوشمند ${smartActivated ? '(فعال شده)' : '(اجباری)'}`
-                                  }
-                                </span>
-                                <Badge variant="secondary" className={`text-xs sm:text-sm px-2 sm:px-3 py-1 font-bold flex-shrink-0 self-start sm:self-auto ${
-                                  smartActivated 
-                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300'
-                                    : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 animate-pulse'
-                                }`}>
-                                  {smartActivated ? '✅ فعال' : result.course?.telegram_only_access ? '⚡ ضروری' : '🔥 SMART'}
-                                </Badge>
-                              </p>
-                              <p className="text-xs sm:text-sm text-muted-foreground font-medium mt-2 leading-relaxed">
-                                {smartActivated 
-                                  ? '✅ فعال‌سازی با موفقیت انجام شد'
-                                  : result.course?.telegram_only_access 
-                                    ? '👆 برای دسترسی به دوره و دریافت پشتیبانی کلیک کنید'
-                                    : '👆 کلیک کنید تا به صورت خودکار فعال شود'
-                                }
-                              </p>
-                           </div>
-                          {!smartActivated && (
-                            <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-                          )}
-                        </div>
-                      )}
-                      
-                      {/* Telegram Channel Activation */}
-                      {result.course.telegram_activation_required && result.course.telegram_channel_link && (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const finalUrl = await resolveTelegramUrl(result.course.telegram_channel_link!, 'telegram');
-                            if (finalUrl) openInNewTab(finalUrl);
-                          }}
-                          className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900/30 dark:hover:to-cyan-900/30 transition-all duration-200 border border-blue-200 dark:border-blue-800 hover:shadow-md group text-right w-full"
-                        >
-                          <div className="w-8 h-8 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                            <Send className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm">
-                              عضویت در کانال تلگرام (اجباری)
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              کلیک کنید برای عضویت در کانال
-                            </p>
-                          </div>
-                          <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-                        </button>
-                      )}
-                      
-                      {/* Telegram Activation without link - just show requirement */}
-                      {result.course.telegram_activation_required && !result.course.telegram_channel_link && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                          <span>عضویت در کانال تلگرام (اجباری)</span>
-                        </div>
-                      )}
+                  <div className="relative overflow-hidden rounded-2xl border-2 border-amber-300 dark:border-amber-700 bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 dark:from-amber-950/50 dark:via-orange-950/40 dark:to-amber-950/30 p-5 sm:p-7 shadow-xl">
+                    {/* Step badge */}
+                    <div className="flex justify-center mb-3">
+                      <Badge className="bg-amber-500 hover:bg-amber-500 text-white text-xs font-bold px-3 py-1 shadow-md">
+                        قدم آخر — کمتر از ۱ دقیقه
+                      </Badge>
                     </div>
+
+                    <h3 className="text-center text-xl sm:text-2xl font-extrabold text-amber-900 dark:text-amber-300 leading-relaxed flex items-center justify-center gap-2">
+                      <Lock className="h-5 w-5 flex-shrink-0" />
+                      بدون فعال‌سازی، وارد دوره نمی‌شوید
+                    </h3>
+                    <p className="text-center text-sm sm:text-base text-amber-800/90 dark:text-amber-200/80 mt-2 max-w-lg mx-auto leading-relaxed">
+                      پرداخت شما کامل شده ✅ اما دسترسی به محتوای دوره فقط با یک کلیک روی دکمه زیر باز می‌شود — این تنها راه ورود به دوره است.
+                    </p>
+
+                    {(() => {
+                      const smartReady = !!result.course.smart_activation_enabled && !!result.course.smart_activation_telegram_link;
+                      const smartPending = smartReady && !smartActivated;
+                      const botSupport = !result.course.smart_activation_enabled && !!result.course.telegram_support_activation_enabled;
+
+                      if (smartReady && smartActivated) {
+                        return (
+                          <div className="mt-5 flex items-center justify-center gap-2 rounded-xl border-2 border-green-400 dark:border-green-700 bg-green-50 dark:bg-green-900/20 p-4 text-green-700 dark:text-green-300 font-bold">
+                            <CheckCircle className="h-5 w-5" />
+                            فعال‌سازی با موفقیت انجام شد
+                          </div>
+                        );
+                      }
+
+                      if (!smartPending && !botSupport) return null;
+
+                      const timerMM = String(Math.floor(activationSecondsLeft / 60)).padStart(2, '0');
+                      const timerSS = String(activationSecondsLeft % 60).padStart(2, '0');
+                      const faDigits = (s: string) => s.replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)]);
+
+                      return (
+                        <>
+                          <button
+                            type="button"
+                            onClick={smartPending
+                              ? async () => {
+                                  if (!result.enrollment?.id) return;
+                                  const activationKey = `activations_${result.enrollment.id}`;
+                                  const savedActivations = localStorage.getItem(activationKey);
+                                  let activations = { support: false, telegram: false, smart: false };
+                                  if (savedActivations) {
+                                    try {
+                                      activations = JSON.parse(savedActivations);
+                                    } catch (error) {
+                                      console.error('Error parsing saved activations:', error);
+                                    }
+                                  }
+                                  activations.smart = true;
+                                  localStorage.setItem(activationKey, JSON.stringify(activations));
+                                  setSmartActivated(true);
+                                  const rawUrl = replacePlaceholders(result.course.smart_activation_telegram_link, result.enrollment);
+                                  const finalUrl = await resolveTelegramUrl(rawUrl, 'support');
+                                  if (finalUrl) window.location.href = finalUrl;
+                                }
+                              : async () => {
+                                  const finalUrl = await resolveTelegramUrl('', 'support');
+                                  if (finalUrl) openInNewTab(finalUrl);
+                                }}
+                            className="mt-5 w-full rounded-xl bg-gradient-to-l from-green-600 via-emerald-500 to-green-600 px-6 py-4 sm:py-5 text-lg sm:text-xl font-extrabold text-white shadow-xl shadow-green-600/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl active:scale-[0.99] flex items-center justify-center gap-3 group"
+                          >
+                            <Send className="h-5 w-5 sm:h-6 sm:w-6 group-hover:-translate-x-1 transition-transform" />
+                            {result.course.telegram_only_access ? 'فعال‌سازی کن و وارد دوره شو' : 'همین حالا فعال‌سازی کن'}
+                          </button>
+                          <p className="text-center text-xs text-amber-700 dark:text-amber-300/80 mt-2">
+                            با یک کلیک، فعال‌سازی در تلگرام انجام می‌شود
+                          </p>
+
+                          {/* FOMO countdown */}
+                          <div className="mt-4 flex items-center justify-center gap-2 flex-wrap rounded-xl border border-amber-300 dark:border-amber-700 bg-white/60 dark:bg-black/20 px-4 py-2.5 text-sm font-bold text-amber-800 dark:text-amber-300">
+                            <Clock className="h-4 w-4 animate-pulse flex-shrink-0" />
+                            {activationSecondsLeft > 0 ? (
+                              <span>
+                                دسترسی شما هنوز فعال نشده — فعال‌سازی تا{' '}
+                                <span dir="ltr" className="inline-block font-mono tabular-nums text-base text-red-600 dark:text-red-400">
+                                  {faDigits(`${timerMM}:${timerSS}`)}
+                                </span>{' '}
+                                دیگر
+                              </span>
+                            ) : (
+                              <span className="text-red-600 dark:text-red-400">
+                                ⏰ دسترسی شما هنوز فعال نشده — همین حالا دکمه بالا را بزنید
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
+
+                    {/* Secondary requirements */}
+                    {result.course.support_activation_required && !result.course.smart_activation_enabled && !result.course.telegram_support_activation_enabled && (
+                      <div className="mt-4 flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300 bg-white/50 dark:bg-black/10 rounded-lg p-3">
+                        <div className="w-2 h-2 bg-amber-500 rounded-full flex-shrink-0" />
+                        <span>فعال‌سازی پشتیبانی (اجباری)</span>
+                      </div>
+                    )}
+
+                    {result.course.telegram_activation_required && result.course.telegram_channel_link && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const finalUrl = await resolveTelegramUrl(result.course.telegram_channel_link!, 'telegram');
+                          if (finalUrl) openInNewTab(finalUrl);
+                        }}
+                        className="mt-3 flex items-center gap-3 w-full p-3 rounded-lg bg-white/60 dark:bg-black/20 border border-blue-200 dark:border-blue-800 hover:bg-white transition-all duration-200 group text-right"
+                      >
+                        <Send className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm text-foreground">عضویت در کانال تلگرام (اجباری)</p>
+                          <p className="text-xs text-muted-foreground">برای اطلاع‌رسانی‌های دوره حتماً عضو شوید</p>
+                        </div>
+                        <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      </button>
+                    )}
+
+                    {result.course.telegram_activation_required && !result.course.telegram_channel_link && (
+                      <div className="mt-4 flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300 bg-white/50 dark:bg-black/10 rounded-lg p-3">
+                        <div className="w-2 h-2 bg-amber-500 rounded-full flex-shrink-0" />
+                        <span>عضویت در کانال تلگرام (اجباری)</span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1533,7 +1504,7 @@ const EnrollSuccess: React.FC = () => {
                       <strong>دسترسی به محتوای این دوره فقط از طریق فعال‌سازی تلگرام امکان‌پذیر است.</strong>
                     </p>
                     <p className="text-sm text-blue-600 dark:text-blue-400">
-                      لطفاً از طریق دکمه‌های فعال‌سازی هوشمند یا فعال‌سازی عادی تلگرام اقدام کنید.
+                      از دکمه سبز بزرگ «فعال‌سازی» در بالای همین صفحه استفاده کنید تا دسترسی‌تان باز شود.
                     </p>
                   </div>
                 )}
