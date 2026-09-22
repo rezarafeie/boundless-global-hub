@@ -2442,6 +2442,7 @@ export type Database = {
           enabled: boolean
           fast_finish_days: number
           free_days: number
+          messages: Json
           mission_hours: number
           notifications_enabled: boolean
           reactivation_days: number
@@ -2454,6 +2455,7 @@ export type Database = {
           enabled?: boolean
           fast_finish_days?: number
           free_days?: number
+          messages?: Json
           mission_hours?: number
           notifications_enabled?: boolean
           reactivation_days?: number
@@ -2466,6 +2468,7 @@ export type Database = {
           enabled?: boolean
           fast_finish_days?: number
           free_days?: number
+          messages?: Json
           mission_hours?: number
           notifications_enabled?: boolean
           reactivation_days?: number
