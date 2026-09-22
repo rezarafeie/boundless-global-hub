@@ -387,13 +387,19 @@ const AssignmentCard: React.FC<{
                   <Loader2 className="h-4 w-4 animate-spin" />
                   کوچ هوشمند در حال بررسی پاسخ‌های شماست...
                 </div>
-                <div className="space-y-2">
-                  <div className="h-3 rounded bg-primary/10 animate-pulse w-11/12" />
-                  <div className="h-3 rounded bg-primary/10 animate-pulse w-9/12" />
-                  <div className="h-3 rounded bg-primary/10 animate-pulse w-10/12" />
-                  <div className="h-3 rounded bg-primary/10 animate-pulse w-7/12" />
-                </div>
-                <p className="text-xs text-muted-foreground">این کار معمولاً چند ثانیه طول می‌کشد. لطفاً همین‌جا بمانید.</p>
+                {streamText.trim() ? (
+                  <p className="whitespace-pre-wrap text-sm leading-7 text-foreground/90">
+                    {prettifyStream(streamText)}
+                    <span className="mr-1 inline-block h-4 w-1 animate-pulse bg-primary align-middle" />
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="h-3 rounded bg-primary/10 animate-pulse w-11/12" />
+                    <div className="h-3 rounded bg-primary/10 animate-pulse w-9/12" />
+                    <div className="h-3 rounded bg-primary/10 animate-pulse w-7/12" />
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">لطفاً همین‌جا بمانید، بازخورد در حال نوشته شدن است.</p>
               </div>
             )}
 
@@ -406,11 +412,10 @@ const AssignmentCard: React.FC<{
             <CTASection ctas={assignment.cta_config?.ctas} />
 
             {!readonly && (
-              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-2 sticky bottom-0 bg-background pb-[env(safe-area-inset-bottom)]">
-                <Button variant="outline" onClick={() => upsertDraft(answers)} disabled={saving}>
-                  <Save className="h-4 w-4 ml-2" />
-                  {saving ? 'در حال ذخیره...' : 'ذخیره پیش‌نویس'}
-                </Button>
+              <div className="flex flex-col-reverse items-center gap-2 pt-2 sm:flex-row sm:justify-between sticky bottom-0 bg-background pb-[env(safe-area-inset-bottom)]">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  {saving ? (<><Loader2 className="h-3 w-3 animate-spin" /> در حال ذخیره خودکار...</>) : savedAt ? (<><Save className="h-3 w-3" /> پاسخ‌ها به‌صورت خودکار ذخیره شد</>) : null}
+                </span>
                 <Button onClick={handleSubmit} disabled={submitting}>
                   {submitting ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <Send className="h-4 w-4 ml-2" />}
                   ارسال تمرین
