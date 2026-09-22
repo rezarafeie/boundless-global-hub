@@ -13,7 +13,11 @@ const fa = (n: number) => n.toLocaleString('fa-IR', { minimumIntegerDigits: 2, u
  * Fixed top banner (site-wide) showing the live countdown of the user's free course access.
  * Only fetches once per mount; the per-second ticking stays inside this component.
  */
-const GlobalAccessCountdownBanner: React.FC = () => {
+interface Props {
+  className?: string;
+}
+
+const GlobalAccessCountdownBanner: React.FC<Props> = ({ className }) => {
   const { user } = useAuth();
   const [raw, setRaw] = useState<GamStatus | null>(null);
   const [dismissed, setDismissed] = useState(false);
@@ -28,7 +32,7 @@ const GlobalAccessCountdownBanner: React.FC = () => {
       }
       try {
         const { data, error } = await supabase.functions.invoke('course-access-status', {
-          body: { userId: Number(user.id) },
+          body: { userId: user.id, email: user.email },
         });
         if (error) throw error;
         if (!cancelled) setRaw({ ...(data as GamStatus), fetchedAt: Date.now() });
@@ -58,7 +62,7 @@ const GlobalAccessCountdownBanner: React.FC = () => {
   const urgent = remaining > 0 && remaining < 24 * 60 * 60 * 1000;
 
   return (
-    <div className="sticky top-16 z-[60] w-full" dir="rtl">
+    <div className={cn('sticky top-0 z-[60] w-full', className)} dir="rtl">
       <Link to={href} className="block">
         <div
           className={cn(

@@ -31,6 +31,25 @@ export const DEFAULT_SETTINGS = {
   messages: {} as Record<string, { title?: string; text?: string }>,
 };
 
+export async function resolveGamificationUserId(userId: unknown, email?: unknown): Promise<number | null> {
+  const numericId = Number(userId);
+  if (Number.isInteger(numericId) && numericId > 0) return numericId;
+
+  const rawId = typeof userId === "string" ? userId.trim() : "";
+  const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+  let query = supabase.from("chat_users").select("id").limit(1);
+  if (rawId && normalizedEmail) query = query.or(`user_id.eq.${rawId},email.eq.${normalizedEmail}`);
+  else if (rawId) query = query.eq("user_id", rawId);
+  else if (normalizedEmail) query = query.eq("email", normalizedEmail);
+  else return null;
+  const { data, error } = await query.maybeSingle();
+  if (error) {
+    console.error("resolveGamificationUserId failed", { code: error.code, message: error.message });
+    return null;
+  }
+  return data?.id ? Number(data.id) : null;
+}
+
 export async function getGamSettings(courseId: string): Promise<GamSettings | null> {
   const { data } = await supabase
     .from("course_gamification_settings")
@@ -63,7 +82,14 @@ export async function ensureAccessWindow(userId: number, courseId: string, enrol
     .eq("user_id", userId)
     .eq("course_id", courseId)
     .maybeSingle();
-  if (existing) return existing;
+  if (existing) {
+    await notifyStudent(userId, courseId, "welcome", existing.id, {
+      free_days: s.free_days,
+      mission_hours: s.mission_hours,
+      fast_finish_days: s.fast_finish_days,
+    });
+    return existing;
+  }
 
   const startedAt = new Date();
   const { data: created } = await supabase
@@ -390,16 +416,18 @@ export async function notifyStudent(
   const s = await getGamSettings(courseId);
   if (s && !s.notifications_enabled) return { skipped: true };
 
-  // idempotency
-  const { error: dupErr } = await supabase.from("course_gamification_notifications").insert({
-    user_id: userId, course_id: courseId, kind, ref_id: refId ?? kind, channels: [],
-  });
-  if (dupErr && dupErr.code === "23505") return { duplicate: true };
+  const notificationRef = refId ?? kind;
+  const { data: previous } = await supabase
+    .from("course_gamification_notifications")
+    .select("channels")
+    .eq("user_id", userId).eq("course_id", courseId).eq("kind", kind).eq("ref_id", notificationRef)
+    .maybeSingle();
+  const delivered = new Set<string>(Array.isArray(previous?.channels) ? previous.channels : []);
 
   const { data: user } = await supabase
     .from("chat_users").select("id, name, full_name, phone, email, telegram_chat_id")
     .eq("id", userId).maybeSingle();
-  if (!user) return { skipped: true };
+  if (!user) return { skipped: true, reason: "user_not_found" };
 
   const { data: course } = await supabase.from("courses").select("title, slug").eq("id", courseId).maybeSingle();
   const courseTitle = course?.title ?? "";
@@ -414,14 +442,16 @@ export async function notifyStudent(
     ...vars,
   });
   const body = `${msg.title}\n\n${msg.text}\n\n${courseTitle}`;
-  const channels: string[] = [];
+  const channels = new Set<string>(delivered);
+  const errors: Record<string, string> = {};
 
   // telegram bot
-  if (user.telegram_chat_id) {
+  if (user.telegram_chat_id && !channels.has("telegram_bot")) {
     try {
-      await sendMessage(Number(user.telegram_chat_id), body);
-      channels.push("telegram_bot");
-    } catch (_e) { /* ignore */ }
+      const response = await sendMessage(Number(user.telegram_chat_id), body);
+      if ((response as any)?.ok) channels.add("telegram_bot");
+      else errors.telegram_bot = JSON.stringify(response);
+    } catch (e) { errors.telegram_bot = String(e); }
   }
 
   // telegram business (only when support is activated)
@@ -432,40 +462,50 @@ export async function notifyStudent(
       .eq("user_id", userId).eq("course_id", courseId)
       .eq("status", "activated")
       .maybeSingle();
-    if (act?.telegram_id) {
+    if (act?.telegram_id && !channels.has("telegram_business")) {
       const { data: settings } = await supabase
         .from("admin_settings").select("telegram_business_connection_id" as any).eq("id", 1).maybeSingle();
       const bcid = (settings as any)?.telegram_business_connection_id;
       if (bcid) {
-        await tgCall("sendMessage", {
+        const response = await tgCall("sendMessage", {
           chat_id: Number(act.telegram_id),
           text: body,
           business_connection_id: bcid,
         });
-        channels.push("telegram_business");
+        if ((response as any)?.ok) channels.add("telegram_business");
+        else errors.telegram_business = JSON.stringify(response);
       }
     }
-  } catch (_e) { /* ignore */ }
+  } catch (e) { errors.telegram_business = String(e); }
 
-  if (user.email) {
+  if (user.email && !channels.has("email")) {
     const html = `<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;line-height:1.9">${body.replace(/\n/g, "<br/>")}</div>`;
     const r = await sendEmail(user.email, msg.title, html);
-    if (r.ok) channels.push("email");
+    if (r.ok) channels.add("email");
+    else errors.email = r.error ?? "unknown email error";
   }
 
-  if (user.phone) {
+  if (user.phone && !channels.has("sms")) {
     const r = await sendSms(user.phone, body, {
       name: user.full_name ?? user.name ?? "",
       course_title: courseTitle,
     }, null);
-    if (r.ok) channels.push("sms");
+    if (r.ok) channels.add("sms");
+    else errors.sms = r.error ?? "unknown sms error";
   }
 
-  await supabase.from("course_gamification_notifications")
-    .update({ channels })
-    .eq("user_id", userId).eq("course_id", courseId).eq("kind", kind).eq("ref_id", refId ?? kind);
+  const channelList = [...channels];
+  await supabase.from("course_gamification_notifications").upsert({
+    user_id: userId,
+    course_id: courseId,
+    kind,
+    ref_id: notificationRef,
+    channels: channelList,
+    sent_at: new Date().toISOString(),
+  }, { onConflict: "user_id,course_id,kind,ref_id" });
+  if (Object.keys(errors).length) console.error("gamification notification delivery failed", { userId, courseId, kind, errors });
 
-  return { channels };
+  return { channels: channelList, errors };
 }
 
 /* ---------------- enrollment backfill ---------------- */
