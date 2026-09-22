@@ -1218,17 +1218,17 @@ const CourseAccess: React.FC = () => {
                             <AccordionItem 
                               key={titleGroup.id} 
                               value={titleGroup.id}
-                              className="border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+                              className="border border-border rounded-xl bg-card overflow-hidden"
                             >
-                              <AccordionTrigger className="px-5 py-4 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-300 [&[data-state=open]]:bg-blue-50 dark:[&[data-state=open]]:bg-blue-950/50">
+                              <AccordionTrigger className="px-5 py-4 hover:bg-muted/60 transition-colors [&[data-state=open]]:bg-muted/40">
                                 <div className="flex items-center justify-between w-full pr-3">
                                   <div className="flex items-center gap-4">
                                     <div className="text-2xl">{titleGroup.icon}</div>
                                     <div className="text-right">
-                                      <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-1">
+                                      <h3 className="font-bold text-lg text-foreground mb-1">
                                         {titleGroup.title}
                                       </h3>
-                                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                                      <p className="text-sm text-muted-foreground">
                                         شامل {titleGroup.sections.length} فصل
                                       </p>
                                     </div>
@@ -1245,19 +1245,19 @@ const CourseAccess: React.FC = () => {
                                     <Accordion key={section.id} type="multiple" className="space-y-1">
                                       <AccordionItem 
                                         value={section.id}
-                                        className="border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
+                                        className="border border-border/60 rounded-lg bg-card overflow-hidden"
                                       >
-                                        <AccordionTrigger className="px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-300 [&[data-state=open]]:bg-blue-50 dark:[&[data-state=open]]:bg-blue-950/50">
+                                        <AccordionTrigger className="px-4 py-3 hover:bg-muted/60 transition-colors [&[data-state=open]]:bg-muted/40">
                                           <div className="flex items-center justify-between w-full pr-3">
                                             <div className="flex items-center gap-3">
-                                              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-sm">
-                                                <BookOpen className="h-4 w-4 text-white" />
+                                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                                <BookOpen className="h-4 w-4 text-primary" />
                                               </div>
                                               <div className="text-right">
-                                                <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-0.5">
+                                                <h4 className="font-semibold text-sm text-foreground mb-0.5">
                                                   {section.title}
                                                 </h4>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                <p className="text-xs text-muted-foreground">
                                                   {section.lessons.length} درس
                                                 </p>
                                               </div>
@@ -1288,11 +1288,11 @@ const CourseAccess: React.FC = () => {
                                                   <div className="flex items-center justify-between">
                                                     <div className="flex-1 min-w-0">
                                                       <h5 className={`font-medium text-sm mb-1 text-right truncate ${
-                                                        isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'
+                                                        isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-foreground'
                                                       }`}>
                                                         {lessonIndex + 1}. {lesson.title}
                                                       </h5>
-                                                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                                                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                                         <div className="flex items-center gap-1">
                                                           <Clock className="h-3 w-3" />
                                                           <span>{lesson.duration} دقیقه</span>
@@ -1348,19 +1348,19 @@ const CourseAccess: React.FC = () => {
                                 <AccordionItem 
                                   key={section.id} 
                                   value={section.id}
-                                  className="border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 overflow-hidden shadow-md hover:shadow-lg transition-all duration-300"
+                                  className="border border-border rounded-xl bg-card overflow-hidden"
                                 >
-                                  <AccordionTrigger className="px-5 py-4 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-300 [&[data-state=open]]:bg-blue-50 dark:[&[data-state=open]]:bg-blue-950/50">
+                                  <AccordionTrigger className="px-5 py-4 hover:bg-muted/60 transition-colors [&[data-state=open]]:bg-muted/40">
                                     <div className="flex items-center justify-between w-full pr-3">
                                       <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-md">
-                                          <BookOpen className="h-5 w-5 text-white" />
+                                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                          <BookOpen className="h-5 w-5 text-primary" />
                                         </div>
                                         <div className="text-right">
-                                          <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-1">
+                                          <h3 className="font-bold text-lg text-foreground mb-1">
                                             {section.title}
                                           </h3>
-                                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                                          <p className="text-sm text-muted-foreground">
                                             {section.lessons.length} درس
                                           </p>
                                         </div>
@@ -1391,11 +1391,11 @@ const CourseAccess: React.FC = () => {
                                             <div className="flex items-center justify-between">
                                               <div className="flex-1 min-w-0">
                                                 <h4 className={`font-semibold text-base mb-2 text-right truncate ${
-                                                  isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'
+                                                  isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-foreground'
                                                 }`}>
                                                   {lessonIndex + 1}. {lesson.title}
                                                 </h4>
-                                                <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                                   <div className="flex items-center gap-1">
                                                     <Clock className="h-4 w-4" />
                                                     <span>{lesson.duration} دقیقه</span>
@@ -1477,7 +1477,7 @@ const CourseAccess: React.FC = () => {
 
               {/* Desktop Main Content Area */}
               {!isMobile && (
-                <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+                <div className="flex-1 overflow-y-auto bg-muted/30">
                   {selectedLesson ? (
                     <div className="p-4 lg:p-6">
                       {renderLessonContent(selectedLesson)}
@@ -1488,8 +1488,8 @@ const CourseAccess: React.FC = () => {
                         <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950 rounded-xl flex items-center justify-center mx-auto mb-4">
                           <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-gray-100">شروع یادگیری</h3>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                        <h3 className="text-xl font-bold mb-3 text-foreground">شروع یادگیری</h3>
+                        <p className="text-muted-foreground text-sm leading-relaxed">
                           از منوی کناری یک درس انتخاب کنید
                         </p>
                       </div>
