@@ -901,26 +901,24 @@ const CourseAccess: React.FC = () => {
 
         {/* Video Section */}
         {lesson.video_url && (
-          <div className="relative">
-            <div className="bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-border p-4">
-              <VideoEmbed embedCode={lesson.video_url} className="w-full" />
-            </div>
+          <div className="rounded-xl overflow-hidden border border-border bg-black">
+            <VideoEmbed embedCode={lesson.video_url} className="w-full" />
           </div>
         )}
 
         {/* Content and Download Section */}
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Lesson Content */}
             {lesson.content && (
-              <Card className="border-0 bg-card/50 backdrop-blur-sm">
-                <CardContent className="p-6 lg:p-8">
-                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary" />
+              <Card className="border-border/60 shadow-sm">
+                <CardContent className="p-5 lg:p-6">
+                  <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
                     توضیحات درس
                   </h3>
-                   <div className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-a:text-primary">
+                   <div className="prose max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-a:text-primary">
                     <div dangerouslySetInnerHTML={{ __html: replaceUserTemplate(lesson.content) }} />
                   </div>
                 </CardContent>
