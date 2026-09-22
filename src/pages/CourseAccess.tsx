@@ -932,19 +932,19 @@ const CourseAccess: React.FC = () => {
 
             {/* Next Lesson Button */}
             {nextLesson && (
-              <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-primary mb-2">درس بعدی</h4>
-                      <p className="text-sm text-muted-foreground">{nextLesson.title}</p>
+              <Card className="border-border/60 shadow-sm">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0 text-right">
+                      <p className="text-xs text-muted-foreground mb-1">درس بعدی</p>
+                      <p className="text-sm font-medium truncate">{nextLesson.title}</p>
                     </div>
                     <Button 
                       onClick={() => handleLessonSelect(nextLesson)}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 shrink-0"
                     >
-                      درس بعدی
-                      <ChevronRight className="h-4 w-4" />
+                      ادامه
+                      <ChevronRight className="h-4 w-4 rotate-180" />
                     </Button>
                   </div>
                 </CardContent>
@@ -956,17 +956,19 @@ const CourseAccess: React.FC = () => {
           <div className="space-y-6">
             {/* File Download */}
             {lesson.file_url && (
-              <Card className="border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20">
-                <CardContent className="p-6">
-                  <div className="text-center space-y-4">
-                    <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center mx-auto">
-                      <Download className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-emerald-800 dark:text-emerald-300 mb-2">منابع درس</h4>
-                      <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-4">
-                        فایل‌های ضمیمه و منابع اضافی این درس
-                      </p>
+              <Card className="border-border/60 shadow-sm">
+                <CardContent className="p-5">
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <Download className="h-5 w-5" />
+                      </div>
+                      <div className="text-right">
+                        <h4 className="font-semibold text-sm mb-1">منابع درس</h4>
+                        <p className="text-xs text-muted-foreground">
+                          فایل‌های ضمیمه و منابع اضافی این درس
+                        </p>
+                      </div>
                     </div>
                     <Button
                       onClick={async () => {
