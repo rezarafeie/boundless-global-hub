@@ -152,6 +152,7 @@ const CourseAccess: React.FC = () => {
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [showReactivate, setShowReactivate] = useState(false);
+  const gam = useCourseGamification(course?.id, course?.slug);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileLessonView, setShowMobileLessonView] = useState(false);
   const [openTitleGroups, setOpenTitleGroups] = useState<Set<string>>(new Set());
