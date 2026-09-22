@@ -17,6 +17,7 @@ export type GamSettings = {
   mission_hours: number;
   fast_finish_days: number;
   notifications_enabled: boolean;
+  messages: Record<string, { title?: string; text?: string }>;
 };
 
 export const DEFAULT_SETTINGS = {
