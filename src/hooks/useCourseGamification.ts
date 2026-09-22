@@ -35,6 +35,33 @@ export interface GamStatus {
   mission?: GamMission | null;
   rewards?: GamReward[];
   earnedRewards?: any[];
+  fetchedAt?: number;
+}
+
+/**
+ * Ticks locally (1s) only inside the component that renders a countdown,
+ * so pages embedding videos/iframes are never re-rendered every second.
+ */
+export function useLiveGamStatus(status: GamStatus | null): GamStatus | null {
+  const [, setTick] = useState(0);
+  const hasCountdown = !!status && (status.remainingMs != null || status.mission != null);
+  useEffect(() => {
+    if (!hasCountdown) return;
+    const t = setInterval(() => setTick((v) => v + 1), 1000);
+    return () => clearInterval(t);
+  }, [hasCountdown]);
+
+  if (!status) return null;
+  const elapsed = status.fetchedAt ? Math.max(0, Date.now() - status.fetchedAt) : 0;
+  return {
+    ...status,
+    remainingMs: status.remainingMs != null ? Math.max(0, status.remainingMs - elapsed) : undefined,
+    fastFinishRemainingMs:
+      status.fastFinishRemainingMs != null ? Math.max(0, status.fastFinishRemainingMs - elapsed) : undefined,
+    mission: status.mission
+      ? { ...status.mission, remainingMs: Math.max(0, status.mission.remainingMs - elapsed) }
+      : null,
+  };
 }
 
 export function formatRemaining(ms?: number | null): string {
@@ -74,8 +101,7 @@ export function useCourseGamification(courseId?: string | null, courseSlug?: str
         body: { userId: Number(user.id), courseId, courseSlug },
       });
       if (error) throw error;
-      setStatus(data as GamStatus);
-      setTick(0);
+      setStatus({ ...(data as GamStatus), fetchedAt: Date.now() });
     } catch (e) {
       console.error('gamification status error', e);
       setStatus({ enabled: false });
@@ -86,25 +112,6 @@ export function useCourseGamification(courseId?: string | null, courseSlug?: str
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  // local ticking so countdowns move without refetching (1s, for live FOMO countdowns)
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setTick((v) => v + 1), 1000);
-    return () => clearInterval(t);
-  }, [status]);
-
-  const elapsed = tick * 1000;
-  const live: GamStatus | null = status
-    ? {
-        ...status,
-        remainingMs: status.remainingMs != null ? Math.max(0, status.remainingMs - elapsed) : undefined,
-        fastFinishRemainingMs:
-          status.fastFinishRemainingMs != null ? Math.max(0, status.fastFinishRemainingMs - elapsed) : undefined,
-        mission: status.mission
-          ? { ...status.mission, remainingMs: Math.max(0, status.mission.remainingMs - elapsed) }
-          : null,
-      }
-    : null;
 
   const completeMission = useCallback(
     async (lessonId: string) => {
@@ -113,12 +120,12 @@ export function useCourseGamification(courseId?: string | null, courseSlug?: str
         body: { userId: Number(user.id), lessonId, courseId },
       });
       if (error) throw error;
-      setStatus((data as any)?.status ?? null);
-      setTick(0);
+      const next = (data as any)?.status;
+      setStatus(next ? { ...next, fetchedAt: Date.now() } : null);
       return data as any;
     },
     [user?.id, courseId],
   );
 
-  return { status: live, loading, refresh, completeMission };
+  return { status, loading, refresh, completeMission };
 }
