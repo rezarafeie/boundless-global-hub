@@ -83,12 +83,9 @@ export async function ensureAccessWindow(userId: number, courseId: string, enrol
   if (created) {
     await ensureNextMission(userId, courseId, s);
     await notifyStudent(userId, courseId, "welcome", created.id, {
-      title: "دسترسی ۷ روزه شما فعال شد 🚀",
-      text:
-        `دسترسی شما به دوره فعال شد.\n` +
-        `شما ${s.free_days} روز فرصت دارید دوره را کامل کنید.\n` +
-        `هر درس یک ماموریت است و ${s.mission_hours} ساعت برای انجام آن وقت دارید.\n` +
-        `اگر دوره را ظرف ${s.fast_finish_days} روز تمام کنی، جایزه ویژه می‌گیری 🎁`,
+      free_days: s.free_days,
+      mission_hours: s.mission_hours,
+      fast_finish_days: s.fast_finish_days,
     });
   }
   return created;
