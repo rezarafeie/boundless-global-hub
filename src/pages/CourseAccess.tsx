@@ -151,6 +151,7 @@ const CourseAccess: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [showAuth, setShowAuth] = useState(false);
+  const [showReactivate, setShowReactivate] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileLessonView, setShowMobileLessonView] = useState(false);
   const [openTitleGroups, setOpenTitleGroups] = useState<Set<string>>(new Set());
