@@ -75,6 +75,7 @@ export function useCourseGamification(courseId?: string | null, courseSlug?: str
       });
       if (error) throw error;
       setStatus(data as GamStatus);
+      setTick(0);
     } catch (e) {
       console.error('gamification status error', e);
       setStatus({ enabled: false });
@@ -85,14 +86,14 @@ export function useCourseGamification(courseId?: string | null, courseSlug?: str
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  // local ticking so countdowns move without refetching
+  // local ticking so countdowns move without refetching (1s, for live FOMO countdowns)
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setTick((v) => v + 1), 60000);
+    const t = setInterval(() => setTick((v) => v + 1), 1000);
     return () => clearInterval(t);
-  }, []);
+  }, [status]);
 
-  const elapsed = tick * 60000;
+  const elapsed = tick * 1000;
   const live: GamStatus | null = status
     ? {
         ...status,

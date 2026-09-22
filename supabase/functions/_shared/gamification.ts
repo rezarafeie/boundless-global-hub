@@ -422,3 +422,47 @@ export async function notifyStudent(
 
   return { channels };
 }
+
+/* ---------------- enrollment backfill ---------------- */
+
+// Starts access windows (and the welcome notification) for students who enrolled in a
+// gamified course but never opened it. Limited to enrollments created after the course
+// gamification settings were created, so older students are never spammed.
+export async function startWindowsForNewEnrollments(limit = 50) {
+  const { data: settings } = await supabase
+    .from("course_gamification_settings")
+    .select("course_id, enabled, created_at")
+    .eq("enabled", true);
+
+  let started = 0;
+  for (const s of settings ?? []) {
+    const { data: enrollments } = await supabase
+      .from("enrollments")
+      .select("id, chat_user_id, created_at")
+      .eq("course_id", s.course_id)
+      .eq("payment_status", "completed")
+      .not("chat_user_id", "is", null)
+      .gte("created_at", s.created_at)
+      .order("created_at", { ascending: false })
+      .limit(500);
+
+    if (!enrollments?.length) continue;
+
+    const userIds = [...new Set(enrollments.map((e: any) => e.chat_user_id))];
+    const { data: windows } = await supabase
+      .from("course_access_windows")
+      .select("user_id")
+      .eq("course_id", s.course_id)
+      .in("user_id", userIds);
+    const has = new Set((windows ?? []).map((w: any) => w.user_id));
+
+    for (const e of enrollments) {
+      if (started >= limit) return started;
+      if (has.has(e.chat_user_id)) continue;
+      has.add(e.chat_user_id);
+      await ensureAccessWindow(Number(e.chat_user_id), s.course_id, e.id);
+      started++;
+    }
+  }
+  return started;
+}

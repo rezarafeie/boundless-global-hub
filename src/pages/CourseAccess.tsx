@@ -30,6 +30,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
 import CourseNotifications from '@/components/Course/CourseNotifications';
+import CourseCountdownNotification from '@/components/Gamification/CourseCountdownNotification';
+import ReactivationDialog from '@/components/Gamification/ReactivationDialog';
+import { useCourseGamification } from '@/hooks/useCourseGamification';
 import CourseActionLinks from '@/components/CourseActionLinks';
 import { useLessonTracker } from '@/hooks/useLessonTracker';
 import { useLessonNumber } from '@/hooks/useLessonNumber';
@@ -148,6 +151,8 @@ const CourseAccess: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [showAuth, setShowAuth] = useState(false);
+  const [showReactivate, setShowReactivate] = useState(false);
+  const gam = useCourseGamification(course?.id, course?.slug);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileLessonView, setShowMobileLessonView] = useState(false);
   const [openTitleGroups, setOpenTitleGroups] = useState<Set<string>>(new Set());
@@ -1131,9 +1136,20 @@ const CourseAccess: React.FC = () => {
         {(enrollment || course.is_free_access) && (
           <>
             {/* Course Notifications Section */}
-            <div className="container mx-auto px-4 py-4">
+            <div className="container mx-auto px-4 py-4 space-y-4">
+              <CourseCountdownNotification
+                status={gam.status}
+                onReactivate={() => setShowReactivate(true)}
+              />
               <CourseNotifications courseId={course.id} />
             </div>
+
+            <ReactivationDialog
+              open={showReactivate}
+              onOpenChange={setShowReactivate}
+              courseId={course.id}
+              courseTitle={course.title}
+            />
 
             {/* Main Course Content */}
             <div className="flex h-[calc(100vh-200px)]">
