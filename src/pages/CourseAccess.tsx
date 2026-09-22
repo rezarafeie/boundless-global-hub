@@ -1136,9 +1136,20 @@ const CourseAccess: React.FC = () => {
         {(enrollment || course.is_free_access) && (
           <>
             {/* Course Notifications Section */}
-            <div className="container mx-auto px-4 py-4">
+            <div className="container mx-auto px-4 py-4 space-y-4">
+              <CourseCountdownNotification
+                status={gam.status}
+                onReactivate={() => setShowReactivate(true)}
+              />
               <CourseNotifications courseId={course.id} />
             </div>
+
+            <ReactivationDialog
+              open={showReactivate}
+              onOpenChange={setShowReactivate}
+              courseId={course.id}
+              courseTitle={course.title}
+            />
 
             {/* Main Course Content */}
             <div className="flex h-[calc(100vh-200px)]">
