@@ -28,7 +28,7 @@ const GlobalAccessCountdownBanner: React.FC = () => {
       }
       try {
         const { data, error } = await supabase.functions.invoke('course-access-status', {
-          body: { userId: Number(user.id) },
+          body: { userId: user.id, email: user.email },
         });
         if (error) throw error;
         if (!cancelled) setRaw({ ...(data as GamStatus), fetchedAt: Date.now() });
@@ -58,7 +58,7 @@ const GlobalAccessCountdownBanner: React.FC = () => {
   const urgent = remaining > 0 && remaining < 24 * 60 * 60 * 1000;
 
   return (
-    <div className="sticky top-16 z-[60] w-full" dir="rtl">
+    <div className="sticky top-0 z-[60] w-full" dir="rtl">
       <Link to={href} className="block">
         <div
           className={cn(

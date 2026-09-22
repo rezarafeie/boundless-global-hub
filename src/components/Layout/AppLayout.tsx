@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import GlobalAccessCountdownBanner from "@/components/Gamification/GlobalAccessCountdownBanner";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -182,6 +183,7 @@ const AppLayout = ({ children, title, showBackButton = true, rightAction }: AppL
               </div>
             </div>
           </header>
+          <GlobalAccessCountdownBanner />
 
           <main className="flex-1 overflow-y-auto">
             <div className="max-w-6xl mx-auto px-6 lg:px-8 py-6 lg:py-8">
@@ -229,6 +231,7 @@ const AppLayout = ({ children, title, showBackButton = true, rightAction }: AppL
               </div>
             </div>
           </header>
+          <GlobalAccessCountdownBanner />
 
           <main className="flex-1 pb-20 overflow-y-auto">{children}</main>
 

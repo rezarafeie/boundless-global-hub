@@ -125,6 +125,18 @@ verify_jwt = false
 [functions.ai-feedback-assignment]
 verify_jwt = false
 
+[functions.course-access-status]
+verify_jwt = false
+
+[functions.course-mission-complete]
+verify_jwt = false
+
+[functions.course-access-cron]
+verify_jwt = false
+
+[functions.course-reactivation-payment]
+verify_jwt = false
+
 
 [functions.rafieipay-request]
 verify_jwt = false

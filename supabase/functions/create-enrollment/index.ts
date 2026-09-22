@@ -165,6 +165,14 @@ Deno.serve(async (req) => {
           .eq('id', existingEnrollmentByEmail.id)
           .single();
 
+        if (fullEnrollment?.payment_status === 'completed') {
+          try {
+            await ensureAccessWindow(Number(existingEnrollmentByEmail.chat_user_id || resolvedChatUserId), course_id, fullEnrollment.id);
+          } catch (gamErr) {
+            console.error('⚠️ ensureAccessWindow recovery failed:', gamErr);
+          }
+        }
+
         // Get course and user data for webhook
         const { data: courseData } = await supabase
           .from('courses')
@@ -235,6 +243,14 @@ Deno.serve(async (req) => {
           .select('*')
           .eq('id', existingEnrollmentByPhone.id)
           .single();
+
+        if (fullEnrollment?.payment_status === 'completed') {
+          try {
+            await ensureAccessWindow(Number(existingEnrollmentByPhone.chat_user_id || resolvedChatUserId), course_id, fullEnrollment.id);
+          } catch (gamErr) {
+            console.error('⚠️ ensureAccessWindow recovery failed:', gamErr);
+          }
+        }
 
         // Get course and user data for webhook
         const { data: courseData } = await supabase

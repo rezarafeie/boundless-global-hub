@@ -94,14 +94,14 @@ export function useCourseGamification(courseId?: string | null, courseSlug?: str
       const authority = params.get('Authority') || params.get('authority');
       if (params.get('reactivate') === '1' && authority && params.get('course')) {
         await supabase.functions.invoke('course-reactivation-payment', {
-          body: { action: 'verify', userId: Number(user.id), courseId: params.get('course'), authority },
+          body: { action: 'verify', userId: user.id, email: user.email, courseId: params.get('course'), authority },
         });
         const clean = window.location.pathname;
         window.history.replaceState({}, '', clean);
       }
 
       const { data, error } = await supabase.functions.invoke('course-access-status', {
-        body: { userId: Number(user.id), courseId, courseSlug },
+        body: { userId: user.id, email: user.email, courseId, courseSlug },
       });
       if (error) throw error;
       setStatus({ ...(data as GamStatus), fetchedAt: Date.now() });
@@ -111,7 +111,7 @@ export function useCourseGamification(courseId?: string | null, courseSlug?: str
     } finally {
       setLoading(false);
     }
-  }, [user?.id, courseId, courseSlug]);
+  }, [user?.id, user?.email, courseId, courseSlug]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -120,14 +120,14 @@ export function useCourseGamification(courseId?: string | null, courseSlug?: str
     async (lessonId: string) => {
       if (!user?.id) return null;
       const { data, error } = await supabase.functions.invoke('course-mission-complete', {
-        body: { userId: Number(user.id), lessonId, courseId },
+        body: { userId: user.id, email: user.email, lessonId, courseId },
       });
       if (error) throw error;
       const next = (data as any)?.status;
       setStatus(next ? { ...next, fetchedAt: Date.now() } : null);
       return data as any;
     },
-    [user?.id, courseId],
+    [user?.id, user?.email, courseId],
   );
 
   return { status, loading, refresh, completeMission };

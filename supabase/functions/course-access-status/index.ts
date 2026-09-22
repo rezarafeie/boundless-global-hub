@@ -1,6 +1,6 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { supabase } from "../_shared/supabase.ts";
-import { buildStatus, ensureAccessWindow } from "../_shared/gamification.ts";
+import { buildStatus, ensureAccessWindow, resolveGamificationUserId } from "../_shared/gamification.ts";
 
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -8,9 +8,9 @@ const json = (b: unknown, s = 200) =>
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { userId, courseId, courseSlug, enrollmentId } = await req.json();
-    const uid = Number(userId);
-    if (!uid) return json({ success: false, error: "userId الزامی است" }, 400);
+    const { userId, email, courseId, courseSlug, enrollmentId } = await req.json();
+    const uid = await resolveGamificationUserId(userId, email);
+    if (!uid) return json({ success: false, error: "حساب دانشجو یافت نشد" }, 404);
 
     let cid = courseId as string | undefined;
     if (!cid && courseSlug) {
