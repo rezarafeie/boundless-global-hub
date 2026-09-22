@@ -12,6 +12,13 @@ interface Props {
   status: GamStatus | null;
 }
 
+const PARTICLES = [
+  'left-[8%] top-[12%]', 'left-[19%] top-[61%]', 'left-[31%] top-[28%]', 'left-[43%] top-[72%]',
+  'left-[55%] top-[9%]', 'left-[67%] top-[48%]', 'left-[79%] top-[20%]', 'left-[90%] top-[65%]',
+  'left-[12%] top-[78%]', 'left-[25%] top-[7%]', 'left-[38%] top-[52%]', 'left-[51%] top-[34%]',
+  'left-[63%] top-[81%]', 'left-[74%] top-[6%]', 'left-[85%] top-[43%]', 'left-[94%] top-[27%]',
+];
+
 const CourseCompletionCelebration: React.FC<Props> = ({ open, onOpenChange, status }) => {
   if (!status?.completed) return null;
   const giftsLink = status.course?.gifts_link;
@@ -21,11 +28,10 @@ const CourseCompletionCelebration: React.FC<Props> = ({ open, onOpenChange, stat
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent dir="rtl" className="overflow-hidden text-center sm:max-w-md">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-          {Array.from({ length: 16 }).map((_, index) => (
+          {PARTICLES.map((position, index) => (
             <span
-              key={index}
-              className="absolute animate-fade-in text-primary"
-              style={{ left: `${6 + (index * 23) % 88}%`, top: `${5 + (index * 31) % 70}%`, animationDelay: `${(index % 5) * 90}ms` }}
+              key={position}
+              className={`absolute animate-fade-in text-primary ${position}`}
             >
               {index % 2 ? '✦' : '●'}
             </span>
