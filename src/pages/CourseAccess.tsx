@@ -40,6 +40,9 @@ import { useAuthTracking } from '@/hooks/useAuthTracking';
 import { TelegramEnrollmentActivation } from '@/components/TelegramEnrollmentActivation';
 import { useIsIranianIP } from '@/hooks/useIsIranianIP';
 import { AssignmentSection } from '@/components/Assignment/AssignmentSection';
+import { Progress } from '@/components/ui/progress';
+import { useLessonWatchTime } from '@/hooks/useLessonWatchTime';
+import LessonWatchProgress from '@/components/Course/LessonWatchProgress';
 
 interface Course {
   id: string;
