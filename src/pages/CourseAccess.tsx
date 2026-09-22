@@ -1278,17 +1278,17 @@ const CourseAccess: React.FC = () => {
                                                   className={`w-full text-right p-3 rounded-lg transition-all duration-200 group border ${
                                                     isSelected 
                                                       ? completedLessons.has(lesson.id)
-                                                        ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 shadow-sm'
-                                                        : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 shadow-sm'
+                                                        ? 'bg-emerald-500/10 border-emerald-500/30'
+                                                        : 'bg-primary/10 border-primary/30'
                                                       : completedLessons.has(lesson.id)
-                                                        ? 'hover:bg-emerald-50 dark:hover:bg-emerald-800/20 border-transparent hover:border-emerald-200 dark:hover:border-emerald-700'
-                                                        : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+                                                        ? 'hover:bg-emerald-500/10 border-transparent'
+                                                        : 'hover:bg-muted/60 border-transparent'
                                                   }`}
                                                 >
                                                   <div className="flex items-center justify-between">
                                                     <div className="flex-1 min-w-0">
                                                       <h5 className={`font-medium text-sm mb-1 text-right truncate ${
-                                                        isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-foreground'
+                                                        isSelected ? 'text-primary' : 'text-foreground'
                                                       }`}>
                                                         {lessonIndex + 1}. {lesson.title}
                                                       </h5>
@@ -1320,8 +1320,8 @@ const CourseAccess: React.FC = () => {
                                                        )}
                                                        {isSelected && !completedLessons.has(lesson.id) && (
                                                          <div className="flex items-center gap-1">
-                                                           <PlayCircle className="h-4 w-4 text-blue-500" />
-                                                           <span className="text-xs font-medium text-blue-600 dark:text-blue-400">در حال پخش</span>
+                                                           <PlayCircle className="h-4 w-4 text-primary" />
+                                                           <span className="text-xs font-medium text-primary">در حال پخش</span>
                                                          </div>
                                                         )}
                                                      </div>
@@ -1381,17 +1381,17 @@ const CourseAccess: React.FC = () => {
                                              className={`w-full text-right p-4 rounded-xl transition-all duration-200 group border ${
                                                isSelected 
                                                  ? completedLessons.has(lesson.id)
-                                                   ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 shadow-md'
-                                                   : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 shadow-md'
+                                                   ? 'bg-emerald-500/10 border-emerald-500/30'
+                                                   : 'bg-primary/10 border-primary/30'
                                                  : completedLessons.has(lesson.id)
-                                                   ? 'hover:bg-emerald-50 dark:hover:bg-emerald-800/20 border-transparent hover:border-emerald-200 dark:hover:border-emerald-700'
-                                                   : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+                                                   ? 'hover:bg-emerald-500/10 border-transparent'
+                                                   : 'hover:bg-muted/60 border-transparent'
                                              }`}
                                           >
                                             <div className="flex items-center justify-between">
                                               <div className="flex-1 min-w-0">
                                                 <h4 className={`font-semibold text-base mb-2 text-right truncate ${
-                                                  isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-foreground'
+                                                  isSelected ? 'text-primary' : 'text-foreground'
                                                 }`}>
                                                   {lessonIndex + 1}. {lesson.title}
                                                 </h4>
@@ -1423,8 +1423,8 @@ const CourseAccess: React.FC = () => {
                                                  )}
                                                  {isSelected && !completedLessons.has(lesson.id) && (
                                                    <div className="flex items-center gap-2">
-                                                     <PlayCircle className="h-5 w-5 text-blue-500" />
-                                                     <span className="text-xs font-medium text-blue-600 dark:text-blue-400">در حال پخش</span>
+                                                     <PlayCircle className="h-5 w-5 text-primary" />
+                                                     <span className="text-xs font-medium text-primary">در حال پخش</span>
                                                    </div>
                                                  )}
                                                </div>
@@ -1485,8 +1485,8 @@ const CourseAccess: React.FC = () => {
                   ) : (
                     <div className="flex items-center justify-center h-full p-6">
                       <div className="text-center max-w-md">
-                        <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950 rounded-xl flex items-center justify-center mx-auto mb-4">
-                          <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                        <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                          <BookOpen className="h-8 w-8 text-primary" />
                         </div>
                         <h3 className="text-xl font-bold mb-3 text-foreground">شروع یادگیری</h3>
                         <p className="text-muted-foreground text-sm leading-relaxed">
