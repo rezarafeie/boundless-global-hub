@@ -28,6 +28,7 @@ export const DEFAULT_SETTINGS = {
   mission_hours: 24,
   fast_finish_days: 3,
   notifications_enabled: true,
+  messages: {} as Record<string, { title?: string; text?: string }>,
 };
 
 export async function getGamSettings(courseId: string): Promise<GamSettings | null> {
