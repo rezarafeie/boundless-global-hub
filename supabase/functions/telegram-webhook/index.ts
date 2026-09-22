@@ -3254,6 +3254,8 @@ async function handleUpdate(update: any) {
           });
         }
 
+        await gamificationWelcomeAfterActivation(cur.user_id, cur.course_id);
+
         // Load course + user, build welcome + buttons
         const [{ data: course }, { data: cu }] = await Promise.all([
           supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activated_media_url, telegram_bot_activated_media_type, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', cur.course_id).maybeSingle(),
@@ -3994,6 +3996,7 @@ async function handleUpdate(update: any) {
           });
         }
 
+        await gamificationWelcomeAfterActivation(act.user_id, act.course_id);
 
         const targetChat = (act as any).telegram_id;
         if (targetChat) {
