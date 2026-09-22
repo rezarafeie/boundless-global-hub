@@ -200,6 +200,7 @@ const AssignmentCard: React.FC<{
         }
       }
     }
+    if (saveTimer.current) clearTimeout(saveTimer.current);
     setSubmitting(true);
     setOpen(true);
     if (assignment.ai_feedback_enabled && !audioContextRef.current) {
@@ -230,36 +231,8 @@ const AssignmentCard: React.FC<{
 
       if (assignment.ai_feedback_enabled) {
         setAwaitingFeedback(true);
-        // fire and poll DB so the feedback appears automatically
-        supabase.functions.invoke('ai-feedback-assignment', { body: { submission_id: subId } })
-          .catch((e) => console.error(e));
-
-        const started = Date.now();
-        const poll = async () => {
-          while (Date.now() - started < 90_000) {
-            await new Promise((r) => setTimeout(r, 2000));
-            const { data } = await supabase
-              .from('assignment_submissions')
-              .select('*')
-              .eq('id', subId!)
-              .maybeSingle();
-            if (data && (data as any).ai_feedback) {
-              setLocalSubmission(data as unknown as AssignmentSubmission);
-              setOpen(true);
-              playSuccessSound(audioContextRef.current);
-              audioContextRef.current = null;
-              setAwaitingFeedback(false);
-              window.setTimeout(() => {
-                feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                feedbackRef.current?.focus({ preventScroll: true });
-              }, 150);
-              return;
-            }
-          }
-          setAwaitingFeedback(false);
-          onSaved();
-        };
-        poll();
+        setStreamText('');
+        await streamFeedback(subId!);
       } else {
         onSaved();
       }
@@ -270,6 +243,79 @@ const AssignmentCard: React.FC<{
       setSubmitting(false);
     }
   };
+
+  const finishFeedback = useCallback((sub: AssignmentSubmission) => {
+    setLocalSubmission(sub);
+    setOpen(true);
+    setAwaitingFeedback(false);
+    setStreamText('');
+    playSuccessSound(audioContextRef.current);
+    audioContextRef.current = null;
+    window.setTimeout(() => {
+      feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      feedbackRef.current?.focus({ preventScroll: true });
+    }, 150);
+  }, []);
+
+  const streamFeedback = useCallback(async (subId: string) => {
+    try {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/ai-feedback-assignment-stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          apikey: SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ submission_id: subId }),
+      });
+      if (!resp.ok || !resp.body) throw new Error(`status ${resp.status}`);
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let done = false;
+      while (!done) {
+        const { done: streamDone, value } = await reader.read();
+        if (streamDone) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          const t = line.trim();
+          if (!t.startsWith('data:')) continue;
+          const payload = t.slice(5).trim();
+          if (payload === '[DONE]') { done = true; continue; }
+          try {
+            const j = JSON.parse(payload);
+            if (j.delta) setStreamText((p) => p + j.delta);
+            if (j.feedback) {
+              finishFeedback({
+                ...(localSubmission || ({} as AssignmentSubmission)),
+                id: subId,
+                assignment_id: assignment.id,
+                student_id: studentId,
+                answers,
+                status: 'reviewed' as SubmissionStatus,
+                ai_feedback: j.feedback,
+              } as AssignmentSubmission);
+            }
+          } catch { /* ignore */ }
+        }
+      }
+    } catch (e) {
+      console.error('feedback stream failed', e);
+    } finally {
+      // Fallback: read the saved row in case the stream ended without a payload
+      const { data } = await supabase
+        .from('assignment_submissions').select('*').eq('id', subId).maybeSingle();
+      if (data && (data as any).ai_feedback) {
+        finishFeedback(data as unknown as AssignmentSubmission);
+      } else {
+        setAwaitingFeedback(false);
+        onSaved();
+      }
+    }
+  }, [answers, assignment.id, finishFeedback, localSubmission, onSaved, studentId]);
 
 
   const statusColor: Record<string, string> = {
