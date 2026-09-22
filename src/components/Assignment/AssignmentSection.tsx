@@ -38,6 +38,27 @@ const playSuccessSound = (audioCtx: AudioContext | null) => {
 };
 
 
+// Turn the partially streamed JSON into readable Persian text
+const KEY_LABELS: Record<string, string> = {
+  summary: 'خلاصه بازخورد',
+  strengths: 'نقاط قوت',
+  weaknesses: 'نکات قابل بهبود',
+  next_steps: 'قدم‌های بعدی',
+  score: 'امتیاز',
+};
+
+const prettifyStream = (raw: string): string =>
+  raw
+    .replace(/```(?:json)?/gi, '')
+    .replace(/"(summary|strengths|weaknesses|next_steps|score)"\s*:/g, (_m, k: string) => `\n${KEY_LABELS[k]}: `)
+    .replace(/[{}[\]"]/g, '')
+    .replace(/,\s*/g, '\n• ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+const SUPABASE_URL = 'https://ihhetvwuhqohbfgkqoxw.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloaGV0dnd1aHFvaGJmZ2txb3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNjk0NTIsImV4cCI6MjA2NTk0NTQ1Mn0.91gRPO_ApEGQF2EtTAQLcqA-mIj7lqF29M1OZcGW4BI';
+
 interface Props {
   lessonId: string;
 }
@@ -147,6 +168,8 @@ const AssignmentCard: React.FC<{
   const [submitting, setSubmitting] = useState(false);
   const [currentSubId, setCurrentSubId] = useState<string | undefined>(submission?.id);
   const [awaitingFeedback, setAwaitingFeedback] = useState(false);
+  const [streamText, setStreamText] = useState('');
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [localSubmission, setLocalSubmission] = useState<AssignmentSubmission | undefined>(submission);
   const effectiveSubmission = localSubmission || submission;
   const status: SubmissionStatus | 'not_started' = effectiveSubmission?.status || 'not_started';
@@ -173,6 +196,7 @@ const AssignmentCard: React.FC<{
           .single();
         if (!error && data) setCurrentSubId(data.id);
       }
+      setSavedAt(Date.now());
     } finally {
       setSaving(false);
     }
@@ -182,9 +206,15 @@ const AssignmentCard: React.FC<{
     const next = { ...answers, [blockId]: value };
     setAnswers(next);
     if (readonly) return;
+    setSavedAt(null);
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => upsertDraft(next), 800);
   };
+
+  // Flush any pending autosave when the card unmounts
+  useEffect(() => () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+  }, []);
 
   useEffect(() => { setLocalSubmission(submission); }, [submission?.id, submission?.ai_feedback]);
 
@@ -200,6 +230,7 @@ const AssignmentCard: React.FC<{
         }
       }
     }
+    if (saveTimer.current) clearTimeout(saveTimer.current);
     setSubmitting(true);
     setOpen(true);
     if (assignment.ai_feedback_enabled && !audioContextRef.current) {
@@ -230,36 +261,8 @@ const AssignmentCard: React.FC<{
 
       if (assignment.ai_feedback_enabled) {
         setAwaitingFeedback(true);
-        // fire and poll DB so the feedback appears automatically
-        supabase.functions.invoke('ai-feedback-assignment', { body: { submission_id: subId } })
-          .catch((e) => console.error(e));
-
-        const started = Date.now();
-        const poll = async () => {
-          while (Date.now() - started < 90_000) {
-            await new Promise((r) => setTimeout(r, 2000));
-            const { data } = await supabase
-              .from('assignment_submissions')
-              .select('*')
-              .eq('id', subId!)
-              .maybeSingle();
-            if (data && (data as any).ai_feedback) {
-              setLocalSubmission(data as unknown as AssignmentSubmission);
-              setOpen(true);
-              playSuccessSound(audioContextRef.current);
-              audioContextRef.current = null;
-              setAwaitingFeedback(false);
-              window.setTimeout(() => {
-                feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                feedbackRef.current?.focus({ preventScroll: true });
-              }, 150);
-              return;
-            }
-          }
-          setAwaitingFeedback(false);
-          onSaved();
-        };
-        poll();
+        setStreamText('');
+        await streamFeedback(subId!);
       } else {
         onSaved();
       }
@@ -270,6 +273,79 @@ const AssignmentCard: React.FC<{
       setSubmitting(false);
     }
   };
+
+  const finishFeedback = useCallback((sub: AssignmentSubmission) => {
+    setLocalSubmission(sub);
+    setOpen(true);
+    setAwaitingFeedback(false);
+    setStreamText('');
+    playSuccessSound(audioContextRef.current);
+    audioContextRef.current = null;
+    window.setTimeout(() => {
+      feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      feedbackRef.current?.focus({ preventScroll: true });
+    }, 150);
+  }, []);
+
+  const streamFeedback = useCallback(async (subId: string) => {
+    try {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/ai-feedback-assignment-stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          apikey: SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ submission_id: subId }),
+      });
+      if (!resp.ok || !resp.body) throw new Error(`status ${resp.status}`);
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let done = false;
+      while (!done) {
+        const { done: streamDone, value } = await reader.read();
+        if (streamDone) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          const t = line.trim();
+          if (!t.startsWith('data:')) continue;
+          const payload = t.slice(5).trim();
+          if (payload === '[DONE]') { done = true; continue; }
+          try {
+            const j = JSON.parse(payload);
+            if (j.delta) setStreamText((p) => p + j.delta);
+            if (j.feedback) {
+              finishFeedback({
+                ...(localSubmission || ({} as AssignmentSubmission)),
+                id: subId,
+                assignment_id: assignment.id,
+                student_id: studentId,
+                answers,
+                status: 'reviewed' as SubmissionStatus,
+                ai_feedback: j.feedback,
+              } as AssignmentSubmission);
+            }
+          } catch { /* ignore */ }
+        }
+      }
+    } catch (e) {
+      console.error('feedback stream failed', e);
+    } finally {
+      // Fallback: read the saved row in case the stream ended without a payload
+      const { data } = await supabase
+        .from('assignment_submissions').select('*').eq('id', subId).maybeSingle();
+      if (data && (data as any).ai_feedback) {
+        finishFeedback(data as unknown as AssignmentSubmission);
+      } else {
+        setAwaitingFeedback(false);
+        onSaved();
+      }
+    }
+  }, [answers, assignment.id, finishFeedback, localSubmission, onSaved, studentId]);
 
 
   const statusColor: Record<string, string> = {
@@ -329,13 +405,19 @@ const AssignmentCard: React.FC<{
                   <Loader2 className="h-4 w-4 animate-spin" />
                   کوچ هوشمند در حال بررسی پاسخ‌های شماست...
                 </div>
-                <div className="space-y-2">
-                  <div className="h-3 rounded bg-primary/10 animate-pulse w-11/12" />
-                  <div className="h-3 rounded bg-primary/10 animate-pulse w-9/12" />
-                  <div className="h-3 rounded bg-primary/10 animate-pulse w-10/12" />
-                  <div className="h-3 rounded bg-primary/10 animate-pulse w-7/12" />
-                </div>
-                <p className="text-xs text-muted-foreground">این کار معمولاً چند ثانیه طول می‌کشد. لطفاً همین‌جا بمانید.</p>
+                {streamText.trim() ? (
+                  <p className="whitespace-pre-wrap text-sm leading-7 text-foreground/90">
+                    {prettifyStream(streamText)}
+                    <span className="mr-1 inline-block h-4 w-1 animate-pulse bg-primary align-middle" />
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="h-3 rounded bg-primary/10 animate-pulse w-11/12" />
+                    <div className="h-3 rounded bg-primary/10 animate-pulse w-9/12" />
+                    <div className="h-3 rounded bg-primary/10 animate-pulse w-7/12" />
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">لطفاً همین‌جا بمانید، بازخورد در حال نوشته شدن است.</p>
               </div>
             )}
 
@@ -348,11 +430,10 @@ const AssignmentCard: React.FC<{
             <CTASection ctas={assignment.cta_config?.ctas} />
 
             {!readonly && (
-              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-2 sticky bottom-0 bg-background pb-[env(safe-area-inset-bottom)]">
-                <Button variant="outline" onClick={() => upsertDraft(answers)} disabled={saving}>
-                  <Save className="h-4 w-4 ml-2" />
-                  {saving ? 'در حال ذخیره...' : 'ذخیره پیش‌نویس'}
-                </Button>
+              <div className="flex flex-col-reverse items-center gap-2 pt-2 sm:flex-row sm:justify-between sticky bottom-0 bg-background pb-[env(safe-area-inset-bottom)]">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  {saving ? (<><Loader2 className="h-3 w-3 animate-spin" /> در حال ذخیره خودکار...</>) : savedAt ? (<><Save className="h-3 w-3" /> پاسخ‌ها به‌صورت خودکار ذخیره شد</>) : null}
+                </span>
                 <Button onClick={handleSubmit} disabled={submitting}>
                   {submitting ? <Loader2 className="h-4 w-4 ml-2 animate-spin" /> : <Send className="h-4 w-4 ml-2" />}
                   ارسال تمرین
