@@ -352,7 +352,7 @@ export async function notifyStudent(
   courseId: string,
   kind: string,
   refId: string | null,
-  msg: { title: string; text: string },
+  vars: Record<string, string | number | null | undefined> = {},
 ) {
   const s = await getGamSettings(courseId);
   if (s && !s.notifications_enabled) return { skipped: true };
