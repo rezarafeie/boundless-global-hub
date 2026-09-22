@@ -30,6 +30,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
 import CourseNotifications from '@/components/Course/CourseNotifications';
+import CourseCountdownNotification from '@/components/Gamification/CourseCountdownNotification';
+import ReactivationDialog from '@/components/Gamification/ReactivationDialog';
+import { useCourseGamification } from '@/hooks/useCourseGamification';
 import CourseActionLinks from '@/components/CourseActionLinks';
 import { useLessonTracker } from '@/hooks/useLessonTracker';
 import { useLessonNumber } from '@/hooks/useLessonNumber';
