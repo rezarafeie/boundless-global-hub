@@ -15,6 +15,20 @@ import {
 
 
 } from '../_shared/telegram.ts';
+import { ensureAccessWindow as gamEnsureAccessWindow } from '../_shared/gamification.ts';
+
+// After a student activates Telegram support, complete any gamification welcome
+// channels that could not be delivered at enrollment time (Telegram was not linked yet).
+async function gamificationWelcomeAfterActivation(userId: unknown, courseId: unknown) {
+  try {
+    const uid = Number(userId);
+    const cid = String(courseId ?? '');
+    if (!Number.isInteger(uid) || uid <= 0 || !cid) return;
+    await gamEnsureAccessWindow(uid, cid);
+  } catch (e) {
+    console.warn('gamification welcome after activation failed', e);
+  }
+}
 import {
   getFields as getReportFields,
   saveDailyReport,
