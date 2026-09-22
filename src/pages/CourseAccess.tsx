@@ -40,6 +40,9 @@ import { useAuthTracking } from '@/hooks/useAuthTracking';
 import { TelegramEnrollmentActivation } from '@/components/TelegramEnrollmentActivation';
 import { useIsIranianIP } from '@/hooks/useIsIranianIP';
 import { AssignmentSection } from '@/components/Assignment/AssignmentSection';
+import { Progress } from '@/components/ui/progress';
+import { useLessonWatchTime } from '@/hooks/useLessonWatchTime';
+import LessonWatchProgress from '@/components/Course/LessonWatchProgress';
 
 interface Course {
   id: string;
@@ -763,7 +766,66 @@ const CourseAccess: React.FC = () => {
     } : undefined
   );
   
-  console.log('CourseAccess render - markLessonComplete:', markLessonComplete);
+  // All lessons in order + overall progress
+  const allCourseLessons = React.useMemo(() => {
+    const list: Lesson[] = [];
+    titleGroups.forEach(group => group.sections.forEach(section => list.push(...section.lessons)));
+    sections.forEach(section => list.push(...section.lessons));
+    return list;
+  }, [titleGroups, sections]);
+
+  const totalLessonsCount = allCourseLessons.length;
+  const completedLessonsCount = allCourseLessons.filter(l => completedLessons.has(l.id)).length;
+  const courseProgressPercent = totalLessonsCount > 0
+    ? Math.round((completedLessonsCount / totalLessonsCount) * 100)
+    : 0;
+
+  // Shared completion handler (manual click or automatic after enough watch time)
+  const completeSelectedLesson = async (auto = false) => {
+    if (!selectedLesson || !user?.id || !course) return;
+    if (completedLessons.has(selectedLesson.id)) return;
+
+    if (!auto) setIsMarkingComplete(true);
+    const lessonId = selectedLesson.id;
+
+    try {
+      if (markLessonComplete) {
+        await markLessonComplete();
+      }
+      setCompletedLessons(prev => new Set([...prev, lessonId]));
+
+      if (gam.status?.enabled) {
+        try {
+          await gam.completeMission(lessonId);
+        } catch (e) {
+          console.error('mission complete error', e);
+        }
+      }
+
+      toast({
+        title: auto ? 'آفرین! 🎉' : 'تبریک!',
+        description: auto ? 'این درس را تا انتها دیدید و تکمیل شد' : 'درس با موفقیت تکمیل شد',
+      });
+    } catch (error) {
+      console.error('Error marking lesson as complete:', error);
+      if (!auto) {
+        toast({ title: 'خطا', description: 'خطا در تکمیل درس', variant: 'destructive' });
+      }
+    } finally {
+      if (!auto) setIsMarkingComplete(false);
+    }
+  };
+
+  // Real time-on-lesson tracking with automatic completion
+  const { secondsRef, requiredRef } = useLessonWatchTime({
+    userId: user?.id ? Number(user.id) : null,
+    courseId: course?.id,
+    lessonId: selectedLesson?.id,
+    durationMinutes: selectedLesson?.duration || 0,
+    isCompleted: selectedLesson ? completedLessons.has(selectedLesson.id) : true,
+    onAutoComplete: () => { completeSelectedLesson(true); },
+  });
+
 
   // Helper function to find next lesson
   const findNextLesson = (currentLesson: Lesson): Lesson | null => {
@@ -788,29 +850,42 @@ const CourseAccess: React.FC = () => {
     const nextLesson = findNextLesson(lesson);
     
     return (
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Back to Course Menu Button */}
-        <div className="flex justify-start">
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              setSelectedLesson(null);
-              if (isMobile) setShowMobileLessonView(false);
-            }}
-            className="flex items-center gap-2"
-          >
-            <ChevronRight className="h-4 w-4 rotate-180" />
-            بازگشت به فهرست دروس
-          </Button>
-        </div>
-
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Lesson Header */}
-        <div className="text-center lg:text-right space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-            <CheckCircle className="h-4 w-4" />
-            درس در حال پخش
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="secondary" className="gap-1 rounded-full font-normal">
+                <PlayCircle className="h-3.5 w-3.5" />
+                در حال پخش
+              </Badge>
+              {lesson.duration > 0 && (
+                <Badge variant="outline" className="gap-1 rounded-full font-normal text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5" />
+                  {lesson.duration} دقیقه
+                </Badge>
+              )}
+              {completedLessons.has(lesson.id) && (
+                <Badge className="gap-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/15">
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  تکمیل شده
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedLesson(null);
+                if (isMobile) setShowMobileLessonView(false);
+              }}
+              className="gap-1 text-muted-foreground shrink-0"
+            >
+              <List className="h-4 w-4" />
+              فهرست دروس
+            </Button>
           </div>
-          <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">{lesson.title}</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground leading-tight">{lesson.title}</h1>
         </div>
 
         {/* VPN Warning */}
@@ -826,26 +901,24 @@ const CourseAccess: React.FC = () => {
 
         {/* Video Section */}
         {lesson.video_url && (
-          <div className="relative">
-            <div className="bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-border p-4">
-              <VideoEmbed embedCode={lesson.video_url} className="w-full" />
-            </div>
+          <div className="rounded-xl overflow-hidden border border-border bg-black">
+            <VideoEmbed embedCode={lesson.video_url} className="w-full" />
           </div>
         )}
 
         {/* Content and Download Section */}
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Lesson Content */}
             {lesson.content && (
-              <Card className="border-0 bg-card/50 backdrop-blur-sm">
-                <CardContent className="p-6 lg:p-8">
-                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary" />
+              <Card className="border-border/60 shadow-sm">
+                <CardContent className="p-5 lg:p-6">
+                  <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
                     توضیحات درس
                   </h3>
-                   <div className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-a:text-primary">
+                   <div className="prose max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-a:text-primary">
                     <div dangerouslySetInnerHTML={{ __html: replaceUserTemplate(lesson.content) }} />
                   </div>
                 </CardContent>
@@ -859,19 +932,19 @@ const CourseAccess: React.FC = () => {
 
             {/* Next Lesson Button */}
             {nextLesson && (
-              <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-primary mb-2">درس بعدی</h4>
-                      <p className="text-sm text-muted-foreground">{nextLesson.title}</p>
+              <Card className="border-border/60 shadow-sm">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0 text-right">
+                      <p className="text-xs text-muted-foreground mb-1">درس بعدی</p>
+                      <p className="text-sm font-medium truncate">{nextLesson.title}</p>
                     </div>
                     <Button 
                       onClick={() => handleLessonSelect(nextLesson)}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 shrink-0"
                     >
-                      درس بعدی
-                      <ChevronRight className="h-4 w-4" />
+                      ادامه
+                      <ChevronRight className="h-4 w-4 rotate-180" />
                     </Button>
                   </div>
                 </CardContent>
@@ -883,17 +956,19 @@ const CourseAccess: React.FC = () => {
           <div className="space-y-6">
             {/* File Download */}
             {lesson.file_url && (
-              <Card className="border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20">
-                <CardContent className="p-6">
-                  <div className="text-center space-y-4">
-                    <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center mx-auto">
-                      <Download className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-emerald-800 dark:text-emerald-300 mb-2">منابع درس</h4>
-                      <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-4">
-                        فایل‌های ضمیمه و منابع اضافی این درس
-                      </p>
+              <Card className="border-border/60 shadow-sm">
+                <CardContent className="p-5">
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <Download className="h-5 w-5" />
+                      </div>
+                      <div className="text-right">
+                        <h4 className="font-semibold text-sm mb-1">منابع درس</h4>
+                        <p className="text-xs text-muted-foreground">
+                          فایل‌های ضمیمه و منابع اضافی این درس
+                        </p>
+                      </div>
                     </div>
                     <Button
                       onClick={async () => {
@@ -912,9 +987,10 @@ const CourseAccess: React.FC = () => {
                         }
                         window.open(lesson.file_url!, '_blank');
                       }}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
+                      variant="outline"
+                      className="w-full gap-2"
                     >
-                      <Download className="h-4 w-4 mr-2" />
+                      <Download className="h-4 w-4" />
                       دانلود منابع
                     </Button>
                   </div>
@@ -922,92 +998,47 @@ const CourseAccess: React.FC = () => {
               </Card>
             )}
 
-            {/* Mark as Complete Button */}
+            {/* Mark as Complete */}
             {selectedLesson && (
-              <Card className={`border-2 transition-all duration-300 ${
-                completedLessons.has(selectedLesson.id)
-                  ? 'border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20'
-                  : 'border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20'
-              }`}>
-                <CardContent className="p-6">
-                  <div className="text-center space-y-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto ${
-                      completedLessons.has(selectedLesson.id)
-                        ? 'bg-emerald-500'
-                        : 'bg-blue-500'
+              <Card className="border-border/60 shadow-sm">
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                      completedLessons.has(selectedLesson.id) ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-primary/10 text-primary'
                     }`}>
-                      <CheckCircle className="h-6 w-6 text-white" />
+                      <CheckCircle className="h-5 w-5" />
                     </div>
-                    <div>
-                      <h4 className={`font-semibold mb-2 ${
-                        completedLessons.has(selectedLesson.id)
-                          ? 'text-emerald-800 dark:text-emerald-300'
-                          : 'text-blue-800 dark:text-blue-300'
-                      }`}>
-                        {completedLessons.has(selectedLesson.id) ? 'درس تکمیل شده' : 'تکمیل درس'}
+                    <div className="text-right">
+                      <h4 className="font-semibold text-sm mb-1">
+                        {completedLessons.has(selectedLesson.id) ? 'این درس تکمیل شد' : 'وضعیت این درس'}
                       </h4>
-                      <p className={`text-sm mb-4 ${
-                        completedLessons.has(selectedLesson.id)
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-blue-600 dark:text-blue-400'
-                      }`}>
-                        {completedLessons.has(selectedLesson.id) 
-                          ? 'این درس با موفقیت تکمیل شده است'
-                          : 'درس را به عنوان تکمیل شده علامت‌گذاری کنید'
-                        }
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {completedLessons.has(selectedLesson.id)
+                          ? 'پیشرفت شما ذخیره شده است'
+                          : 'با دیدن کامل ویدیو به‌صورت خودکار، یا با زدن دکمه زیر تکمیل می‌شود'}
                       </p>
                     </div>
-                    <Button
-                      onClick={async () => {
-                        if (!selectedLesson || !user?.id || !course) return;
-                        
-                        setIsMarkingComplete(true);
-                        
-                        try {
-                          if (markLessonComplete) {
-                            await markLessonComplete();
-                            
-                            // Update local state immediately
-                            setCompletedLessons(prev => new Set([...prev, selectedLesson.id]));
-                            
-                            toast({
-                              title: "تبریک!",
-                              description: "درس با موفقیت تکمیل شد",
-                            });
-                          } else {
-                            toast({
-                              title: "خطا",
-                              description: "خطا در سیستم تکمیل درس",
-                              variant: "destructive"
-                            });
-                          }
-                        } catch (error) {
-                          console.error('Error marking lesson as complete:', error);
-                          toast({
-                            title: "خطا",
-                            description: "خطا در تکمیل درس",
-                            variant: "destructive"
-                          });
-                        } finally {
-                          setIsMarkingComplete(false);
-                        }
-                      }}
-                      disabled={completedLessons.has(selectedLesson.id) || isMarkingComplete}
-                      className={`w-full text-white shadow-lg transition-all duration-300 ${
-                        completedLessons.has(selectedLesson.id)
-                          ? 'bg-emerald-600 hover:bg-emerald-700 cursor-default'
-                          : 'bg-blue-600 hover:bg-blue-700'
-                      }`}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      {isMarkingComplete 
-                        ? 'در حال تکمیل...'
-                        : completedLessons.has(selectedLesson.id) 
-                          ? 'تکمیل شده' 
-                          : 'تکمیل درس'
-                      }
-                    </Button>
                   </div>
+
+                  <LessonWatchProgress
+                    secondsRef={secondsRef}
+                    requiredRef={requiredRef}
+                    completed={completedLessons.has(selectedLesson.id)}
+                  />
+
+                  <Button
+                    onClick={() => completeSelectedLesson(false)}
+                    disabled={completedLessons.has(selectedLesson.id) || isMarkingComplete}
+                    variant={completedLessons.has(selectedLesson.id) ? 'outline' : 'default'}
+                    className="w-full gap-2"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    {isMarkingComplete
+                      ? 'در حال ثبت...'
+                      : completedLessons.has(selectedLesson.id)
+                        ? 'تکمیل شده'
+                        : 'تکمیل کردم'}
+                  </Button>
                 </CardContent>
               </Card>
             )}
@@ -1052,20 +1083,30 @@ const CourseAccess: React.FC = () => {
     <MainLayout>
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <div className="bg-card border-b">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <BookOpen className="h-6 w-6 text-primary" />
+        <div className="bg-card border-b border-border">
+          <div className="container mx-auto px-4 py-5">
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                <BookOpen className="h-5 w-5 text-primary" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex-1 min-w-0 space-y-3">
+                <div className="flex items-start gap-3 flex-wrap">
                   <div className="flex-1 min-w-0">
-                    <h1 className="text-2xl font-bold">{course.title}</h1>
-                    <p className="text-muted-foreground">{course.description}</p>
+                    <h1 className="text-xl lg:text-2xl font-bold truncate">{course.title}</h1>
+                    <p className="text-sm text-muted-foreground line-clamp-1">{course.description}</p>
                   </div>
                   <TelegramEnrollmentActivation courseId={course.id} badgeWhenLinked />
                 </div>
+
+                {(enrollment || course.is_free_access) && totalLessonsCount > 0 && (
+                  <div className="max-w-md space-y-1.5">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>پیشرفت شما در دوره</span>
+                      <span>{completedLessonsCount} از {totalLessonsCount} درس ({courseProgressPercent}٪)</span>
+                    </div>
+                    <Progress value={courseProgressPercent} className="h-1.5" />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1177,17 +1218,17 @@ const CourseAccess: React.FC = () => {
                             <AccordionItem 
                               key={titleGroup.id} 
                               value={titleGroup.id}
-                              className="border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+                              className="border border-border rounded-xl bg-card overflow-hidden"
                             >
-                              <AccordionTrigger className="px-5 py-4 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-300 [&[data-state=open]]:bg-blue-50 dark:[&[data-state=open]]:bg-blue-950/50">
+                              <AccordionTrigger className="px-5 py-4 hover:bg-muted/60 transition-colors [&[data-state=open]]:bg-muted/40">
                                 <div className="flex items-center justify-between w-full pr-3">
                                   <div className="flex items-center gap-4">
                                     <div className="text-2xl">{titleGroup.icon}</div>
                                     <div className="text-right">
-                                      <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-1">
+                                      <h3 className="font-bold text-lg text-foreground mb-1">
                                         {titleGroup.title}
                                       </h3>
-                                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                                      <p className="text-sm text-muted-foreground">
                                         شامل {titleGroup.sections.length} فصل
                                       </p>
                                     </div>
@@ -1204,19 +1245,19 @@ const CourseAccess: React.FC = () => {
                                     <Accordion key={section.id} type="multiple" className="space-y-1">
                                       <AccordionItem 
                                         value={section.id}
-                                        className="border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
+                                        className="border border-border/60 rounded-lg bg-card overflow-hidden"
                                       >
-                                        <AccordionTrigger className="px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-300 [&[data-state=open]]:bg-blue-50 dark:[&[data-state=open]]:bg-blue-950/50">
+                                        <AccordionTrigger className="px-4 py-3 hover:bg-muted/60 transition-colors [&[data-state=open]]:bg-muted/40">
                                           <div className="flex items-center justify-between w-full pr-3">
                                             <div className="flex items-center gap-3">
-                                              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-sm">
-                                                <BookOpen className="h-4 w-4 text-white" />
+                                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                                <BookOpen className="h-4 w-4 text-primary" />
                                               </div>
                                               <div className="text-right">
-                                                <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-0.5">
+                                                <h4 className="font-semibold text-sm text-foreground mb-0.5">
                                                   {section.title}
                                                 </h4>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                <p className="text-xs text-muted-foreground">
                                                   {section.lessons.length} درس
                                                 </p>
                                               </div>
@@ -1237,21 +1278,21 @@ const CourseAccess: React.FC = () => {
                                                   className={`w-full text-right p-3 rounded-lg transition-all duration-200 group border ${
                                                     isSelected 
                                                       ? completedLessons.has(lesson.id)
-                                                        ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 shadow-sm'
-                                                        : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 shadow-sm'
+                                                        ? 'bg-emerald-500/10 border-emerald-500/30'
+                                                        : 'bg-primary/10 border-primary/30'
                                                       : completedLessons.has(lesson.id)
-                                                        ? 'hover:bg-emerald-50 dark:hover:bg-emerald-800/20 border-transparent hover:border-emerald-200 dark:hover:border-emerald-700'
-                                                        : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+                                                        ? 'hover:bg-emerald-500/10 border-transparent'
+                                                        : 'hover:bg-muted/60 border-transparent'
                                                   }`}
                                                 >
                                                   <div className="flex items-center justify-between">
                                                     <div className="flex-1 min-w-0">
                                                       <h5 className={`font-medium text-sm mb-1 text-right truncate ${
-                                                        isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'
+                                                        isSelected ? 'text-primary' : 'text-foreground'
                                                       }`}>
                                                         {lessonIndex + 1}. {lesson.title}
                                                       </h5>
-                                                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                                                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                                         <div className="flex items-center gap-1">
                                                           <Clock className="h-3 w-3" />
                                                           <span>{lesson.duration} دقیقه</span>
@@ -1279,8 +1320,8 @@ const CourseAccess: React.FC = () => {
                                                        )}
                                                        {isSelected && !completedLessons.has(lesson.id) && (
                                                          <div className="flex items-center gap-1">
-                                                           <PlayCircle className="h-4 w-4 text-blue-500" />
-                                                           <span className="text-xs font-medium text-blue-600 dark:text-blue-400">در حال پخش</span>
+                                                           <PlayCircle className="h-4 w-4 text-primary" />
+                                                           <span className="text-xs font-medium text-primary">در حال پخش</span>
                                                          </div>
                                                         )}
                                                      </div>
@@ -1307,19 +1348,19 @@ const CourseAccess: React.FC = () => {
                                 <AccordionItem 
                                   key={section.id} 
                                   value={section.id}
-                                  className="border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 overflow-hidden shadow-md hover:shadow-lg transition-all duration-300"
+                                  className="border border-border rounded-xl bg-card overflow-hidden"
                                 >
-                                  <AccordionTrigger className="px-5 py-4 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-all duration-300 [&[data-state=open]]:bg-blue-50 dark:[&[data-state=open]]:bg-blue-950/50">
+                                  <AccordionTrigger className="px-5 py-4 hover:bg-muted/60 transition-colors [&[data-state=open]]:bg-muted/40">
                                     <div className="flex items-center justify-between w-full pr-3">
                                       <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-md">
-                                          <BookOpen className="h-5 w-5 text-white" />
+                                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                          <BookOpen className="h-5 w-5 text-primary" />
                                         </div>
                                         <div className="text-right">
-                                          <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-1">
+                                          <h3 className="font-bold text-lg text-foreground mb-1">
                                             {section.title}
                                           </h3>
-                                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                                          <p className="text-sm text-muted-foreground">
                                             {section.lessons.length} درس
                                           </p>
                                         </div>
@@ -1340,21 +1381,21 @@ const CourseAccess: React.FC = () => {
                                              className={`w-full text-right p-4 rounded-xl transition-all duration-200 group border ${
                                                isSelected 
                                                  ? completedLessons.has(lesson.id)
-                                                   ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 shadow-md'
-                                                   : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 shadow-md'
+                                                   ? 'bg-emerald-500/10 border-emerald-500/30'
+                                                   : 'bg-primary/10 border-primary/30'
                                                  : completedLessons.has(lesson.id)
-                                                   ? 'hover:bg-emerald-50 dark:hover:bg-emerald-800/20 border-transparent hover:border-emerald-200 dark:hover:border-emerald-700'
-                                                   : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 border-transparent hover:border-gray-200 dark:hover:border-gray-700'
+                                                   ? 'hover:bg-emerald-500/10 border-transparent'
+                                                   : 'hover:bg-muted/60 border-transparent'
                                              }`}
                                           >
                                             <div className="flex items-center justify-between">
                                               <div className="flex-1 min-w-0">
                                                 <h4 className={`font-semibold text-base mb-2 text-right truncate ${
-                                                  isSelected ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'
+                                                  isSelected ? 'text-primary' : 'text-foreground'
                                                 }`}>
                                                   {lessonIndex + 1}. {lesson.title}
                                                 </h4>
-                                                <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                                   <div className="flex items-center gap-1">
                                                     <Clock className="h-4 w-4" />
                                                     <span>{lesson.duration} دقیقه</span>
@@ -1382,8 +1423,8 @@ const CourseAccess: React.FC = () => {
                                                  )}
                                                  {isSelected && !completedLessons.has(lesson.id) && (
                                                    <div className="flex items-center gap-2">
-                                                     <PlayCircle className="h-5 w-5 text-blue-500" />
-                                                     <span className="text-xs font-medium text-blue-600 dark:text-blue-400">در حال پخش</span>
+                                                     <PlayCircle className="h-5 w-5 text-primary" />
+                                                     <span className="text-xs font-medium text-primary">در حال پخش</span>
                                                    </div>
                                                  )}
                                                </div>
@@ -1436,7 +1477,7 @@ const CourseAccess: React.FC = () => {
 
               {/* Desktop Main Content Area */}
               {!isMobile && (
-                <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+                <div className="flex-1 overflow-y-auto bg-muted/30">
                   {selectedLesson ? (
                     <div className="p-4 lg:p-6">
                       {renderLessonContent(selectedLesson)}
@@ -1444,11 +1485,11 @@ const CourseAccess: React.FC = () => {
                   ) : (
                     <div className="flex items-center justify-center h-full p-6">
                       <div className="text-center max-w-md">
-                        <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-950 dark:to-purple-950 rounded-xl flex items-center justify-center mx-auto mb-4">
-                          <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                        <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                          <BookOpen className="h-8 w-8 text-primary" />
                         </div>
-                        <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-gray-100">شروع یادگیری</h3>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                        <h3 className="text-xl font-bold mb-3 text-foreground">شروع یادگیری</h3>
+                        <p className="text-muted-foreground text-sm leading-relaxed">
                           از منوی کناری یک درس انتخاب کنید
                         </p>
                       </div>
