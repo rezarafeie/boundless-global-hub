@@ -108,7 +108,7 @@ const AppLearning = () => {
             type: 'lesson',
             priority: 'medium',
             dueDate: 'امروز',
-            completed: Math.random() > 0.7, // Random completion status
+            completed: false,
             course_title: course.title,
             course_slug: course.slug
           });

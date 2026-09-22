@@ -13,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useLessonNumber } from "@/hooks/useLessonNumber";
 import { 
   Play, 
   CheckCircle,
@@ -60,7 +59,6 @@ const AppCourseDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { getLessonByNumber } = useLessonNumber();
   const [activeTab, setActiveTab] = useState("lessons");
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState<CourseData | null>(null);
@@ -191,11 +189,18 @@ const AppCourseDetail = () => {
           transformedSections = [];
         }
       } else {
-        transformedSections = sectionsData.map(section => ({
+        transformedSections = [...sectionsData]
+          .sort((a, b) => (a.order_index ?? Number.MAX_SAFE_INTEGER) - (b.order_index ?? Number.MAX_SAFE_INTEGER))
+          .map(section => ({
           id: section.id,
           title: section.title,
           order_index: section.order_index,
-          lessons: section.course_lessons?.map((lesson, index) => ({
+          lessons: [...(section.course_lessons || [])]
+            .sort((a, b) => {
+              const orderDifference = (a.order_index ?? Number.MAX_SAFE_INTEGER) - (b.order_index ?? Number.MAX_SAFE_INTEGER);
+              return orderDifference || (a.lesson_number ?? Number.MAX_SAFE_INTEGER) - (b.lesson_number ?? Number.MAX_SAFE_INTEGER);
+            })
+            .map((lesson, index) => ({
             id: lesson.id,
             title: lesson.title,
             duration: lesson.duration || 15,
@@ -203,7 +208,7 @@ const AppCourseDetail = () => {
             lesson_number: lesson.lesson_number || index + 1,
             completed: completedMap.get(lesson.id) === true,
             locked: false
-          })) || []
+          }))
         }));
       }
       // Calculate course progress
@@ -413,7 +418,7 @@ const AppCourseDetail = () => {
                               lesson.locked 
                                 ? 'bg-muted/50 cursor-not-allowed opacity-60' 
                                 : lesson.completed 
-                                  ? 'bg-green-50 border-green-200 hover:bg-green-100' 
+                                  ? 'bg-primary/10 border-primary/25 hover:bg-primary/15 text-foreground' 
                                   : 'hover:bg-accent/50'
                             }`}
                             onClick={() => handleLessonClick(lesson)}
@@ -422,17 +427,17 @@ const AppCourseDetail = () => {
                               {lesson.locked ? (
                                 <Lock size={16} className="text-muted-foreground" />
                               ) : lesson.completed ? (
-                                <CheckCircle size={16} className="text-green-600" />
+                                <CheckCircle size={16} className="text-primary" />
                               ) : (
                                 <Play size={16} className="text-primary" />
                               )}
                               <div className="text-right">
-                                <p className="font-medium text-sm">{lesson.title}</p>
+                                 <p className="font-medium text-sm text-foreground">{lesson.title}</p>
                                 <p className="text-xs text-muted-foreground">{lesson.duration} دقیقه</p>
                               </div>
                             </div>
                             {lesson.completed && (
-                              <Badge variant="outline" className="text-xs bg-green-50 text-green-600 border-green-200">
+                              <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/25">
                                 تکمیل
                               </Badge>
                             )}
