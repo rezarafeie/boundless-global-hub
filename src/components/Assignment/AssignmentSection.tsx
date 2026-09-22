@@ -14,7 +14,9 @@ import type { Assignment, AssignmentSubmission, SubmissionStatus } from '@/types
 import { STATUS_LABELS_FA } from '@/types/assignment';
 const playSuccessSound = () => {
   try {
-    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioCtx = new AudioContextClass();
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     oscillator.type = "sine";
@@ -26,6 +28,7 @@ const playSuccessSound = () => {
     gainNode.connect(audioCtx.destination);
     oscillator.start();
     oscillator.stop(audioCtx.currentTime + 0.3);
+    oscillator.addEventListener('ended', () => void audioCtx.close());
   } catch (e) {
     console.warn("Audio feedback failed", e);
   }
@@ -105,7 +108,7 @@ export const AssignmentSection: React.FC<Props> = ({ lessonId }) => {
 
   return (
     <section className="px-4" aria-labelledby={`lesson-assignments-${lessonId}`}>
-      <div className="mb-3 flex items-center gap-3 border-t border-border pt-6">
+      <div className="mb-3 flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
           <ClipboardCheck className="h-5 w-5" />
         </div>

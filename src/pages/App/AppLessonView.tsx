@@ -424,6 +424,11 @@ const AppLessonView = () => {
           </div>
         )}
 
+        {/* Assignments stay immediately visible after the lesson video */}
+        <div className="py-2">
+          <AssignmentSection lessonId={lesson.id} />
+        </div>
+
         {/* Lesson Content - only show if there's actual content */}
         {(lesson.content && !lesson.content.includes('<iframe') && lesson.content.trim() !== '') && (
           <div className="px-4">
@@ -437,13 +442,6 @@ const AppLessonView = () => {
             </Card>
           </div>
         )}
-
-        {/* Assignments for this lesson */}
-        <div className="py-2">
-          <AssignmentSection lessonId={lesson.id} />
-        </div>
-
-
 
         {/* Action Buttons */}
         <div className="px-4 pb-6">

@@ -1020,6 +1020,10 @@ const CourseAccess: React.FC = () => {
           </div>
         )}
 
+        <div className="mt-6">
+          <AssignmentSection lessonId={lesson.id} />
+        </div>
+
         <div className="mt-7 grid gap-10 lg:grid-cols-[minmax(0,1fr)_16rem]">
           <div className="min-w-0 space-y-8">
             {lesson.content && (
@@ -1030,7 +1034,6 @@ const CourseAccess: React.FC = () => {
                 </div>
               </section>
             )}
-            <AssignmentSection lessonId={lesson.id} />
           </div>
 
           <aside className="space-y-5 lg:border-r lg:border-border/70 lg:pr-6">
