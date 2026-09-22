@@ -58,7 +58,7 @@ const GlobalAccessCountdownBanner: React.FC = () => {
   const urgent = remaining > 0 && remaining < 24 * 60 * 60 * 1000;
 
   return (
-    <div className="fixed top-16 left-0 right-0 z-[9998]" dir="rtl">
+    <div className="sticky top-16 z-[60] w-full" dir="rtl">
       <Link to={href} className="block">
         <div
           className={cn(
@@ -68,7 +68,7 @@ const GlobalAccessCountdownBanner: React.FC = () => {
               : 'bg-primary text-primary-foreground border-primary',
           )}
         >
-          <div className="container flex items-center justify-center gap-3 py-2 text-xs sm:text-sm">
+          <div className="container relative flex items-center justify-center gap-3 py-2 text-xs sm:text-sm">
             {locked ? <Lock className="h-4 w-4 shrink-0" /> : <Clock className="h-4 w-4 shrink-0" />}
             {locked ? (
               <span className="font-bold">{gamText(m, 'locked_title')}</span>
