@@ -48,7 +48,7 @@ const GlobalAccessCountdownBanner: React.FC = () => {
   const locked = status.locked || remaining <= 0;
   const m = status.settings?.messages ?? {};
   const courseSlug = (status as any).course?.slug as string | undefined;
-  const href = courseSlug ? `/access?course=${courseSlug}` : '/dashboard';
+  const href = courseSlug ? `/course-access?course=${courseSlug}` : "/dashboard";
 
   const totalSeconds = Math.floor(remaining / 1000);
   const days = Math.floor(totalSeconds / 86400);
