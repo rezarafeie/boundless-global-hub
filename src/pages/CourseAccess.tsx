@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
   BookOpen, 
   Lock, 
   User,
-  Play,
   FileText,
   Download,
   ChevronRight,
@@ -15,18 +13,15 @@ import {
   AlertCircle,
   X,
   ExternalLink,
-  ChevronDown,
   Clock,
   PlayCircle,
   List,
-  ExternalLinkIcon,
   WifiOff
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/Layout/MainLayout';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import UnifiedMessengerAuth from '@/components/Chat/UnifiedMessengerAuth';
 import CourseNotifications from '@/components/Course/CourseNotifications';
@@ -158,7 +153,6 @@ const CourseAccess: React.FC = () => {
   const gam = useCourseGamification(course?.id, course?.slug);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileLessonView, setShowMobileLessonView] = useState(false);
-  const [openTitleGroups, setOpenTitleGroups] = useState<Set<string>>(new Set());
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
   
