@@ -1083,20 +1083,30 @@ const CourseAccess: React.FC = () => {
     <MainLayout>
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <div className="bg-card border-b">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <BookOpen className="h-6 w-6 text-primary" />
+        <div className="bg-card border-b border-border">
+          <div className="container mx-auto px-4 py-5">
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                <BookOpen className="h-5 w-5 text-primary" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex-1 min-w-0 space-y-3">
+                <div className="flex items-start gap-3 flex-wrap">
                   <div className="flex-1 min-w-0">
-                    <h1 className="text-2xl font-bold">{course.title}</h1>
-                    <p className="text-muted-foreground">{course.description}</p>
+                    <h1 className="text-xl lg:text-2xl font-bold truncate">{course.title}</h1>
+                    <p className="text-sm text-muted-foreground line-clamp-1">{course.description}</p>
                   </div>
                   <TelegramEnrollmentActivation courseId={course.id} badgeWhenLinked />
                 </div>
+
+                {(enrollment || course.is_free_access) && totalLessonsCount > 0 && (
+                  <div className="max-w-md space-y-1.5">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>پیشرفت شما در دوره</span>
+                      <span>{completedLessonsCount} از {totalLessonsCount} درس ({courseProgressPercent}٪)</span>
+                    </div>
+                    <Progress value={courseProgressPercent} className="h-1.5" />
+                  </div>
+                )}
               </div>
             </div>
           </div>
