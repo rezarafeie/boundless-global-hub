@@ -150,6 +150,8 @@ const AssignmentCard: React.FC<{
   const [submitting, setSubmitting] = useState(false);
   const [currentSubId, setCurrentSubId] = useState<string | undefined>(submission?.id);
   const [awaitingFeedback, setAwaitingFeedback] = useState(false);
+  const [streamText, setStreamText] = useState('');
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [localSubmission, setLocalSubmission] = useState<AssignmentSubmission | undefined>(submission);
   const effectiveSubmission = localSubmission || submission;
   const status: SubmissionStatus | 'not_started' = effectiveSubmission?.status || 'not_started';
