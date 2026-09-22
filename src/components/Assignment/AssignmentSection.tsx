@@ -192,7 +192,6 @@ const AssignmentCard: React.FC<{
         subId = data.id;
         setCurrentSubId(subId);
         setLocalSubmission(data as unknown as AssignmentSubmission);
-              playSuccessSound();
       } else {
         const { error } = await supabase
           .from('assignment_submissions')
@@ -281,7 +280,7 @@ const AssignmentCard: React.FC<{
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="p-4 pt-0 space-y-4 border-t">
+          <div className="p-4 pt-0 space-y-4 border-t" dir="rtl">
             {assignment.blocks.map((b) => (
               <BlockRenderer
                 key={b.id}

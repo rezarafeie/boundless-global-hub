@@ -59,7 +59,7 @@ export const FeedbackReport: React.FC<{ feedback: AIFeedback; adminFeedback?: st
               <div className="flex items-center gap-2 mb-2 text-sm font-medium text-green-700 dark:text-green-400">
                 <CheckCircle2 className="h-4 w-4" /> نقاط قوت
               </div>
-              <ul className="space-y-1 pr-6 list-disc text-sm">
+              <ul className="space-y-1 ps-6 list-disc text-sm">
                 {feedback.strengths.map((s, i) => <li key={i}><MarkdownLite text={String(s)} /></li>)}
               </ul>
             </div>
@@ -70,7 +70,7 @@ export const FeedbackReport: React.FC<{ feedback: AIFeedback; adminFeedback?: st
               <div className="flex items-center gap-2 mb-2 text-sm font-medium text-amber-700 dark:text-amber-400">
                 <AlertCircle className="h-4 w-4" /> نقاط قابل بهبود
               </div>
-              <ul className="space-y-1 pr-6 list-disc text-sm">
+              <ul className="space-y-1 ps-6 list-disc text-sm">
                 {feedback.weaknesses.map((s, i) => <li key={i}><MarkdownLite text={String(s)} /></li>)}
               </ul>
             </div>
@@ -81,7 +81,7 @@ export const FeedbackReport: React.FC<{ feedback: AIFeedback; adminFeedback?: st
               <div className="flex items-center gap-2 mb-2 text-sm font-medium text-primary">
                 <ArrowLeft className="h-4 w-4" /> قدم بعدی
               </div>
-              <ul className="space-y-1 pr-6 list-disc text-sm">
+              <ul className="space-y-1 ps-6 list-disc text-sm">
                 {feedback.next_steps.map((s, i) => <li key={i}><MarkdownLite text={String(s)} /></li>)}
               </ul>
             </div>
