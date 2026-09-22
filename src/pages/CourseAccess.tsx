@@ -1125,70 +1125,48 @@ const CourseAccess: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-background">
-        {/* Header */}
-        <div className="bg-card border-b border-border">
-          <div className="container mx-auto px-4 py-5">
-            <div className="flex items-start gap-4">
-              <div className="w-11 h-11 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
-                <BookOpen className="h-5 w-5 text-primary" />
+      <div className="min-h-screen bg-muted/20" dir="rtl">
+        <div className="border-b border-border/70 bg-background">
+          <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-4 lg:px-8">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <BookOpen className="h-5 w-5" />
               </div>
-              <div className="flex-1 min-w-0 space-y-3">
-                <div className="flex items-start gap-3 flex-wrap">
-                  <div className="flex-1 min-w-0">
-                    <h1 className="text-xl lg:text-2xl font-bold truncate">{course.title}</h1>
-                    <p className="text-sm text-muted-foreground line-clamp-1">{course.description}</p>
-                  </div>
-                  <TelegramEnrollmentActivation courseId={course.id} badgeWhenLinked />
-                </div>
-
-                {(enrollment || course.is_free_access) && totalLessonsCount > 0 && (
-                  <div className="max-w-md space-y-1.5">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>پیشرفت شما در دوره</span>
-                      <span>{completedLessonsCount} از {totalLessonsCount} درس ({courseProgressPercent}٪)</span>
-                    </div>
-                    <Progress value={courseProgressPercent} className="h-1.5" />
-                  </div>
-                )}
+              <div className="min-w-0">
+                <h1 className="truncate text-base font-bold text-foreground lg:text-lg">{course.title}</h1>
+                <p className="hidden truncate text-xs text-muted-foreground sm:block">{course.description}</p>
               </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <TelegramEnrollmentActivation courseId={course.id} badgeWhenLinked />
+              {(enrollment || course.is_free_access) && (
+                <Button variant="outline" size="sm" className="gap-2 lg:hidden" onClick={() => setShowMobileLessonView(false)}>
+                  <List className="h-4 w-4" /> فهرست
+                </Button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Not Logged In - Only show if course doesn't have free access */}
         {!isAuthenticated && !course.is_free_access && (
-          <div className="container mx-auto px-4 py-12">
-            <Card className="max-w-md mx-auto">
-              <CardContent className="pt-6 text-center">
-                <User className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">❌ شما وارد نشده‌اید</h2>
-                <p className="text-muted-foreground mb-4">
-                  برای دسترسی به محتوای دوره، لطفاً وارد حساب کاربری خود شوید
-                </p>
-                <div className="space-y-3">
-                  <Button onClick={() => setShowAuth(true)} className="w-full">
-                    ورود / ثبت‌نام
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-            
+          <div className="mx-auto max-w-md px-4 py-16 text-center">
+            <User className="mx-auto mb-5 h-10 w-10 text-muted-foreground" />
+            <h2 className="mb-2 text-xl font-semibold">برای ادامه وارد شوید</h2>
+            <p className="mb-6 text-sm text-muted-foreground">برای دسترسی به محتوای دوره، وارد حساب کاربری خود شوید.</p>
+            <Button onClick={() => setShowAuth(true)} className="w-full">ورود / ثبت‌نام</Button>
             {showAuth && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                <div className="bg-background rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-                  <div className="sticky top-0 bg-background border-b p-4 flex items-center justify-between">
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4">
+                <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-background">
+                  <div className="sticky top-0 flex items-center justify-between border-b bg-background p-4">
                     <h3 className="font-semibold">ورود / ثبت‌نام</h3>
-                    <Button variant="ghost" size="sm" onClick={() => setShowAuth(false)}>
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => setShowAuth(false)}><X className="h-4 w-4" /></Button>
                   </div>
                   <div className="p-4">
-                    <UnifiedMessengerAuth 
-                      onAuthenticated={(sessionToken: string, userName: string, user: any) => {
-                        login(user, sessionToken);
+                    <UnifiedMessengerAuth
+                      onAuthenticated={(sessionToken: string, userName: string, authenticatedUser: any) => {
+                        login(authenticatedUser, sessionToken);
                         setShowAuth(false);
-                        checkAuthAndLoadCourse(); // Reload course data to check enrollment
+                        checkAuthAndLoadCourse();
                       }}
                       isAcademyAuth={true}
                     />
@@ -1199,36 +1177,21 @@ const CourseAccess: React.FC = () => {
           </div>
         )}
 
-        {/* Logged In but Not Enrolled - Only show if course doesn't have free access */}
         {isAuthenticated && !enrollment && !course.is_free_access && (
-          <div className="container mx-auto px-4 py-12">
-            <Card className="max-w-md mx-auto">
-              <CardContent className="pt-6 text-center">
-                <Lock className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">⛔ دسترسی محدود</h2>
-                <p className="text-muted-foreground mb-4">
-                  شما در این دوره ثبت‌نام نکرده‌اید
-                </p>
-                <Button onClick={() => window.open(`/course/${course.slug}`, '_blank')}>
-                  مشاهده دوره و ثبت‌نام
-                </Button>
-              </CardContent>
-            </Card>
+          <div className="mx-auto max-w-md px-4 py-16 text-center">
+            <Lock className="mx-auto mb-5 h-10 w-10 text-muted-foreground" />
+            <h2 className="mb-2 text-xl font-semibold">دسترسی به این دوره فعال نیست</h2>
+            <p className="mb-6 text-sm text-muted-foreground">برای مشاهده درس‌ها ابتدا در دوره ثبت‌نام کنید.</p>
+            <Button onClick={() => window.open(`/course/${course.slug}`, '_blank')}>مشاهده دوره و ثبت‌نام</Button>
           </div>
         )}
 
-        {/* Course Content - Show if enrolled OR if course has free access */}
         {(enrollment || course.is_free_access) && (
           <>
-            {/* Course Notifications Section */}
-            <div className="container mx-auto px-4 py-4 space-y-4">
-              <CourseCountdownNotification
-                status={gam.status}
-                onReactivate={() => setShowReactivate(true)}
-              />
+            <div className="mx-auto max-w-[1600px] space-y-3 px-4 py-3 lg:px-8">
+              <CourseCountdownNotification status={gam.status} onReactivate={() => setShowReactivate(true)} />
               <CourseNotifications courseId={course.id} />
             </div>
-
             <ReactivationDialog
               open={showReactivate}
               onOpenChange={setShowReactivate}
@@ -1236,334 +1199,27 @@ const CourseAccess: React.FC = () => {
               courseTitle={course.title}
             />
 
-            {/* Main Course Content */}
-            <div className="flex h-[calc(100vh-200px)]">
-              {/* Course Navigation Sidebar */}
-              <div className={`${isMobile ? 'w-full' : 'w-1/3 lg:w-1/4'} bg-background border-r overflow-y-auto`}>
-                <div className="p-4">
-                  <div className="mb-6">
-                    <h2 className="font-bold text-xl mb-2 text-primary">فهرست دروس</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {titleGroups.reduce((total, group) => total + group.sections.reduce((sectionTotal, section) => sectionTotal + section.lessons.length, 0), 0) + sections.reduce((total, section) => total + section.lessons.length, 0)} درس
-                    </p>
-                  </div>
+            <div className="mx-auto max-w-[1600px] px-0 lg:px-8 lg:pb-8">
+              <div className="overflow-hidden border-y border-border/70 bg-background lg:grid lg:h-[calc(100dvh-13rem)] lg:min-h-[680px] lg:grid-cols-[21rem_minmax(0,1fr)] lg:rounded-lg lg:border">
+                <aside className={`${isMobile && showMobileLessonView ? 'hidden' : 'block'} min-h-[calc(100dvh-12rem)] border-l border-border/70 lg:min-h-0`}>
+                  {renderCurriculum()}
+                </aside>
 
-                  <div className="space-y-2">
-                    {titleGroups.length === 0 && sections.length === 0 ? (
-                      <div className="text-center py-8">
-                        <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground">هنوز هیچ درسی اضافه نشده است</p>
-                      </div>
-                    ) : (
-                      <>
-                        {/* Title Groups */}
-                        <Accordion type="multiple" value={Array.from(openTitleGroups)} onValueChange={(values) => setOpenTitleGroups(new Set(values))} className="space-y-3">
-                          {titleGroups.map((titleGroup, titleGroupIndex) => (
-                            <AccordionItem 
-                              key={titleGroup.id} 
-                              value={titleGroup.id}
-                              className="border border-border rounded-xl bg-card overflow-hidden"
-                            >
-                              <AccordionTrigger className="px-5 py-4 hover:bg-muted/60 transition-colors [&[data-state=open]]:bg-muted/40">
-                                <div className="flex items-center justify-between w-full pr-3">
-                                  <div className="flex items-center gap-4">
-                                    <div className="text-2xl">{titleGroup.icon}</div>
-                                    <div className="text-right">
-                                      <h3 className="font-bold text-lg text-foreground mb-1">
-                                        {titleGroup.title}
-                                      </h3>
-                                      <p className="text-sm text-muted-foreground">
-                                        شامل {titleGroup.sections.length} فصل
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <Badge variant="secondary" className="bg-primary/20 text-primary px-3 py-1.5 text-sm font-medium shadow-sm">
-                                    {titleGroup.sections.reduce((total, section) => total + section.lessons.length, 0)}
-                                  </Badge>
-                                </div>
-                              </AccordionTrigger>
-                              <AccordionContent className="px-0 pb-4">
-                                <div className="space-y-2 px-4">
-                                  {/* Sections under this title group */}
-                                  {titleGroup.sections.map((section, sectionIndex) => (
-                                    <Accordion key={section.id} type="multiple" className="space-y-1">
-                                      <AccordionItem 
-                                        value={section.id}
-                                        className="border border-border/60 rounded-lg bg-card overflow-hidden"
-                                      >
-                                        <AccordionTrigger className="px-4 py-3 hover:bg-muted/60 transition-colors [&[data-state=open]]:bg-muted/40">
-                                          <div className="flex items-center justify-between w-full pr-3">
-                                            <div className="flex items-center gap-3">
-                                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                                <BookOpen className="h-4 w-4 text-primary" />
-                                              </div>
-                                              <div className="text-right">
-                                                <h4 className="font-semibold text-sm text-foreground mb-0.5">
-                                                  {section.title}
-                                                </h4>
-                                                <p className="text-xs text-muted-foreground">
-                                                  {section.lessons.length} درس
-                                                </p>
-                                              </div>
-                                            </div>
-                                            <Badge variant="outline" className="text-xs px-2 py-0.5">
-                                              {section.lessons.length}
-                                            </Badge>
-                                          </div>
-                                        </AccordionTrigger>
-                                        <AccordionContent className="px-0 pb-2">
-                                          <div className="space-y-1 px-3">
-                                            {section.lessons.map((lesson, lessonIndex) => {
-                                              const isSelected = selectedLesson?.id === lesson.id;
-                                              return (
-                                                <button
-                                                  key={lesson.id}
-                                                  onClick={() => handleLessonSelect(lesson)}
-                                                  className={`w-full text-right p-3 rounded-lg transition-all duration-200 group border ${
-                                                    isSelected 
-                                                      ? completedLessons.has(lesson.id)
-                                                        ? 'bg-emerald-500/10 border-emerald-500/30'
-                                                        : 'bg-primary/10 border-primary/30'
-                                                      : completedLessons.has(lesson.id)
-                                                        ? 'hover:bg-emerald-500/10 border-transparent'
-                                                        : 'hover:bg-muted/60 border-transparent'
-                                                  }`}
-                                                >
-                                                  <div className="flex items-center justify-between">
-                                                    <div className="flex-1 min-w-0">
-                                                      <h5 className={`font-medium text-sm mb-1 text-right truncate ${
-                                                        isSelected ? 'text-primary' : 'text-foreground'
-                                                      }`}>
-                                                        {lessonIndex + 1}. {lesson.title}
-                                                      </h5>
-                                                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                                        <div className="flex items-center gap-1">
-                                                          <Clock className="h-3 w-3" />
-                                                          <span>{lesson.duration} دقیقه</span>
-                                                        </div>
-                                                        {lesson.video_url && (
-                                                          <div className="flex items-center gap-1">
-                                                            <PlayCircle className="h-3 w-3" />
-                                                            <span>ویدیو</span>
-                                                          </div>
-                                                        )}
-                                                        {lesson.file_url && (
-                                                          <div className="flex items-center gap-1">
-                                                            <FileText className="h-3 w-3" />
-                                                            <span>فایل</span>
-                                                          </div>
-                                                        )}
-                                                      </div>
-                                                    </div>
-                                                     <div className="flex items-center gap-2">
-                                                       {completedLessons.has(lesson.id) && (
-                                                         <div className="flex items-center gap-1">
-                                                           <CheckCircle className="h-4 w-4 text-emerald-500" />
-                                                           <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">تکمیل شده</span>
-                                                         </div>
-                                                       )}
-                                                       {isSelected && !completedLessons.has(lesson.id) && (
-                                                         <div className="flex items-center gap-1">
-                                                           <PlayCircle className="h-4 w-4 text-primary" />
-                                                           <span className="text-xs font-medium text-primary">در حال پخش</span>
-                                                         </div>
-                                                        )}
-                                                     </div>
-                                                   </div>
-                                                </button>
-                                              );
-                                            })}
-                           </div>
-                         </AccordionContent>
-                       </AccordionItem>
-                     </Accordion>
-                   ))}
-                 </div>
-               </AccordionContent>
-             </AccordionItem>
-           ))}
-         </Accordion>
-
-                        {/* Show orphan sections if they exist */}
-                        {sections.length > 0 && (
-                          <div className="mt-4">
-                            <Accordion type="multiple" className="space-y-1">
-                              {sections.map((section, sectionIndex) => (
-                                <AccordionItem 
-                                  key={section.id} 
-                                  value={section.id}
-                                  className="border border-border rounded-xl bg-card overflow-hidden"
-                                >
-                                  <AccordionTrigger className="px-5 py-4 hover:bg-muted/60 transition-colors [&[data-state=open]]:bg-muted/40">
-                                    <div className="flex items-center justify-between w-full pr-3">
-                                      <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                                          <BookOpen className="h-5 w-5 text-primary" />
-                                        </div>
-                                        <div className="text-right">
-                                          <h3 className="font-bold text-lg text-foreground mb-1">
-                                            {section.title}
-                                          </h3>
-                                          <p className="text-sm text-muted-foreground">
-                                            {section.lessons.length} درس
-                                          </p>
-                                        </div>
-                                      </div>
-                                      <Badge variant="secondary" className="bg-primary/20 text-primary px-3 py-1.5 text-sm font-medium shadow-sm">
-                                        {section.lessons.length}
-                                      </Badge>
-                                    </div>
-                                  </AccordionTrigger>
-                                  <AccordionContent className="px-0 pb-4">
-                                    <div className="space-y-1 px-4">
-                                      {section.lessons.map((lesson, lessonIndex) => {
-                                        const isSelected = selectedLesson?.id === lesson.id;
-                                        return (
-                                          <button
-                                            key={lesson.id}
-                                             onClick={() => handleLessonSelect(lesson)}
-                                             className={`w-full text-right p-4 rounded-xl transition-all duration-200 group border ${
-                                               isSelected 
-                                                 ? completedLessons.has(lesson.id)
-                                                   ? 'bg-emerald-500/10 border-emerald-500/30'
-                                                   : 'bg-primary/10 border-primary/30'
-                                                 : completedLessons.has(lesson.id)
-                                                   ? 'hover:bg-emerald-500/10 border-transparent'
-                                                   : 'hover:bg-muted/60 border-transparent'
-                                             }`}
-                                          >
-                                            <div className="flex items-center justify-between">
-                                              <div className="flex-1 min-w-0">
-                                                <h4 className={`font-semibold text-base mb-2 text-right truncate ${
-                                                  isSelected ? 'text-primary' : 'text-foreground'
-                                                }`}>
-                                                  {lessonIndex + 1}. {lesson.title}
-                                                </h4>
-                                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                                  <div className="flex items-center gap-1">
-                                                    <Clock className="h-4 w-4" />
-                                                    <span>{lesson.duration} دقیقه</span>
-                                                  </div>
-                                                  {lesson.video_url && (
-                                                    <div className="flex items-center gap-1">
-                                                      <PlayCircle className="h-4 w-4" />
-                                                      <span>ویدیو</span>
-                                                    </div>
-                                                  )}
-                                                  {lesson.file_url && (
-                                                    <div className="flex items-center gap-1">
-                                                      <FileText className="h-4 w-4" />
-                                                      <span>فایل</span>
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              </div>
-                                               <div className="flex items-center gap-2">
-                                                 {completedLessons.has(lesson.id) && (
-                                                   <div className="flex items-center gap-2">
-                                                     <CheckCircle className="h-5 w-5 text-emerald-500" />
-                                                     <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">تکمیل شده</span>
-                                                   </div>
-                                                 )}
-                                                 {isSelected && !completedLessons.has(lesson.id) && (
-                                                   <div className="flex items-center gap-2">
-                                                     <PlayCircle className="h-5 w-5 text-primary" />
-                                                     <span className="text-xs font-medium text-primary">در حال پخش</span>
-                                                   </div>
-                                                 )}
-                                               </div>
-                                            </div>
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </AccordionContent>
-                                </AccordionItem>
-                              ))}
-                            </Accordion>
-                          </div>
-                        )}
-                       </>
-                     )}
-
-                     {/* Course Action Links at the bottom of the menu */}
-                     {course && (course.support_link || course.telegram_channel_link || course.gifts_link) && enrollment && (
-                       <div className="mt-6 pt-4 border-t border-border">
-                         <CourseActionLinks 
-                           course={{
-                             id: course.id,
-                             title: course.title,
-                             support_link: course.support_link,
-                             telegram_channel_link: course.telegram_channel_link,
-                             gifts_link: course.gifts_link,
-                             support_activation_required: course.support_activation_required || false,
-                             telegram_activation_required: course.telegram_activation_required || false,
-                             smart_activation_enabled: false,
-                             telegram_support_activation_enabled: course.telegram_support_activation_enabled || false,
-                             telegram_course_access_via_bot_enabled: course.telegram_course_access_via_bot_enabled || false
-                           }}
-                           enrollment={{
-                             id: enrollment.id,
-                             full_name: user?.name || user?.firstName || 'کاربر',
-                             email: user?.email || ''
-                           }}
-                           userEmail={user?.email || ''}
-                           userId={user?.id ? parseInt(user.id) : null}
-                           onSupportActivated={() => {}}
-                           onTelegramActivated={() => {}}
-                         />
-                       </div>
-                     )}
-
-                   </div>
-                 </div>
-               </div>
-
-              {/* Desktop Main Content Area */}
-              {!isMobile && (
-                <div className="flex-1 overflow-y-auto bg-muted/30">
+                <main className={`${isMobile && !showMobileLessonView ? 'hidden' : 'block'} min-w-0 overflow-y-auto bg-background`}>
                   {selectedLesson ? (
-                    <div className="p-4 lg:p-6">
-                      {renderLessonContent(selectedLesson)}
-                    </div>
+                    <div className="px-4 py-5 sm:px-6 lg:px-10 lg:py-8">{renderLessonContent(selectedLesson)}</div>
                   ) : (
-                    <div className="flex items-center justify-center h-full p-6">
-                      <div className="text-center max-w-md">
-                        <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                          <BookOpen className="h-8 w-8 text-primary" />
-                        </div>
-                        <h3 className="text-xl font-bold mb-3 text-foreground">شروع یادگیری</h3>
-                        <p className="text-muted-foreground text-sm leading-relaxed">
-                          از منوی کناری یک درس انتخاب کنید
-                        </p>
+                    <div className="flex h-full min-h-[520px] items-center justify-center p-8 text-center">
+                      <div className="max-w-sm">
+                        <BookOpen className="mx-auto mb-4 h-9 w-9 text-muted-foreground" />
+                        <h2 className="mb-2 text-lg font-semibold">یک درس را انتخاب کنید</h2>
+                        <p className="text-sm leading-7 text-muted-foreground">از فهرست دوره، درس موردنظرتان را باز کنید.</p>
                       </div>
                     </div>
                   )}
-                </div>
-              )}
-            </div>
-
-            {/* Mobile Lesson View */}
-            {isMobile && showMobileLessonView && selectedLesson && (
-              <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
-                <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b p-4 flex items-center gap-3">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setShowMobileLessonView(false)}
-                    className="flex items-center gap-2"
-                  >
-                    <X className="h-4 w-4" />
-                    بازگشت
-                  </Button>
-                  <h2 className="font-medium text-lg truncate flex-1">{selectedLesson.title}</h2>
-                  <TelegramEnrollmentActivation courseId={course.id} badgeWhenLinked className="shrink-0" />
-                </div>
-                <div className="p-4">
-                  {renderLessonContent(selectedLesson)}
-                </div>
+                </main>
               </div>
-            )}
+            </div>
           </>
         )}
       </div>
