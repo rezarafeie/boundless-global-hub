@@ -12,11 +12,14 @@ import { FeedbackReport } from './FeedbackReport';
 import { CTASection } from './CTASection';
 import type { Assignment, AssignmentSubmission, SubmissionStatus } from '@/types/assignment';
 import { STATUS_LABELS_FA } from '@/types/assignment';
-const playSuccessSound = () => {
+const createAudioContext = (): AudioContext | null => {
+  const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  return AudioContextClass ? new AudioContextClass() : null;
+};
+
+const playSuccessSound = (audioCtx: AudioContext | null) => {
   try {
-    const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const audioCtx = new AudioContextClass();
+    if (!audioCtx) return;
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     oscillator.type = "sine";
@@ -150,6 +153,7 @@ const AssignmentCard: React.FC<{
   const readonly = ['submitted', 'reviewed', 'completed'].includes(status);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const feedbackRef = useRef<HTMLDivElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     setAnswers(submission?.answers || {});
@@ -198,6 +202,10 @@ const AssignmentCard: React.FC<{
     }
     setSubmitting(true);
     setOpen(true);
+    if (assignment.ai_feedback_enabled && !audioContextRef.current) {
+      audioContextRef.current = createAudioContext();
+      void audioContextRef.current?.resume();
+    }
     try {
       let subId = currentSubId;
       if (!subId) {
@@ -238,7 +246,8 @@ const AssignmentCard: React.FC<{
             if (data && (data as any).ai_feedback) {
               setLocalSubmission(data as unknown as AssignmentSubmission);
               setOpen(true);
-              playSuccessSound();
+              playSuccessSound(audioContextRef.current);
+              audioContextRef.current = null;
               setAwaitingFeedback(false);
               window.setTimeout(() => {
                 feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
