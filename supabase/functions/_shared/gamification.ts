@@ -273,9 +273,8 @@ export async function grantRewards(userId: number, courseId: string, completionD
 
   if (granted.length) {
     await notifyStudent(userId, courseId, "rewards", null, {
-      title: "جایزه شما فعال شد 🎁",
-      text: `تبریک! دوره را در ${completionDays.toFixed(1)} روز تمام کردی.\nجوایز شما:\n` +
-        granted.map((g) => `• ${g.title}`).join("\n"),
+      days: completionDays.toFixed(1),
+      rewards: granted.map((g) => `• ${g.title}`).join("\n"),
     });
   }
   return granted;
