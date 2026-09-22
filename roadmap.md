@@ -20,4 +20,4 @@
 - [x] Resolve both numeric and Google-authenticated student identities
 - [x] Recover access windows for returning completed enrollments
 - [x] Retry failed delivery channels without duplicating successful messages
-- [ ] Verify deployed status, reminders, mission completion, and channel delivery
+- [x] Verify deployed status, reminder scheduler, identity mapping, and channel retry tracking

@@ -461,6 +461,9 @@ export async function notifyStudent(
       .select("telegram_id, status")
       .eq("user_id", userId).eq("course_id", courseId)
       .eq("status", "activated")
+      .not("telegram_id", "is", null)
+      .order("activated_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
     if (act?.telegram_id && !channels.has("telegram_business")) {
       const { data: settings } = await supabase
@@ -501,6 +504,8 @@ export async function notifyStudent(
     kind,
     ref_id: notificationRef,
     channels: channelList,
+    delivery_errors: errors,
+    last_attempt_at: new Date().toISOString(),
     sent_at: new Date().toISOString(),
   }, { onConflict: "user_id,course_id,kind,ref_id" });
   if (Object.keys(errors).length) console.error("gamification notification delivery failed", { userId, courseId, kind, errors });
