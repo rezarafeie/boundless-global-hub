@@ -121,7 +121,14 @@ Deno.serve(async (req) => {
       payload_json: {},
     });
 
-    return json({ activation: row });
+    // Bale deep link (opt-in per course)
+    const baleEnabled = !!(course as any)?.bale_support_activation_enabled;
+    const baleUser = (Deno.env.get('BALE_BOT_USERNAME') ?? '').replace(/^@/, '');
+    const bale_link = baleEnabled && row.activation_token
+      ? `https://ble.ir/${baleUser || 'rafiei_bot'}?start=${encodeURIComponent('sact_' + row.activation_token)}`
+      : null;
+
+    return json({ activation: row, bale_enabled: baleEnabled, bale_link });
   } catch (e) {
     return json({ error: (e as Error).message }, 500);
   }
