@@ -1070,6 +1070,7 @@ const EnrollSuccess: React.FC = () => {
             rafiei_bot_followup_enabled,
             rafiei_bot_activation_required,
             telegram_support_activation_enabled,
+            bale_support_activation_enabled,
             telegram_course_access_via_bot_enabled
           )
         `)
@@ -1137,6 +1138,7 @@ const EnrollSuccess: React.FC = () => {
             rafiei_bot_followup_enabled,
             rafiei_bot_activation_required,
             telegram_support_activation_enabled,
+            bale_support_activation_enabled,
             telegram_course_access_via_bot_enabled
           )
         `)
@@ -1432,6 +1434,19 @@ const EnrollSuccess: React.FC = () => {
                           <p className="mt-2 text-center text-xs text-muted-foreground">
                             این مرحله کمتر از یک دقیقه زمان می‌برد
                           </p>
+
+                          {result.course.bale_support_activation_enabled && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="lg"
+                              onClick={openBaleActivation}
+                              className="mt-3 h-12 w-full gap-2 rounded-lg font-bold"
+                            >
+                              <Send className="h-4 w-4 shrink-0" />
+                              فعال‌سازی در پیام‌رسان بله (بدون فیلترشکن)
+                            </Button>
+                          )}
 
                           <div className="mt-4 flex flex-wrap items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-muted-foreground">
                             <Clock className="h-4 w-4 flex-shrink-0 text-primary" />
