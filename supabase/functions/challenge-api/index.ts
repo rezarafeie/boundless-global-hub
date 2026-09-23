@@ -159,7 +159,11 @@ Deno.serve(async (req) => {
     const ch = await getChallenge();
     if (!ch) return json({ success: false, error: "چالش یافت نشد" }, 404);
     const admin = ["admin_action"].includes(action) ? await isAdmin(req) : false;
-    if (!VISIBLE.includes(ch.status) && !admin) return json({ success: false, error: "چالش هنوز منتشر نشده است" }, 404);
+    // Draft preview: read-only view of an unpublished challenge (no joining/actions)
+    if (!VISIBLE.includes(ch.status) && action === "get" && body.preview) {
+      return json({ success: true, preview: true, ...(await fullState(ch, null)) });
+    }
+    if (!VISIBLE.includes(ch.status) && !admin) return json({ success: false, notPublished: true, error: "چالش هنوز منتشر نشده است" }, 200);
 
     if (action === "get") return json({ success: true, ...(await fullState(ch, uid)) });
 

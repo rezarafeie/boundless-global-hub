@@ -51,17 +51,29 @@ const ChallengePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [started, setStarted] = useState(false);
+  const isPreview = params.get('preview') === '1';
   const ident = useMemo(() => ({ userId: user?.id, email: (user as any)?.email, slug }), [user?.id, slug]);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const load = useCallback(async (action = 'get') => {
-    try { setState(await challengeApi(action, ident)); }
-    catch (e: any) { toast.error(e.message); }
+    try { setErrorMsg(null); setState(await challengeApi(action, { ...ident, preview: isPreview })); }
+    catch (e: any) { setErrorMsg(e.message); }
     finally { setLoading(false); }
-  }, [ident]);
+  }, [ident, isPreview]);
   useEffect(() => { load(); }, [load]);
 
   if (loading) return <div className="flex justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
-  if (!state?.challenge) return <p className="py-24 text-center text-muted-foreground">چالش یافت نشد.</p>;
+  if (!state?.challenge) return <p dir="rtl" className="py-24 text-center text-muted-foreground">{errorMsg ?? 'چالش یافت نشد.'}</p>;
+  if (state.preview) return (
+    <div dir="rtl" className="mx-auto max-w-3xl space-y-4 px-4 py-6">
+      <Card className="border-dashed"><CardContent className="p-4 text-sm text-muted-foreground">پیش‌نمایش پیش‌نویس — این چالش هنوز منتشر نشده و دانشجوها آن را نمی‌بینند.</CardContent></Card>
+      <Card><CardContent className="space-y-3 p-5">
+        <h1 className="text-xl font-bold">{state.challenge.title}</h1>
+        {state.challenge.description && <p className="text-sm text-muted-foreground">{state.challenge.description}</p>}
+        <ul className="space-y-1 text-sm">{(state.days || []).map((d: any) => <li key={d.id}>روز {faNum(d.day_number)}: {d.title}</li>)}</ul>
+      </CardContent></Card>
+    </div>
+  );
 
   const ch = state.challenge;
   const seg = segmentsOf(ch);
