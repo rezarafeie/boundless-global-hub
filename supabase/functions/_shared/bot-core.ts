@@ -9,6 +9,7 @@ import {
   linkedAtColumn,
   chatIdPatch,
   channelLabel,
+  isBale as isBaleChannel,
   type Channel,
 } from './channel.ts';
 import {
@@ -3821,13 +3822,15 @@ async function handleUpdate(update: any) {
     }
     // Load course + user for message rendering
     const [{ data: course }, { data: cu }] = await Promise.all([
-      supabase.from('courses').select('title, telegram_bot_welcome_message').eq('id', act.course_id).maybeSingle(),
+      supabase.from('courses').select('title, telegram_bot_welcome_message, bale_activation_link, bale_bot_welcome_message').eq('id', act.course_id).maybeSingle(),
       supabase.from('chat_users').select('name, first_name').eq('id', act.user_id).maybeSingle(),
     ]);
     const displayName = (cu as any)?.first_name || (cu as any)?.name || 'دوست عزیز';
     const courseTitle = (course as any)?.title || 'دوره';
     const defaultTpl = 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال بشه.';
-    const tpl = ((course as any)?.telegram_bot_welcome_message as string | null) || defaultTpl;
+    const tpl = (isBaleChannel()
+      ? ((course as any)?.bale_bot_welcome_message as string | null) || ((course as any)?.telegram_bot_welcome_message as string | null)
+      : ((course as any)?.telegram_bot_welcome_message as string | null)) || defaultTpl;
     const welcome = tpl
       .replace(/\{\{name\}\}/g, escapeHtml(displayName))
       .replace(/\{\{course_title\}\}/g, escapeHtml(courseTitle));
@@ -3839,7 +3842,9 @@ async function handleUpdate(update: any) {
     await supabase.from('support_activations').update({
       status: newStatus,
       opened_bot_at: new Date().toISOString(),
-      telegram_id: chat_id,
+      telegram_id: currentChannel() === 'telegram' ? chat_id : null,
+      bale_chat_id: currentChannel() === 'bale' ? chat_id : null,
+      activation_channel: currentChannel(),
       telegram_username: msg?.from?.username ?? null,
       telegram_first_name: msg?.from?.first_name ?? null,
       telegram_last_name: msg?.from?.last_name ?? null,
@@ -3861,7 +3866,9 @@ async function handleUpdate(update: any) {
         .eq('id', act.user_id);
     } catch (e) { console.warn('auto-login on sact_ failed', e); }
 
-    const supportUrl = act.support_prefilled_link || `https://telegram.me/rafieiacademy`;
+    const supportUrl = isBaleChannel()
+      ? ((course as any)?.bale_activation_link || act.support_prefilled_link || 'https://ble.ir/rafieiacademy')
+      : (act.support_prefilled_link || 'https://telegram.me/rafieiacademy');
     await tgCall('sendMessage', {
       chat_id,
       text: welcome,
