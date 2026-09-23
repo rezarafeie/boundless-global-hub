@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,7 +39,11 @@ interface Props {
   onSaved?: () => void;
 }
 
-const CourseGamificationSettings: React.FC<Props> = ({ courseId, onSaved }) => {
+export interface CourseGamificationSettingsHandle {
+  save: () => Promise<void>;
+}
+
+const CourseGamificationSettings = forwardRef<CourseGamificationSettingsHandle, Props>(({ courseId, onSaved }, ref) => {
   const { toast } = useToast();
   const [settings, setSettings] = useState<any>(GAM_DEFAULTS);
   const [rewards, setRewards] = useState<Reward[]>([]);
@@ -64,7 +68,7 @@ const CourseGamificationSettings: React.FC<Props> = ({ courseId, onSaved }) => {
     })();
   }, [courseId]);
 
-  const save = async () => {
+  const persist = async () => {
     setSaving(true);
     try {
       const { error } = await (supabase as any).from('course_gamification_settings').upsert(
@@ -98,14 +102,22 @@ const CourseGamificationSettings: React.FC<Props> = ({ courseId, onSaved }) => {
         if (rw.id) await (supabase as any).from('course_gamification_rewards').update(payload).eq('id', rw.id);
         else await (supabase as any).from('course_gamification_rewards').insert(payload);
       }
-      toast({ title: 'ذخیره شد', description: 'تنظیمات دسترسی گیمیفای به‌روزرسانی شد' });
-      onSaved?.();
-    } catch (e: any) {
-      toast({ title: 'خطا', description: e.message, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
   };
+
+  const save = async () => {
+    try {
+      await persist();
+      toast({ title: 'ذخیره شد', description: 'تنظیمات دسترسی گیمیفای به‌روزرسانی شد' });
+      onSaved?.();
+    } catch (e: any) {
+      toast({ title: 'خطا', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  useImperativeHandle(ref, () => ({ save: persist }), [courseId, settings, rewards]);
 
   const removeReward = async (idx: number) => {
     const rw = rewards[idx];
@@ -308,11 +320,13 @@ const CourseGamificationSettings: React.FC<Props> = ({ courseId, onSaved }) => {
         ))}
       </div>
 
-      <Button type="button" className="w-full" onClick={save} disabled={saving}>
+      <Button type="button" className="w-full" onClick={() => void save()} disabled={saving}>
         {saving && <Loader2 className="ml-2 h-4 w-4 animate-spin" />} ذخیره تنظیمات گیمیفای
       </Button>
     </div>
   );
-};
+});
+
+CourseGamificationSettings.displayName = 'CourseGamificationSettings';
 
 export default CourseGamificationSettings;
