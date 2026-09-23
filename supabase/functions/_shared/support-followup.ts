@@ -284,6 +284,23 @@ export async function runStage2(row: Row, opts: { isTest?: boolean } = {}) {
 
 export async function runStage3(row: Row, opts: { isTest?: boolean } = {}) {
   if (!row.telegram_id) {
+    // Bale has no "business account" API — mirror the stage 3 text through the Bale bot
+    // so Bale-only students still receive this followup.
+    const target = botTarget(row);
+    if (target && target.channel === "bale") {
+      const baleVars = buildVars(row);
+      const baleText = render(row.courses.support_followup_stage3_business_text, baleVars) || "[TEST] followup";
+      const baleKb = renderButtons(row.courses.support_followup_stage3_buttons, baleVars);
+      const baleRes = await runWithChannel("bale", () => sendRichMessage(target.chatId, baleText, {
+        mediaUrl: row.courses.support_followup_stage3_media_url,
+        mediaType: row.courses.support_followup_stage3_media_type,
+        keyboard: baleKb as any,
+        parse_mode: "HTML",
+      }));
+      const baleOk = (baleRes as any)?.ok !== false;
+      await logSend(row, 3, "bale_bot", baleOk ? "sent" : "failed", baleOk ? undefined : JSON.stringify(baleRes), { chat_id: target.chatId, messenger: "bale", text: baleText, response: baleRes, is_test: !!opts.isTest });
+      return [{ ok: baleOk, chat_id: target.chatId, messenger: "bale", text: baleText, response: baleRes }];
+    }
     await logSend(row, 3, "telegram_business", "failed", "no telegram_id", { is_test: !!opts.isTest });
     return [{ ok: false, error: "no telegram_id" }];
   }
