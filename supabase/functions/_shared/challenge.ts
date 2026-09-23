@@ -203,28 +203,45 @@ export async function loadStructure(challengeId: string) {
 
 const OPEN = ["available", "started", "submitted", "pending_ai", "pending_review", "needs_revision"];
 
+// Highest day number the participant may open: the calendar day, or — when
+// the challenge allows early unlock — one past the last consecutively completed day.
+export async function unlockedDay(ch: Challenge, p: Participant) {
+  const today = currentDayNumber(ch);
+  if (!(ch as any).unlock_next_on_complete || today < 1) return today;
+  const { data: rows } = await supabase.from("challenge_progress").select("day_number, status").eq("participant_id", p.id).order("day_number");
+  let last = 0;
+  for (const r of rows ?? []) {
+    if (r.day_number !== last + 1) break;
+    if (!["completed", "skipped"].includes(r.status)) break;
+    last = r.day_number;
+  }
+  return Math.min(Number(ch.days_count) || 1, Math.max(today, last + 1));
+}
+
 export async function ensureProgress(ch: Challenge, p: Participant, structure?: { days: any[]; variants: any[] }) {
   if (!["active", "finished"].includes(ch.status)) return 0;
   const { days, variants } = structure ?? await loadStructure(ch.id);
   const today = currentDayNumber(ch);
+  const limit = await unlockedDay(ch, p);
   const { data: rows } = await supabase.from("challenge_progress").select("day_id").eq("participant_id", p.id);
   const have = new Set((rows ?? []).map((r: any) => r.day_id));
   const joinedDay = currentDayNumber(ch, Date.parse(p.joined_at)) || 1;
   let created = 0;
   for (const d of days) {
-    if (d.day_number > today || have.has(d.id)) continue;
+    if (d.day_number > limit || have.has(d.id)) continue;
     const w = dayWindow(ch, d);
+    const early = d.day_number > today;
     const variant = selectVariant(variants.filter((v: any) => v.day_id === d.id), p);
     const skipped = d.day_number < joinedDay;
     const { error } = await supabase.from("challenge_progress").insert({
       participant_id: p.id, challenge_id: ch.id, day_id: d.id, day_number: d.day_number,
       variant_id: variant?.id ?? null, assignment_id: variant?.assignment_id ?? null, form_id: variant?.form_id ?? null,
       status: skipped ? "skipped" : "available",
-      available_at: new Date(w.available).toISOString(), deadline_at: new Date(w.deadline).toISOString(),
+      available_at: new Date(early ? Date.now() : w.available).toISOString(), deadline_at: new Date(w.deadline).toISOString(),
     });
     if (error) continue; // unique → already created by a parallel run
     created++;
-    if (!skipped && d.day_number === today) {
+    if (!skipped && (d.day_number === today || early)) {
       await emitEvent(ch, p, d.day_number === 1 ? "challenge_started" : "mission_available", `day:${d.day_number}`, {
         day: d.day_number, mission_title: d.title, xp: d.xp,
         deadline: new Date(w.deadline).toLocaleString("fa-IR", { timeZone: "Asia/Tehran" }),
