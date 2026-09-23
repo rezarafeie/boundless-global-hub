@@ -1,13 +1,34 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { supabase } from "../_shared/supabase.ts";
 import { resolveGamificationUserId } from "../_shared/gamification.ts";
+import { zarinpalFetch } from "../_shared/zarinpal.ts";
+import { fetchUsdTomanRate } from "../_shared/rafieipay.ts";
 import {
   loadStructure, syncParticipant, emitEvent, reportMetrics, recalcParticipant, completeMission,
   grantReward, participantStats, unlockedDay, currentDayNumber, dayWindow, selectVariant, processRewards,
 } from "../_shared/challenge.ts";
 
+const ZARINPAL_MERCHANT_ID = Deno.env.get("ZARINPAL_MERCHANT_ID") || "";
+
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+// Unlock a participant after a paid penalty (or admin waiver) and reopen the missed mission for 24h.
+async function releasePaymentLock(ch: any, p: any, lock: any, meta: Record<string, unknown>) {
+  const history = Array.isArray(p.profile?.payment_history) ? p.profile.payment_history : [];
+  const profile = { ...p.profile, payment_lock: null, payment_history: [...history, { ...lock, active: false, released_at: new Date().toISOString(), ...meta }] };
+  await supabase.from("challenge_participants").update({ profile }).eq("id", p.id);
+  p.profile = profile;
+  const dayNum = Number(String(lock.ref ?? "").replace("day:", "")) || null;
+  let q = supabase.from("challenge_progress").select("id").eq("participant_id", p.id).eq("status", "missed");
+  q = dayNum ? q.eq("day_number", dayNum) : q.order("day_number", { ascending: false }).limit(1);
+  const { data: rows } = await q;
+  for (const r of rows ?? []) {
+    await supabase.from("challenge_progress").update({ status: "available", missed_at: null, deadline_at: new Date(Date.now() + 24 * 3600000).toISOString() }).eq("id", r.id);
+  }
+  await recalcParticipant(ch, p);
+  await emitEvent(ch, p, "penalty_applied", `penalty_released:${lock.at}`, { feedback: meta.paid ? "پرداخت جریمه تایید شد. به چالش برگشتی! ماموریت از دست رفته ۲۴ ساعت دیگر باز است." : "جریمه شما توسط مربی بخشیده شد. به چالش برگشتی!" });
+}
 
 const VISIBLE = ["scheduled", "active", "paused", "finished"];
 
@@ -199,6 +220,49 @@ Deno.serve(async (req) => {
     if (!p && action !== "admin_action") return json({ success: false, error: "ابتدا در چالش ثبت‌نام کنید" }, 400);
 
     if (action === "sync") return json({ success: true, ...(await fullState(ch, uid)) });
+
+    /* ---------- paid penalty (pay to return) ---------- */
+    const lock = p?.profile?.payment_lock;
+    if (action === "penalty_price") {
+      if (!lock?.active) return json({ success: true, locked: false });
+      const rate = await fetchUsdTomanRate();
+      return json({ success: true, locked: true, usd: lock.usd, toman: Math.max(1000, Math.round(Number(lock.usd) * (rate || 0))) });
+    }
+    if (action === "penalty_pay") {
+      if (!lock?.active) return json({ success: false, error: "جریمه‌ای برای پرداخت وجود ندارد" }, 400);
+      const rate = await fetchUsdTomanRate();
+      if (!rate) return json({ success: false, error: "نرخ دلار در دسترس نیست، کمی بعد دوباره تلاش کنید" }, 503);
+      const toman = Math.max(1000, Math.round(Number(lock.usd) * rate));
+      const base = String(body.origin ?? "https://academy.rafiei.co").replace(/\/$/, "");
+      const callback = `${base}${String(body.returnPath ?? `/challenges/${ch.slug}`)}?penalty_paid=1`;
+      const res = await zarinpalFetch("/pg/v4/payment/request.json", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ merchant_id: ZARINPAL_MERCHANT_ID, amount: toman * 10, description: `جریمه بازگشت به چالش ${ch.title} (${lock.usd} دلار)`, callback_url: callback }),
+      });
+      const data = await res.json();
+      if (data.data?.code === 100 && data.data?.authority) {
+        const profile = { ...p.profile, payment_lock: { ...lock, authority: data.data.authority, toman } };
+        await supabase.from("challenge_participants").update({ profile }).eq("id", p.id);
+        return json({ success: true, paymentUrl: `https://www.zarinpal.com/pg/StartPay/${data.data.authority}`, toman, usd: lock.usd });
+      }
+      return json({ success: false, error: "خطا در اتصال به درگاه پرداخت" }, 400);
+    }
+    if (action === "penalty_verify") {
+      const authority = String(body.authority ?? "");
+      if (!lock?.active) return json({ success: true, alreadyVerified: true, ...(await fullState(ch, uid)) });
+      if (!authority || lock.authority !== authority) return json({ success: false, error: "پرداخت معتبر نیست" }, 400);
+      const res = await zarinpalFetch("/pg/v4/payment/verify.json", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ merchant_id: ZARINPAL_MERCHANT_ID, amount: Number(lock.toman) * 10, authority }),
+      });
+      const data = await res.json();
+      if (!(data.data?.code === 100 || data.data?.code === 101)) return json({ success: false, error: "پرداخت تایید نشد" }, 400);
+      await releasePaymentLock(ch, p, lock, { paid: true, ref_id: String(data.data.ref_id ?? authority) });
+      return json({ success: true, refId: data.data.ref_id, ...(await fullState(ch, uid)) });
+    }
+    if (lock?.active && ["start", "complete_manual", "report_metrics", "update_stage"].includes(action)) {
+      return json({ success: false, paymentRequired: true, error: `برای ادامه چالش ابتدا جریمه ${lock.usd} دلاری را پرداخت کنید` }, 402);
+    }
 
     if (action === "start") {
       await supabase.from("challenge_progress").update({ status: "started", started_at: new Date().toISOString() })
