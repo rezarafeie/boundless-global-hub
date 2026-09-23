@@ -60,10 +60,16 @@ const SUPABASE_URL = 'https://ihhetvwuhqohbfgkqoxw.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloaGV0dnd1aHFvaGJmZ2txb3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNjk0NTIsImV4cCI6MjA2NTk0NTQ1Mn0.91gRPO_ApEGQF2EtTAQLcqA-mIj7lqF29M1OZcGW4BI';
 
 interface Props {
-  lessonId: string;
+  lessonId?: string;
+  /** Render one specific assignment (e.g. from a challenge mission) instead of a lesson's assignments */
+  assignmentId?: string;
+  /** Called after save/submit/AI feedback so a host (challenge) can refresh its state */
+  onChange?: () => void;
+  /** Hide the section header (host provides its own) */
+  bare?: boolean;
 }
 
-export const AssignmentSection: React.FC<Props> = ({ lessonId }) => {
+export const AssignmentSection: React.FC<Props> = ({ lessonId, assignmentId, onChange, bare }) => {
   const { user, isAuthenticated } = useAuth();
   const studentId = user ? parseInt(user.id) : null;
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -72,12 +78,9 @@ export const AssignmentSection: React.FC<Props> = ({ lessonId }) => {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data: aData } = await supabase
-      .from('assignments')
-      .select('*')
-      .eq('lesson_id', lessonId)
-      .eq('status', 'published')
-      .order('created_at');
+    let q = supabase.from('assignments').select('*').eq('status', 'published');
+    q = assignmentId ? q.eq('id', assignmentId) : q.eq('lesson_id', lessonId ?? '');
+    const { data: aData } = await q.order('created_at');
     const list = (aData || []) as unknown as Assignment[];
     setAssignments(list);
 
@@ -100,7 +103,7 @@ export const AssignmentSection: React.FC<Props> = ({ lessonId }) => {
       setSubmissions(map);
     }
     setLoading(false);
-  }, [lessonId, studentId]);
+  }, [lessonId, assignmentId, studentId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -130,6 +133,18 @@ export const AssignmentSection: React.FC<Props> = ({ lessonId }) => {
 
   if (!studentId) return null;
 
+  const reload = () => { load(); onChange?.(); };
+
+  if (bare) {
+    return (
+      <div className="space-y-3">
+        {assignments.map((a) => (
+          <AssignmentCard key={a.id} assignment={a} submission={submissions[a.id]} studentId={studentId} onSaved={reload} defaultOpen />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <section className="px-4" aria-labelledby={`lesson-assignments-${lessonId}`}>
       <div className="mb-3 flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
@@ -148,7 +163,7 @@ export const AssignmentSection: React.FC<Props> = ({ lessonId }) => {
             assignment={a}
             submission={submissions[a.id]}
             studentId={studentId}
-            onSaved={load}
+            onSaved={reload}
           />
         ))}
       </div>
@@ -161,8 +176,9 @@ const AssignmentCard: React.FC<{
   submission?: AssignmentSubmission;
   studentId: number;
   onSaved: () => void;
-}> = ({ assignment, submission, studentId, onSaved }) => {
-  const [open, setOpen] = useState(false);
+  defaultOpen?: boolean;
+}> = ({ assignment, submission, studentId, onSaved, defaultOpen }) => {
+  const [open, setOpen] = useState(!!defaultOpen);
   const [answers, setAnswers] = useState<Record<string, unknown>>(submission?.answers || {});
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -279,13 +295,14 @@ const AssignmentCard: React.FC<{
     setOpen(true);
     setAwaitingFeedback(false);
     setStreamText('');
+    window.setTimeout(() => onSaved(), 1500);
     playSuccessSound(audioContextRef.current);
     audioContextRef.current = null;
     window.setTimeout(() => {
       feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       feedbackRef.current?.focus({ preventScroll: true });
     }, 150);
-  }, []);
+  }, [onSaved]);
 
   const streamFeedback = useCallback(async (subId: string) => {
     try {

@@ -47,6 +47,7 @@ const menuItems = [
   { id: 'courses', label: 'دوره‌ها', icon: BookOpen },
   { id: 'tests', label: 'آزمون‌ها', icon: Brain },
   { id: 'assignments', label: 'تمرین‌ها', icon: ClipboardCheck },
+  { id: 'challenges', label: 'چالش‌ها', icon: Kanban },
   { id: 'support-activations', label: 'فعال‌سازی پشتیبانی', icon: MessageSquare },
   { id: 'webinars', label: 'وبینارها', icon: Calendar },
   { id: 'consultations', label: 'مشاوره‌ها', icon: Video },
