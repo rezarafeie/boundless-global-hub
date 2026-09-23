@@ -504,6 +504,17 @@ export async function notifyStudent(
     } catch (e) { errors.telegram_bot = String(e); }
   }
 
+  // bale bot (opt-in per course)
+  if ((course as any)?.bale_support_activation_enabled && (user as any).bale_chat_id && !channels.has("bale_bot")) {
+    try {
+      const response = await baleSendMessage(Number((user as any).bale_chat_id), stripHtml(body));
+      if ((response as any)?.ok) channels.add("bale_bot");
+      else errors.bale_bot = JSON.stringify(response);
+    } catch (e) { errors.bale_bot = String(e); }
+  }
+
+
+
   // telegram business (only when support is activated)
   try {
     const { data: act } = await supabase
