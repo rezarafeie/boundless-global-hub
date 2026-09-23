@@ -266,6 +266,23 @@ function aiPassed(sub: any, assignment: any): boolean | null {
   return Number.isFinite(score) ? score >= Number(pass) : true;
 }
 
+// Human-readable list of exactly what must be fixed (coach feedback first, then AI).
+export function revisionReasons(sub: any): string {
+  const out: string[] = [];
+  if (sub?.admin_feedback) out.push(`بازخورد مربی: ${String(sub.admin_feedback).trim()}`);
+  let fb = sub?.ai_feedback;
+  if (typeof fb === "string") { try { fb = JSON.parse(fb); } catch { out.push(fb.slice(0, 800)); fb = null; } }
+  if (fb && typeof fb === "object") {
+    const arr = (v: any) => (Array.isArray(v) ? v : v ? [v] : []).map((x: any) => (typeof x === "string" ? x : x?.text ?? x?.title ?? JSON.stringify(x))).filter(Boolean);
+    const fixes = [...arr(fb.required_changes), ...arr(fb.revisions), ...arr(fb.weaknesses), ...arr(fb.improvements)];
+    const steps = [...arr(fb.next_steps), ...arr(fb.nextSteps)];
+    if (fixes.length) out.push("موارد نیازمند اصلاح:\n" + fixes.slice(0, 6).map((x) => `• ${x}`).join("\n"));
+    if (steps.length) out.push("قدم‌های بعدی:\n" + steps.slice(0, 5).map((x) => `• ${x}`).join("\n"));
+    if (!fixes.length && !steps.length && (fb.summary || fb.feedback)) out.push(String(fb.summary ?? fb.feedback).slice(0, 800));
+  }
+  return out.join("\n\n");
+}
+
 // Reads the linked assignment submission / form submission and derives the
 // mission status. Idempotent; safe to call from cron, student page and admin.
 export async function syncProgressRow(ch: Challenge, p: Participant, row: any, day: any) {
@@ -274,6 +291,7 @@ export async function syncProgressRow(ch: Challenge, p: Participant, row: any, d
   let next = row.status;
   let submissionId = row.submission_id;
   let submittedAt = row.submitted_at;
+  let lastSub: any = null;
 
   if (row.assignment_id) {
     const { data: subs } = await supabase.from("assignment_submissions").select("*")
@@ -282,6 +300,7 @@ export async function syncProgressRow(ch: Challenge, p: Participant, row: any, d
       .order("updated_at", { ascending: false }).limit(5);
     const sub = (subs ?? []).find((s: any) => s.status !== "draft") ?? (subs ?? [])[0];
     if (sub) {
+      lastSub = sub;
       submissionId = sub.id;
       submittedAt = sub.submitted_at ?? submittedAt;
       const { data: assignment } = await supabase.from("assignments").select("passing_score").eq("id", row.assignment_id).maybeSingle();
@@ -315,7 +334,8 @@ export async function syncProgressRow(ch: Challenge, p: Participant, row: any, d
   const patch: Record<string, unknown> = { status: next, submission_id: submissionId, submitted_at: submittedAt };
   await supabase.from("challenge_progress").update(patch).eq("id", row.id);
   if (next === "needs_revision" && row.status !== "needs_revision") {
-    await emitEvent(ch, p, "revision_requested", `prog:${row.id}:rev:${Date.now() - (Date.now() % HOUR)}`, { day: row.day_number }, `${SITE}/challenges/${ch.slug}?day=${row.day_number}&action=revision`);
+    const reasons = lastSub ? revisionReasons(lastSub) : "";
+    await emitEvent(ch, p, "revision_requested", `prog:${row.id}:rev:${Date.now() - (Date.now() % HOUR)}`, { day: row.day_number, mission_title: day?.title ?? "", reasons }, `${SITE}/challenges/${ch.slug}?day=${row.day_number}&action=revision`);
   }
   if (next === "completed") await completeMission(ch, p, { ...row, ...patch }, day);
   return next;
