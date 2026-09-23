@@ -106,7 +106,7 @@ const ChallengePage: React.FC = () => {
                 {labelOf(seg.business_models, p.business_model)} · {labelOf(seg.stages, p.stage)} · {labelOf(seg.budgets, p.budget)}
               </p>
             </div>
-            <Badge className="text-sm">روز {faNum(Math.max(1, state.today))} از {faNum(ch.days_count)}</Badge>
+            <Badge className="text-sm">{state.today < 1 ? 'به‌زودی' : `روز ${faNum(state.today)} از ${faNum(ch.days_count)}`}</Badge>
           </div>
           <Progress value={state.stats.progressPercent} />
           <div className="grid grid-cols-2 gap-2 text-center text-sm sm:grid-cols-4">
@@ -118,7 +118,15 @@ const ChallengePage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {ch.status === 'scheduled' && <Card><CardContent className="p-5 text-center text-muted-foreground">چالش از {new Date(ch.start_date).toLocaleDateString('fa-IR')} شروع می‌شود. اولین ماموریت همان روز برایت باز می‌شود.</CardContent></Card>}
+      {(ch.status === 'scheduled' || state.today < 1) && (
+        <Card className="border-2 border-primary/30">
+          <CardContent className="space-y-2 p-5 text-center">
+            <p className="text-lg font-bold">چالش هنوز شروع نشده است</p>
+            <p className="text-muted-foreground">شروع: {new Date(ch.start_date).toLocaleDateString('fa-IR', { timeZone: 'Asia/Tehran' })} · <Countdown to={state.days?.[0]?.available_at ?? ch.start_date} /> مانده</p>
+            <p className="text-sm text-muted-foreground">ماموریت روز اول در روز شروع برایت باز می‌شود و از طریق تلگرام/ایمیل خبرت می‌کنیم.</p>
+          </CardContent>
+        </Card>
+      )}
       {ch.status === 'paused' && <Card><CardContent className="p-5 text-center text-muted-foreground">چالش موقتاً متوقف شده است.</CardContent></Card>}
 
       {/* today's mission */}
