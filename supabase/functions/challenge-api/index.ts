@@ -27,7 +27,7 @@ async function releasePaymentLock(ch: any, p: any, lock: any, meta: Record<strin
     await supabase.from("challenge_progress").update({ status: "available", missed_at: null, deadline_at: new Date(Date.now() + 24 * 3600000).toISOString() }).eq("id", r.id);
   }
   await recalcParticipant(ch, p);
-  await emitEvent(ch, p, "penalty_applied", `penalty_released:${lock.at}`, { feedback: meta.paid ? "پرداخت جریمه تایید شد. به چالش برگشتی! ماموریت از دست رفته ۲۴ ساعت دیگر باز است." : "جریمه شما توسط مربی بخشیده شد. به چالش برگشتی!" });
+  await emitEvent(ch, p, "penalty_released", `penalty_released:${lock.at}`, { feedback: meta.paid ? "پرداخت جریمه تایید شد. به چالش برگشتی! ماموریت از دست رفته ۲۴ ساعت دیگر باز است." : "جریمه شما توسط مربی بخشیده شد. به چالش برگشتی!" });
 }
 
 const VISIBLE = ["scheduled", "active", "paused", "finished"];

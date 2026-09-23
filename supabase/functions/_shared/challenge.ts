@@ -92,6 +92,8 @@ const DEFAULT_MESSAGES: Record<string, { title: string; text: string }> = {
   first_sale: { title: "🎉 اولین فروش!", text: "تبریک {name}! اولین فروش تو در {challenge_title} ثبت شد." },
   reward_unlocked: { title: "🎁 جایزه جدید باز شد", text: "{name}، جایزه «{reward}» را گرفتی.\n{challenge_url}" },
   penalty_applied: { title: "هشدار چالش", text: "{feedback}" },
+  payment_required: { title: "⛔ چالش متوقف شد", text: "{name}، ماموریت روز {day} از دست رفت. برای بازگشت به {challenge_title} باید {usd} دلار جریمه پرداخت کنی.\n{challenge_url}" },
+  penalty_released: { title: "✅ به چالش برگشتی", text: "{name}، {feedback}\n{mission_url}" },
   inactive: { title: "دلمون برات تنگ شده 👋", text: "{name}، چند وقتی است در {challenge_title} فعالیتی نداشتی. ماموریت امروز منتظرته.\n{challenge_url}" },
   challenge_completed: { title: "🏆 چالش تمام شد", text: "{name}، {challenge_title} به پایان رسید. امتیاز نهایی: {xp} — پیشرفت: {progress}٪" },
 };
@@ -447,9 +449,8 @@ export async function applyPenalties(ch: Challenge, p: Participant, trigger: str
       profile.payment_lock = { active: true, usd, rule_key: r.key ?? t.type, ref, reason: a.message ?? null, at: new Date().toISOString() };
       await supabase.from("challenge_participants").update({ profile }).eq("id", p.id);
       p.profile = profile;
-      await emitEvent(ch, p, "penalty_applied", key, {
-        feedback: (a.message ?? "یک روز از چالش را از دست دادی. برای بازگشت به چالش باید {usd} دلار جریمه پرداخت کنی.").replace(/\{usd\}/g, String(usd)),
-      });
+      const custom = a.message ? { feedback: String(a.message).replace(/\{usd\}/g, String(usd)) } : {};
+      await emitEvent(ch, p, "payment_required", key, { usd, day: String(ref).replace("day:", ""), ...custom });
       continue;
     }
     if (a.type === "lose_xp") profile.xp_penalty = Number(profile.xp_penalty ?? 0) + Number(a.value ?? 0);
