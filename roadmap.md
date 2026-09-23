@@ -25,3 +25,7 @@
 ## Enrollment activation experience
 - [x] Replace alarmist activation messaging with a calm, transparent confirmation flow
 - [x] Show the enrolled course's real lesson list as locked until Telegram activation
+
+## Course gamification settings save
+- [x] Save gamification settings with the main course update button
+- [x] Restore Boundless Taste gamification to enabled
