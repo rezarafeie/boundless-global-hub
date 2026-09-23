@@ -4668,19 +4668,35 @@ async function handleSocialMessage(chat_id: number, user: BotUser, msg: any, ses
   }
 }
 
-// ============ HTTP entry ============
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  const secretHeader = req.headers.get('x-telegram-bot-api-secret-token');
-  if (WEBHOOK_SECRET && secretHeader !== WEBHOOK_SECRET) {
-    return new Response('Unauthorized', { status: 401, headers: corsHeaders });
-  }
-  try {
-    const update = await req.json();
-    handleUpdate(update).catch(e => console.error('handleUpdate error:', e));
-    return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-  } catch (e) {
-    console.error('webhook error:', e);
-    return new Response(JSON.stringify({ ok: false }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-  }
-});
+// ============ Shared HTTP entry (Telegram + Bale) ============
+export { handleUpdate, corsHeaders, WEBHOOK_SECRET };
+
+/**
+ * One bot brain, two messengers. Every webhook function calls this with its
+ * own channel; the whole update is processed inside that channel context.
+ */
+export function serveBotWebhook(channel: Channel, opts: { secret?: string } = {}) {
+  Deno.serve(async (req) => {
+    if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+    const expected = opts.secret ?? (channel === 'telegram' ? WEBHOOK_SECRET : '');
+    if (expected) {
+      const secretHeader = req.headers.get('x-telegram-bot-api-secret-token')
+        ?? req.headers.get('x-bale-bot-api-secret-token');
+      if (secretHeader !== expected) {
+        return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+      }
+    }
+
+    try {
+      const update = await req.json();
+      runWithChannel(channel, () => {
+        handleUpdate(update).catch(e => console.error(`[${channel}] handleUpdate error:`, e));
+      });
+      return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    } catch (e) {
+      console.error(`[${channel}] webhook error:`, e);
+      return new Response(JSON.stringify({ ok: false }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+  });
+}
