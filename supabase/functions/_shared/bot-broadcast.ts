@@ -1,5 +1,6 @@
 // Broadcast (اطلاعیه همگانی) queue with Telegram-safe rate limiting.
 import { sendMessage, editMessage, escapeHtml, type InlineKeyboard } from './telegram.ts';
+import { chatIdColumn } from './channel.ts';
 
 export interface BroadcastButton { text: string; url: string }
 
@@ -38,14 +39,14 @@ export async function fetchBroadcastTargets(supabase: any): Promise<number[]> {
   for (let from = 0; from < 50000; from += pageSize) {
     const { data, error } = await supabase
       .from('chat_users')
-      .select('telegram_chat_id')
-      .not('telegram_chat_id', 'is', null)
+      .select(chatIdColumn())
+      .not(chatIdColumn(), 'is', null)
       .order('id', { ascending: true })
       .range(from, from + pageSize - 1);
     if (error) { console.error('fetchBroadcastTargets error:', error); break; }
     if (!data?.length) break;
     for (const r of data) {
-      const id = Number((r as any).telegram_chat_id);
+      const id = Number((r as any)[chatIdColumn()]);
       if (Number.isFinite(id) && id !== 0) ids.add(id);
     }
     if (data.length < pageSize) break;
