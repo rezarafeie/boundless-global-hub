@@ -3866,8 +3866,9 @@ async function handleUpdate(update: any) {
         .eq('id', act.user_id);
     } catch (e) { console.warn('auto-login on sact_ failed', e); }
 
+    const baleCustom = ((course as any)?.bale_activation_link || '').trim();
     const supportUrl = isBaleChannel()
-      ? ((course as any)?.bale_activation_link || act.support_prefilled_link || 'https://ble.ir/rafieiacademy')
+      ? (/ble\.ir/i.test(baleCustom) ? baleCustom : 'https://ble.ir/rafieiacademy')
       : (act.support_prefilled_link || 'https://telegram.me/rafieiacademy');
     await tgCall('sendMessage', {
       chat_id,
