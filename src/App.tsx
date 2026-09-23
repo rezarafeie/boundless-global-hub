@@ -140,6 +140,10 @@ import CourseContentManagement from "./pages/Course/CourseContentManagement";
 import CourseCreate from "./pages/Admin/CourseCreate";
 import CourseEdit from "./pages/Admin/CourseEdit";
 import AssignmentsList from "./pages/Admin/Assignments/AssignmentsList";
+import ChallengesAdmin from "./pages/Admin/Challenges/ChallengesAdmin";
+import ChallengeBuilder from "./pages/Admin/Challenges/ChallengeBuilder";
+import ChallengesHome from "./pages/Challenges/ChallengesHome";
+import ChallengePage from "./pages/Challenges/ChallengePage";
 import AssignmentEditor from "./pages/Admin/Assignments/AssignmentEditor";
 import AssignmentSubmissions from "./pages/Admin/Assignments/AssignmentSubmissions";
 import WebinarLogin from "./pages/WebinarLogin";
@@ -332,6 +336,10 @@ const App = () => {
                     {/* Smart Test V2 (boundless_smart_test_v2) — fully separate from V1 */}
                     <Route path="/smart-test-v2" element={<SmartTestV2 />} />
                     <Route path="/smart-test-v2/result/:id" element={<SmartTestV2Result />} />
+                    <Route path="/enroll/admin/challenges" element={<ChallengesAdmin />} />
+                    <Route path="/enroll/admin/challenges/:id" element={<ChallengeBuilder />} />
+                    <Route path="/challenges" element={<ChallengesHome />} />
+                    <Route path="/challenges/:slug" element={<ChallengePage />} />
                     <Route path="/enroll/admin/smart-test-v2" element={<SmartTestV2Admin />} />
 
                     
@@ -453,6 +461,8 @@ const App = () => {
                      <Route path="/app/tests" element={<AppTests />} />
                      <Route path="/app/learning" element={<AppLearning />} />
                      <Route path="/app/profile" element={<AppProfile />} />
+                     <Route path="/app/challenges" element={<ChallengesHome />} />
+                     <Route path="/app/challenges/:slug" element={<ChallengePage />} />
 
                      {/* Webinar Routes */}
         <Route path="/enroll/admin/webinar" element={<WebinarAdmin />} />
