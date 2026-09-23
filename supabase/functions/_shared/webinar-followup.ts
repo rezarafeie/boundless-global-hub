@@ -150,13 +150,15 @@ export async function runWebinarFollowup(
   const kb = customButtons
     ?? (vars.webinar_link ? [[{ text: "🎥 ورود به وبینار", url: vars.webinar_link }]] : undefined);
 
-  if (fu.channel === "bot") {
-    const res = await sendRichMessage(chatId, text, { mediaUrl, mediaType, mediaItems, keyboard: kb as any, parse_mode: "HTML" });
+  // Bale has no business-account API, so business followups for Bale users are
+  // mirrored through the Bale bot instead.
+  if (fu.channel === "bot" || botChannel === "bale") {
+    const res = await runWithChannel(botChannel, () => sendRichMessage(chatId, text, { mediaUrl, mediaType, mediaItems, keyboard: kb as any, parse_mode: "HTML" }));
     const ok = (res as any)?.ok !== false;
     const errStr = ok ? "" : JSON.stringify(res);
     const permanent = !ok && /chat not found|bot was blocked|user is deactivated|PEER_ID_INVALID|Forbidden/i.test(errStr);
-    await logWebinarSend(fu, rec, userId, "telegram_bot", ok ? "sent" : (permanent ? "unreachable" : "failed"), ok ? undefined : errStr, { ...logExtra, chat_id: chatId, text, media_url: mediaUrl || null, response: res });
-    results.push({ channel: "bot", ok, unreachable: permanent, chat_id: chatId, text, response: res });
+    await logWebinarSend(fu, rec, userId, botLogChannel(botChannel), ok ? "sent" : (permanent ? "unreachable" : "failed"), ok ? undefined : errStr, { ...logExtra, chat_id: chatId, messenger: botChannel, text, media_url: mediaUrl || null, response: res });
+    results.push({ channel: fu.channel, ok, unreachable: permanent, chat_id: chatId, messenger: botChannel, text, response: res });
     return { ok: ok || permanent, results };
   }
 
