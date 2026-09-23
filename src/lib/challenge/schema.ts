@@ -157,7 +157,7 @@ export const JSON_GUIDE = `راهنمای ساختار JSON چالش:
 • onboarding_form: اختیاری — {title, description, ai_prompt, fields:[{field_key,label,field_type,required,options}]} که یک فرم واقعی در سیستم فرم‌ها می‌سازد، یا {form_id} برای فرم موجود.
 • xp_rules: on_time_bonus، streak_milestones.
 • rewards: [{key, title, emoji, description, trigger:{type: missions_completed|xp|streak|challenge_completed|complete_before_day|first_sale|revenue|custom, value}, reward_type: discount_code|percent|credit|link, reward_value, link}].
-• penalties: [{key, trigger:{type: mission_missed|streak_broken|missed_count, value}, action:{type: lose_xp|reset_streak|warning|custom|lock_course, value, message}}]. lock_course فقط در صورت تعریف صریح دسترسی دوره را قفل می‌کند.
+• penalties: [{key, trigger:{type: mission_missed|streak_broken|missed_count, value}, action:{type: lose_xp|reset_streak|warning|custom|pay_to_return|lock_course, value, message}}]. pay_to_return: شرکت‌کننده تا پرداخت value دلار (با نرخ روز) متوقف می‌شود و پس از پرداخت ماموریت از دست رفته ۲۴ ساعت باز می‌شود. lock_course فقط در صورت تعریف صریح دسترسی دوره را قفل می‌کند.
 • notifications: channels (telegram_bot, telegram_business, bale, email, in_app, sms)، followups [{hours_before}] پیش از ددلاین، inactive_hours، messages: {رویداد: {title, text, channels, enabled}}.
   رویدادها: ${EVENT_KINDS.join(', ')}
   متغیرها: {name} {challenge_title} {day} {days_count} {mission_title} {deadline} {remaining_time} {xp} {streak} {reward} {progress} {feedback} {challenge_url} {mission_url}

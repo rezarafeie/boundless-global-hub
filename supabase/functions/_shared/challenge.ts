@@ -440,6 +440,18 @@ export async function applyPenalties(ch: Challenge, p: Participant, trigger: str
     if (done) continue;
     const a = r.action ?? {};
     const profile = { ...(p.profile ?? {}) };
+    if (a.type === "pay_to_return") {
+      // Paid penalty: participant is paused until they pay (USD, converted at live rate).
+      if (profile.payment_lock?.active) continue; // don't stack while already locked
+      const usd = Math.max(1, Number(a.value ?? 10));
+      profile.payment_lock = { active: true, usd, rule_key: r.key ?? t.type, ref, reason: a.message ?? null, at: new Date().toISOString() };
+      await supabase.from("challenge_participants").update({ profile }).eq("id", p.id);
+      p.profile = profile;
+      await emitEvent(ch, p, "penalty_applied", key, {
+        feedback: (a.message ?? "یک روز از چالش را از دست دادی. برای بازگشت به چالش باید {usd} دلار جریمه پرداخت کنی.").replace(/\{usd\}/g, String(usd)),
+      });
+      continue;
+    }
     if (a.type === "lose_xp") profile.xp_penalty = Number(profile.xp_penalty ?? 0) + Number(a.value ?? 0);
     if (a.type === "reset_streak") profile.streak_reset_at_day = currentDayNumber(ch);
     if (a.type === "lose_xp" || a.type === "reset_streak") {
