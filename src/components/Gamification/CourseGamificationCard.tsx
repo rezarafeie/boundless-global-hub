@@ -109,6 +109,9 @@ const CourseGamificationCard: React.FC<Props> = ({ status: rawStatus, onOpenMiss
                       {r.emoji ?? '🎁'} {r.title}
                     </div>
                     {r.description && <div className="text-muted-foreground">{r.description}</div>}
+                    {r.unlocked && (
+                      <RewardValue label={r.value_label} value={r.reward_value} type={r.reward_type} />
+                    )}
                   </div>
                   <Badge variant={r.unlocked ? 'default' : 'secondary'} className="shrink-0">
                     {r.unlocked ? 'باز شد' : `تا ${r.within_days} روز`}
