@@ -1424,9 +1424,9 @@ const EnrollSuccess: React.FC = () => {
                                   if (finalUrl) openInNewTab(finalUrl);
                                 }}
                             size="lg"
-                            className="mt-6 h-16 w-full gap-3 rounded-lg bg-primary text-lg font-bold text-primary-foreground shadow-sm hover:bg-primary/90"
+                            className="mt-6 h-16 w-full gap-2 rounded-lg bg-primary text-base font-bold text-primary-foreground shadow-sm hover:bg-primary/90 sm:gap-3 sm:text-lg"
                           >
-                            <Send className="h-5 w-5" />
+                            <Send className="h-5 w-5 shrink-0 sm:h-5 sm:w-5" />
                             فعال‌سازی پشتیبانی و ورود به دوره
                           </Button>
                           <p className="mt-2 text-center text-xs text-muted-foreground">
