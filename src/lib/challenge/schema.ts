@@ -325,7 +325,8 @@ export async function importChallengeJson(j: any, mode: 'create' | 'update', onL
 
 /* ---------- export ---------- */
 export async function exportChallengeJson(id: string, opts: { includeAssignments?: boolean } = { includeAssignments: true }) {
-  const { data: c } = await supabase.from('challenges').select('*').eq('id', id).single();
+  const { data: cRaw } = await supabase.from('challenges').select('*').eq('id', id).single();
+  const c: any = cRaw;
   const { data: days } = await supabase.from('challenge_days').select('*').eq('challenge_id', id).order('day_number');
   const { data: vars } = await supabase.from('challenge_variants').select('*').eq('challenge_id', id);
   const aIds = (vars ?? []).map((v: any) => v.assignment_id).filter(Boolean);
@@ -341,7 +342,7 @@ export async function exportChallengeJson(id: string, opts: { includeAssignments
     },
     segments: c.segments, onboarding_form: c.onboarding_form_id ? { form_id: c.onboarding_form_id } : null,
     xp_rules: c.xp_rules, rewards: c.reward_rules, penalties: c.penalty_rules,
-    notifications: { ...(c.notification_settings || {}), messages: c.messages },
+    notifications: { ...((c.notification_settings as any) || {}), messages: c.messages },
     days: (days ?? []).map((d: any) => ({
       day_number: d.day_number, title: d.title, short_description: d.short_description, goal: d.goal, estimated_minutes: d.estimated_minutes,
       xp: d.xp, required: d.required, review_mode: d.review_mode, unlock_time: d.unlock_time, deadline_time: d.deadline_time, deadline_hours: d.deadline_hours,
