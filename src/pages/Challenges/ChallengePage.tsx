@@ -120,6 +120,9 @@ const ChallengePage: React.FC = () => {
         </CardContent>
       </Card>
 
+      {p.profile?.payment_lock?.active && <PenaltyLock ident={ident} slug={slug!} lock={p.profile.payment_lock} />}
+
+
       {(ch.status === 'scheduled' || state.today < 1) && (
         <Card className="border-2 border-primary/30">
           <CardContent className="space-y-2 p-5 text-center">

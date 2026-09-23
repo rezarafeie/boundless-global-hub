@@ -518,6 +518,7 @@ const ParticipantDialog: React.FC<{ ch: any; seg: Segments; days: any[]; p: any;
           <Input className="w-28" placeholder="± XP" value={xp} onChange={(e) => setXp(e.target.value)} />
           <Button size="sm" variant="outline" onClick={() => xp && act('adjust_xp', { amount: Number(xp) })}>اعمال XP</Button>
           <Button size="sm" variant="outline" onClick={() => act('sync')}>همگام‌سازی</Button>
+          {p.profile?.payment_lock?.active && <Button size="sm" variant="destructive" onClick={() => act('waive_penalty')}>بخشیدن جریمه {p.profile.payment_lock.usd}$</Button>}
           {(ch.reward_rules || []).map((r: any) => <Button key={r.key ?? r.title} size="sm" variant="ghost" onClick={() => act('grant_reward', { rewardKey: r.key ?? r.title })}>🎁 {r.title}</Button>)}
         </div>
         {p.goal && <p className="text-sm"><b>هدف:</b> {p.goal}</p>}
