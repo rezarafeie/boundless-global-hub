@@ -111,7 +111,7 @@ const ChallengesAdmin: React.FC = () => {
                     <Button size="sm" variant="outline" onClick={() => navigate(`/enroll/admin/challenges/${c.id}?tab=participants`)}>شرکت‌کننده‌ها</Button>
                     <Button size="sm" variant="outline" onClick={async () => downloadJson(await exportChallengeJson(c.id), `${c.slug}.json`)}><FileJson className="ml-1 h-3 w-3" />خروجی</Button>
                     <Button size="sm" variant="outline" onClick={() => duplicate(c)}><Copy className="ml-1 h-3 w-3" />کپی</Button>
-                    <Button size="sm" variant="ghost" onClick={() => window.open(`/challenges/${c.slug}`, '_blank')}>پیش‌نمایش</Button>
+                    <Button size="sm" variant="ghost" onClick={() => window.open(`/challenges/${c.slug}?preview=1`, '_blank')}>پیش‌نمایش</Button>
                     {c.status === 'active' && <Button size="sm" variant="ghost" onClick={() => setStatus(c, 'paused')}>توقف</Button>}
                     {c.status === 'paused' && <Button size="sm" variant="ghost" onClick={() => setStatus(c, 'active')}>ادامه</Button>}
                     {['active', 'paused'].includes(c.status) && <Button size="sm" variant="ghost" onClick={() => confirm('چالش پایان یابد؟') && setStatus(c, 'finished')}>پایان</Button>}
