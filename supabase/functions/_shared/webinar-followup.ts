@@ -257,11 +257,12 @@ export async function fetchUsersByPhones(phones: string[]): Promise<Record<strin
     }
   }
   const all = Array.from(variants.keys());
+  const reachable = (u: any) => Boolean(u?.telegram_chat_id || u?.bale_chat_id);
   const take = (u: any) => {
     const norm = normalizePhone(u.phone);
-    if (norm && (!out[norm] || (!out[norm].telegram_chat_id && u.telegram_chat_id))) out[norm] = u;
+    if (norm && (!out[norm] || (!reachable(out[norm]) && reachable(u)))) out[norm] = u;
   };
-  const cols = "id, name, full_name, first_name, last_name, email, phone, telegram_chat_id";
+  const cols = "id, name, full_name, first_name, last_name, email, phone, telegram_chat_id, bale_chat_id";
   for (let i = 0; i < all.length; i += 500) {
     const chunk = all.slice(i, i + 500);
     const { data } = await supabase.from("chat_users").select(cols).in("phone", chunk);
