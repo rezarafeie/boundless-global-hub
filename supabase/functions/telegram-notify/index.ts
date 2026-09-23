@@ -163,7 +163,7 @@ async function buildMessage(type: string, data: any): Promise<BuiltMessage | nul
 
     const text = [
       `📊 <b>خلاصه روزانه شما</b>`,
-      `سلام ${escapeHtml(agent.name ?? '')}!`,
+      `سلام ${escapeHtml(agent?.name ?? '')}!`,
       ``,
       `🎯 لیدهای جدید امروز: <b>${newLeads ?? 0}</b>`,
       `📝 یادداشت‌های ثبت‌شده: <b>${notesCount ?? 0}</b>`,
