@@ -2146,6 +2146,7 @@ export type Database = {
           streak_enabled: boolean
           timezone: string
           title: string
+          unlock_next_on_complete: boolean
           updated_at: string
           xp_rules: Json
         }
@@ -2176,6 +2177,7 @@ export type Database = {
           streak_enabled?: boolean
           timezone?: string
           title: string
+          unlock_next_on_complete?: boolean
           updated_at?: string
           xp_rules?: Json
         }
@@ -2206,6 +2208,7 @@ export type Database = {
           streak_enabled?: boolean
           timezone?: string
           title?: string
+          unlock_next_on_complete?: boolean
           updated_at?: string
           xp_rules?: Json
         }
