@@ -475,11 +475,11 @@ export async function notifyStudent(
   const delivered = new Set<string>(Array.isArray(previous?.channels) ? previous.channels : []);
 
   const { data: user } = await supabase
-    .from("chat_users").select("id, name, full_name, phone, email, telegram_chat_id")
+    .from("chat_users").select("id, name, full_name, phone, email, telegram_chat_id, bale_chat_id")
     .eq("id", userId).maybeSingle();
   if (!user) return { skipped: true, reason: "user_not_found" };
 
-  const { data: course } = await supabase.from("courses").select("title, slug").eq("id", courseId).maybeSingle();
+  const { data: course } = await supabase.from("courses").select("title, slug, bale_support_activation_enabled").eq("id", courseId).maybeSingle();
   const courseTitle = course?.title ?? "";
   const msg = gamMessage(s?.messages ?? {}, kind, {
     course_title: courseTitle,
