@@ -295,13 +295,14 @@ const AssignmentCard: React.FC<{
     setOpen(true);
     setAwaitingFeedback(false);
     setStreamText('');
+    window.setTimeout(() => onSaved(), 1500);
     playSuccessSound(audioContextRef.current);
     audioContextRef.current = null;
     window.setTimeout(() => {
       feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       feedbackRef.current?.focus({ preventScroll: true });
     }, 150);
-  }, []);
+  }, [onSaved]);
 
   const streamFeedback = useCallback(async (subId: string) => {
     try {
