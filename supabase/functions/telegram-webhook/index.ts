@@ -3254,8 +3254,6 @@ async function handleUpdate(update: any) {
           });
         }
 
-        await gamificationWelcomeAfterActivation(cur.user_id, cur.course_id);
-
         // Load course + user, build welcome + buttons
         const [{ data: course }, { data: cu }] = await Promise.all([
           supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activated_media_url, telegram_bot_activated_media_type, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', cur.course_id).maybeSingle(),
@@ -3302,6 +3300,9 @@ async function handleUpdate(update: any) {
           mediaType: (course as any)?.telegram_bot_activated_media_type,
           keyboard: buttons.length ? (buttons as any) : undefined,
         });
+
+        // Gamification welcome goes AFTER the activation welcome message
+        await gamificationWelcomeAfterActivation(cur.user_id, cur.course_id);
       } else {
         await editMessage(chat_id, message_id, '❌ فعال‌سازی یافت نشد.', []);
       }
@@ -3996,8 +3997,6 @@ async function handleUpdate(update: any) {
           });
         }
 
-        await gamificationWelcomeAfterActivation(act.user_id, act.course_id);
-
         const targetChat = (act as any).telegram_id;
         if (targetChat) {
           const [{ data: course }, { data: cu }] = await Promise.all([
@@ -4071,6 +4070,9 @@ async function handleUpdate(update: any) {
 
             } catch (e) { console.warn('activated welcome reply failed', e); }
           }
+
+          // Gamification welcome goes AFTER the activation welcome messages
+          await gamificationWelcomeAfterActivation(act.user_id, act.course_id);
         }
 
         return;
