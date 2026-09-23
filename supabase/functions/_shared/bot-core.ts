@@ -1264,9 +1264,9 @@ async function handleContactLogin(chat_id: number, phoneRaw: string) {
   const existing = await findChatUserByPhone(norm.local);
   if (existing) {
     // Auto-login: link telegram_chat_id to this account
-    await supabase.from('chat_users').update({ telegram_chat_id: null }).eq('telegram_chat_id', chat_id);
+    await supabase.from('chat_users').update(chatIdPatch(null)).eq(chatIdColumn(), chat_id);
     const { error } = await supabase.from('chat_users')
-      .update({ telegram_chat_id: chat_id, telegram_linked_at: new Date().toISOString() })
+      .update(chatIdPatch(chat_id))
       .eq('id', existing.id);
     if (error) {
       await sendMessage(chat_id, `❌ خطا در ورود: ${escapeHtml(error.message)}`, { removeKeyboard: true });
@@ -1355,9 +1355,9 @@ async function handleOtpInput(chat_id: number, text: string) {
   }
 
   // Unlink any other account holding this chat_id, then link this user
-  await supabase.from('chat_users').update({ telegram_chat_id: null }).eq('telegram_chat_id', chat_id);
+  await supabase.from('chat_users').update(chatIdPatch(null)).eq(chatIdColumn(), chat_id);
   const { error } = await supabase.from('chat_users')
-    .update({ telegram_chat_id: chat_id, telegram_linked_at: new Date().toISOString() })
+    .update(chatIdPatch(chat_id))
     .eq('id', session.context.chat_user_id);
   if (error) { await sendMessage(chat_id, `❌ خطا در لینک حساب: ${error.message}`, { keyboard: BACK_HOME_KBD }); return; }
 
@@ -1459,9 +1459,9 @@ async function handleSignupEmail(chat_id: number, text: string) {
     newUserId = ins.id;
   } else {
     // Existing — just link telegram
-    await supabase.from('chat_users').update({ telegram_chat_id: null }).eq('telegram_chat_id', chat_id);
+    await supabase.from('chat_users').update(chatIdPatch(null)).eq(chatIdColumn(), chat_id);
     await supabase.from('chat_users')
-      .update({ telegram_chat_id: chat_id, telegram_linked_at: new Date().toISOString() })
+      .update(chatIdPatch(chat_id))
       .eq('id', existing.id);
   }
 
@@ -1669,7 +1669,7 @@ async function studentLogoutConfirm(chat_id: number, message_id: number) {
 }
 
 async function studentLogout(chat_id: number, message_id: number, user: BotUser) {
-  await supabase.from('chat_users').update({ telegram_chat_id: null, telegram_linked_at: null }).eq('id', user.id);
+  await supabase.from('chat_users').update(chatIdPatch(null)).eq('id', user.id);
   await clearSession(chat_id);
   await editMessage(chat_id, message_id,
     '✅ با موفقیت خارج شدید. حساب شما از این ربات جدا شد.\nبرای ورود مجدد /start را بزنید.', []);
@@ -2775,9 +2775,9 @@ async function handleWebinarGuestPhone(chat_id: number, rawPhone: string) {
   const existing = await findChatUserByPhone(phoneLocal.replace(/^0/, ''));
   if (existing) {
     // Link telegram to the existing academy account and register right away
-    await supabase.from('chat_users').update({ telegram_chat_id: null }).eq('telegram_chat_id', chat_id);
+    await supabase.from('chat_users').update(chatIdPatch(null)).eq(chatIdColumn(), chat_id);
     await supabase.from('chat_users')
-      .update({ telegram_chat_id: chat_id, telegram_linked_at: new Date().toISOString() })
+      .update(chatIdPatch(chat_id))
       .eq('id', existing.id);
     await clearSession(chat_id);
     await sendMessage(chat_id, '✅ شماره شما تایید شد.', { removeKeyboard: true });
@@ -3855,10 +3855,10 @@ async function handleUpdate(update: any) {
 
     // Auto-login: link this telegram chat to the academy user account
     try {
-      await supabase.from('chat_users').update({ telegram_chat_id: null }).eq('telegram_chat_id', chat_id);
+      await supabase.from('chat_users').update(chatIdPatch(null)).eq(chatIdColumn(), chat_id);
       await supabase
         .from('chat_users')
-        .update({ telegram_chat_id: chat_id, telegram_linked_at: new Date().toISOString() })
+        .update(chatIdPatch(chat_id))
         .eq('id', act.user_id);
     } catch (e) { console.warn('auto-login on sact_ failed', e); }
 
@@ -4250,7 +4250,7 @@ async function handleUpdate(update: any) {
     const { data: u } = await supabase.from('chat_users').select('id, name').eq('phone', phoneInput).maybeSingle();
     if (!u) { await sendMessage(chat_id, '❌ کاربری با این شماره یافت نشد.'); return; }
     const { error } = await supabase.from('chat_users')
-      .update({ telegram_chat_id: linkChatId, telegram_linked_at: new Date().toISOString() })
+      .update(chatIdPatch(linkChatId))
       .eq('id', u.id);
     await clearSession(chat_id);
     if (error) await sendMessage(chat_id, `❌ خطا: ${error.message}`);
