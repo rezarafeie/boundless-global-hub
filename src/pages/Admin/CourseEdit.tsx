@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, DollarSign, RefreshCw, Percent, Clock, Link as LinkIcon, MessageCircle, Gift, Rocket } from 'lucide-react';
-import CourseGamificationSettings from '@/components/Admin/CourseGamificationSettings';
+import CourseGamificationSettings, { CourseGamificationSettingsHandle } from '@/components/Admin/CourseGamificationSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { TetherlandService } from '@/lib/tetherlandService';
@@ -70,6 +70,7 @@ const CourseEdit: React.FC = () => {
   const navigate = useNavigate();
   const { courseId } = useParams<{ courseId: string }>();
   const { toast } = useToast();
+  const gamificationSettingsRef = useRef<CourseGamificationSettingsHandle>(null);
   
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState<Course | null>(null);
@@ -405,6 +406,8 @@ const CourseEdit: React.FC = () => {
         .eq('id', courseId);
       
       if (error) throw error;
+
+      await gamificationSettingsRef.current?.save();
       
       toast({
         title: "موفق",
@@ -1475,9 +1478,9 @@ mba
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   روشن/خاموش کردن سیستم برای این دوره و تنظیم مدت دسترسی، هزینه و مدت تمدید، مهلت ماموریت‌ها و جوایز.
-                  این تنظیمات جدا از فرم دوره ذخیره می‌شود.
+                  این تنظیمات همراه با دکمه «به‌روزرسانی دوره» ذخیره می‌شود.
                 </p>
-                {courseId && <CourseGamificationSettings courseId={courseId} />}
+                {courseId && <CourseGamificationSettings ref={gamificationSettingsRef} courseId={courseId} />}
               </div>
 
               <div className="flex items-center space-x-2">
