@@ -253,7 +253,7 @@ export async function completeMission(userId: number, courseId: string, lessonId
     rewards = await grantRewards(userId, courseId, days);
     await notifyStudent(userId, courseId, "course_completed", w.id, {
       days: days.toFixed(1),
-      rewards: rewards.length ? rewards.map((r) => `• ${r.title}`).join("\n") : "هدایای دوره فعال شد",
+      rewards: rewards.length ? formatRewardLines(rewards) : "هدایای دوره فعال شد",
     });
   }
 
@@ -336,7 +336,7 @@ export async function grantRewards(userId: number, courseId: string, completionD
   if (granted.length) {
     await notifyStudent(userId, courseId, "rewards", null, {
       days: completionDays.toFixed(1),
-      rewards: granted.map((g) => `• ${g.title}`).join("\n"),
+      rewards: formatRewardLines(granted),
     });
   }
   return granted;
@@ -383,7 +383,7 @@ export async function buildStatus(userId: number, courseId: string) {
     const granted = await grantRewards(userId, courseId, days);
     await notifyStudent(userId, courseId, "course_completed", w.id, {
       days: days.toFixed(1),
-      rewards: granted.length ? granted.map((r) => `• ${r.title}`).join("\n") : "هدایای دوره فعال شد",
+      rewards: granted.length ? formatRewardLines(granted) : "هدایای دوره فعال شد",
     });
   }
 
