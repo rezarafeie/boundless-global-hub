@@ -207,7 +207,7 @@ const ChallengePage: React.FC = () => {
               <div key={r.key} className={`rounded-lg border p-3 ${r.earned ? 'border-primary/40 bg-primary/5' : 'opacity-60'}`}>
                 <p className="text-sm font-medium">{r.emoji ?? '🎁'} {r.title} {r.earned ? '✅' : '🔒'}</p>
                 {r.description && <p className="text-xs text-muted-foreground">{r.description}</p>}
-                {r.earned && r.reward_value && <RewardValue reward={{ reward_type: r.reward_type, reward_value: r.reward_value } as any} />}
+                {r.earned && r.reward_value && <RewardValue type={r.reward_type} value={r.reward_value} />}
               </div>
             ))}
           </CardContent>
