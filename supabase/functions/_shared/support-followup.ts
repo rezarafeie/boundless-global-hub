@@ -483,5 +483,5 @@ export const SUPPORT_ACTIVATION_SELECT = `
     support_followup_stage3_buttons
 
   ),
-  chat_users:user_id (id, name, first_name, last_name, full_name, email, phone)
+  chat_users:user_id (id, name, first_name, last_name, full_name, email, phone, telegram_chat_id, bale_chat_id)
 `;
