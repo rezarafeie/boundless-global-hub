@@ -383,6 +383,23 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
     results.push({ channel: "bot", ok: effectiveOk, unreachable: permanent, chat_id: target.chatId, messenger: target.channel, text, response: res });
   } else if (cf.channel === "business") {
     if (!row.telegram_id) {
+      // Bale has no business account API — deliver the same text through the Bale bot.
+      const baleTarget = botTarget(row);
+      if (baleTarget && baleTarget.channel === "bale") {
+        const baleText = render(cf.bot_text, vars) || "[TEST] followup";
+        const baleKb = renderButtons(cf.buttons, vars);
+        const baleRes = await runWithChannel("bale", () => sendRichMessage(baleTarget.chatId, baleText, {
+          mediaUrl: cf.media_url,
+          mediaType: cf.media_type,
+          mediaItems: cfMediaItems(cf),
+          keyboard: baleKb as any,
+          parse_mode: "HTML",
+        }));
+        const baleOk = (baleRes as any)?.ok !== false;
+        await logSendCustom(row, cf, "bale_bot", baleOk ? "sent" : "failed", baleOk ? undefined : JSON.stringify(baleRes), { ...logExtra, chat_id: baleTarget.chatId, messenger: "bale", text: baleText, response: baleRes });
+        results.push({ channel: "business", ok: baleOk, chat_id: baleTarget.chatId, messenger: "bale", text: baleText, response: baleRes });
+        return results;
+      }
       await logSendCustom(row, cf, "telegram_business", "unreachable", "no telegram_id", logExtra);
       // Return ok:true so counter bumps and we stop retrying rows that will never receive anything.
       results.push({ channel: "business", ok: true, skipped: true, reason: "no telegram_id", unreachable: true });
