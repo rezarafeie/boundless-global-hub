@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Bell, CheckCircle2, Clock, Flame, Gift, Loader2, Target, Trophy, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { AssignmentSection } from '@/components/Assignment/AssignmentSection';
-import { RewardValue } from '@/components/Gamification/RewardValue';
+import RewardValue from '@/components/Gamification/RewardValue';
 import { challengeApi, labelOf, PROGRESS_LABELS, segmentsOf } from '@/lib/challenge/schema';
 
 const faNum = (n: number | string | null | undefined) => Number(n ?? 0).toLocaleString('fa-IR');
