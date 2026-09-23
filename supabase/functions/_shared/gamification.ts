@@ -482,9 +482,10 @@ export async function notifyStudent(
 
   const { data: course } = await supabase.from("courses").select("title, slug, bale_support_activation_enabled").eq("id", courseId).maybeSingle();
   const courseTitle = course?.title ?? "";
+  const firstName = String(user.full_name ?? user.name ?? "").trim().split(/\s+/)[0] || "دوست عزیز";
   const msg = gamMessage(s?.messages ?? {}, kind, {
     course_title: courseTitle,
-    name: user.full_name ?? user.name ?? "",
+    name: firstName,
     free_days: s?.free_days,
     mission_hours: s?.mission_hours,
     fast_finish_days: s?.fast_finish_days,
@@ -553,7 +554,7 @@ export async function notifyStudent(
 
   if (user.phone && !channels.has("sms")) {
     const r = await sendSms(user.phone, body, {
-      name: user.full_name ?? user.name ?? "",
+      name: firstName,
       course_title: courseTitle,
     }, null);
     if (r.ok) channels.add("sms");
