@@ -29,3 +29,10 @@
 ## Course gamification settings save
 - [x] Save gamification settings with the main course update button
 - [x] Restore Boundless Taste gamification to enabled
+
+## Boundless Challenge MVP
+- [x] Challenge tables, backend and hourly reminder job
+- [x] Admin list, builder (days/variants/rules/notifications), participants, preview and coverage check
+- [x] JSON import (create/update, validation, preview, rollback), export, template and guide
+- [x] Student pages /challenges and /challenges/:slug with existing assignment card inline
+- [ ] Build the first 30-day Boundless Sales Challenge JSON (waiting on content)
