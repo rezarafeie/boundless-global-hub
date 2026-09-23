@@ -1,6 +1,17 @@
 // Shared helpers for support-activation followups (used by cron + test function).
 import { supabase } from "./supabase.ts";
 import { sendMessage, tgCall, sendRichMessage, buildButtonsKeyboard, appendButtonsAsLinks } from "./telegram.ts";
+import { botLogChannel, resolveBotTarget, runWithChannel } from "./channel.ts";
+
+// Where can we reach this person with a bot message? Telegram first, Bale as the
+// mirror for users who linked the Bale bot instead.
+function botTarget(row: any) {
+  return resolveBotTarget(
+    { telegram_chat_id: row?.telegram_id },
+    { bale_chat_id: row?.bale_chat_id },
+    row?.chat_users ?? null,
+  );
+}
 
 export type Row = any;
 
@@ -249,24 +260,26 @@ function cfMediaItems(cf: any): { url: string; type?: string | null }[] {
 }
 
 export async function runStage2(row: Row, opts: { isTest?: boolean } = {}) {
-  if (!row.telegram_id) {
-    await logSend(row, 2, "telegram_bot", "failed", "no telegram_id", { is_test: !!opts.isTest });
-    return [{ ok: false, error: "no telegram_id" }];
+  const target = botTarget(row);
+  if (!target) {
+    await logSend(row, 2, "telegram_bot", "failed", "no telegram/bale chat id", { is_test: !!opts.isTest });
+    return [{ ok: false, error: "no telegram/bale chat id" }];
   }
+  const logChannel = botLogChannel(target.channel);
   const vars = buildVars(row);
   const text = render(row.courses.support_followup_stage2_bot_text, vars) || "[TEST] followup";
   const kb = renderButtons(row.courses.support_followup_stage2_buttons, vars)
     ?? [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]];
-  const res = await sendRichMessage(row.telegram_id, text, {
+  const res = await runWithChannel(target.channel, () => sendRichMessage(target.chatId, text, {
     mediaUrl: row.courses.support_followup_stage2_media_url,
     mediaType: row.courses.support_followup_stage2_media_type,
     keyboard: kb as any,
     parse_mode: "HTML",
-  });
+  }));
 
   const ok = (res as any)?.ok !== false;
-  await logSend(row, 2, "telegram_bot", ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { chat_id: row.telegram_id, text, response: res, is_test: !!opts.isTest });
-  return [{ ok, chat_id: row.telegram_id, text, response: res }];
+  await logSend(row, 2, logChannel, ok ? "sent" : "failed", ok ? undefined : JSON.stringify(res), { chat_id: target.chatId, messenger: target.channel, text, response: res, is_test: !!opts.isTest });
+  return [{ ok, chat_id: target.chatId, messenger: target.channel, text, response: res }];
 }
 
 export async function runStage3(row: Row, opts: { isTest?: boolean } = {}) {

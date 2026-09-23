@@ -40,3 +40,28 @@ export function chatIdPatch(chatId: number | null, withTimestamp = true): Record
 export function channelLabel(): string {
   return isBale() ? 'بله' : 'تلگرام';
 }
+
+/**
+ * Pick the messenger to reach a person on, from any record that may carry
+ * telegram / bale chat ids. Telegram wins when both exist.
+ */
+export function resolveBotTarget(
+  ...sources: Array<Record<string, unknown> | null | undefined>
+): { chatId: number; channel: Channel } | null {
+  for (const src of sources) {
+    if (!src) continue;
+    const tg = Number((src as any).telegram_chat_id ?? (src as any).telegram_id ?? 0);
+    if (tg) return { chatId: tg, channel: 'telegram' };
+  }
+  for (const src of sources) {
+    if (!src) continue;
+    const bale = Number((src as any).bale_chat_id ?? 0);
+    if (bale) return { chatId: bale, channel: 'bale' };
+  }
+  return null;
+}
+
+/** Log-friendly channel name for a bot delivery. */
+export function botLogChannel(channel: Channel): string {
+  return channel === 'bale' ? 'bale_bot' : 'telegram_bot';
+}
