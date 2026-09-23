@@ -280,6 +280,36 @@ export async function completeMission(userId: number, courseId: string, lessonId
 
 /* ---------------- rewards ---------------- */
 
+export function rewardValueLabel(type?: string | null, value?: string | null) {
+  if (!value) return "";
+  switch (type) {
+    case "discount_code":
+    case "coupon":
+      return `کد تخفیف: ${value}`;
+    case "discount_percent":
+      return `تخفیف: ${value}٪`;
+    case "cash":
+    case "credit":
+      return `اعتبار: ${value}`;
+    case "link":
+    case "file":
+      return `لینک دریافت: ${value}`;
+    default:
+      return value;
+  }
+}
+
+export function formatRewardLines(items: any[]) {
+  return items
+    .map((r) => {
+      const label = rewardValueLabel(r.reward_type, r.reward_value);
+      const head = `• ${r.emoji ? `${r.emoji} ` : ""}${r.title}`;
+      return label ? `${head}\n   ${label}` : head;
+    })
+    .join("\n");
+}
+
+
 export async function grantRewards(userId: number, courseId: string, completionDays: number) {
   const { data: rewards } = await supabase
     .from("course_gamification_rewards")
