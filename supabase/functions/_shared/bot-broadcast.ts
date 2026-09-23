@@ -1,5 +1,5 @@
 // Broadcast (اطلاعیه همگانی) queue with Telegram-safe rate limiting.
-import { sendMessage, editMessage, escapeHtml, type InlineKeyboard } from '../_shared/telegram.ts';
+import { sendMessage, editMessage, escapeHtml, type InlineKeyboard } from './telegram.ts';
 
 export interface BroadcastButton { text: string; url: string }
 

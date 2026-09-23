@@ -14,8 +14,8 @@ import {
   type InlineKeyboard,
 
 
-} from '../_shared/telegram.ts';
-import { ensureAccessWindow as gamEnsureAccessWindow } from '../_shared/gamification.ts';
+} from './telegram.ts';
+import { ensureAccessWindow as gamEnsureAccessWindow } from './gamification.ts';
 
 // After a student activates Telegram support, complete any gamification welcome
 // channels that could not be delivered at enrollment time (Telegram was not linked yet).
@@ -38,7 +38,7 @@ import {
   generateAdminPeriodSummary,
   getAdminChatIds,
   type ReportRole,
-} from '../_shared/daily-report.ts';
+} from './daily-report.ts';
 import {
   parseBroadcastButtons,
   buttonsToKeyboard,
@@ -46,7 +46,7 @@ import {
   fetchBroadcastTargets,
   runBroadcastQueue,
   type BroadcastButton,
-} from './broadcast.ts';
+} from './bot-broadcast.ts';
 
 
 const corsHeaders = {
