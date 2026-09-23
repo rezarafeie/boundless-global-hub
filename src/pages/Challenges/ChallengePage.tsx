@@ -43,6 +43,30 @@ const List: React.FC<{ title: string; items?: any[] }> = ({ title, items }) =>
     </div>
   ) : null;
 
+const PenaltyLock: React.FC<{ ident: any; slug: string; lock: any }> = ({ ident, slug, lock }) => {
+  const [toman, setToman] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { challengeApi('penalty_price', ident).then((r: any) => setToman(r.toman ?? null)).catch(() => {}); }, [ident]);
+  const pay = async () => {
+    setBusy(true);
+    try {
+      const r: any = await challengeApi('penalty_pay', { ...ident, origin: window.location.origin, returnPath: `/challenges/${slug}` });
+      window.location.href = r.paymentUrl;
+    } catch (e: any) { toast.error(e.message); setBusy(false); }
+  };
+  return (
+    <Card className="border-2 border-destructive/40">
+      <CardContent className="space-y-3 p-5">
+        <p className="font-bold text-destructive">چالش برای تو متوقف شده است</p>
+        <p className="text-sm text-muted-foreground">{lock.reason ? String(lock.reason).replace(/\{usd\}/g, String(lock.usd)) : `یک روز از چالش را از دست دادی. برای بازگشت باید ${faNum(lock.usd)} دلار جریمه پرداخت کنی.`}</p>
+        <p className="text-sm">مبلغ: <b>{faNum(lock.usd)} دلار</b>{toman ? ` (≈ ${faNum(toman)} تومان با نرخ امروز)` : ''}</p>
+        <p className="text-xs text-muted-foreground">پس از پرداخت، ماموریت از دست رفته ۲۴ ساعت دوباره برایت باز می‌شود.</p>
+        <Button className="w-full sm:w-auto" disabled={busy} onClick={pay}>{busy && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}پرداخت جریمه و بازگشت به چالش</Button>
+      </CardContent>
+    </Card>
+  );
+};
+
 const ChallengePage: React.FC = () => {
   const { slug } = useParams();
   const [params, setParams] = useSearchParams();
@@ -61,7 +85,22 @@ const ChallengePage: React.FC = () => {
     catch (e: any) { setErrorMsg(e.message); }
     finally { setLoading(false); }
   }, [ident, isPreview]);
-  useEffect(() => { if (!authLoading) load(); }, [load, authLoading]);
+  useEffect(() => {
+    if (authLoading) return;
+    const authority = params.get('Authority');
+    if (params.get('penalty_paid') === '1' && authority && user?.id) {
+      const ok = params.get('Status') === 'OK';
+      setParams({}, { replace: true });
+      if (!ok) { toast.error('پرداخت لغو شد'); load(); return; }
+      setLoading(true);
+      challengeApi('penalty_verify', { ...ident, authority })
+        .then((r: any) => { setState(r); toast.success('پرداخت تایید شد، به چالش برگشتی!'); })
+        .catch((e: any) => { toast.error(e.message); load(); })
+        .finally(() => setLoading(false));
+      return;
+    }
+    load();
+  }, [load, authLoading]);
 
   if (loading || authLoading) return <div className="flex justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!state?.challenge) return <p dir="rtl" className="py-24 text-center text-muted-foreground">{errorMsg ?? 'چالش یافت نشد.'}</p>;
@@ -94,7 +133,7 @@ const ChallengePage: React.FC = () => {
   const current = progress.find((r) => r.day_number === selectedDay) ?? progress[progress.length - 1];
   const dayInfo = state.days.find((d: any) => d.day_number === current?.day_number);
   const isToday = current?.day_number === state.today;
-  const canWork = current && ['available', 'started', 'needs_revision', 'submitted', 'pending_ai', 'pending_review', 'completed'].includes(current.status);
+  const canWork = !p.profile?.payment_lock?.active && current && ['available', 'started', 'needs_revision', 'submitted', 'pending_ai', 'pending_review', 'completed'].includes(current.status);
 
   return (
     <div dir="rtl" className="mx-auto max-w-5xl space-y-6 px-4 py-6">
