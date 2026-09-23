@@ -1362,15 +1362,15 @@ const EnrollSuccess: React.FC = () => {
                 {/* Final activation */}
                 {result.course && ((result.course.support_activation_required && !result.course.smart_activation_enabled) || result.course.smart_activation_enabled || result.course.telegram_activation_required || result.course.telegram_support_activation_enabled) && (
                   <div className="rounded-lg border border-primary/20 bg-primary/5 p-5 sm:p-6">
-                    <div className="mb-5 flex items-start gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-card">
-                        <Lock className="h-5 w-5 text-primary" />
+                    <div className="mb-6 flex items-start gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-card shadow-sm">
+                        <Lock className="h-6 w-6 text-primary" />
                       </div>
                       <div>
                         <Badge variant="outline" className="mb-2 border-primary/25 bg-card text-primary">مرحله نهایی</Badge>
                         <h3 className="text-lg font-bold text-foreground">فعال‌سازی دسترسی به دوره</h3>
-                        <p className="mt-1 text-sm leading-7 text-muted-foreground">
-                          برای اتصال امن ثبت‌نام شما به حساب آموزشی و دریافت پشتیبانی، فعال‌سازی را در تلگرام تکمیل کنید. بلافاصله پس از تأیید، جلسات دوره برای شما باز می‌شوند.
+                        <p className="mt-2 text-sm leading-7 text-muted-foreground sm:text-base">
+                          برای دسترسی به دوره، پشتیبانی تلگرام را فعال کنید. بلافاصله پس از فعال‌سازی، همه جلسات برای شما باز می‌شوند.
                         </p>
                       </div>
                     </div>
@@ -1424,10 +1424,10 @@ const EnrollSuccess: React.FC = () => {
                                   if (finalUrl) openInNewTab(finalUrl);
                                 }}
                             size="lg"
-                            className="mt-5 h-13 w-full gap-3 bg-success text-base font-bold text-success-foreground hover:bg-success/90"
+                            className="mt-6 h-16 w-full gap-3 rounded-lg bg-primary text-lg font-bold text-primary-foreground shadow-sm hover:bg-primary/90"
                           >
                             <Send className="h-5 w-5" />
-                            اتصال به پشتیبانی و شروع دوره
+                            فعال‌سازی پشتیبانی و ورود به دوره
                           </Button>
                           <p className="mt-2 text-center text-xs text-muted-foreground">
                             این مرحله کمتر از یک دقیقه زمان می‌برد
@@ -1494,9 +1494,10 @@ const EnrollSuccess: React.FC = () => {
                       </div>
                       <Badge variant="secondary">پس از فعال‌سازی باز می‌شود</Badge>
                     </div>
-                    <div className="space-y-2" aria-label="پیش‌نمایش قفل‌شده جلسات دوره">
-                      {courseLessons.length > 0 ? courseLessons.map((lesson, index) => (
-                        <div key={lesson.id} className="flex min-h-14 items-center gap-3 rounded-lg border border-border bg-muted/35 px-3 py-2.5">
+                    <div className="relative max-h-48 overflow-hidden" aria-label="پیش‌نمایش قفل‌شده جلسات دوره">
+                      <div className="space-y-2">
+                      {courseLessons.length > 0 ? courseLessons.slice(0, 5).map((lesson, index) => (
+                        <div key={lesson.id} className={`flex min-h-14 items-center gap-3 rounded-lg border border-border bg-muted/35 px-3 py-2.5 ${index > 2 ? 'opacity-50' : ''}`}>
                           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-card text-xs font-bold text-muted-foreground">
                             {new Intl.NumberFormat('fa-IR', { minimumIntegerDigits: 2 }).format(lesson.lesson_number ?? index + 1)}
                           </span>
@@ -1510,6 +1511,14 @@ const EnrollSuccess: React.FC = () => {
                         <div className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 p-5 text-sm text-muted-foreground">
                           <Lock className="h-4 w-4" />
                           فهرست کامل جلسات پس از فعال‌سازی نمایش داده می‌شود
+                        </div>
+                      )}
+                      </div>
+                      {courseLessons.length > 3 && (
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-20 items-end justify-center bg-gradient-to-t from-card via-card/90 to-transparent pb-1">
+                          <span className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">
+                            +{new Intl.NumberFormat('fa-IR').format(courseLessons.length - 3)} جلسه دیگر
+                          </span>
                         </div>
                       )}
                     </div>
