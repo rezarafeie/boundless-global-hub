@@ -455,6 +455,17 @@ export async function notifyStudent(
   const s = await getGamSettings(courseId);
   if (s && !s.notifications_enabled) return { skipped: true };
 
+  // Students who finished the course must not receive follow-up/reminder messages.
+  const FOLLOWUP_KINDS = new Set(["welcome", "mission_due", "mission_assigned", "access_expiring", "access_expired", "locked", "reactivation"]);
+  if (FOLLOWUP_KINDS.has(kind)) {
+    const { data: win } = await supabase
+      .from("course_access_windows")
+      .select("status")
+      .eq("user_id", userId).eq("course_id", courseId)
+      .maybeSingle();
+    if (win?.status === "completed") return { skipped: true, reason: "course_completed" };
+  }
+
   const notificationRef = refId ?? kind;
   const { data: previous } = await supabase
     .from("course_gamification_notifications")
