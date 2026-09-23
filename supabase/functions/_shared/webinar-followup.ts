@@ -126,13 +126,15 @@ export async function runWebinarFollowup(
     return { ok: r.ok, results };
   }
 
-  // Telegram channels need a linked telegram chat id
-  const chatId = user?.telegram_chat_id;
-  if (!chatId) {
+  // Bot channels need a linked messenger account — Telegram first, Bale as the mirror.
+  const target = resolveBotTarget(user ?? null);
+  const chatId = target?.chatId;
+  if (!target || !chatId) {
     const ch = fu.channel === "business" ? "telegram_business" : "telegram_bot";
-    await logWebinarSend(fu, rec, userId, ch, "unreachable", "no linked telegram account", logExtra);
-    return { ok: true, results: [{ channel: ch, ok: false, unreachable: true, reason: "no linked telegram account" }] };
+    await logWebinarSend(fu, rec, userId, ch, "unreachable", "no linked telegram/bale account", logExtra);
+    return { ok: true, results: [{ channel: ch, ok: false, unreachable: true, reason: "no linked telegram/bale account" }] };
   }
+  const botChannel = target.channel;
 
   let text = render(fu.bot_text, vars) || "[TEST] webinar followup";
   const mediaUrl = (fu.media_url ?? "").trim();
