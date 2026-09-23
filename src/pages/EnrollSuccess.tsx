@@ -1366,7 +1366,7 @@ const EnrollSuccess: React.FC = () => {
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-card shadow-sm">
                         <Lock className="h-6 w-6 text-primary" />
                       </div>
-                      <div>
+                      <div className="min-w-0 flex-1 text-right">
                         <Badge variant="outline" className="mb-2 border-primary/25 bg-card text-primary">مرحله نهایی</Badge>
                         <h3 className="text-lg font-bold text-foreground">فعال‌سازی دسترسی به دوره</h3>
                         <p className="mt-2 text-sm leading-7 text-muted-foreground sm:text-base">
@@ -1487,13 +1487,13 @@ const EnrollSuccess: React.FC = () => {
 
                 {result.course?.telegram_only_access && (
                   <div className="border-t border-border pt-6">
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="h-5 w-5 text-primary" />
-                        <h3 className="font-bold text-foreground">فهرست جلسات دوره</h3>
+                      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="h-5 w-5 shrink-0 text-primary" />
+                          <h3 className="text-sm font-bold text-foreground sm:text-base">فهرست جلسات دوره</h3>
+                        </div>
+                        <Badge variant="secondary" className="w-fit whitespace-nowrap px-3 py-1 text-xs">پس از فعال‌سازی باز می‌شود</Badge>
                       </div>
-                      <Badge variant="secondary">پس از فعال‌سازی باز می‌شود</Badge>
-                    </div>
                     <div className="relative max-h-48 overflow-hidden" aria-label="پیش‌نمایش قفل‌شده جلسات دوره">
                       <div className="space-y-2">
                       {courseLessons.length > 0 ? courseLessons.slice(0, 5).map((lesson, index) => (
