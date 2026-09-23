@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Flame, Zap, Clock, Gift, Lock, Target, PartyPopper } from 'lucide-react';
 import { GamStatus, formatRemaining, useLiveGamStatus } from '@/hooks/useCourseGamification';
 import { gamText } from '@/lib/gamificationMessages';
+import RewardValue from '@/components/Gamification/RewardValue';
 
 interface Props {
   status: GamStatus | null;
