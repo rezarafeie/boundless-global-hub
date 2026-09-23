@@ -1,5 +1,16 @@
-// Telegram Bot webhook — full role-based CRM/Lead bot
+// Shared bot brain — full role-based CRM/Lead bot.
+// Runs identically on Telegram and on Bale; the active messenger comes from
+// the channel context set by each webhook function.
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import {
+  currentChannel,
+  runWithChannel,
+  chatIdColumn,
+  linkedAtColumn,
+  chatIdPatch,
+  channelLabel,
+  type Channel,
+} from './channel.ts';
 import {
   sendMessage,
   editMessage,
@@ -123,8 +134,8 @@ function phoneVariants(phone: string | null | undefined): string[] {
 async function resolveUser(chat_id: number): Promise<BotUser | null> {
   const { data } = await supabase
     .from('chat_users')
-    .select('id, name, role, is_messenger_admin, telegram_chat_id, phone')
-    .eq('telegram_chat_id', chat_id)
+    .select('id, name, role, is_messenger_admin, telegram_chat_id, bale_chat_id, phone')
+    .eq(chatIdColumn(), chat_id)
     .maybeSingle();
   if (!data) return null;
   let role: Role = normalizeRole(data.role as string | null);
@@ -169,7 +180,12 @@ async function resolveUser(chat_id: number): Promise<BotUser | null> {
 
 // ============ Session state ============
 async function getSession(chat_id: number) {
-  const { data } = await supabase.from('telegram_bot_sessions').select('*').eq('chat_id', chat_id).maybeSingle();
+  const { data } = await supabase
+    .from('telegram_bot_sessions')
+    .select('*')
+    .eq('chat_id', chat_id)
+    .eq('channel', currentChannel())
+    .maybeSingle();
   if (!data) return null;
   if (new Date(data.expires_at) < new Date()) return null;
   return data;
@@ -178,9 +194,10 @@ async function getSession(chat_id: number) {
 async function setSession(chat_id: number, user_id: number | null, state: string | null, context: any = {}) {
   const expires_at = new Date(Date.now() + 30 * 60 * 1000).toISOString();
   await supabase.from('telegram_bot_sessions').upsert({
-    chat_id, user_id, state, context, expires_at, updated_at: new Date().toISOString(),
-  });
+    chat_id, channel: currentChannel(), user_id, state, context, expires_at, updated_at: new Date().toISOString(),
+  }, { onConflict: 'chat_id,channel' });
 }
+
 
 async function getFilters(chat_id: number): Promise<Filters> {
   const s = await getSession(chat_id);
