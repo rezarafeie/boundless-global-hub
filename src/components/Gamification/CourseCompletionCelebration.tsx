@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { GamStatus } from '@/hooks/useCourseGamification';
 import { gamText } from '@/lib/gamificationMessages';
 import { openInNewTab } from '@/lib/utils';
+import RewardValue from '@/components/Gamification/RewardValue';
 
 interface Props {
   open: boolean;
@@ -57,7 +58,12 @@ const CourseCompletionCelebration: React.FC<Props> = ({ open, onOpenChange, stat
             </p>
             {status.earnedRewards.map((reward) => (
               <div key={reward.id} className="text-sm text-muted-foreground">
-                • {reward.title}
+                <div>• {reward.title}</div>
+                <RewardValue
+                  label={reward.value_label}
+                  value={reward.reward_value}
+                  type={reward.reward_type}
+                />
               </div>
             ))}
           </div>

@@ -18,6 +18,7 @@ export interface GamReward {
   within_days: number;
   reward_type?: string | null;
   reward_value?: string | null;
+  value_label?: string | null;
   unlocked?: boolean;
 }
 

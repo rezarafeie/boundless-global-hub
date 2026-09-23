@@ -253,7 +253,7 @@ export async function completeMission(userId: number, courseId: string, lessonId
     rewards = await grantRewards(userId, courseId, days);
     await notifyStudent(userId, courseId, "course_completed", w.id, {
       days: days.toFixed(1),
-      rewards: rewards.length ? rewards.map((r) => `• ${r.title}`).join("\n") : "هدایای دوره فعال شد",
+      rewards: rewards.length ? formatRewardLines(rewards) : "هدایای دوره فعال شد",
     });
   }
 
@@ -279,6 +279,36 @@ export async function completeMission(userId: number, courseId: string, lessonId
 }
 
 /* ---------------- rewards ---------------- */
+
+export function rewardValueLabel(type?: string | null, value?: string | null) {
+  if (!value) return "";
+  switch (type) {
+    case "discount_code":
+    case "coupon":
+      return `کد تخفیف: ${value}`;
+    case "discount_percent":
+      return `تخفیف: ${value}٪`;
+    case "cash":
+    case "credit":
+      return `اعتبار: ${value}`;
+    case "link":
+    case "file":
+      return `لینک دریافت: ${value}`;
+    default:
+      return value;
+  }
+}
+
+export function formatRewardLines(items: any[]) {
+  return items
+    .map((r) => {
+      const label = rewardValueLabel(r.reward_type, r.reward_value);
+      const head = `• ${r.emoji ? `${r.emoji} ` : ""}${r.title}`;
+      return label ? `${head}\n   ${label}` : head;
+    })
+    .join("\n");
+}
+
 
 export async function grantRewards(userId: number, courseId: string, completionDays: number) {
   const { data: rewards } = await supabase
@@ -306,7 +336,7 @@ export async function grantRewards(userId: number, courseId: string, completionD
   if (granted.length) {
     await notifyStudent(userId, courseId, "rewards", null, {
       days: completionDays.toFixed(1),
-      rewards: granted.map((g) => `• ${g.title}`).join("\n"),
+      rewards: formatRewardLines(granted),
     });
   }
   return granted;
@@ -353,7 +383,7 @@ export async function buildStatus(userId: number, courseId: string) {
     const granted = await grantRewards(userId, courseId, days);
     await notifyStudent(userId, courseId, "course_completed", w.id, {
       days: days.toFixed(1),
-      rewards: granted.length ? granted.map((r) => `• ${r.title}`).join("\n") : "هدایای دوره فعال شد",
+      rewards: granted.length ? formatRewardLines(granted) : "هدایای دوره فعال شد",
     });
   }
 
@@ -396,11 +426,20 @@ export async function buildStatus(userId: number, courseId: string) {
       lesson_number: missionLesson?.lesson_number ?? null,
       remainingMs: Math.max(0, new Date(mission.due_at).getTime() - now),
     } : null,
-    rewards: (allRewards ?? []).map((r: any) => ({
-      ...r,
-      unlocked: (earned ?? []).some((e: any) => e.reward_id === r.id),
+    rewards: (allRewards ?? []).map((r: any) => {
+      const unlocked = (earned ?? []).some((e: any) => e.reward_id === r.id);
+      return {
+        ...r,
+        unlocked,
+        // Only reveal the actual value (discount code, link, credit) once earned.
+        reward_value: unlocked ? r.reward_value : null,
+        value_label: unlocked ? rewardValueLabel(r.reward_type, r.reward_value) : null,
+      };
+    }),
+    earnedRewards: (earned ?? []).map((e: any) => ({
+      ...e,
+      value_label: rewardValueLabel(e.reward_type, e.reward_value),
     })),
-    earnedRewards: earned ?? [],
   };
 }
 
