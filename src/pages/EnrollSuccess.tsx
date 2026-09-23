@@ -1622,14 +1622,14 @@ const EnrollSuccess: React.FC = () => {
                 {result.course && (
                   <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
                     <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-3">دوره ثبت‌نام شده</h3>
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
                         <h4 className="font-medium">{result.course.title}</h4>
                         <p className="text-sm text-muted-foreground">
                           {result.course.description}
                         </p>
                       </div>
-                      <Badge className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
+                      <Badge className="shrink-0 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
                         فعال
                       </Badge>
                     </div>
