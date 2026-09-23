@@ -28,7 +28,11 @@ export const DEFAULT_SEGMENTS: Segments = {
   ],
 };
 
-export const segmentsOf = (ch: any): Segments => ({ ...DEFAULT_SEGMENTS, ...(ch?.segments || {}) });
+export const segmentsOf = (ch: any): Segments => {
+  const s = ch?.segments || {};
+  const pick = (k: keyof Segments) => (Array.isArray(s[k]) && s[k].length ? s[k].map((o: any) => typeof o === 'object' ? { value: String(o.value), label: String(o.label ?? o.value) } : { value: String(o), label: String(o) }) : DEFAULT_SEGMENTS[k]);
+  return { business_models: pick('business_models'), stages: pick('stages'), budgets: pick('budgets'), boundless_codes: pick('boundless_codes') };
+};
 export const labelOf = (opts: Option[], v?: string | null) => opts.find((o) => o.value === v)?.label ?? v ?? '—';
 
 export const REVIEW_MODES: Option[] = [
