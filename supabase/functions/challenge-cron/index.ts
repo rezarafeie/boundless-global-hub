@@ -20,6 +20,8 @@ Deno.serve(async (req) => {
   try {
     const today = tehranDate(now);
     // lifecycle: scheduled → active
+    await supabase.from("challenges").update({ status: "scheduled" }).eq("status", "published").gt("start_date", today);
+    await supabase.from("challenges").update({ status: "active" }).eq("status", "published").lte("start_date", today);
     const { data: toStart } = await supabase.from("challenges").select("id").eq("status", "scheduled").lte("start_date", today);
     for (const c of toStart ?? []) { await supabase.from("challenges").update({ status: "active" }).eq("id", c.id); result.started++; }
 

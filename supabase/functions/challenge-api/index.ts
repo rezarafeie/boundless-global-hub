@@ -129,6 +129,12 @@ Deno.serve(async (req) => {
       let q = supabase.from("challenges").select("*");
       q = body.challengeId ? q.eq("id", body.challengeId) : q.eq("slug", String(body.slug ?? ""));
       const { data } = await q.maybeSingle();
+      // "published" is not a valid challenge status; treat it as active/scheduled and fix it in place
+      if (data && data.status === "published") {
+        const today = new Date(Date.now() + 3.5 * 3600000).toISOString().slice(0, 10);
+        data.status = String(data.start_date).slice(0, 10) <= today ? "active" : "scheduled";
+        await supabase.from("challenges").update({ status: data.status }).eq("id", data.id);
+      }
       return data;
     };
     const getParticipant = async (ch: any) => {
