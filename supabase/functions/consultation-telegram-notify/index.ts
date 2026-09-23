@@ -2,6 +2,7 @@
 // through the Telegram Business connection (falls back to the bot chat).
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { tgCall, escapeHtml } from '../_shared/telegram.ts';
+import { resolveBotTarget, runWithChannel, type Channel } from '../_shared/channel.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -82,6 +83,7 @@ Deno.serve(async (req) => {
     }
 
     let chatId: number | null = test_chat_id ? Number(test_chat_id) : null;
+    let messenger: Channel = 'telegram';
     let text = test_text as string | undefined;
 
     if (!text || !chatId) {
@@ -105,14 +107,16 @@ Deno.serve(async (req) => {
       if (!chatId) {
         const { data: user } = await supabase
           .from('chat_users')
-          .select('telegram_chat_id')
+          .select('telegram_chat_id, bale_chat_id')
           .eq('id', booking.user_id)
           .maybeSingle();
-        chatId = (user as any)?.telegram_chat_id ? Number((user as any).telegram_chat_id) : null;
+        const target = resolveBotTarget(user);
+        chatId = target?.chatId ?? null;
+        messenger = target?.channel ?? 'telegram';
       }
 
       if (!chatId) {
-        return new Response(JSON.stringify({ skipped: true, reason: 'user has no linked telegram account' }), {
+        return new Response(JSON.stringify({ skipped: true, reason: 'user has no linked telegram/bale account' }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -145,7 +149,8 @@ Deno.serve(async (req) => {
     let res: any = null;
     let viaBusiness = false;
     let businessError: string | null = null;
-    if (bcid) {
+    // Bale has no business-account API: those users get the message from the Bale bot.
+    if (bcid && messenger === 'telegram') {
       const bizRes = await tgCall('sendMessage', { chat_id: chatId, text, business_connection_id: bcid, parse_mode: 'HTML' });
       viaBusiness = bizRes?.ok === true;
       res = bizRes;
@@ -153,17 +158,18 @@ Deno.serve(async (req) => {
         businessError = bizRes?.description ?? JSON.stringify(bizRes);
         console.error('Business send failed for chat', chatId, businessError);
       }
-    } else {
+    } else if (messenger === 'telegram') {
       businessError = 'telegram_business_connection_id is not configured';
       console.error(businessError);
     }
     if (!viaBusiness) {
-      res = await tgCall('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true });
+      res = await runWithChannel(messenger, () => tgCall('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true }));
     }
 
     return new Response(JSON.stringify({
       ok: res?.ok === true,
       via: viaBusiness ? 'business' : 'bot',
+      messenger,
       business_error: businessError,
       business_unreachable: !!businessError && /BUSINESS_PEER_USAGE_MISSING|PEER_ID_INVALID/i.test(businessError),
       chat_id: chatId,
