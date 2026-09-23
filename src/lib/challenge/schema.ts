@@ -56,7 +56,7 @@ export const PROGRESS_LABELS: Record<string, string> = {
 export const EVENT_KINDS = [
   'challenge_joined', 'challenge_started', 'mission_available', 'deadline_approaching', 'mission_submitted',
   'ai_feedback_ready', 'coach_feedback_ready', 'revision_requested', 'mission_completed', 'mission_missed',
-  'streak_achieved', 'streak_broken', 'first_sale', 'reward_unlocked', 'penalty_applied', 'inactive', 'challenge_completed',
+  'streak_achieved', 'streak_broken', 'first_sale', 'reward_unlocked', 'penalty_applied', 'payment_required', 'penalty_released', 'inactive', 'challenge_completed',
 ];
 export const CHANNELS: Option[] = [
   { value: 'telegram_bot', label: 'ربات تلگرام' }, { value: 'telegram_business', label: 'تلگرام بیزینس' },
@@ -104,24 +104,56 @@ export const JSON_TEMPLATE = {
     ai_review_default: true, coach_review_default: false,
   },
   segments: { business_models: DEFAULT_SEGMENTS.business_models, stages: DEFAULT_SEGMENTS.stages, budgets: DEFAULT_SEGMENTS.budgets, boundless_codes: DEFAULT_SEGMENTS.boundless_codes },
-  onboarding_form: null,
+  onboarding_form: {
+    title: 'پروفایل چالش', description: 'چند سوال کوتاه', ai_prompt: 'پروفایل دانشجو را خلاصه کن و مسیر پیشنهادی بده.', require_login: true,
+    fields: [
+      { field_key: 'main_goal', label: 'هدف اصلی تو در این چالش؟', field_type: 'textarea', required: true },
+      { field_key: 'hours', label: 'روزی چند ساعت وقت داری؟', field_type: 'select', required: true, options: ['کمتر از ۱', '۱ تا ۳', 'بیش از ۳'] },
+    ],
+  },
   xp_rules: { on_time_bonus: 5, streak_milestones: [3, 7, 14, 21, 30] },
   rewards: [
+    { key: 'three_done', title: 'شروع قدرتمند', emoji: '⚡', description: '۳ ماموریت اول', trigger: { type: 'missions_completed', value: 3 }, reward_type: 'credit', reward_value: 50000 },
+    { key: 'xp100', title: '۱۰۰ امتیاز', emoji: '⭐', trigger: { type: 'xp', value: 100 }, reward_type: 'percent', reward_value: 10 },
     { key: 'streak7', title: 'استریک ۷ روزه', emoji: '🔥', description: 'هفت روز پشت سر هم', trigger: { type: 'streak', value: 7 }, reward_type: 'discount_code', reward_value: 'STREAK7' },
-    { key: 'first_sale', title: 'اولین فروش', emoji: '💰', trigger: { type: 'first_sale' }, reward_type: 'link', reward_value: 'https://academy.rafiei.co/gift' },
+    { key: 'first_sale', title: 'اولین فروش', emoji: '💰', trigger: { type: 'first_sale' }, reward_type: 'link', reward_value: 'https://academy.rafiei.co/gift', link: 'https://academy.rafiei.co/gift' },
+    { key: 'rev1000', title: '۱۰۰۰ دلار فروش', emoji: '🚀', trigger: { type: 'revenue', value: 1000 } },
+    { key: 'fast_finish', title: 'تمام‌کننده سریع', emoji: '🏃', trigger: { type: 'complete_before_day', value: 28 } },
     { key: 'finisher', title: 'قهرمان چالش', emoji: '🏆', trigger: { type: 'challenge_completed' } },
+    { key: 'coach_pick', title: 'انتخاب مربی', emoji: '👑', description: 'فقط دستی توسط ادمین داده می‌شود', trigger: { type: 'custom' } },
   ],
   penalties: [
     { key: 'miss_xp', trigger: { type: 'mission_missed' }, action: { type: 'lose_xp', value: 5, message: '۵ امتیاز به‌خاطر ماموریت از دست رفته کم شد.' } },
+    { key: 'streak_reset', trigger: { type: 'streak_broken' }, action: { type: 'reset_streak', message: 'استریک تو صفر شد.' } },
     { key: 'three_missed', trigger: { type: 'missed_count', value: 3 }, action: { type: 'warning', message: 'سه ماموریت را از دست دادی؛ با مربی صحبت کن.' } },
+    { key: 'paid_return', trigger: { type: 'mission_missed' }, action: { type: 'pay_to_return', value: 10, message: 'یک روز را از دست دادی. برای بازگشت {usd} دلار جریمه پرداخت کن.' } },
+    { key: 'coach_note', trigger: { type: 'missed_count', value: 5 }, action: { type: 'custom', message: 'مربی به‌زودی با تو تماس می‌گیرد.' } },
+    { key: 'course_lock', enabled_note: 'فقط در صورت نیاز صریح — این مورد را حذف کنید اگر نمی‌خواهید دوره قفل شود', trigger: { type: 'missed_count', value: 10 }, action: { type: 'lock_course', course_ids: [], message: 'به دلیل ۱۰ غیبت، دسترسی دوره موقتاً قفل شد.' } },
   ],
   notifications: {
     channels: { telegram_bot: true, telegram_business: true, bale: true, email: true, in_app: true, sms: false },
     followups: [{ hours_before: 6 }, { hours_before: 2 }, { hours_before: 0.5 }],
     inactive_hours: 48,
     messages: {
-      mission_available: { title: 'ماموریت روز {day} آماده است 🔥', text: '{name}، ماموریت امروز: «{mission_title}»\nمهلت: {deadline}\n{mission_url}', channels: ['telegram_bot', 'bale', 'email', 'in_app'] },
-      deadline_approaching: { title: '⏰ {remaining_time} مانده', text: '{name}، ماموریت روز {day} هنوز مانده.\n{mission_url}' },
+      challenge_joined: { enabled: true, title: 'به {challenge_title} خوش آمدی 🎯', text: '{name} عزیز، ثبت‌نامت انجام شد. هر روز یک ماموریت شخصی برایت باز می‌شود.\n{challenge_url}', channels: ['telegram_bot', 'telegram_business', 'bale', 'email', 'in_app'] },
+      challenge_started: { enabled: true, title: 'چالش شروع شد 🚀', text: '{name}، {challenge_title} از امروز شروع شد.\n{mission_url}' },
+      mission_available: { enabled: true, title: 'ماموریت روز {day} آماده است 🔥', text: '{name}، ماموریت امروز: «{mission_title}»\nمهلت: {deadline}\nپاداش: {xp} امتیاز\n{mission_url}' },
+      deadline_approaching: { enabled: true, title: '⏰ {remaining_time} تا پایان ماموریت', text: '{name}، ماموریت روز {day} («{mission_title}») هنوز انجام نشده.\n{mission_url}' },
+      mission_submitted: { enabled: true, title: 'ماموریت ارسال شد 📤', text: 'ماموریت روز {day} دریافت شد و در حال بررسی است.', channels: ['in_app'] },
+      ai_feedback_ready: { enabled: true, title: 'بازخورد هوشمند آماده است 🤖', text: '{name}، بازخورد ماموریت روز {day} آماده است.\n{mission_url}' },
+      coach_feedback_ready: { enabled: true, title: 'مربی ماموریتت را بررسی کرد 👤', text: '{name}، بازخورد مربی برای روز {day} ثبت شد.\n{mission_url}' },
+      revision_requested: { enabled: true, title: 'نیاز به اصلاح 🔄', text: '{name}، ماموریت روز {day} «{mission_title}» نیاز به اصلاح دارد.\n\n{reasons}\n\nاصلاح کن و دوباره بفرست:\n{mission_url}' },
+      mission_completed: { enabled: true, title: 'ماموریت روز {day} کامل شد ✅', text: 'آفرین {name}! +{xp} امتیاز. استریک فعلی: {streak} روز 🔥' },
+      mission_missed: { enabled: true, title: 'ماموریت روز {day} از دست رفت', text: '{name}، مهلت ماموریت «{mission_title}» تمام شد.\n{challenge_url}' },
+      streak_achieved: { enabled: true, title: '🔥 استریک {streak} روزه!', text: '{name}، {streak} روز پشت سر هم! ادامه بده.' },
+      streak_broken: { enabled: true, title: 'استریک قطع شد', text: '{name}، استریک تو قطع شد. با ماموریت امروز دوباره بساز.' },
+      first_sale: { enabled: true, title: '🎉 اولین فروش!', text: 'تبریک {name}! اولین فروش تو در {challenge_title} ثبت شد.' },
+      reward_unlocked: { enabled: true, title: '🎁 جایزه جدید باز شد', text: '{name}، جایزه «{reward}» را گرفتی.\n{challenge_url}' },
+      penalty_applied: { enabled: true, title: 'هشدار چالش', text: '{feedback}' },
+      payment_required: { enabled: true, title: '⛔ چالش متوقف شد', text: '{name}، ماموریت روز {day} از دست رفت. برای بازگشت باید {usd} دلار جریمه پرداخت کنی.\n{challenge_url}' },
+      penalty_released: { enabled: true, title: '✅ به چالش برگشتی', text: '{name}، {feedback}\n{mission_url}' },
+      inactive: { enabled: true, title: 'دلمون برات تنگ شده 👋', text: '{name}، چند وقتی است فعالیتی نداشتی. ماموریت امروز منتظرته.\n{challenge_url}' },
+      challenge_completed: { enabled: true, title: '🏆 چالش تمام شد', text: '{name}، {challenge_title} به پایان رسید. امتیاز نهایی: {xp} — پیشرفت: {progress}٪' },
     },
   },
   days: [
@@ -148,6 +180,27 @@ export const JSON_TEMPLATE = {
         { key: 'FB', title: 'همه مسیرها', is_fallback: true, instructions: 'نیچ خود را مشخص کن', assignment_id: null, form_id: null },
       ],
     },
+    {
+      day_number: 2, title: 'اولین ترافیک', short_description: 'اولین بازدیدکننده‌ها', goal: '۱۰۰ بازدید', estimated_minutes: 60,
+      xp: 15, required: true, review_mode: 'ai_human', unlock_time: '08:00', deadline_time: null, deadline_hours: 36,
+      notification_text: 'امروز نوبت آوردن ترافیک است 🚦', followups: [{ hours_before: 4 }, { hours_before: 1 }],
+      stage_update: { enabled: true, prompt: 'اولین بازدید یا لید را گرفتی؟', suggest: 'traffic_no_sales' },
+      variants: [
+        { key: 'PAID', title: 'مسیر پولی', budgets: ['paid'], priority: 10, instructions: 'یک کمپین تبلیغاتی کوچک راه بینداز', checklist: ['تعیین بودجه روزانه'], expected_result: 'اسکرین‌شات کمپین',
+          form: { title: 'گزارش کمپین روز ۲', description: 'نتایج را بنویس', fields: [{ field_key: 'spend', label: 'هزینه (دلار)', field_type: 'number', required: true }, { field_key: 'shot', label: 'لینک اسکرین‌شات', field_type: 'text', required: false }] } },
+        { key: 'EXISTING', title: 'استفاده از تمرین موجود', budgets: ['low'], assignment_id: '00000000-0000-0000-0000-000000000000 (شناسه تمرین موجود — یا حذف کنید)' },
+        { key: 'FB', title: 'بدون بودجه', is_fallback: true, instructions: 'در ۳ گروه/صفحه مرتبط محتوا منتشر کن',
+          assignment: { title: 'روز ۲ — ترافیک رایگان', ai_feedback_enabled: true, manual_review_enabled: true, passing_score: 60,
+            ai_feedback_prompt: 'بررسی کن آیا دانشجو واقعاً محتوا منتشر کرده؛ score، summary، strengths، weaknesses، next_steps و pass یا needs_revision بده.',
+            blocks: [
+              { id: 'b1', type: 'hint', label: 'لینک‌ها را کامل وارد کن' },
+              { id: 'b2', type: 'single_choice', label: 'کدام کانال؟', options: ['اینستاگرام', 'تلگرام', 'سایر'], required: true },
+              { id: 'b3', type: 'checklist', label: 'انجام دادم', options: ['پست اول', 'پست دوم', 'پست سوم'] },
+              { id: 'b4', type: 'image_upload', label: 'اسکرین‌شات آمار', required: false },
+              { id: 'b5', type: 'rating', label: 'چقدر سخت بود؟' },
+            ] } },
+      ],
+    },
   ],
 };
 
@@ -155,12 +208,15 @@ export const JSON_GUIDE = `راهنمای ساختار JSON چالش:
 • challenge: تنظیمات اصلی (title, slug یکتا، start_date به‌صورت YYYY-MM-DD، days_count، status: draft|scheduled|active|paused|finished، default_deadline_time به وقت تهران HH:MM، سوئیچ‌های گیمیفیکیشن/استریک/اعلان/لیدربورد).
 • segments: گزینه‌های پروفایل (business_models, stages, budgets, boundless_codes) هرکدام [{value,label}]. valueها در variantها استفاده می‌شوند.
 • onboarding_form: اختیاری — {title, description, ai_prompt, fields:[{field_key,label,field_type,required,options}]} که یک فرم واقعی در سیستم فرم‌ها می‌سازد، یا {form_id} برای فرم موجود.
-• xp_rules: on_time_bonus، streak_milestones.
+• xp_rules: on_time_bonus (امتیاز اضافه برای ارسال قبل از ددلاین)، streak_milestones (روزهای جشن استریک).
+• challenge.unlock_next_on_complete: true یعنی با انجام ماموریت، روز بعد زودتر از تاریخش باز شود.
 • rewards: [{key, title, emoji, description, trigger:{type: missions_completed|xp|streak|challenge_completed|complete_before_day|first_sale|revenue|custom, value}, reward_type: discount_code|percent|credit|link, reward_value, link}].
 • penalties: [{key, trigger:{type: mission_missed|streak_broken|missed_count, value}, action:{type: lose_xp|reset_streak|warning|custom|pay_to_return|lock_course, value, message}}]. pay_to_return: شرکت‌کننده تا پرداخت value دلار (با نرخ روز) متوقف می‌شود و پس از پرداخت ماموریت از دست رفته ۲۴ ساعت باز می‌شود. lock_course فقط در صورت تعریف صریح دسترسی دوره را قفل می‌کند.
 • notifications: channels (telegram_bot, telegram_business, bale, email, in_app, sms)، followups [{hours_before}] پیش از ددلاین، inactive_hours، messages: {رویداد: {title, text, channels, enabled}}.
   رویدادها: ${EVENT_KINDS.join(', ')}
-  متغیرها: {name} {challenge_title} {day} {days_count} {mission_title} {deadline} {remaining_time} {xp} {streak} {reward} {progress} {feedback} {challenge_url} {mission_url}
+  enabled: false یعنی آن پیام ارسال نشود؛ channels خالی یعنی همه کانال‌های فعال چالش.
+  متغیرها: {name} (فقط نام کوچک) {challenge_title} {day} {days_count} {mission_title} {deadline} {remaining_time} {xp} {streak} {reward} {progress} {feedback} {reasons} (دلایل اصلاح) {usd} (مبلغ جریمه) {challenge_url} {mission_url}
+  payment_required: وقتی جریمه پولی فعال می‌شود — penalty_released: پس از پرداخت یا بخشش مربی.
 • days: [{day_number, title, short_description, goal, estimated_minutes, xp, required, review_mode: auto|ai|human|ai_human, unlock_time, deadline_time, deadline_hours, notification_text, followups, stage_update:{enabled,prompt,suggest}, variants:[...] }].
 • variant: شرایط (business_models, stages, budgets, boundless_codes — خالی یعنی «همه»)، priority، is_fallback، محتوا (instructions, checklist[], tips[], example, resources[{title,url}], expected_result) و ارسال: assignment_id موجود، form_id موجود، یا assignment جدید {title, description, blocks[], ai_feedback_enabled, ai_feedback_prompt, passing_score, manual_review_enabled} یا form جدید {title, fields[]}.
   انواع بلوک تمرین: title, description, short_text, long_text, number, single_choice, multiple_choice, rating, checklist, file_upload, image_upload, link, hint.
