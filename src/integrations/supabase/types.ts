@@ -3748,6 +3748,8 @@ export type Database = {
           admin_notes: string | null
           approved_at: string | null
           approved_by: string | null
+          bale_chat_id: number | null
+          bale_linked_at: string | null
           chat_user_id: number | null
           coaching_lessons_since_checkin: number
           country_code: string | null
@@ -3784,6 +3786,8 @@ export type Database = {
           admin_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          bale_chat_id?: number | null
+          bale_linked_at?: string | null
           chat_user_id?: number | null
           coaching_lessons_since_checkin?: number
           country_code?: string | null
@@ -3820,6 +3824,8 @@ export type Database = {
           admin_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          bale_chat_id?: number | null
+          bale_linked_at?: string | null
           chat_user_id?: number | null
           coaching_lessons_since_checkin?: number
           country_code?: string | null
@@ -4456,6 +4462,7 @@ export type Database = {
           answers: Json | null
           assigned_agent_id: number | null
           call_clicks: number | null
+          channel: string
           created_at: string
           id: string
           name: string | null
@@ -4468,6 +4475,7 @@ export type Database = {
           answers?: Json | null
           assigned_agent_id?: number | null
           call_clicks?: number | null
+          channel?: string
           created_at?: string
           id?: string
           name?: string | null
@@ -4480,6 +4488,7 @@ export type Database = {
           answers?: Json | null
           assigned_agent_id?: number | null
           call_clicks?: number | null
+          channel?: string
           created_at?: string
           id?: string
           name?: string | null
@@ -7327,6 +7336,7 @@ export type Database = {
       }
       telegram_bot_sessions: {
         Row: {
+          channel: string
           chat_id: number
           context: Json
           expires_at: string
@@ -7335,6 +7345,7 @@ export type Database = {
           user_id: number | null
         }
         Insert: {
+          channel?: string
           chat_id: number
           context?: Json
           expires_at?: string
@@ -7343,6 +7354,7 @@ export type Database = {
           user_id?: number | null
         }
         Update: {
+          channel?: string
           chat_id?: number
           context?: Json
           expires_at?: string
@@ -7588,6 +7600,7 @@ export type Database = {
       }
       telegram_login_tokens: {
         Row: {
+          channel: string
           contact_otp_code: string | null
           contact_otp_expires_at: string | null
           created_at: string
@@ -7606,6 +7619,7 @@ export type Database = {
           verified: boolean
         }
         Insert: {
+          channel?: string
           contact_otp_code?: string | null
           contact_otp_expires_at?: string | null
           created_at?: string
@@ -7624,6 +7638,7 @@ export type Database = {
           verified?: boolean
         }
         Update: {
+          channel?: string
           contact_otp_code?: string | null
           contact_otp_expires_at?: string | null
           created_at?: string
@@ -8526,6 +8541,7 @@ export type Database = {
       }
       webinar_login_tokens: {
         Row: {
+          channel: string
           created_at: string
           display_name: string | null
           expires_at: string
@@ -8538,6 +8554,7 @@ export type Database = {
           webinar_id: string
         }
         Insert: {
+          channel?: string
           created_at?: string
           display_name?: string | null
           expires_at?: string
@@ -8550,6 +8567,7 @@ export type Database = {
           webinar_id: string
         }
         Update: {
+          channel?: string
           created_at?: string
           display_name?: string | null
           expires_at?: string
@@ -8898,6 +8916,7 @@ export type Database = {
       webinar_support_activations: {
         Row: {
           activated_at: string | null
+          bale_chat_id: number | null
           created_at: string
           id: string
           phone: string | null
@@ -8908,6 +8927,7 @@ export type Database = {
         }
         Insert: {
           activated_at?: string | null
+          bale_chat_id?: number | null
           created_at?: string
           id?: string
           phone?: string | null
@@ -8918,6 +8938,7 @@ export type Database = {
         }
         Update: {
           activated_at?: string | null
+          bale_chat_id?: number | null
           created_at?: string
           id?: string
           phone?: string | null
