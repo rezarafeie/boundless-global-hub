@@ -190,7 +190,7 @@ export async function getFileUrl(file_id: string): Promise<string | null> {
   const res = await tgCall('getFile', { file_id });
   const path = res?.result?.file_path;
   if (!path) return null;
-  return `https://api.telegram.org/file/bot${BOT_TOKEN}/${path}`;
+  return `${fileBase()}/${path}`;
 }
 
 const EXT_MIME: Record<string, string> = {
@@ -223,7 +223,7 @@ export async function downloadFile(file_id: string): Promise<{ bytes: Uint8Array
   const res = await tgCall('getFile', { file_id });
   const path = res?.result?.file_path;
   if (!path) return null;
-  const url = `https://api.telegram.org/file/bot${BOT_TOKEN}/${path}`;
+  const url = `${fileBase()}/${path}`;
   const r = await fetch(url);
   if (!r.ok) return null;
   const bytes = new Uint8Array(await r.arrayBuffer());
