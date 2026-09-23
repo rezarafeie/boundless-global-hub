@@ -935,6 +935,44 @@ mba
                         در صورت فعال بودن، کارت «فعال‌سازی پشتیبانی» کاربر را به ربات تلگرام هدایت می‌کند و کل مراحل فعال‌سازی رهگیری می‌شود.
                       </p>
 
+                      {/* Bale messenger activation (opt-in) */}
+                      <div className="border-t pt-4 mt-4 space-y-3">
+                        <h4 className="text-sm font-semibold text-foreground">فعال‌سازی از طریق ربات بله</h4>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="bale_support_activation_enabled"
+                            checked={!!formData.bale_support_activation_enabled}
+                            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, bale_support_activation_enabled: checked }))}
+                          />
+                          <Label htmlFor="bale_support_activation_enabled">نمایش دکمه فعال‌سازی در پیام‌رسان بله</Label>
+                        </div>
+                        <p className="text-xs text-muted-foreground pr-8">
+                          در صورت فعال بودن، در صفحه موفقیت ثبت‌نام دکمه فعال‌سازی بله هم نمایش داده می‌شود و پیام‌های ربات از طریق بله هم ارسال می‌شود.
+                        </p>
+                        <div className="bg-muted/40 p-3 rounded-lg">
+                          <Label htmlFor="bale_activation_link">لینک پشتیبانی در بله (اختیاری)</Label>
+                          <Input
+                            id="bale_activation_link"
+                            value={formData.bale_activation_link ?? ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, bale_activation_link: e.target.value }))}
+                            placeholder="https://ble.ir/rafieiacademy"
+                            className="mt-2"
+                          />
+                        </div>
+                        <div className="bg-muted/40 p-3 rounded-lg">
+                          <Label htmlFor="bale_bot_welcome_message">پیام خوش‌آمد ربات بله (اختیاری)</Label>
+                          <Textarea
+                            id="bale_bot_welcome_message"
+                            value={formData.bale_bot_welcome_message ?? ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, bale_bot_welcome_message: e.target.value }))}
+                            rows={3}
+                            className="mt-2"
+                          />
+                        </div>
+                      </div>
+
+
+
                       <div className="bg-muted/40 p-3 rounded-lg mt-2">
                         <Label htmlFor="telegram_activation_keyword">کلمه کلیدی فعال‌سازی</Label>
                         <Input
