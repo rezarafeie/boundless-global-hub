@@ -84,7 +84,7 @@ const DEFAULT_MESSAGES: Record<string, { title: string; text: string }> = {
   mission_submitted: { title: "ماموریت ارسال شد 📤", text: "ماموریت روز {day} دریافت شد و در حال بررسی است." },
   ai_feedback_ready: { title: "بازخورد هوشمند آماده است 🤖", text: "{name}، بازخورد ماموریت روز {day} آماده است.\n{mission_url}" },
   coach_feedback_ready: { title: "مربی ماموریتت را بررسی کرد 👤", text: "{name}، بازخورد مربی برای روز {day} ثبت شد.\n{mission_url}" },
-  revision_requested: { title: "نیاز به اصلاح 🔄", text: "{name}، ماموریت روز {day} نیاز به اصلاح دارد. اصلاح کن و دوباره بفرست.\n{mission_url}" },
+  revision_requested: { title: "نیاز به اصلاح 🔄", text: "{name}، ماموریت روز {day} «{mission_title}» نیاز به اصلاح دارد.\n\n{reasons}\n\nاصلاح کن و دوباره بفرست:\n{mission_url}" },
   mission_completed: { title: "ماموریت روز {day} کامل شد ✅", text: "آفرین {name}! +{xp} امتیاز. استریک فعلی: {streak} روز 🔥" },
   mission_missed: { title: "ماموریت روز {day} از دست رفت", text: "{name}، مهلت ماموریت «{mission_title}» تمام شد. امروز دوباره شروع کن 💪\n{challenge_url}" },
   streak_achieved: { title: "🔥 استریک {streak} روزه!", text: "{name}، {streak} روز پشت سر هم ماموریت‌ها را انجام دادی. ادامه بده!" },
@@ -203,28 +203,45 @@ export async function loadStructure(challengeId: string) {
 
 const OPEN = ["available", "started", "submitted", "pending_ai", "pending_review", "needs_revision"];
 
+// Highest day number the participant may open: the calendar day, or — when
+// the challenge allows early unlock — one past the last consecutively completed day.
+export async function unlockedDay(ch: Challenge, p: Participant) {
+  const today = currentDayNumber(ch);
+  if (!(ch as any).unlock_next_on_complete || today < 1) return today;
+  const { data: rows } = await supabase.from("challenge_progress").select("day_number, status").eq("participant_id", p.id).order("day_number");
+  let last = 0;
+  for (const r of rows ?? []) {
+    if (r.day_number !== last + 1) break;
+    if (!["completed", "skipped"].includes(r.status)) break;
+    last = r.day_number;
+  }
+  return Math.min(Number(ch.days_count) || 1, Math.max(today, last + 1));
+}
+
 export async function ensureProgress(ch: Challenge, p: Participant, structure?: { days: any[]; variants: any[] }) {
   if (!["active", "finished"].includes(ch.status)) return 0;
   const { days, variants } = structure ?? await loadStructure(ch.id);
   const today = currentDayNumber(ch);
+  const limit = await unlockedDay(ch, p);
   const { data: rows } = await supabase.from("challenge_progress").select("day_id").eq("participant_id", p.id);
   const have = new Set((rows ?? []).map((r: any) => r.day_id));
   const joinedDay = currentDayNumber(ch, Date.parse(p.joined_at)) || 1;
   let created = 0;
   for (const d of days) {
-    if (d.day_number > today || have.has(d.id)) continue;
+    if (d.day_number > limit || have.has(d.id)) continue;
     const w = dayWindow(ch, d);
+    const early = d.day_number > today;
     const variant = selectVariant(variants.filter((v: any) => v.day_id === d.id), p);
     const skipped = d.day_number < joinedDay;
     const { error } = await supabase.from("challenge_progress").insert({
       participant_id: p.id, challenge_id: ch.id, day_id: d.id, day_number: d.day_number,
       variant_id: variant?.id ?? null, assignment_id: variant?.assignment_id ?? null, form_id: variant?.form_id ?? null,
       status: skipped ? "skipped" : "available",
-      available_at: new Date(w.available).toISOString(), deadline_at: new Date(w.deadline).toISOString(),
+      available_at: new Date(early ? Date.now() : w.available).toISOString(), deadline_at: new Date(w.deadline).toISOString(),
     });
     if (error) continue; // unique → already created by a parallel run
     created++;
-    if (!skipped && d.day_number === today) {
+    if (!skipped && (d.day_number === today || early)) {
       await emitEvent(ch, p, d.day_number === 1 ? "challenge_started" : "mission_available", `day:${d.day_number}`, {
         day: d.day_number, mission_title: d.title, xp: d.xp,
         deadline: new Date(w.deadline).toLocaleString("fa-IR", { timeZone: "Asia/Tehran" }),
@@ -249,6 +266,23 @@ function aiPassed(sub: any, assignment: any): boolean | null {
   return Number.isFinite(score) ? score >= Number(pass) : true;
 }
 
+// Human-readable list of exactly what must be fixed (coach feedback first, then AI).
+export function revisionReasons(sub: any): string {
+  const out: string[] = [];
+  if (sub?.admin_feedback) out.push(`بازخورد مربی: ${String(sub.admin_feedback).trim()}`);
+  let fb = sub?.ai_feedback;
+  if (typeof fb === "string") { try { fb = JSON.parse(fb); } catch { out.push(fb.slice(0, 800)); fb = null; } }
+  if (fb && typeof fb === "object") {
+    const arr = (v: any) => (Array.isArray(v) ? v : v ? [v] : []).map((x: any) => (typeof x === "string" ? x : x?.text ?? x?.title ?? JSON.stringify(x))).filter(Boolean);
+    const fixes = [...arr(fb.required_changes), ...arr(fb.revisions), ...arr(fb.weaknesses), ...arr(fb.improvements)];
+    const steps = [...arr(fb.next_steps), ...arr(fb.nextSteps)];
+    if (fixes.length) out.push("موارد نیازمند اصلاح:\n" + fixes.slice(0, 6).map((x) => `• ${x}`).join("\n"));
+    if (steps.length) out.push("قدم‌های بعدی:\n" + steps.slice(0, 5).map((x) => `• ${x}`).join("\n"));
+    if (!fixes.length && !steps.length && (fb.summary || fb.feedback)) out.push(String(fb.summary ?? fb.feedback).slice(0, 800));
+  }
+  return out.join("\n\n");
+}
+
 // Reads the linked assignment submission / form submission and derives the
 // mission status. Idempotent; safe to call from cron, student page and admin.
 export async function syncProgressRow(ch: Challenge, p: Participant, row: any, day: any) {
@@ -257,6 +291,7 @@ export async function syncProgressRow(ch: Challenge, p: Participant, row: any, d
   let next = row.status;
   let submissionId = row.submission_id;
   let submittedAt = row.submitted_at;
+  let lastSub: any = null;
 
   if (row.assignment_id) {
     const { data: subs } = await supabase.from("assignment_submissions").select("*")
@@ -265,6 +300,7 @@ export async function syncProgressRow(ch: Challenge, p: Participant, row: any, d
       .order("updated_at", { ascending: false }).limit(5);
     const sub = (subs ?? []).find((s: any) => s.status !== "draft") ?? (subs ?? [])[0];
     if (sub) {
+      lastSub = sub;
       submissionId = sub.id;
       submittedAt = sub.submitted_at ?? submittedAt;
       const { data: assignment } = await supabase.from("assignments").select("passing_score").eq("id", row.assignment_id).maybeSingle();
@@ -298,7 +334,8 @@ export async function syncProgressRow(ch: Challenge, p: Participant, row: any, d
   const patch: Record<string, unknown> = { status: next, submission_id: submissionId, submitted_at: submittedAt };
   await supabase.from("challenge_progress").update(patch).eq("id", row.id);
   if (next === "needs_revision" && row.status !== "needs_revision") {
-    await emitEvent(ch, p, "revision_requested", `prog:${row.id}:rev:${Date.now() - (Date.now() % HOUR)}`, { day: row.day_number }, `${SITE}/challenges/${ch.slug}?day=${row.day_number}&action=revision`);
+    const reasons = lastSub ? revisionReasons(lastSub) : "";
+    await emitEvent(ch, p, "revision_requested", `prog:${row.id}:rev:${Date.now() - (Date.now() % HOUR)}`, { day: row.day_number, mission_title: day?.title ?? "", reasons }, `${SITE}/challenges/${ch.slug}?day=${row.day_number}&action=revision`);
   }
   if (next === "completed") await completeMission(ch, p, { ...row, ...patch }, day);
   return next;
@@ -449,5 +486,7 @@ export async function syncParticipant(ch: Challenge, p: Participant, structure?:
   await ensureProgress(ch, p, s);
   const { data: rows } = await supabase.from("challenge_progress").select("*").eq("participant_id", p.id).in("status", OPEN);
   const byId = new Map(s.days.map((d: any) => [d.id, d]));
-  for (const r of rows ?? []) await syncProgressRow(ch, p, r, byId.get(r.day_id));
+  let completedAny = false;
+  for (const r of rows ?? []) if ((await syncProgressRow(ch, p, r, byId.get(r.day_id))) === "completed") completedAny = true;
+  if ((ch as any).unlock_next_on_complete) await ensureProgress(ch, p, s);
 }

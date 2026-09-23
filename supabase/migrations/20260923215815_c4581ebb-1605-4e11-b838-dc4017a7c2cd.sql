@@ -1,0 +1,1 @@
+ALTER TABLE public.challenges ADD COLUMN IF NOT EXISTS unlock_next_on_complete boolean NOT NULL DEFAULT false;

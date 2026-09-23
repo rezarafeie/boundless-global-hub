@@ -3,7 +3,7 @@ import { supabase } from "../_shared/supabase.ts";
 import { resolveGamificationUserId } from "../_shared/gamification.ts";
 import {
   loadStructure, syncParticipant, emitEvent, reportMetrics, recalcParticipant, completeMission,
-  grantReward, participantStats, currentDayNumber, dayWindow, selectVariant, processRewards,
+  grantReward, participantStats, unlockedDay, currentDayNumber, dayWindow, selectVariant, processRewards,
 } from "../_shared/challenge.ts";
 
 const json = (b: unknown, s = 200) =>
@@ -56,22 +56,23 @@ async function fullState(ch: any, uid: number | null) {
     participant = data;
   }
   const today = currentDayNumber(ch);
+  if (participant && ch.status === "active") await syncParticipant(ch, participant, { days, variants });
+  const visibleDay = participant ? await unlockedDay(ch, participant) : today;
   const publicDays = days.map((d: any) => {
     const w = dayWindow(ch, d);
     return {
-      id: d.id, day_number: d.day_number, title: d.title, short_description: d.day_number <= today ? d.short_description : null,
-      goal: d.day_number <= today ? d.goal : null, estimated_minutes: d.estimated_minutes, xp: d.xp, required: d.required,
+      id: d.id, day_number: d.day_number, title: d.title, short_description: d.day_number <= visibleDay ? d.short_description : null,
+      goal: d.day_number <= visibleDay ? d.goal : null, estimated_minutes: d.estimated_minutes, xp: d.xp, required: d.required,
       review_mode: d.review_mode, stage_update_enabled: d.stage_update_enabled, stage_update_prompt: d.stage_update_prompt,
       stage_update_suggest: d.stage_update_suggest, available_at: new Date(w.available).toISOString(), deadline_at: new Date(w.deadline).toISOString(),
     };
   });
   const base: any = {
     challenge: { ...ch, messages: undefined, notification_settings: undefined, penalty_rules: undefined },
-    days: publicDays, today, participant,
+    days: publicDays, today, unlocked_day: visibleDay, participant,
   };
   if (!participant) return base;
 
-  if (ch.status === "active") await syncParticipant(ch, participant, { days, variants });
   const { data: fresh } = await supabase.from("challenge_participants").select("*").eq("id", participant.id).maybeSingle();
   participant = fresh ?? participant;
   const { data: progress } = await supabase.from("challenge_progress").select("*").eq("participant_id", participant.id).order("day_number");

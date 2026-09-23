@@ -46,7 +46,7 @@ const List: React.FC<{ title: string; items?: any[] }> = ({ title, items }) =>
 const ChallengePage: React.FC = () => {
   const { slug } = useParams();
   const [params, setParams] = useSearchParams();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [state, setState] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -56,13 +56,14 @@ const ChallengePage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const load = useCallback(async (action = 'get') => {
+    if (action === 'get') setLoading(true);
     try { setErrorMsg(null); setState(await challengeApi(action, { ...ident, preview: isPreview })); }
     catch (e: any) { setErrorMsg(e.message); }
     finally { setLoading(false); }
   }, [ident, isPreview]);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (!authLoading) load(); }, [load, authLoading]);
 
-  if (loading) return <div className="flex justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (loading || authLoading) return <div className="flex justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!state?.challenge) return <p dir="rtl" className="py-24 text-center text-muted-foreground">{errorMsg ?? 'چالش یافت نشد.'}</p>;
   if (state.preview) return (
     <div dir="rtl" className="mx-auto max-w-3xl space-y-4 px-4 py-6">
@@ -88,7 +89,8 @@ const ChallengePage: React.FC = () => {
   if (!p) return <Onboarding ch={ch} seg={seg} isAuthenticated={isAuthenticated} busy={busy} onJoin={(profile) => run('join', { profile })} />;
 
   const progress: any[] = state.progress || [];
-  const selectedDay = Number(params.get('day')) || state.today;
+  const openRow = progress.find((r) => ['available', 'started', 'needs_revision'].includes(r.status));
+  const selectedDay = Number(params.get('day')) || openRow?.day_number || state.today;
   const current = progress.find((r) => r.day_number === selectedDay) ?? progress[progress.length - 1];
   const dayInfo = state.days.find((d: any) => d.day_number === current?.day_number);
   const isToday = current?.day_number === state.today;
@@ -185,6 +187,7 @@ const ChallengePage: React.FC = () => {
             {canWork && !current.assignment && !current.form && ['available', 'started'].includes(current.status) && (
               <Button size="lg" className="h-14 w-full text-base font-bold" disabled={busy} onClick={() => run('complete_manual', { progressId: current.id })}>انجام دادم ✅</Button>
             )}
+            {current.status === 'needs_revision' && <RevisionBox sub={current.submission} />}
             {current.status === 'pending_review' && <p className="rounded-lg bg-muted p-3 text-center text-sm">👤 در انتظار بررسی مربی</p>}
             {current.submission?.admin_feedback && (
               <div className="rounded-lg border p-3 text-sm"><p className="mb-1 font-semibold">بازخورد مربی {current.submission.score != null && `(امتیاز ${faNum(current.submission.score)})`}</p><p className="whitespace-pre-line text-muted-foreground">{current.submission.admin_feedback}</p></div>
@@ -259,6 +262,25 @@ const Stat: React.FC<{ icon: React.ReactNode; label: string; value: string }> = 
     <p className="font-semibold">{value}</p>
   </div>
 );
+
+const toList = (v: any): string[] => (Array.isArray(v) ? v : v ? [v] : []).map((x: any) => (typeof x === 'string' ? x : x?.text ?? x?.title ?? JSON.stringify(x))).filter(Boolean);
+const RevisionBox: React.FC<{ sub: any }> = ({ sub }) => {
+  let fb = sub?.ai_feedback;
+  if (typeof fb === 'string') { try { fb = JSON.parse(fb); } catch { fb = { summary: fb }; } }
+  const fixes = fb ? [...toList(fb.required_changes), ...toList(fb.revisions), ...toList(fb.weaknesses), ...toList(fb.improvements)] : [];
+  const steps = fb ? [...toList(fb.next_steps), ...toList(fb.nextSteps)] : [];
+  return (
+    <div className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm">
+      <p className="font-bold text-destructive">🔄 این ماموریت نیاز به اصلاح دارد — دقیقاً این موارد را درست کن:</p>
+      {sub?.admin_feedback && <div><p className="font-semibold">بازخورد مربی</p><p className="whitespace-pre-line text-muted-foreground">{sub.admin_feedback}</p></div>}
+      <List title="موارد نیازمند اصلاح" items={fixes} />
+      <List title="قدم‌های بعدی" items={steps} />
+      {!sub?.admin_feedback && !fixes.length && !steps.length && fb?.summary && <p className="whitespace-pre-line text-muted-foreground">{fb.summary}</p>}
+      {!sub?.admin_feedback && !fb && <p className="text-muted-foreground">جزئیات بازخورد در بخش تمرین پایین نمایش داده می‌شود.</p>}
+      <p className="text-muted-foreground">پس از اصلاح، تمرین را دوباره ارسال کن.</p>
+    </div>
+  );
+};
 
 const Onboarding: React.FC<{ ch: any; seg: any; isAuthenticated: boolean; busy: boolean; onJoin: (p: any) => void }> = ({ ch, seg, isAuthenticated, busy, onJoin }) => {
   const [f, setF] = useState<any>({});
