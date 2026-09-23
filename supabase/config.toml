@@ -265,3 +265,9 @@ verify_jwt = false
 
 [functions.snapppay-callback]
 verify_jwt = false
+
+[functions.bale-webhook]
+verify_jwt = false
+
+[functions.bale-set-webhook]
+verify_jwt = false
