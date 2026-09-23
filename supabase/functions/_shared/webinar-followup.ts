@@ -2,6 +2,7 @@
 import { supabase } from "./supabase.ts";
 import { sendMessage, tgCall, sendRichMessage, buildButtonsKeyboard, appendButtonsAsLinks } from "./telegram.ts";
 import { render, sendEmail, sendSms } from "./support-followup.ts";
+import { botLogChannel, resolveBotTarget, runWithChannel } from "./channel.ts";
 
 export type Followup = any;
 export type Recipient = {
@@ -125,13 +126,15 @@ export async function runWebinarFollowup(
     return { ok: r.ok, results };
   }
 
-  // Telegram channels need a linked telegram chat id
-  const chatId = user?.telegram_chat_id;
-  if (!chatId) {
+  // Bot channels need a linked messenger account — Telegram first, Bale as the mirror.
+  const target = resolveBotTarget(user ?? null);
+  const chatId = target?.chatId;
+  if (!target || !chatId) {
     const ch = fu.channel === "business" ? "telegram_business" : "telegram_bot";
-    await logWebinarSend(fu, rec, userId, ch, "unreachable", "no linked telegram account", logExtra);
-    return { ok: true, results: [{ channel: ch, ok: false, unreachable: true, reason: "no linked telegram account" }] };
+    await logWebinarSend(fu, rec, userId, ch, "unreachable", "no linked telegram/bale account", logExtra);
+    return { ok: true, results: [{ channel: ch, ok: false, unreachable: true, reason: "no linked telegram/bale account" }] };
   }
+  const botChannel = target.channel;
 
   let text = render(fu.bot_text, vars) || "[TEST] webinar followup";
   const mediaUrl = (fu.media_url ?? "").trim();
@@ -147,13 +150,15 @@ export async function runWebinarFollowup(
   const kb = customButtons
     ?? (vars.webinar_link ? [[{ text: "🎥 ورود به وبینار", url: vars.webinar_link }]] : undefined);
 
-  if (fu.channel === "bot") {
-    const res = await sendRichMessage(chatId, text, { mediaUrl, mediaType, mediaItems, keyboard: kb as any, parse_mode: "HTML" });
+  // Bale has no business-account API, so business followups for Bale users are
+  // mirrored through the Bale bot instead.
+  if (fu.channel === "bot" || botChannel === "bale") {
+    const res = await runWithChannel(botChannel, () => sendRichMessage(chatId, text, { mediaUrl, mediaType, mediaItems, keyboard: kb as any, parse_mode: "HTML" }));
     const ok = (res as any)?.ok !== false;
     const errStr = ok ? "" : JSON.stringify(res);
     const permanent = !ok && /chat not found|bot was blocked|user is deactivated|PEER_ID_INVALID|Forbidden/i.test(errStr);
-    await logWebinarSend(fu, rec, userId, "telegram_bot", ok ? "sent" : (permanent ? "unreachable" : "failed"), ok ? undefined : errStr, { ...logExtra, chat_id: chatId, text, media_url: mediaUrl || null, response: res });
-    results.push({ channel: "bot", ok, unreachable: permanent, chat_id: chatId, text, response: res });
+    await logWebinarSend(fu, rec, userId, botLogChannel(botChannel), ok ? "sent" : (permanent ? "unreachable" : "failed"), ok ? undefined : errStr, { ...logExtra, chat_id: chatId, messenger: botChannel, text, media_url: mediaUrl || null, response: res });
+    results.push({ channel: fu.channel, ok, unreachable: permanent, chat_id: chatId, messenger: botChannel, text, response: res });
     return { ok: ok || permanent, results };
   }
 
@@ -252,11 +257,12 @@ export async function fetchUsersByPhones(phones: string[]): Promise<Record<strin
     }
   }
   const all = Array.from(variants.keys());
+  const reachable = (u: any) => Boolean(u?.telegram_chat_id || u?.bale_chat_id);
   const take = (u: any) => {
     const norm = normalizePhone(u.phone);
-    if (norm && (!out[norm] || (!out[norm].telegram_chat_id && u.telegram_chat_id))) out[norm] = u;
+    if (norm && (!out[norm] || (!reachable(out[norm]) && reachable(u)))) out[norm] = u;
   };
-  const cols = "id, name, full_name, first_name, last_name, email, phone, telegram_chat_id";
+  const cols = "id, name, full_name, first_name, last_name, email, phone, telegram_chat_id, bale_chat_id";
   for (let i = 0; i < all.length; i += 500) {
     const chunk = all.slice(i, i + 500);
     const { data } = await supabase.from("chat_users").select(cols).in("phone", chunk);
@@ -281,7 +287,7 @@ export async function fetchUsersByPhones(phones: string[]): Promise<Record<strin
       const digits = String(u.phone ?? "").replace(/[^0-9]/g, "");
       const match = chunk.find((p) => digits.endsWith(p.replace(/^0/, "").slice(-9)));
       if (!match) continue;
-      if (!out[match] || (!out[match].telegram_chat_id && u.telegram_chat_id)) out[match] = u;
+      if (!out[match] || (!reachable(out[match]) && reachable(u))) out[match] = u;
     }
   }
   return out;

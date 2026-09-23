@@ -284,6 +284,23 @@ export async function runStage2(row: Row, opts: { isTest?: boolean } = {}) {
 
 export async function runStage3(row: Row, opts: { isTest?: boolean } = {}) {
   if (!row.telegram_id) {
+    // Bale has no "business account" API — mirror the stage 3 text through the Bale bot
+    // so Bale-only students still receive this followup.
+    const target = botTarget(row);
+    if (target && target.channel === "bale") {
+      const baleVars = buildVars(row);
+      const baleText = render(row.courses.support_followup_stage3_business_text, baleVars) || "[TEST] followup";
+      const baleKb = renderButtons(row.courses.support_followup_stage3_buttons, baleVars);
+      const baleRes = await runWithChannel("bale", () => sendRichMessage(target.chatId, baleText, {
+        mediaUrl: row.courses.support_followup_stage3_media_url,
+        mediaType: row.courses.support_followup_stage3_media_type,
+        keyboard: baleKb as any,
+        parse_mode: "HTML",
+      }));
+      const baleOk = (baleRes as any)?.ok !== false;
+      await logSend(row, 3, "bale_bot", baleOk ? "sent" : "failed", baleOk ? undefined : JSON.stringify(baleRes), { chat_id: target.chatId, messenger: "bale", text: baleText, response: baleRes, is_test: !!opts.isTest });
+      return [{ ok: baleOk, chat_id: target.chatId, messenger: "bale", text: baleText, response: baleRes }];
+    }
     await logSend(row, 3, "telegram_business", "failed", "no telegram_id", { is_test: !!opts.isTest });
     return [{ ok: false, error: "no telegram_id" }];
   }
@@ -340,30 +357,49 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
     await logSendCustom(row, cf, "sms", r.ok ? "sent" : "failed", r.error, { ...logExtra, to: phone, resolved_url: r.url, response: r.body });
     results.push({ channel: "sms", to: phone, resolved_url: r.url, ...r });
   } else if (cf.channel === "bot") {
-    if (!row.telegram_id) {
-      await logSendCustom(row, cf, "telegram_bot", "unreachable", "no telegram_id", logExtra);
-      results.push({ channel: "bot", ok: true, skipped: true, reason: "no telegram_id", unreachable: true });
+    const target = botTarget(row);
+    if (!target) {
+      await logSendCustom(row, cf, "telegram_bot", "unreachable", "no telegram/bale chat id", logExtra);
+      results.push({ channel: "bot", ok: true, skipped: true, reason: "no telegram/bale chat id", unreachable: true });
       return results;
     }
+    const logChannel = botLogChannel(target.channel);
     const text = render(cf.bot_text, vars) || "[TEST] followup";
     const kb = renderButtons(cf.buttons, vars)
       ?? (vars.activation_link ? [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]] : undefined);
-    const res = await sendRichMessage(row.telegram_id, text, {
+    const res = await runWithChannel(target.channel, () => sendRichMessage(target.chatId, text, {
       mediaUrl: cf.media_url,
       mediaType: cf.media_type,
       mediaItems: cfMediaItems(cf),
       keyboard: kb as any,
       parse_mode: "HTML",
-    });
+    }));
 
     const ok = (res as any)?.ok !== false;
     const errStr = ok ? "" : JSON.stringify(res);
     const permanent = !ok && /chat not found|bot was blocked|user is deactivated|PEER_ID_INVALID|Forbidden/i.test(errStr);
     const effectiveOk = ok || permanent;
-    await logSendCustom(row, cf, "telegram_bot", ok ? "sent" : (permanent ? "unreachable" : "failed"), ok ? undefined : errStr, { ...logExtra, chat_id: row.telegram_id, text, response: res });
-    results.push({ channel: "bot", ok: effectiveOk, unreachable: permanent, chat_id: row.telegram_id, text, response: res });
+    await logSendCustom(row, cf, logChannel, ok ? "sent" : (permanent ? "unreachable" : "failed"), ok ? undefined : errStr, { ...logExtra, chat_id: target.chatId, messenger: target.channel, text, response: res });
+    results.push({ channel: "bot", ok: effectiveOk, unreachable: permanent, chat_id: target.chatId, messenger: target.channel, text, response: res });
   } else if (cf.channel === "business") {
     if (!row.telegram_id) {
+      // Bale has no business account API — deliver the same text through the Bale bot.
+      const baleTarget = botTarget(row);
+      if (baleTarget && baleTarget.channel === "bale") {
+        const baleText = render(cf.bot_text, vars) || "[TEST] followup";
+        const baleKb = renderButtons(cf.buttons, vars);
+        const baleRes = await runWithChannel("bale", () => sendRichMessage(baleTarget.chatId, baleText, {
+          mediaUrl: cf.media_url,
+          mediaType: cf.media_type,
+          mediaItems: cfMediaItems(cf),
+          keyboard: baleKb as any,
+          parse_mode: "HTML",
+        }));
+        const baleOk = (baleRes as any)?.ok !== false;
+        await logSendCustom(row, cf, "bale_bot", baleOk ? "sent" : "failed", baleOk ? undefined : JSON.stringify(baleRes), { ...logExtra, chat_id: baleTarget.chatId, messenger: "bale", text: baleText, response: baleRes });
+        results.push({ channel: "business", ok: baleOk, chat_id: baleTarget.chatId, messenger: "bale", text: baleText, response: baleRes });
+        return results;
+      }
       await logSendCustom(row, cf, "telegram_business", "unreachable", "no telegram_id", logExtra);
       // Return ok:true so counter bumps and we stop retrying rows that will never receive anything.
       results.push({ channel: "business", ok: true, skipped: true, reason: "no telegram_id", unreachable: true });
@@ -483,5 +519,5 @@ export const SUPPORT_ACTIVATION_SELECT = `
     support_followup_stage3_buttons
 
   ),
-  chat_users:user_id (id, name, first_name, last_name, full_name, email, phone)
+  chat_users:user_id (id, name, first_name, last_name, full_name, email, phone, telegram_chat_id, bale_chat_id)
 `;

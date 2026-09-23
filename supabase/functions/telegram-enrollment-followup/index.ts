@@ -7,6 +7,13 @@
 //      - Send periodic coaching check-ins.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { sendMessage, escapeHtml, mdToTelegramHtml, type InlineKeyboard } from '../_shared/telegram.ts';
+import { resolveBotTarget, runWithChannel } from '../_shared/channel.ts';
+
+// Reach the student on the messenger they actually linked: Telegram first, Bale as the mirror.
+function botTarget(enr: any, cu?: any) {
+  return resolveBotTarget(enr ?? null, cu ?? null);
+}
+const HAS_BOT_CHAT = 'telegram_chat_id.not.is.null,bale_chat_id.not.is.null';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -106,7 +113,7 @@ async function getEnrollmentBundle(enrollmentId: string) {
     .eq('id', enr.course_id).maybeSingle();
   if (!course) return null;
   const { data: cu } = await supabase.from('chat_users')
-    .select('id, name, email').eq('phone', enr.phone).maybeSingle();
+    .select('id, name, email, telegram_chat_id, bale_chat_id').eq('phone', enr.phone).maybeSingle();
   if (!cu) return null;
   return { enr, course, cu };
 }
@@ -205,7 +212,9 @@ async function processQueueRow(row: any, settings: any) {
     cu.email ?? null,
     isCourse ? '📚 مرور دوره' : '▶️ ادامه درس (Mini App)',
   );
-  await sendMessage(enr.telegram_chat_id, finalText, { keyboard: kbd });
+  const qTarget = botTarget(enr, cu);
+  if (!qTarget) return;
+  await runWithChannel(qTarget.channel, () => sendMessage(qTarget.chatId, finalText, { keyboard: kbd }));
   await recordEvent(
     enr.id,
     isCourse ? 'course_completed' : 'lesson_completed',
@@ -267,7 +276,9 @@ async function processDailyHourReminder(enr: any, settings: any) {
   const kbd = await buildCtaKeyboard(course, enr.id, cu.email ?? null,
     progress.nextLesson ? '▶️ ادامه درس (Mini App)' : '📚 مرور دوره');
   kbd.push([{ text: '⏰ تغییر زمان یادآوری', callback_data: `enroll:settime:${enr.id}` }]);
-  await sendMessage(enr.telegram_chat_id, finalText, { keyboard: kbd });
+  const dTarget = botTarget(enr, cu);
+  if (!dTarget) return;
+  await runWithChannel(dTarget.channel, () => sendMessage(dTarget.chatId, finalText, { keyboard: kbd }));
   await recordEvent(enr.id, 'daily_hour', finalText, { hour: enr.followup_hour_tehran });
 }
 
@@ -275,8 +286,8 @@ async function dailyHourPass(settings: any) {
   const hour = tehranHour();
   const { data: dueRaw } = await supabase
     .from('enrollments')
-    .select('id, phone, course_id, telegram_chat_id, followup_hour_tehran')
-    .not('telegram_chat_id', 'is', null)
+    .select('id, phone, course_id, telegram_chat_id, bale_chat_id, followup_hour_tehran')
+    .or(HAS_BOT_CHAT)
     .eq('followup_hour_tehran', hour)
     .limit(300);
   let n = 0;
@@ -299,8 +310,8 @@ async function inactivityPass(settings: any) {
     const cutoff = new Date(Date.now() - tier.days * 24 * 3600 * 1000).toISOString();
     const { data: rows } = await supabase
       .from('enrollments')
-      .select('id, phone, course_id, telegram_chat_id, last_activity_at, inactivity_stage, followup_state')
-      .not('telegram_chat_id', 'is', null)
+      .select('id, phone, course_id, telegram_chat_id, bale_chat_id, last_activity_at, inactivity_stage, followup_state')
+      .or(HAS_BOT_CHAT)
       .lt('inactivity_stage', tier.stage)
       .or(`last_activity_at.lte.${cutoff},last_activity_at.is.null`)
       .neq('followup_state', 'completed')
@@ -335,7 +346,9 @@ async function inactivityPass(settings: any) {
         if (tier.days >= 14) {
           kbd.push([{ text: '💬 چی مانعم میشه؟', callback_data: `coach:reply:${enr.id}` }]);
         }
-        await sendMessage(enr.telegram_chat_id, finalText, { keyboard: kbd });
+        const iTarget = botTarget(enr, cu);
+        if (!iTarget) continue;
+        await runWithChannel(iTarget.channel, () => sendMessage(iTarget.chatId, finalText, { keyboard: kbd }));
         await recordEvent(enr.id, tier.eventType, finalText, { tier: tier.days });
         await supabase.from('enrollments').update({ inactivity_stage: tier.stage }).eq('id', enr.id);
         n++;
@@ -350,8 +363,8 @@ async function coachingPass(settings: any) {
   // Eligible: counter >= 5 OR last coaching event > 10 days ago.
   const { data: rows } = await supabase
     .from('enrollments')
-    .select('id, phone, course_id, telegram_chat_id, coaching_lessons_since_checkin, followup_state')
-    .not('telegram_chat_id', 'is', null)
+    .select('id, phone, course_id, telegram_chat_id, bale_chat_id, coaching_lessons_since_checkin, followup_state')
+    .or(HAS_BOT_CHAT)
     .gte('coaching_lessons_since_checkin', 5)
     .neq('followup_state', 'completed')
     .limit(100);
@@ -369,7 +382,9 @@ async function coachingPass(settings: any) {
       if (cProgress.total > 0 && cProgress.completed >= cProgress.total) continue;
       const question = COACHING_QUESTIONS[Math.floor(Math.random() * COACHING_QUESTIONS.length)];
       const text = `سلام ${escapeHtml(cu.name ?? '')} 🌿\nیه سوال کوتاه برای اینکه بهتر کمکت کنم:\n\n<b>${escapeHtml(question)}</b>\n\nهمین‌جا توی همین چت جواب بده.`;
-      await sendMessage(enr.telegram_chat_id, text);
+      const cTarget = botTarget(enr, cu);
+      if (!cTarget) continue;
+      await runWithChannel(cTarget.channel, () => sendMessage(cTarget.chatId, text));
       await recordEvent(enr.id, 'coaching_checkin', text, { question });
       await supabase.from('enrollments').update({ coaching_lessons_since_checkin: 0 }).eq('id', enr.id);
       n++;
@@ -398,8 +413,9 @@ async function activationNudgePass() {
     const lower = new Date(Date.now() - (tier.days + 14) * 24 * 3600 * 1000).toISOString();
     const { data: rows } = await supabase
       .from('enrollments')
-      .select('id, full_name, phone, email, course_id, created_at, chat_user_id, payment_status, telegram_chat_id, courses!inner(id, title, slug, rafiei_bot_followup_enabled)')
+      .select('id, full_name, phone, email, course_id, created_at, chat_user_id, payment_status, telegram_chat_id, bale_chat_id, courses!inner(id, title, slug, rafiei_bot_followup_enabled)')
       .is('telegram_chat_id', null)
+      .is('bale_chat_id', null)
       .in('payment_status', ['completed', 'success'])
       .lte('created_at', upper)
       .gte('created_at', lower)

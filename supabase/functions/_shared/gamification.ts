@@ -505,8 +505,9 @@ export async function notifyStudent(
     } catch (e) { errors.telegram_bot = String(e); }
   }
 
-  // bale bot (opt-in per course)
-  if ((course as any)?.bale_support_activation_enabled && (user as any).bale_chat_id && !channels.has("bale_bot")) {
+  // bale bot — only for students who are NOT reachable on Telegram, so nobody
+  // ever receives the same message twice on two messengers.
+  if (!channels.has("telegram_bot") && (user as any).bale_chat_id && !channels.has("bale_bot")) {
     try {
       const response = await baleSendMessage(Number((user as any).bale_chat_id), stripHtml(body));
       if ((response as any)?.ok) channels.add("bale_bot");
