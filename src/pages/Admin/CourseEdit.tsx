@@ -111,6 +111,9 @@ const CourseEdit: React.FC = () => {
     rafiei_bot_activation_required: false,
     rafiei_bot_followup_config: { lesson_complete: true, course_complete: true, inactivity: true, coaching: true } as { lesson_complete: boolean; course_complete: boolean; inactivity: boolean; coaching: boolean },
     telegram_support_activation_enabled: false,
+    bale_support_activation_enabled: false,
+    bale_activation_link: '',
+    bale_bot_welcome_message: '',
     telegram_course_access_via_bot_enabled: false,
     telegram_bot_welcome_message: 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال و دوره برات فعال بشه.',
     telegram_bot_activated_message: 'درود بر شما {{name}} 🌱\nپشتیبانی اختصاصی شما با موفقیت فعال شد ✅\n\nدسترسی به دوره «{{course_title}}» از دکمه‌های زیر برای شما فعال است.\n\nبا آرزوی موفقیت\nتیم پشتیبانی آکادمی رفیعی',
@@ -224,6 +227,9 @@ const CourseEdit: React.FC = () => {
         lead_start_date: data.lead_start_date ? new Date(data.lead_start_date).toISOString().slice(0, 16) : '',
         vpn_warning_enabled: (data as any).vpn_warning_enabled || false,
         telegram_support_activation_enabled: (data as any).telegram_support_activation_enabled || false,
+        bale_support_activation_enabled: (data as any).bale_support_activation_enabled || false,
+        bale_activation_link: (data as any).bale_activation_link || '',
+        bale_bot_welcome_message: (data as any).bale_bot_welcome_message || '',
         telegram_course_access_via_bot_enabled: (data as any).telegram_course_access_via_bot_enabled || false,
         telegram_bot_welcome_message: (data as any).telegram_bot_welcome_message || 'درود {{name}} عزیز 🌱\n\nبه آکادمی رفیعی خوش اومدی.\n\nبرای فعال‌سازی پشتیبانی دوره «{{course_title}}»، روی دکمه زیر بزن.\nبعد از باز شدن چت پشتیبانی، فقط گزینه Send / ارسال پیام رو بزن تا اطلاعاتت برای تیم پشتیبانی ارسال و دوره برات فعال بشه.',
         telegram_bot_activated_message: (data as any).telegram_bot_activated_message || 'درود بر شما {{name}} 🌱\nپشتیبانی اختصاصی شما با موفقیت فعال شد ✅\n\nدسترسی به دوره «{{course_title}}» از دکمه‌های زیر برای شما فعال است.\n\nبا آرزوی موفقیت\nتیم پشتیبانی آکادمی رفیعی',
@@ -356,6 +362,9 @@ const CourseEdit: React.FC = () => {
         lead_start_date: formData.use_enrollments_as_leads && formData.lead_start_date ? new Date(formData.lead_start_date).toISOString() : null,
         vpn_warning_enabled: formData.vpn_warning_enabled,
         telegram_support_activation_enabled: formData.telegram_support_activation_enabled,
+        bale_support_activation_enabled: formData.bale_support_activation_enabled,
+        bale_activation_link: formData.bale_activation_link?.trim() || null,
+        bale_bot_welcome_message: formData.bale_bot_welcome_message?.trim() || null,
         telegram_course_access_via_bot_enabled: formData.telegram_course_access_via_bot_enabled,
         telegram_bot_welcome_message: formData.telegram_bot_welcome_message?.trim() || null,
         telegram_bot_activated_message: formData.telegram_bot_activated_message?.trim() || null,
@@ -934,6 +943,44 @@ mba
                       <p className="text-xs text-muted-foreground pr-8">
                         در صورت فعال بودن، کارت «فعال‌سازی پشتیبانی» کاربر را به ربات تلگرام هدایت می‌کند و کل مراحل فعال‌سازی رهگیری می‌شود.
                       </p>
+
+                      {/* Bale messenger activation (opt-in) */}
+                      <div className="border-t pt-4 mt-4 space-y-3">
+                        <h4 className="text-sm font-semibold text-foreground">فعال‌سازی از طریق ربات بله</h4>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="bale_support_activation_enabled"
+                            checked={!!formData.bale_support_activation_enabled}
+                            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, bale_support_activation_enabled: checked }))}
+                          />
+                          <Label htmlFor="bale_support_activation_enabled">نمایش دکمه فعال‌سازی در پیام‌رسان بله</Label>
+                        </div>
+                        <p className="text-xs text-muted-foreground pr-8">
+                          در صورت فعال بودن، در صفحه موفقیت ثبت‌نام دکمه فعال‌سازی بله هم نمایش داده می‌شود و پیام‌های ربات از طریق بله هم ارسال می‌شود.
+                        </p>
+                        <div className="bg-muted/40 p-3 rounded-lg">
+                          <Label htmlFor="bale_activation_link">لینک پشتیبانی در بله (اختیاری)</Label>
+                          <Input
+                            id="bale_activation_link"
+                            value={formData.bale_activation_link ?? ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, bale_activation_link: e.target.value }))}
+                            placeholder="https://ble.ir/rafieiacademy"
+                            className="mt-2"
+                          />
+                        </div>
+                        <div className="bg-muted/40 p-3 rounded-lg">
+                          <Label htmlFor="bale_bot_welcome_message">پیام خوش‌آمد ربات بله (اختیاری)</Label>
+                          <Textarea
+                            id="bale_bot_welcome_message"
+                            value={formData.bale_bot_welcome_message ?? ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, bale_bot_welcome_message: e.target.value }))}
+                            rows={3}
+                            className="mt-2"
+                          />
+                        </div>
+                      </div>
+
+
 
                       <div className="bg-muted/40 p-3 rounded-lg mt-2">
                         <Label htmlFor="telegram_activation_keyword">کلمه کلیدی فعال‌سازی</Label>

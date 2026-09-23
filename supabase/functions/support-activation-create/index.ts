@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
 
     // Build support prefilled link + persist if empty
     const [{ data: course }, { data: user }] = await Promise.all([
-      supabase.from('courses').select('title, support_link, smart_activation_telegram_link, telegram_activation_keyword, support_prefilled_message_template, slug').eq('id', course_id).maybeSingle(),
+      supabase.from('courses').select('title, support_link, smart_activation_telegram_link, telegram_activation_keyword, support_prefilled_message_template, slug, bale_support_activation_enabled').eq('id', course_id).maybeSingle(),
       supabase.from('chat_users').select('name, first_name, last_name, phone, email').eq('id', user_id).maybeSingle(),
     ]);
 
@@ -121,7 +121,14 @@ Deno.serve(async (req) => {
       payload_json: {},
     });
 
-    return json({ activation: row });
+    // Bale deep link (opt-in per course)
+    const baleEnabled = !!(course as any)?.bale_support_activation_enabled;
+    const baleUser = (Deno.env.get('BALE_BOT_USERNAME') ?? '').replace(/^@/, '');
+    const bale_link = baleEnabled && row.activation_token
+      ? `https://ble.ir/${baleUser || 'rafiei_bot'}?start=${encodeURIComponent('sact_' + row.activation_token)}`
+      : null;
+
+    return json({ activation: row, bale_enabled: baleEnabled, bale_link });
   } catch (e) {
     return json({ error: (e as Error).message }, 500);
   }

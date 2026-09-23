@@ -2,6 +2,7 @@
 // Opt-in per course via public.course_gamification_settings.enabled.
 import { supabase } from "./supabase.ts";
 import { sendMessage, tgCall } from "./telegram.ts";
+import { baleSendMessage, stripHtml } from "./bale.ts";
 import { sendEmail, sendSms } from "./support-followup.ts";
 import { gamMessage, gamText } from "./gamificationMessages.ts";
 
@@ -475,11 +476,11 @@ export async function notifyStudent(
   const delivered = new Set<string>(Array.isArray(previous?.channels) ? previous.channels : []);
 
   const { data: user } = await supabase
-    .from("chat_users").select("id, name, full_name, phone, email, telegram_chat_id")
+    .from("chat_users").select("id, name, full_name, phone, email, telegram_chat_id, bale_chat_id")
     .eq("id", userId).maybeSingle();
   if (!user) return { skipped: true, reason: "user_not_found" };
 
-  const { data: course } = await supabase.from("courses").select("title, slug").eq("id", courseId).maybeSingle();
+  const { data: course } = await supabase.from("courses").select("title, slug, bale_support_activation_enabled").eq("id", courseId).maybeSingle();
   const courseTitle = course?.title ?? "";
   const msg = gamMessage(s?.messages ?? {}, kind, {
     course_title: courseTitle,
@@ -503,6 +504,17 @@ export async function notifyStudent(
       else errors.telegram_bot = JSON.stringify(response);
     } catch (e) { errors.telegram_bot = String(e); }
   }
+
+  // bale bot (opt-in per course)
+  if ((course as any)?.bale_support_activation_enabled && (user as any).bale_chat_id && !channels.has("bale_bot")) {
+    try {
+      const response = await baleSendMessage(Number((user as any).bale_chat_id), stripHtml(body));
+      if ((response as any)?.ok) channels.add("bale_bot");
+      else errors.bale_bot = JSON.stringify(response);
+    } catch (e) { errors.bale_bot = String(e); }
+  }
+
+
 
   // telegram business (only when support is activated)
   try {
