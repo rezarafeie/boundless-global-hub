@@ -2,6 +2,7 @@
 // Opt-in per course via public.course_gamification_settings.enabled.
 import { supabase } from "./supabase.ts";
 import { sendMessage, tgCall } from "./telegram.ts";
+import { baleSendMessage, stripHtml } from "./bale.ts";
 import { sendEmail, sendSms } from "./support-followup.ts";
 import { gamMessage, gamText } from "./gamificationMessages.ts";
 
