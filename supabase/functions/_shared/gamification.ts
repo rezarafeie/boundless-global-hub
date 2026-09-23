@@ -426,11 +426,20 @@ export async function buildStatus(userId: number, courseId: string) {
       lesson_number: missionLesson?.lesson_number ?? null,
       remainingMs: Math.max(0, new Date(mission.due_at).getTime() - now),
     } : null,
-    rewards: (allRewards ?? []).map((r: any) => ({
-      ...r,
-      unlocked: (earned ?? []).some((e: any) => e.reward_id === r.id),
+    rewards: (allRewards ?? []).map((r: any) => {
+      const unlocked = (earned ?? []).some((e: any) => e.reward_id === r.id);
+      return {
+        ...r,
+        unlocked,
+        // Only reveal the actual value (discount code, link, credit) once earned.
+        reward_value: unlocked ? r.reward_value : null,
+        value_label: unlocked ? rewardValueLabel(r.reward_type, r.reward_value) : null,
+      };
+    }),
+    earnedRewards: (earned ?? []).map((e: any) => ({
+      ...e,
+      value_label: rewardValueLabel(e.reward_type, e.reward_value),
     })),
-    earnedRewards: earned ?? [],
   };
 }
 
