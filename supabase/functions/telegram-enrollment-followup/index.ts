@@ -249,6 +249,8 @@ async function processDailyHourReminder(enr: any, settings: any) {
 
   const progress = await buildProgressContext(course.id, cu.id);
   const isComplete = progress.total > 0 && progress.completed >= progress.total;
+  // Course finished → stop all follow-up nudges for this student.
+  if (isComplete) return;
   const userContext = [
     `رویداد: یادآوری روزانه ساعت ${enr.followup_hour_tehran}`,
     `نام دانشجو: ${cu.name ?? ''}`,
@@ -363,6 +365,8 @@ async function coachingPass(settings: any) {
       const cfg = courseFollowupConfig(course);
       if (!cfg.coaching) continue;
       if (await recentAutoMessageWithinHours(enr.id, 48)) continue;
+      const cProgress = await buildProgressContext(course.id, cu.id);
+      if (cProgress.total > 0 && cProgress.completed >= cProgress.total) continue;
       const question = COACHING_QUESTIONS[Math.floor(Math.random() * COACHING_QUESTIONS.length)];
       const text = `سلام ${escapeHtml(cu.name ?? '')} 🌿\nیه سوال کوتاه برای اینکه بهتر کمکت کنم:\n\n<b>${escapeHtml(question)}</b>\n\nهمین‌جا توی همین چت جواب بده.`;
       await sendMessage(enr.telegram_chat_id, text);
