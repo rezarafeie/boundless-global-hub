@@ -2,6 +2,7 @@
 import { supabase } from "./supabase.ts";
 import { sendMessage, tgCall, sendRichMessage, buildButtonsKeyboard, appendButtonsAsLinks } from "./telegram.ts";
 import { render, sendEmail, sendSms } from "./support-followup.ts";
+import { botLogChannel, resolveBotTarget, runWithChannel } from "./channel.ts";
 
 export type Followup = any;
 export type Recipient = {
