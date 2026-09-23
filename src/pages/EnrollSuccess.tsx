@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, CheckCircle, XCircle, ExternalLink, RefreshCw, MessageSquare, Send, Phone, Zap, Brain, User, CreditCard, Clock, Lock } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, ExternalLink, RefreshCw, MessageSquare, Send, Phone, Zap, Brain, User, CreditCard, Clock, Lock, BookOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -691,6 +691,7 @@ const EnrollSuccess: React.FC = () => {
   const [smartActivated, setSmartActivated] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
   const [coachFlags, setCoachFlags] = useState<{ enabled: boolean; required: boolean; supportLink?: string | null } | null>(null);
+  const [courseLessons, setCourseLessons] = useState<Array<{ id: string; title: string; duration: number | null; lesson_number: number | null }>>([]);
 
   // FOMO countdown for the activation CTA — starts ticking once the page loads successfully
   const ACTIVATION_WINDOW_SECONDS = 15 * 60;
@@ -739,6 +740,37 @@ const EnrollSuccess: React.FC = () => {
       cancelled = true;
     };
   }, [result?.success, result?.enrollment?.id, result?.enrollment?.course_id, result?.course?.id]);
+
+  useEffect(() => {
+    const courseId = result?.enrollment?.course_id ?? result?.course?.id;
+    if (!result?.success || !courseId) {
+      setCourseLessons([]);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('course_lessons')
+        .select('id, title, duration, lesson_number, order_index')
+        .eq('course_id', courseId)
+        .order('order_index', { ascending: true })
+        .limit(8);
+
+      if (!cancelled && !error) {
+        setCourseLessons((data ?? []).map((lesson: any, index: number) => ({
+          id: lesson.id,
+          title: lesson.title,
+          duration: lesson.duration,
+          lesson_number: lesson.lesson_number ?? index + 1,
+        })));
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [result?.success, result?.enrollment?.course_id, result?.course?.id]);
 
   // Auto-authenticate user after successful enrollment
   useEffect(() => {
@@ -1313,73 +1345,35 @@ const EnrollSuccess: React.FC = () => {
         <div className="max-w-2xl mx-auto min-w-0">
           {result?.success ? (
             // Success State
-            <Card className="bg-card/80 backdrop-blur-sm border shadow-xl">
-              <CardHeader className="text-center">
-                <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
-                  <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+            <Card className="overflow-hidden border-border bg-card shadow-sm">
+              <CardHeader className="px-6 pb-5 pt-9 text-center sm:px-8">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success-soft">
+                  <CheckCircle className="h-8 w-8 text-success" />
                 </div>
-                <CardTitle className="text-2xl text-green-700 dark:text-green-400 mb-2">
-                  🎉 ثبت‌نام موفقیت‌آمیز!
+                <CardTitle className="mb-2 text-2xl text-foreground">
+                  ثبت‌نام شما با موفقیت انجام شد
                 </CardTitle>
                 <p className="text-muted-foreground">
-                  پرداخت شما با موفقیت انجام شد و ثبت‌نام تکمیل گردید.
+                  {result.course?.title ? `ثبت‌نام شما در «${result.course.title}» تأیید شد.` : 'پرداخت شما تأیید شد و ثبت‌نام تکمیل گردید.'}
                 </p>
               </CardHeader>
               
               <CardContent className="space-y-6">
-                {/* Telegram Coach Wizard launcher */}
-                {coachFlags?.enabled && result.enrollment?.id && (
-                  <button
-                    type="button"
-                    onClick={() => setCoachOpen(true)}
-                    className="group relative w-full overflow-hidden rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-5 text-right shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/30 transition-all"
-                  >
-                    <div className="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full bg-cyan-500/20 blur-2xl" />
-                    <div className="pointer-events-none absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-indigo-500/20 blur-2xl" />
-                    <div className="relative flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center shadow-md shadow-indigo-500/30 group-hover:scale-105 transition-transform">
-                        <Bot className="h-6 w-6 text-white" />
+                {/* Final activation */}
+                {result.course && ((result.course.support_activation_required && !result.course.smart_activation_enabled) || result.course.smart_activation_enabled || result.course.telegram_activation_required || result.course.telegram_support_activation_enabled) && (
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-5 sm:p-6">
+                    <div className="mb-5 flex items-start gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-card">
+                        <Lock className="h-5 w-5 text-primary" />
                       </div>
-                      <div className="flex-1 min-w-0 text-slate-100">
-                        <div className="flex items-center gap-2">
-                          <p className="font-bold text-base truncate">
-                            راه‌اندازی کوچ شخصی تلگرام
-                          </p>
-                          {coachFlags.required && (
-                            <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px]">
-                              اجباری
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-400 mt-1 truncate">
-                          اتصال به ربات + فعال‌سازی پشتیبانی در یک ویزارد سریع
+                      <div>
+                        <Badge variant="outline" className="mb-2 border-primary/25 bg-card text-primary">مرحله نهایی</Badge>
+                        <h3 className="text-lg font-bold text-foreground">فعال‌سازی دسترسی به دوره</h3>
+                        <p className="mt-1 text-sm leading-7 text-muted-foreground">
+                          برای اتصال امن ثبت‌نام شما به حساب آموزشی و دریافت پشتیبانی، فعال‌سازی را در تلگرام تکمیل کنید. بلافاصله پس از تأیید، جلسات دوره برای شما باز می‌شوند.
                         </p>
                       </div>
-                      <div className="h-9 px-3 rounded-lg bg-white text-slate-900 text-xs font-semibold flex items-center gap-1 group-hover:bg-slate-100 transition-colors">
-                        شروع
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </div>
                     </div>
-                  </button>
-                )}
-
-                {/* 🚨 FINAL ACTIVATION — the only way into the course */}
-                {result.course && ((result.course.support_activation_required && !result.course.smart_activation_enabled) || result.course.smart_activation_enabled || result.course.telegram_activation_required || result.course.telegram_support_activation_enabled) && (
-                  <div className="relative overflow-hidden rounded-2xl border-2 border-amber-300 dark:border-amber-700 bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 dark:from-amber-950/50 dark:via-orange-950/40 dark:to-amber-950/30 p-5 sm:p-7 shadow-xl">
-                    {/* Step badge */}
-                    <div className="flex justify-center mb-3">
-                      <Badge className="bg-amber-500 hover:bg-amber-500 text-white text-xs font-bold px-3 py-1 shadow-md">
-                        قدم آخر — کمتر از ۱ دقیقه
-                      </Badge>
-                    </div>
-
-                    <h3 className="text-center text-xl sm:text-2xl font-extrabold text-amber-900 dark:text-amber-300 leading-relaxed flex items-center justify-center gap-2">
-                      <Lock className="h-5 w-5 flex-shrink-0" />
-                      بدون فعال‌سازی، وارد دوره نمی‌شوید
-                    </h3>
-                    <p className="text-center text-sm sm:text-base text-amber-800/90 dark:text-amber-200/80 mt-2 max-w-lg mx-auto leading-relaxed">
-                      پرداخت شما کامل شده ✅ اما دسترسی به محتوای دوره فقط با یک کلیک روی دکمه زیر باز می‌شود — این تنها راه ورود به دوره است.
-                    </p>
 
                     {(() => {
                       const smartReady = !!result.course.smart_activation_enabled && !!result.course.smart_activation_telegram_link;
@@ -1388,7 +1382,7 @@ const EnrollSuccess: React.FC = () => {
 
                       if (smartReady && smartActivated) {
                         return (
-                          <div className="mt-5 flex items-center justify-center gap-2 rounded-xl border-2 border-green-400 dark:border-green-700 bg-green-50 dark:bg-green-900/20 p-4 text-green-700 dark:text-green-300 font-bold">
+                          <div className="mt-5 flex items-center justify-center gap-2 rounded-lg border border-success/30 bg-success-soft p-4 font-bold text-success">
                             <CheckCircle className="h-5 w-5" />
                             فعال‌سازی با موفقیت انجام شد
                           </div>
@@ -1403,7 +1397,7 @@ const EnrollSuccess: React.FC = () => {
 
                       return (
                         <>
-                          <button
+                          <Button
                             type="button"
                             onClick={smartPending
                               ? async () => {
@@ -1429,30 +1423,27 @@ const EnrollSuccess: React.FC = () => {
                                   const finalUrl = await resolveTelegramUrl('', 'support');
                                   if (finalUrl) openInNewTab(finalUrl);
                                 }}
-                            className="mt-5 w-full rounded-xl bg-gradient-to-l from-green-600 via-emerald-500 to-green-600 px-6 py-4 sm:py-5 text-lg sm:text-xl font-extrabold text-white shadow-xl shadow-green-600/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl active:scale-[0.99] flex items-center justify-center gap-3 group"
+                            size="lg"
+                            className="mt-5 h-13 w-full gap-3 bg-success text-base font-bold text-success-foreground hover:bg-success/90"
                           >
-                            <Send className="h-5 w-5 sm:h-6 sm:w-6 group-hover:-translate-x-1 transition-transform" />
-                            {result.course.telegram_only_access ? 'فعال‌سازی کن و وارد دوره شو' : 'همین حالا فعال‌سازی کن'}
-                          </button>
-                          <p className="text-center text-xs text-amber-700 dark:text-amber-300/80 mt-2">
-                            با یک کلیک، فعال‌سازی در تلگرام انجام می‌شود
+                            <Send className="h-5 w-5" />
+                            اتصال به پشتیبانی و شروع دوره
+                          </Button>
+                          <p className="mt-2 text-center text-xs text-muted-foreground">
+                            این مرحله کمتر از یک دقیقه زمان می‌برد
                           </p>
 
-                          {/* FOMO countdown */}
-                          <div className="mt-4 flex items-center justify-center gap-2 flex-wrap rounded-xl border border-amber-300 dark:border-amber-700 bg-white/60 dark:bg-black/20 px-4 py-2.5 text-sm font-bold text-amber-800 dark:text-amber-300">
-                            <Clock className="h-4 w-4 animate-pulse flex-shrink-0" />
+                          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-muted-foreground">
+                            <Clock className="h-4 w-4 flex-shrink-0 text-primary" />
                             {activationSecondsLeft > 0 ? (
                               <span>
-                                فقط{' '}
-                                <span dir="ltr" className="inline-block font-mono tabular-nums text-base text-red-600 dark:text-red-400">
+                                فرصت فعال‌سازی رایگان:{' '}
+                                <span dir="ltr" className="inline-block font-mono tabular-nums font-bold text-foreground">
                                   {faDigits(`${timerMM}:${timerSS}`)}
-                                </span>{' '}
-                                تا فعال‌سازی رایگان و دسترسی به دوره فرصت دارید
+                                </span>
                               </span>
                             ) : (
-                              <span className="text-red-600 dark:text-red-400">
-                                ⏰ دسترسی شما هنوز فعال نشده — همین حالا دکمه بالا را بزنید
-                              </span>
+                              <span>برای بررسی وضعیت فعال‌سازی، دکمه بالا را انتخاب کنید.</span>
                             )}
                           </div>
                         </>
@@ -1461,8 +1452,8 @@ const EnrollSuccess: React.FC = () => {
 
                     {/* Secondary requirements */}
                     {result.course.support_activation_required && !result.course.smart_activation_enabled && !result.course.telegram_support_activation_enabled && (
-                      <div className="mt-4 flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300 bg-white/50 dark:bg-black/10 rounded-lg p-3">
-                        <div className="w-2 h-2 bg-amber-500 rounded-full flex-shrink-0" />
+                        <div className="mt-4 flex items-center gap-2 rounded-lg bg-card p-3 text-sm text-muted-foreground">
+                          <div className="h-2 w-2 flex-shrink-0 rounded-full bg-primary" />
                         <span>فعال‌سازی پشتیبانی (اجباری)</span>
                       </div>
                     )}
@@ -1474,9 +1465,9 @@ const EnrollSuccess: React.FC = () => {
                           const finalUrl = await resolveTelegramUrl(result.course.telegram_channel_link!, 'telegram');
                           if (finalUrl) openInNewTab(finalUrl);
                         }}
-                        className="mt-3 flex items-center gap-3 w-full p-3 rounded-lg bg-white/60 dark:bg-black/20 border border-blue-200 dark:border-blue-800 hover:bg-white transition-all duration-200 group text-right"
+                        className="mt-3 flex w-full items-center gap-3 rounded-lg border border-border bg-card p-3 text-right transition-colors hover:bg-accent"
                       >
-                        <Send className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                          <Send className="h-4 w-4 flex-shrink-0 text-primary" />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm text-foreground">عضویت در کانال تلگرام (اجباری)</p>
                           <p className="text-xs text-muted-foreground">برای اطلاع‌رسانی‌های دوره حتماً عضو شوید</p>
@@ -1486,25 +1477,44 @@ const EnrollSuccess: React.FC = () => {
                     )}
 
                     {result.course.telegram_activation_required && !result.course.telegram_channel_link && (
-                      <div className="mt-4 flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300 bg-white/50 dark:bg-black/10 rounded-lg p-3">
-                        <div className="w-2 h-2 bg-amber-500 rounded-full flex-shrink-0" />
+                        <div className="mt-4 flex items-center gap-2 rounded-lg bg-card p-3 text-sm text-muted-foreground">
+                          <div className="h-2 w-2 flex-shrink-0 rounded-full bg-primary" />
                         <span>عضویت در کانال تلگرام (اجباری)</span>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* Telegram Only Access Message */}
                 {result.course?.telegram_only_access && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800 text-center">
-                    <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-2 text-lg">
-                      🔐 دسترسی به محتوای دوره
-                    </h3>
-                    <p className="text-blue-700 dark:text-blue-300 mb-4">
-                      <strong>دسترسی به محتوای این دوره فقط از طریق فعال‌سازی تلگرام امکان‌پذیر است.</strong>
-                    </p>
-                    <p className="text-sm text-blue-600 dark:text-blue-400">
-                      از دکمه سبز بزرگ «فعال‌سازی» در بالای همین صفحه استفاده کنید تا دسترسی‌تان باز شود.
+                  <div className="border-t border-border pt-6">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="h-5 w-5 text-primary" />
+                        <h3 className="font-bold text-foreground">فهرست جلسات دوره</h3>
+                      </div>
+                      <Badge variant="secondary">پس از فعال‌سازی باز می‌شود</Badge>
+                    </div>
+                    <div className="space-y-2" aria-label="پیش‌نمایش قفل‌شده جلسات دوره">
+                      {courseLessons.length > 0 ? courseLessons.map((lesson, index) => (
+                        <div key={lesson.id} className="flex min-h-14 items-center gap-3 rounded-lg border border-border bg-muted/35 px-3 py-2.5">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-card text-xs font-bold text-muted-foreground">
+                            {new Intl.NumberFormat('fa-IR', { minimumIntegerDigits: 2 }).format(lesson.lesson_number ?? index + 1)}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-foreground">{lesson.title}</p>
+                            {lesson.duration ? <p className="mt-0.5 text-xs text-muted-foreground">{new Intl.NumberFormat('fa-IR').format(lesson.duration)} دقیقه</p> : null}
+                          </div>
+                          <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        </div>
+                      )) : (
+                        <div className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 p-5 text-sm text-muted-foreground">
+                          <Lock className="h-4 w-4" />
+                          فهرست کامل جلسات پس از فعال‌سازی نمایش داده می‌شود
+                        </div>
+                      )}
+                    </div>
+                    <p className="mt-4 text-center text-xs text-muted-foreground">
+                      همه جلسات بلافاصله پس از تأیید تلگرام در حساب آموزشی شما فعال می‌شوند.
                     </p>
                   </div>
                 )}

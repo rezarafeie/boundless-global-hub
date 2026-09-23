@@ -21,3 +21,7 @@
 - [x] Recover access windows for returning completed enrollments
 - [x] Retry failed delivery channels without duplicating successful messages
 - [x] Verify deployed status, reminder scheduler, identity mapping, and channel retry tracking
+
+## Enrollment activation experience
+- [x] Replace alarmist activation messaging with a calm, transparent confirmation flow
+- [x] Show the enrolled course's real lesson list as locked until Telegram activation
