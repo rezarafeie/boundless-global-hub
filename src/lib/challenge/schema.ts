@@ -107,8 +107,8 @@ export const JSON_TEMPLATE = {
   onboarding_form: {
     title: 'پروفایل چالش', description: 'چند سوال کوتاه', ai_prompt: 'پروفایل دانشجو را خلاصه کن و مسیر پیشنهادی بده.', require_login: true,
     fields: [
-      { field_key: 'main_goal', label: 'هدف اصلی تو در این چالش؟', field_type: 'textarea', required: true },
-      { field_key: 'hours', label: 'روزی چند ساعت وقت داری؟', field_type: 'select', required: true, options: ['کمتر از ۱', '۱ تا ۳', 'بیش از ۳'] },
+      { field_key: 'main_goal', label: 'هدف اصلی تو در این چالش؟', field_type: 'long_text', required: true },
+      { field_key: 'hours', label: 'روزی چند ساعت وقت داری؟', field_type: 'dropdown', required: true, options: ['کمتر از ۱', '۱ تا ۳', 'بیش از ۳'] },
     ],
   },
   xp_rules: { on_time_bonus: 5, streak_milestones: [3, 7, 14, 21, 30] },
@@ -205,7 +205,7 @@ export const JSON_TEMPLATE = {
 export const JSON_GUIDE = `راهنمای ساختار JSON چالش:
 • challenge: تنظیمات اصلی (title, slug یکتا، start_date به‌صورت YYYY-MM-DD، days_count، status: draft|scheduled|active|paused|finished، default_deadline_time به وقت تهران HH:MM، سوئیچ‌های گیمیفیکیشن/استریک/اعلان/لیدربورد).
 • segments: گزینه‌های پروفایل (business_models, stages, budgets, boundless_codes) هرکدام [{value,label}]. valueها در variantها استفاده می‌شوند.
-• onboarding_form: اختیاری — {title, description, ai_prompt, fields:[{field_key,label,field_type,required,options}]} که یک فرم واقعی در سیستم فرم‌ها می‌سازد، یا {form_id} برای فرم موجود.
+• onboarding_form: اختیاری — {title, description, ai_prompt, require_login, fields:[{field_key,label,field_type: text|long_text|phone|email|number|dropdown|image|voice|file|message,required,options,help_text}]} که یک فرم واقعی در سیستم فرم‌ها می‌سازد، یا {form_id} برای فرم موجود.
 • xp_rules: on_time_bonus (امتیاز اضافه برای ارسال قبل از ددلاین)، streak_milestones (روزهای جشن استریک).
 • challenge.unlock_next_on_complete: true یعنی با انجام ماموریت، روز بعد زودتر از تاریخش باز شود.
 • rewards: [{key, title, emoji, description, trigger:{type: missions_completed|xp|streak|challenge_completed|complete_before_day|first_sale|revenue|custom, value}, reward_type: discount_code|percent|credit|link, reward_value, link}].
