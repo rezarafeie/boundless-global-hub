@@ -3867,9 +3867,13 @@ async function handleUpdate(update: any) {
     } catch (e) { console.warn('auto-login on sact_ failed', e); }
 
     const baleCustom = ((course as any)?.bale_activation_link || '').trim();
-    const supportUrl = isBaleChannel()
-      ? (/ble\.ir/i.test(baleCustom) ? baleCustom : 'https://ble.ir/rafieiacademy')
-      : (act.support_prefilled_link || 'https://telegram.me/rafieiacademy');
+    let supportUrl = act.support_prefilled_link || 'https://telegram.me/rafieiacademy';
+    if (isBaleChannel()) {
+      const baseBale = (/ble\.ir/i.test(baleCustom) ? baleCustom : 'https://ble.ir/rafieiacademy').split('?')[0];
+      let prefill = '';
+      try { prefill = new URL(act.support_prefilled_link || '').searchParams.get('text') || ''; } catch { /* no prefill */ }
+      supportUrl = prefill ? `${baseBale}?text=${encodeURIComponent(prefill)}` : baseBale;
+    }
     await tgCall('sendMessage', {
       chat_id,
       text: welcome,
