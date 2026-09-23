@@ -1,6 +1,17 @@
 // Shared helpers for support-activation followups (used by cron + test function).
 import { supabase } from "./supabase.ts";
 import { sendMessage, tgCall, sendRichMessage, buildButtonsKeyboard, appendButtonsAsLinks } from "./telegram.ts";
+import { botLogChannel, resolveBotTarget, runWithChannel } from "./channel.ts";
+
+// Where can we reach this person with a bot message? Telegram first, Bale as the
+// mirror for users who linked the Bale bot instead.
+function botTarget(row: any) {
+  return resolveBotTarget(
+    { telegram_chat_id: row?.telegram_id },
+    { bale_chat_id: row?.bale_chat_id },
+    row?.chat_users ?? null,
+  );
+}
 
 export type Row = any;
 
