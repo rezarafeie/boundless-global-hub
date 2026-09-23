@@ -271,3 +271,9 @@ verify_jwt = false
 
 [functions.bale-set-webhook]
 verify_jwt = false
+
+[functions.challenge-api]
+verify_jwt = false
+
+[functions.challenge-cron]
+verify_jwt = false
