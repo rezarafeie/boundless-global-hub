@@ -1270,6 +1270,41 @@ const EnrollSuccess: React.FC = () => {
     return null;
   };
 
+  // Bale messenger activation (opt-in per course)
+  const openBaleActivation = async () => {
+    const c: any = result?.course;
+    const enrollment: any = result?.enrollment;
+    const uid = user?.id ? Number(user.id) : (enrollment?.chat_user_id ?? null);
+    if (!c?.id || !uid) {
+      toast({
+        title: 'خطا در ساخت لینک بله',
+        description: 'شناسه کاربر یا دوره پیدا نشد. لطفاً صفحه را رفرش کنید.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke('support-activation-create', {
+        body: { user_id: uid, course_id: c.id, enrollment_id: enrollment?.id ?? null },
+      });
+      if (error) throw error;
+      const link = (data as any)?.bale_link as string | undefined;
+      if (link) {
+        openInNewTab(link);
+        return;
+      }
+    } catch (e) {
+      console.error('bale activation link failed', e);
+    }
+    toast({
+      title: 'خطا در ساخت لینک بله',
+      description: 'لطفاً چند لحظه دیگر دوباره تلاش کنید.',
+      variant: 'destructive'
+    });
+  };
+
+
+
   const handleRetry = () => {
     setVerifying(true);
     verifyPayment();
