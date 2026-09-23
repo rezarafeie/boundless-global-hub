@@ -1,6 +1,26 @@
-// Shared Telegram Bot API helpers
+// Shared Bot API helpers — one implementation, two messengers (Telegram + Bale).
+// Bale (https://tapi.bale.ai) mirrors the Telegram Bot API, so every helper below
+// simply targets the API base of the channel the current update belongs to.
+import { currentChannel } from './channel.ts';
+
 const BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN') ?? '';
+const BALE_TOKEN = Deno.env.get('BALE_BOT_TOKEN') ?? '';
 const API_BASE = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const BALE_API_BASE = `https://tapi.bale.ai/bot${BALE_TOKEN}`;
+
+export function activeToken(): string {
+  return currentChannel() === 'bale' ? BALE_TOKEN : BOT_TOKEN;
+}
+
+export function apiBase(): string {
+  return currentChannel() === 'bale' ? BALE_API_BASE : API_BASE;
+}
+
+export function fileBase(): string {
+  return currentChannel() === 'bale'
+    ? `https://tapi.bale.ai/file/bot${BALE_TOKEN}`
+    : `https://api.telegram.org/file/bot${BOT_TOKEN}`;
+}
 
 export interface InlineKeyboardButton {
   text: string;
@@ -11,16 +31,74 @@ export interface InlineKeyboardButton {
 
 export type InlineKeyboard = InlineKeyboardButton[][];
 
+function stripTags(s: string): string {
+  return String(s)
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"');
+}
+
+// Bale ignores a few Telegram-only fields and rejects web_app buttons.
+function adaptPayloadForBale(payload: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...payload };
+  delete out.disable_web_page_preview;
+  const rm: any = out.reply_markup;
+  if (rm && typeof rm === 'object') {
+    const next: any = { ...rm };
+    if (Array.isArray(next.inline_keyboard)) {
+      next.inline_keyboard = next.inline_keyboard.map((row: any[]) =>
+        row.map((b: any) => {
+          const btn: any = { text: b.text };
+          if (b.url) btn.url = b.url;
+          else if (b.web_app?.url) btn.url = b.web_app.url;
+          else if (b.callback_data) btn.callback_data = b.callback_data;
+          return btn;
+        }),
+      );
+    }
+    if (Array.isArray(next.keyboard)) {
+      delete next.is_persistent;
+    }
+    out.reply_markup = next;
+  }
+  return out;
+}
+
 export async function tgCall(method: string, payload: Record<string, unknown>) {
-  if (!BOT_TOKEN) throw new Error('TELEGRAM_BOT_TOKEN is not configured');
-  const res = await fetch(`${API_BASE}/${method}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  const data = await res.json();
-  if (!data.ok) {
-    console.error(`Telegram ${method} failed:`, data);
+  const bale = currentChannel() === 'bale';
+  const token = activeToken();
+  if (!token) throw new Error(bale ? 'BALE_BOT_TOKEN is not configured' : 'TELEGRAM_BOT_TOKEN is not configured');
+
+  const send = async (body: Record<string, unknown>) => {
+    const res = await fetch(`${apiBase()}/${method}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    try {
+      return await res.json();
+    } catch {
+      return { ok: false, description: `non-json response (${res.status})` };
+    }
+  };
+
+  let data = await send(bale ? adaptPayloadForBale(payload) : payload);
+
+  // Bale is less forgiving about HTML entities — retry once as plain text.
+  if (!data?.ok && bale && (payload.parse_mode || payload.text || payload.caption)) {
+    const retry = adaptPayloadForBale({ ...payload });
+    delete retry.parse_mode;
+    if (typeof retry.text === 'string') retry.text = stripTags(retry.text);
+    if (typeof retry.caption === 'string') retry.caption = stripTags(retry.caption);
+    data = await send(retry);
+  }
+
+  if (!data?.ok) {
+    console.error(`${bale ? 'Bale' : 'Telegram'} ${method} failed:`, data);
   }
   return data;
 }
