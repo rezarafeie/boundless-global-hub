@@ -339,6 +339,8 @@ Deno.serve(async (req) => {
         const r = (ch.reward_rules ?? []).find((x: any) => (x.key ?? x.title) === body.rewardKey);
         if (!r) return json({ success: false, error: "جایزه یافت نشد" }, 404);
         await grantReward(ch, target, r);
+      } else if (op === "waive_penalty") {
+        if (target.profile?.payment_lock?.active) await releasePaymentLock(ch, target, target.profile.payment_lock, { paid: false, waived: true });
       } else if (op === "sync") {
         await syncParticipant(ch, target);
       } else return json({ success: false, error: "عملیات نامعتبر" }, 400);

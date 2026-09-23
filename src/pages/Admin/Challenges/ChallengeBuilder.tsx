@@ -176,7 +176,7 @@ const ChallengeBuilder: React.FC = () => {
           <Card><CardContent className="space-y-4 p-5">
             <F label="قوانین امتیاز (on_time_bonus، streak_milestones)"><JsonField value={ch.xp_rules} onChange={(v) => set('xp_rules', v)} rows={4} /></F>
             <F label="جوایز — trigger.type: missions_completed | xp | streak | challenge_completed | complete_before_day | first_sale | revenue | custom"><JsonField value={ch.reward_rules} onChange={(v) => set('reward_rules', v)} rows={10} /></F>
-            <F label="جریمه‌ها — action.type: lose_xp | reset_streak | warning | custom | lock_course (فقط در صورت تعریف صریح)"><JsonField value={ch.penalty_rules} onChange={(v) => set('penalty_rules', v)} rows={8} /></F>
+            <F label="جریمه‌ها — action.type: lose_xp | reset_streak | warning | custom | pay_to_return (value = مبلغ دلار؛ {usd} در پیام) | lock_course (فقط در صورت تعریف صریح)"><JsonField value={ch.penalty_rules} onChange={(v) => set('penalty_rules', v)} rows={8} /></F>
             <p className="text-xs text-muted-foreground">بعد از ویرایش «ذخیره تنظیمات» را بزنید.</p>
           </CardContent></Card>
         </TabsContent>
