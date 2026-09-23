@@ -211,7 +211,7 @@ async function saveFilters(chat_id: number, user_id: number, filters: Filters) {
 }
 
 async function clearSession(chat_id: number) {
-  await supabase.from('telegram_bot_sessions').delete().eq('chat_id', chat_id);
+  await supabase.from('telegram_bot_sessions').delete().eq('chat_id', chat_id).eq('channel', currentChannel());
 }
 
 // ============ Broadcast (اطلاعیه همگانی) ============
