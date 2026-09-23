@@ -202,6 +202,7 @@ export type Database = {
       }
       admin_settings: {
         Row: {
+          bale_bot_username: string | null
           id: number
           manual_approval_enabled: boolean
           manual_payment_enabled: boolean
@@ -237,6 +238,7 @@ export type Database = {
           zibal_enabled: boolean
         }
         Insert: {
+          bale_bot_username?: string | null
           id?: number
           manual_approval_enabled?: boolean
           manual_payment_enabled?: boolean
@@ -272,6 +274,7 @@ export type Database = {
           zibal_enabled?: boolean
         }
         Update: {
+          bale_bot_username?: string | null
           id?: number
           manual_approval_enabled?: boolean
           manual_payment_enabled?: boolean
@@ -1810,6 +1813,8 @@ export type Database = {
         Row: {
           age: number | null
           avatar_url: string | null
+          bale_chat_id: number | null
+          bale_linked_at: string | null
           bedoun_marz: boolean | null
           bedoun_marz_approved: boolean | null
           bedoun_marz_request: boolean | null
@@ -1852,6 +1857,8 @@ export type Database = {
         Insert: {
           age?: number | null
           avatar_url?: string | null
+          bale_chat_id?: number | null
+          bale_linked_at?: string | null
           bedoun_marz?: boolean | null
           bedoun_marz_approved?: boolean | null
           bedoun_marz_request?: boolean | null
@@ -1894,6 +1901,8 @@ export type Database = {
         Update: {
           age?: number | null
           avatar_url?: string | null
+          bale_chat_id?: number | null
+          bale_linked_at?: string | null
           bedoun_marz?: boolean | null
           bedoun_marz_approved?: boolean | null
           bedoun_marz_request?: boolean | null
@@ -2749,6 +2758,9 @@ export type Database = {
       }
       courses: {
         Row: {
+          bale_activation_link: string | null
+          bale_bot_welcome_message: string | null
+          bale_support_activation_enabled: boolean
           create_test_license: boolean | null
           created_at: string
           description: string | null
@@ -2824,6 +2836,9 @@ export type Database = {
           woocommerce_product_id: number | null
         }
         Insert: {
+          bale_activation_link?: string | null
+          bale_bot_welcome_message?: string | null
+          bale_support_activation_enabled?: boolean
           create_test_license?: boolean | null
           created_at?: string
           description?: string | null
@@ -2899,6 +2914,9 @@ export type Database = {
           woocommerce_product_id?: number | null
         }
         Update: {
+          bale_activation_link?: string | null
+          bale_bot_welcome_message?: string | null
+          bale_support_activation_enabled?: boolean
           create_test_license?: boolean | null
           created_at?: string
           description?: string | null
@@ -6802,9 +6820,11 @@ export type Database = {
         Row: {
           activated_at: string | null
           activated_by_admin_id: number | null
+          activation_channel: string
           activation_token: string
           admin_note: string | null
           assigned_agent_id: number | null
+          bale_chat_id: number | null
           bot_deep_link: string
           clicked_support_button_at: string | null
           course_id: string
@@ -6833,9 +6853,11 @@ export type Database = {
         Insert: {
           activated_at?: string | null
           activated_by_admin_id?: number | null
+          activation_channel?: string
           activation_token: string
           admin_note?: string | null
           assigned_agent_id?: number | null
+          bale_chat_id?: number | null
           bot_deep_link: string
           clicked_support_button_at?: string | null
           course_id: string
@@ -6864,9 +6886,11 @@ export type Database = {
         Update: {
           activated_at?: string | null
           activated_by_admin_id?: number | null
+          activation_channel?: string
           activation_token?: string
           admin_note?: string | null
           assigned_agent_id?: number | null
+          bale_chat_id?: number | null
           bot_deep_link?: string
           clicked_support_button_at?: string | null
           course_id?: string
@@ -9072,9 +9096,11 @@ export type Database = {
         Returns: {
           activated_at: string | null
           activated_by_admin_id: number | null
+          activation_channel: string
           activation_token: string
           admin_note: string | null
           assigned_agent_id: number | null
+          bale_chat_id: number | null
           bot_deep_link: string
           clicked_support_button_at: string | null
           course_id: string
