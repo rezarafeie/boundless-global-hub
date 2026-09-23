@@ -128,7 +128,6 @@ export const JSON_TEMPLATE = {
     { key: 'three_missed', trigger: { type: 'missed_count', value: 3 }, action: { type: 'warning', message: 'سه ماموریت را از دست دادی؛ با مربی صحبت کن.' } },
     { key: 'paid_return', trigger: { type: 'mission_missed' }, action: { type: 'pay_to_return', value: 10, message: 'یک روز را از دست دادی. برای بازگشت {usd} دلار جریمه پرداخت کن.' } },
     { key: 'coach_note', trigger: { type: 'missed_count', value: 5 }, action: { type: 'custom', message: 'مربی به‌زودی با تو تماس می‌گیرد.' } },
-    { key: 'course_lock', enabled_note: 'فقط در صورت نیاز صریح — این مورد را حذف کنید اگر نمی‌خواهید دوره قفل شود', trigger: { type: 'missed_count', value: 10 }, action: { type: 'lock_course', course_ids: [], message: 'به دلیل ۱۰ غیبت، دسترسی دوره موقتاً قفل شد.' } },
   ],
   notifications: {
     channels: { telegram_bot: true, telegram_business: true, bale: true, email: true, in_app: true, sms: false },
@@ -188,7 +187,6 @@ export const JSON_TEMPLATE = {
       variants: [
         { key: 'PAID', title: 'مسیر پولی', budgets: ['paid'], priority: 10, instructions: 'یک کمپین تبلیغاتی کوچک راه بینداز', checklist: ['تعیین بودجه روزانه'], expected_result: 'اسکرین‌شات کمپین',
           form: { title: 'گزارش کمپین روز ۲', description: 'نتایج را بنویس', fields: [{ field_key: 'spend', label: 'هزینه (دلار)', field_type: 'number', required: true }, { field_key: 'shot', label: 'لینک اسکرین‌شات', field_type: 'text', required: false }] } },
-        { key: 'EXISTING', title: 'استفاده از تمرین موجود', budgets: ['low'], assignment_id: '00000000-0000-0000-0000-000000000000 (شناسه تمرین موجود — یا حذف کنید)' },
         { key: 'FB', title: 'بدون بودجه', is_fallback: true, instructions: 'در ۳ گروه/صفحه مرتبط محتوا منتشر کن',
           assignment: { title: 'روز ۲ — ترافیک رایگان', ai_feedback_enabled: true, manual_review_enabled: true, passing_score: 60,
             ai_feedback_prompt: 'بررسی کن آیا دانشجو واقعاً محتوا منتشر کرده؛ score، summary، strengths، weaknesses، next_steps و pass یا needs_revision بده.',
