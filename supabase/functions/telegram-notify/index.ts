@@ -4,6 +4,26 @@
 //  - GET (cron)                   -> process pending queue (retry failures)
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { sendMessage, sendPhoto, escapeHtml, formatTehran } from '../_shared/telegram.ts';
+import { resolveBotTarget, runWithChannel, type Channel } from '../_shared/channel.ts';
+
+type BotTarget = { chatId: number; channel: Channel };
+const BOT_COLS = 'telegram_chat_id, bale_chat_id';
+const HAS_BOT_CHAT = 'telegram_chat_id.not.is.null,bale_chat_id.not.is.null';
+
+// One person = one messenger. Telegram when linked, otherwise Bale.
+function targetsFrom(rows: any[]): BotTarget[] {
+  const seen = new Set<string>();
+  const out: BotTarget[] = [];
+  for (const r of rows ?? []) {
+    const t = resolveBotTarget(r);
+    if (!t) continue;
+    const key = `${t.channel}:${t.chatId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(t);
+  }
+  return out;
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,7 +50,7 @@ async function getSettings() {
 }
 
 interface BuiltMessage {
-  chat_ids: number[];
+  targets: BotTarget[];
   text: string;
   keyboard?: any[][];
   photo_url?: string;
@@ -45,10 +65,11 @@ async function buildMessage(type: string, data: any): Promise<BuiltMessage | nul
     const { agent_user_id, enrollment_id } = data;
     const { data: agent } = await supabase
       .from('chat_users')
-      .select('telegram_chat_id, name')
+      .select(`${BOT_COLS}, name`)
       .eq('id', agent_user_id)
       .maybeSingle();
-    if (!agent?.telegram_chat_id) return null;
+    const agentTarget = resolveBotTarget(agent);
+    if (!agentTarget) return null;
 
     const { data: enr } = await supabase
       .from('enrollments')
@@ -67,7 +88,7 @@ async function buildMessage(type: string, data: any): Promise<BuiltMessage | nul
     ].join('\n');
 
     return {
-      chat_ids: [Number(agent.telegram_chat_id)],
+      targets: [agentTarget],
       text,
       keyboard: [[
         { text: '👁 مشاهده', callback_data: `lead:view:${enrollment_id}` },
@@ -89,12 +110,12 @@ async function buildMessage(type: string, data: any): Promise<BuiltMessage | nul
     // Notify all admins & sales managers with linked telegram
     const { data: recipients } = await supabase
       .from('chat_users')
-      .select('telegram_chat_id, role, is_messenger_admin')
-      .not('telegram_chat_id', 'is', null)
+      .select(`${BOT_COLS}, role, is_messenger_admin`)
+      .or(HAS_BOT_CHAT)
       .or('is_messenger_admin.eq.true,role.eq.admin,role.eq.sales_manager');
 
-    const ids = (recipients ?? []).map(r => Number(r.telegram_chat_id)).filter(Boolean);
-    if (!ids.length) return null;
+    const targets = targetsFrom(recipients ?? []);
+    if (!targets.length) return null;
 
     const text = [
       `📅 <b>رزرو مشاوره جدید</b>`,
@@ -106,7 +127,7 @@ async function buildMessage(type: string, data: any): Promise<BuiltMessage | nul
       `🕐 ${formatTehran(booking.created_at)}`,
     ].filter(Boolean).join('\n');
 
-    return { chat_ids: ids, text };
+    return { targets, text };
   }
 
   if (type === 'daily_summary') {
@@ -114,10 +135,11 @@ async function buildMessage(type: string, data: any): Promise<BuiltMessage | nul
     const { agent_user_id } = data;
     const { data: agent } = await supabase
       .from('chat_users')
-      .select('telegram_chat_id, name')
+      .select(`${BOT_COLS}, name`)
       .eq('id', agent_user_id)
       .maybeSingle();
-    if (!agent?.telegram_chat_id) return null;
+    const summaryTarget = resolveBotTarget(agent);
+    if (!summaryTarget) return null;
 
     // Count today's assignments and CRM notes for this agent
     const startOfDay = new Date();
@@ -149,7 +171,7 @@ async function buildMessage(type: string, data: any): Promise<BuiltMessage | nul
       `موفق باشید 🌟`,
     ].join('\n');
 
-    return { chat_ids: [Number(agent.telegram_chat_id)], text };
+    return { targets: [summaryTarget], text };
   }
 
   if (type === 'manual_payment_pending') {
@@ -165,11 +187,11 @@ async function buildMessage(type: string, data: any): Promise<BuiltMessage | nul
     // Recipients: admins + sales managers with linked telegram
     const { data: staff } = await supabase
       .from('chat_users')
-      .select('id, telegram_chat_id, role, is_messenger_admin')
-      .not('telegram_chat_id', 'is', null)
+      .select(`id, ${BOT_COLS}, role, is_messenger_admin`)
+      .or(HAS_BOT_CHAT)
       .or('is_messenger_admin.eq.true,role.eq.admin,role.eq.sales_manager');
 
-    const ids = new Set<number>((staff ?? []).map((s: any) => Number(s.telegram_chat_id)).filter(Boolean));
+    const staffRows: any[] = [...(staff ?? [])];
 
     // Also include assigned sales agent for this enrollment, if any
     const { data: assignment } = await supabase
@@ -186,14 +208,15 @@ async function buildMessage(type: string, data: any): Promise<BuiltMessage | nul
       if (sa?.user_id) {
         const { data: agentUser } = await supabase
           .from('chat_users')
-          .select('telegram_chat_id')
+          .select(BOT_COLS)
           .eq('id', sa.user_id)
           .maybeSingle();
-        if (agentUser?.telegram_chat_id) ids.add(Number(agentUser.telegram_chat_id));
+        if (agentUser) staffRows.push(agentUser);
       }
     }
 
-    if (!ids.size) return null;
+    const targets = targetsFrom(staffRows);
+    if (!targets.length) return null;
 
     const text = [
       `💳 <b>پرداخت کارت به کارت جدید — در انتظار تایید</b>`,
@@ -207,7 +230,7 @@ async function buildMessage(type: string, data: any): Promise<BuiltMessage | nul
     ].filter(Boolean).join('\n');
 
     return {
-      chat_ids: Array.from(ids),
+      targets,
       text,
       photo_url: enr.receipt_url || undefined,
       keyboard: [[
@@ -224,8 +247,9 @@ async function enqueueAndSend(type: string, data: any) {
   const msg = await buildMessage(type, data);
   if (!msg) return { skipped: true };
 
-  for (const chat_id of msg.chat_ids) {
-    const payload = { text: msg.text, keyboard: msg.keyboard, photo_url: msg.photo_url };
+  for (const target of msg.targets) {
+    const chat_id = target.chatId;
+    const payload = { text: msg.text, keyboard: msg.keyboard, photo_url: msg.photo_url, messenger: target.channel };
     const { data: row } = await supabase
       .from('telegram_notification_queue')
       .insert({ chat_id, payload, notification_type: type, status: 'pending' })
@@ -233,13 +257,13 @@ async function enqueueAndSend(type: string, data: any) {
       .single();
 
     try {
-      const res = msg.photo_url
-        ? await sendPhoto(chat_id, msg.photo_url, { caption: msg.text, keyboard: msg.keyboard })
-        : await sendMessage(chat_id, msg.text, { keyboard: msg.keyboard });
+      const res = await runWithChannel(target.channel, () => (msg.photo_url
+        ? sendPhoto(chat_id, msg.photo_url!, { caption: msg.text, keyboard: msg.keyboard })
+        : sendMessage(chat_id, msg.text, { keyboard: msg.keyboard })));
       // Fallback to plain message if photo failed (e.g. invalid URL)
       let finalRes: any = res;
       if (!res?.ok && msg.photo_url) {
-        finalRes = await sendMessage(chat_id, msg.text, { keyboard: msg.keyboard });
+        finalRes = await runWithChannel(target.channel, () => sendMessage(chat_id, msg.text, { keyboard: msg.keyboard }));
       }
       if (finalRes?.ok) {
         await supabase.from('telegram_notification_queue').update({
@@ -256,7 +280,7 @@ async function enqueueAndSend(type: string, data: any) {
       }).eq('id', row?.id);
     }
   }
-  return { sent: msg.chat_ids.length };
+  return { sent: msg.targets.length };
 }
 
 async function processQueue() {
@@ -270,7 +294,8 @@ async function processQueue() {
   let processed = 0;
   for (const row of rows ?? []) {
     try {
-      const res = await sendMessage(Number(row.chat_id), row.payload.text, { keyboard: row.payload.keyboard });
+      const channel: Channel = row.payload?.messenger === 'bale' ? 'bale' : 'telegram';
+      const res = await runWithChannel(channel, () => sendMessage(Number(row.chat_id), row.payload.text, { keyboard: row.payload.keyboard }));
       if (res?.ok) {
         await supabase.from('telegram_notification_queue').update({
           status: 'sent', sent_at: new Date().toISOString(), attempts: row.attempts + 1,
