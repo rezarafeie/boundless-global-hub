@@ -4590,12 +4590,11 @@ async function handleSocialMessage(chat_id: number, user: BotUser, msg: any, ses
       return;
     }
     // Atomic append to session context so parallel album updates don't overwrite each other
-    const { error: appendErr } = await supabase.rpc('tg_append_session_media', {
-      p_chat_id: chat_id,
-      p_media: [uploaded],
-    });
+    // (the SQL helper is keyed by chat_id only, so it is used for Telegram sessions)
+    const appendErr = currentChannel() === 'telegram'
+      ? (await supabase.rpc('tg_append_session_media', { p_chat_id: chat_id, p_media: [uploaded] })).error
+      : { message: 'non-telegram channel' };
     if (appendErr) {
-      console.error('tg_append_session_media error:', appendErr);
       // Fallback to non-atomic write
       const media = [...(session.context.media ?? []), uploaded];
       await setSession(chat_id, user.id, 'social:awaiting_media', { ...session.context, media });
