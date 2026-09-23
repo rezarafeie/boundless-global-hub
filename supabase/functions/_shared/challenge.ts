@@ -84,7 +84,7 @@ const DEFAULT_MESSAGES: Record<string, { title: string; text: string }> = {
   mission_submitted: { title: "ماموریت ارسال شد 📤", text: "ماموریت روز {day} دریافت شد و در حال بررسی است." },
   ai_feedback_ready: { title: "بازخورد هوشمند آماده است 🤖", text: "{name}، بازخورد ماموریت روز {day} آماده است.\n{mission_url}" },
   coach_feedback_ready: { title: "مربی ماموریتت را بررسی کرد 👤", text: "{name}، بازخورد مربی برای روز {day} ثبت شد.\n{mission_url}" },
-  revision_requested: { title: "نیاز به اصلاح 🔄", text: "{name}، ماموریت روز {day} نیاز به اصلاح دارد. اصلاح کن و دوباره بفرست.\n{mission_url}" },
+  revision_requested: { title: "نیاز به اصلاح 🔄", text: "{name}، ماموریت روز {day} «{mission_title}» نیاز به اصلاح دارد.\n\n{reasons}\n\nاصلاح کن و دوباره بفرست:\n{mission_url}" },
   mission_completed: { title: "ماموریت روز {day} کامل شد ✅", text: "آفرین {name}! +{xp} امتیاز. استریک فعلی: {streak} روز 🔥" },
   mission_missed: { title: "ماموریت روز {day} از دست رفت", text: "{name}، مهلت ماموریت «{mission_title}» تمام شد. امروز دوباره شروع کن 💪\n{challenge_url}" },
   streak_achieved: { title: "🔥 استریک {streak} روزه!", text: "{name}، {streak} روز پشت سر هم ماموریت‌ها را انجام دادی. ادامه بده!" },
@@ -486,5 +486,7 @@ export async function syncParticipant(ch: Challenge, p: Participant, structure?:
   await ensureProgress(ch, p, s);
   const { data: rows } = await supabase.from("challenge_progress").select("*").eq("participant_id", p.id).in("status", OPEN);
   const byId = new Map(s.days.map((d: any) => [d.id, d]));
-  for (const r of rows ?? []) await syncProgressRow(ch, p, r, byId.get(r.day_id));
+  let completedAny = false;
+  for (const r of rows ?? []) if ((await syncProgressRow(ch, p, r, byId.get(r.day_id))) === "completed") completedAny = true;
+  if ((ch as any).unlock_next_on_complete) await ensureProgress(ch, p, s);
 }
