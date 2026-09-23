@@ -10,8 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Copy, Download, FileJson, Loader2, Plus, Upload } from 'lucide-react';
+import { Trash2, Copy, Download, FileJson, Loader2, Plus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import { deleteChallengeFully } from '@/lib/challenge/schema';
 import {
   JSON_GUIDE, JSON_TEMPLATE, STATUSES, downloadJson, exportChallengeJson, importChallengeJson, labelOf, validateChallengeJson, type Validation,
 } from '@/lib/challenge/schema';
@@ -63,6 +64,12 @@ const ChallengesAdmin: React.FC = () => {
     } catch (e: any) { toast.error(e.message); }
   };
 
+  const remove = async (c: any) => {
+    if (!confirm(`چالش «${c.title}» و همه داده‌هایش (روزها، شرکت‌کننده‌ها، پیشرفت، تمرین‌ها، فرم‌ها و ارسال‌ها) برای همیشه حذف شود؟`)) return;
+    if (prompt('برای تأیید، slug چالش را تایپ کنید:') !== c.slug) return toast.error('slug مطابقت ندارد');
+    try { const r = await deleteChallengeFully(c.id); toast.success(`چالش حذف شد (${r.assignments} تمرین، ${r.forms} فرم)`); load(); }
+    catch (e: any) { toast.error(e.message); }
+  };
   const setStatus = async (c: any, status: string) => {
     const { error } = await supabase.from('challenges').update({ status }).eq('id', c.id);
     error ? toast.error(error.message) : load();
@@ -115,6 +122,7 @@ const ChallengesAdmin: React.FC = () => {
                     {c.status === 'active' && <Button size="sm" variant="ghost" onClick={() => setStatus(c, 'paused')}>توقف</Button>}
                     {c.status === 'paused' && <Button size="sm" variant="ghost" onClick={() => setStatus(c, 'active')}>ادامه</Button>}
                     {['active', 'paused'].includes(c.status) && <Button size="sm" variant="ghost" onClick={() => confirm('چالش پایان یابد؟') && setStatus(c, 'finished')}>پایان</Button>}
+                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(c)}><Trash2 className="ml-1 h-3 w-3" />حذف</Button>
                   </div>
                 </CardContent>
               </Card>

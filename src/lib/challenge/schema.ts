@@ -382,3 +382,49 @@ export async function challengeApi(action: string, payload: Record<string, unkno
   if (data && data.success === false) throw new Error(data.error || 'خطا');
   return data;
 }
+
+/* ---------- delete ---------- */
+// Deletes a challenge and everything it generated: days, variants, participants,
+// progress, metrics, events (cascade) plus assignments/forms created for it
+// (tagged "challenge") and their submissions. Assignments/forms still used by
+// another challenge are kept.
+export async function deleteChallengeFully(id: string) {
+  const [{ data: vars }, { data: prog }] = await Promise.all([
+    supabase.from('challenge_variants').select('assignment_id, form_id').eq('challenge_id', id),
+    supabase.from('challenge_progress').select('assignment_id, form_id').eq('challenge_id', id),
+  ]);
+  const rows = [...(vars ?? []), ...(prog ?? [])] as any[];
+  let aIds = [...new Set(rows.map((r) => r.assignment_id).filter(Boolean))] as string[];
+  let fIds = [...new Set(rows.map((r) => r.form_id).filter(Boolean))] as string[];
+  if (aIds.length) {
+    const [{ data: other }, { data: tagged }] = await Promise.all([
+      supabase.from('challenge_variants').select('assignment_id').in('assignment_id', aIds).neq('challenge_id', id),
+      supabase.from('assignments').select('id, tags').in('id', aIds),
+    ]);
+    const used = new Set((other ?? []).map((o: any) => o.assignment_id));
+    aIds = (tagged ?? []).filter((a: any) => (a.tags ?? []).includes('challenge') && !used.has(a.id)).map((a: any) => a.id);
+  }
+  if (fIds.length) {
+    const { data: other } = await supabase.from('challenge_variants').select('form_id').in('form_id', fIds).neq('challenge_id', id);
+    const used = new Set((other ?? []).map((o: any) => o.form_id));
+    fIds = fIds.filter((f) => !used.has(f));
+  }
+  const { error } = await supabase.from('challenges').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+  if (aIds.length) {
+    await supabase.from('assignment_ai_logs' as any).delete().in('assignment_id', aIds);
+    await supabase.from('assignment_submissions').delete().in('assignment_id', aIds);
+    const { error: e } = await supabase.from('assignments').delete().in('id', aIds);
+    if (e) throw new Error('حذف تمرین‌ها: ' + e.message);
+  }
+  if (fIds.length) {
+    const { data: subs } = await supabase.from('telegram_form_submissions').select('id').in('form_id', fIds);
+    const sIds = (subs ?? []).map((s: any) => s.id);
+    if (sIds.length) await supabase.from('telegram_form_answers').delete().in('submission_id', sIds);
+    await supabase.from('telegram_form_submissions').delete().in('form_id', fIds);
+    await supabase.from('telegram_form_fields').delete().in('form_id', fIds);
+    const { error: e } = await supabase.from('telegram_forms').delete().in('id', fIds);
+    if (e) throw new Error('حذف فرم‌ها: ' + e.message);
+  }
+  return { assignments: aIds.length, forms: fIds.length };
+}
