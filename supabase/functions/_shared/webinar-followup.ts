@@ -287,7 +287,7 @@ export async function fetchUsersByPhones(phones: string[]): Promise<Record<strin
       const digits = String(u.phone ?? "").replace(/[^0-9]/g, "");
       const match = chunk.find((p) => digits.endsWith(p.replace(/^0/, "").slice(-9)));
       if (!match) continue;
-      if (!out[match] || (!out[match].telegram_chat_id && u.telegram_chat_id)) out[match] = u;
+      if (!out[match] || (!reachable(out[match]) && reachable(u))) out[match] = u;
     }
   }
   return out;
