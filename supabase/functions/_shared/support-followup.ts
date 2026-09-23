@@ -340,28 +340,30 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
     await logSendCustom(row, cf, "sms", r.ok ? "sent" : "failed", r.error, { ...logExtra, to: phone, resolved_url: r.url, response: r.body });
     results.push({ channel: "sms", to: phone, resolved_url: r.url, ...r });
   } else if (cf.channel === "bot") {
-    if (!row.telegram_id) {
-      await logSendCustom(row, cf, "telegram_bot", "unreachable", "no telegram_id", logExtra);
-      results.push({ channel: "bot", ok: true, skipped: true, reason: "no telegram_id", unreachable: true });
+    const target = botTarget(row);
+    if (!target) {
+      await logSendCustom(row, cf, "telegram_bot", "unreachable", "no telegram/bale chat id", logExtra);
+      results.push({ channel: "bot", ok: true, skipped: true, reason: "no telegram/bale chat id", unreachable: true });
       return results;
     }
+    const logChannel = botLogChannel(target.channel);
     const text = render(cf.bot_text, vars) || "[TEST] followup";
     const kb = renderButtons(cf.buttons, vars)
       ?? (vars.activation_link ? [[{ text: "✅ فعال‌سازی پشتیبانی", url: vars.activation_link }]] : undefined);
-    const res = await sendRichMessage(row.telegram_id, text, {
+    const res = await runWithChannel(target.channel, () => sendRichMessage(target.chatId, text, {
       mediaUrl: cf.media_url,
       mediaType: cf.media_type,
       mediaItems: cfMediaItems(cf),
       keyboard: kb as any,
       parse_mode: "HTML",
-    });
+    }));
 
     const ok = (res as any)?.ok !== false;
     const errStr = ok ? "" : JSON.stringify(res);
     const permanent = !ok && /chat not found|bot was blocked|user is deactivated|PEER_ID_INVALID|Forbidden/i.test(errStr);
     const effectiveOk = ok || permanent;
-    await logSendCustom(row, cf, "telegram_bot", ok ? "sent" : (permanent ? "unreachable" : "failed"), ok ? undefined : errStr, { ...logExtra, chat_id: row.telegram_id, text, response: res });
-    results.push({ channel: "bot", ok: effectiveOk, unreachable: permanent, chat_id: row.telegram_id, text, response: res });
+    await logSendCustom(row, cf, logChannel, ok ? "sent" : (permanent ? "unreachable" : "failed"), ok ? undefined : errStr, { ...logExtra, chat_id: target.chatId, messenger: target.channel, text, response: res });
+    results.push({ channel: "bot", ok: effectiveOk, unreachable: permanent, chat_id: target.chatId, messenger: target.channel, text, response: res });
   } else if (cf.channel === "business") {
     if (!row.telegram_id) {
       await logSendCustom(row, cf, "telegram_business", "unreachable", "no telegram_id", logExtra);
