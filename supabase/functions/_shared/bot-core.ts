@@ -931,7 +931,7 @@ async function adminStats(chat_id: number, message_id: number) {
   const [{ count: totalLeads }, { count: totalAgents }, { count: linked }, { count: pendingC }] = await Promise.all([
     supabase.from('enrollments').select('id', { count: 'exact', head: true }).in('payment_status', ['success', 'completed']),
     supabase.from('sales_agents').select('id', { count: 'exact', head: true }).eq('is_active', true),
-    supabase.from('chat_users').select('id', { count: 'exact', head: true }).not('telegram_chat_id', 'is', null),
+    supabase.from('chat_users').select('id', { count: 'exact', head: true }).not(chatIdColumn(), 'is', null),
     supabase.from('consultation_bookings').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
   ]);
   const text = [
@@ -939,7 +939,7 @@ async function adminStats(chat_id: number, message_id: number) {
     ``,
     `🎯 کل لیدهای موفق: <b>${totalLeads ?? 0}</b>`,
     `👥 کارشناسان فعال: <b>${totalAgents ?? 0}</b>`,
-    `🤖 کاربران لینک‌شده تلگرام: <b>${linked ?? 0}</b>`,
+    `🤖 کاربران لینک‌شده ${channelLabel()}: <b>${linked ?? 0}</b>`,
     `📅 مشاوره‌های در انتظار: <b>${pendingC ?? 0}</b>`,
   ].join('\n');
   await editMessage(chat_id, message_id, text, [[{ text: '⬅️ بازگشت', callback_data: 'admin:menu' }]]);
@@ -947,12 +947,12 @@ async function adminStats(chat_id: number, message_id: number) {
 
 async function adminListLinked(chat_id: number, message_id: number, page: number) {
   const { data, count } = await supabase.from('chat_users')
-    .select('id, name, phone, role, telegram_chat_id', { count: 'exact' })
-    .not('telegram_chat_id', 'is', null).order('telegram_linked_at', { ascending: false })
+    .select(`id, name, phone, role, ${chatIdColumn()}`, { count: 'exact' })
+    .not(chatIdColumn(), 'is', null).order(linkedAtColumn(), { ascending: false })
     .range(page * 10, page * 10 + 9);
   const lines = [`👥 <b>کاربران لینک‌شده</b> — ${count ?? 0} کاربر`, ``];
   (data ?? []).forEach(u => {
-    lines.push(`• ${escapeHtml(u.name)} — ${escapeHtml(u.role ?? '-')} — <code>${u.telegram_chat_id}</code>`);
+    lines.push(`• ${escapeHtml(u.name)} — ${escapeHtml(u.role ?? '-')} — <code>${(u as any)[chatIdColumn()]}</code>`);
   });
   const keyboard: InlineKeyboard = [];
   const nav: any[] = [];
@@ -1204,6 +1204,7 @@ async function buildWebinarLoginUrl(
       phone,
       display_name: targetUser?.name || null,
       telegram_chat_id: targetChat ?? null,
+      channel: currentChannel(),
     });
     if (error) {
       console.warn('webinar login token insert failed', error);
@@ -1452,8 +1453,7 @@ async function handleSignupEmail(chat_id: number, text: string) {
       signup_source: 'telegram_bot',
       is_approved: true,
       role: 'user',
-      telegram_chat_id: chat_id,
-      telegram_linked_at: new Date().toISOString(),
+      ...chatIdPatch(chat_id),
     }).select('id').single();
     if (insErr) { await sendMessage(chat_id, `❌ خطا در ساخت حساب: ${escapeHtml(insErr.message)}`, { keyboard: BACK_HOME_KBD }); return; }
     newUserId = ins.id;
@@ -1508,7 +1508,7 @@ function normPhone(p: string | null | undefined): string {
 
 async function tryLinkEnrollment(chat_id: number, enrollment_id: string, user: BotUser): Promise<void> {
   const { data: enr } = await supabase.from('enrollments')
-    .select('id, phone, course_id, payment_status, telegram_chat_id')
+    .select(`id, phone, course_id, payment_status, ${chatIdColumn()}`)
     .eq('id', enrollment_id).maybeSingle();
   if (!enr) { await sendMessage(chat_id, '❌ ثبت‌نام پیدا نشد.', { keyboard: await buildStartKeyboard(user) }); return; }
   const { data: course } = await supabase.from('courses')
@@ -1525,8 +1525,7 @@ async function tryLinkEnrollment(chat_id: number, enrollment_id: string, user: B
   }
 
   await supabase.from('enrollments').update({
-    telegram_chat_id: chat_id,
-    telegram_linked_at: new Date().toISOString(),
+    ...chatIdPatch(chat_id),
     followup_state: 'linked',
   }).eq('id', enrollment_id);
 
@@ -2214,8 +2213,8 @@ async function notifySalesTeamAboutLead(lead_id: string, summary: string) {
   if (!lead) return;
   const { data: staff } = await supabase
     .from('chat_users')
-    .select('telegram_chat_id, name, role, is_messenger_admin')
-    .not('telegram_chat_id', 'is', null)
+    .select(`${chatIdColumn()}, name, role, is_messenger_admin`)
+    .not(chatIdColumn(), 'is', null)
     .or('is_messenger_admin.eq.true,role.eq.admin,role.eq.sales_manager,role.eq.sales_agent')
     .limit(50);
   const tg = (lead.answers as any)?.telegram_chat_id;
@@ -2232,7 +2231,7 @@ async function notifySalesTeamAboutLead(lead_id: string, summary: string) {
   ].filter(Boolean).join('\n');
   const kbd: InlineKeyboard = tg ? [[{ text: '💬 شروع گفت‌وگو در تلگرام', url: `tg://user?id=${tg}` }]] : [];
   for (const s of (staff ?? [])) {
-    try { await sendMessage(s.telegram_chat_id as number, text, { keyboard: kbd }); } catch { /* ignore */ }
+    try { await sendMessage((s as any)[chatIdColumn()] as number, text, { keyboard: kbd }); } catch { /* ignore */ }
   }
 }
 
@@ -2608,7 +2607,7 @@ async function isWebinarSupportActivated(webinar_id: string, chat_id: number): P
     .from('webinar_support_activations')
     .select('status')
     .eq('webinar_id', webinar_id)
-    .eq('telegram_chat_id', chat_id)
+    .eq(chatIdColumn(), chat_id)
     .maybeSingle();
   return (data as any)?.status === 'activated';
 }
@@ -2713,11 +2712,11 @@ async function registerWebinar(chat_id: number, message_id: number | null, prefi
   try {
     await supabase.from('webinar_support_activations').upsert({
       webinar_id: w.id,
-      telegram_chat_id: chat_id,
+      [chatIdColumn()]: chat_id,
       phone: normPhone,
       status: 'pending',
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'webinar_id,telegram_chat_id', ignoreDuplicates: false });
+    }, { onConflict: `webinar_id,${chatIdColumn()}`, ignoreDuplicates: false });
   } catch (e) { console.warn('webinar_support_activations upsert failed', e); }
 
   const activated = await isWebinarSupportActivated(w.id, chat_id);
@@ -2839,8 +2838,7 @@ async function handleWebinarGuestEmail(chat_id: number, text: string) {
     signup_source: 'telegram_webinar',
     is_approved: true,
     role: 'user',
-    telegram_chat_id: chat_id,
-    telegram_linked_at: new Date().toISOString(),
+    ...chatIdPatch(chat_id),
   }).select('id').single();
   if (insErr) console.error('guest chat_users insert failed:', insErr);
   await clearSession(chat_id);
@@ -3667,10 +3665,10 @@ async function handleUpdate(update: any) {
   try {
     await supabase.from('enrollments')
       .update({ last_activity_at: new Date().toISOString(), inactivity_stage: 0 })
-      .eq('telegram_chat_id', chat_id);
+      .eq(chatIdColumn(), chat_id);
     if (text && text.trim()) {
       const { data: enrs } = await supabase.from('enrollments')
-        .select('id').eq('telegram_chat_id', chat_id);
+        .select('id').eq(chatIdColumn(), chat_id);
       const ids = (enrs ?? []).map((e: any) => e.id);
       if (ids.length) {
         const cutoff = new Date(Date.now() - 48 * 3600 * 1000).toISOString();
@@ -3781,6 +3779,7 @@ async function handleUpdate(update: any) {
       .from('telegram_login_tokens')
       .update({
         telegram_chat_id: chat_id,
+        channel: currentChannel(),
         telegram_username: tgUsername,
         first_name: fName,
         otp_code: otp,
@@ -4110,6 +4109,7 @@ async function handleUpdate(update: any) {
       .from('telegram_login_tokens')
       .select('token, expires_at')
       .eq('telegram_chat_id', chat_id)
+      .eq('channel', currentChannel())
       .eq('verified', false)
       .order('created_at', { ascending: false })
       .limit(1)
