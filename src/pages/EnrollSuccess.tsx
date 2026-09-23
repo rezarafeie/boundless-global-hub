@@ -1362,17 +1362,17 @@ const EnrollSuccess: React.FC = () => {
                 {/* Final activation */}
                 {result.course && ((result.course.support_activation_required && !result.course.smart_activation_enabled) || result.course.smart_activation_enabled || result.course.telegram_activation_required || result.course.telegram_support_activation_enabled) && (
                   <div className="rounded-lg border border-primary/20 bg-primary/5 p-5 sm:p-6">
-                    <div className="mb-6 grid grid-cols-[3rem_minmax(0,1fr)] gap-x-3 gap-y-3 sm:flex sm:items-start sm:gap-4">
+                    <div className="mb-6 flex items-start gap-3 sm:gap-4">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-card shadow-sm">
                         <Lock className="h-6 w-6 text-primary" />
                       </div>
                       <div className="min-w-0 flex-1 text-right">
                         <Badge variant="outline" className="mb-2 border-primary/25 bg-card text-primary">مرحله نهایی</Badge>
-                        <h3 className="text-lg font-bold text-foreground">فعال‌سازی دسترسی به دوره</h3>
+                        <h3 className="text-lg font-bold text-foreground sm:text-xl">فعال‌سازی دسترسی به دوره</h3>
+                        <p className="mt-2 text-sm leading-7 text-muted-foreground sm:text-base">
+                          برای دسترسی به دوره، پشتیبانی تلگرام را فعال کنید. بلافاصله پس از فعال‌سازی، همه جلسات برای شما باز می‌شوند.
+                        </p>
                       </div>
-                      <p className="col-span-2 text-right text-sm leading-7 text-muted-foreground sm:mt-2 sm:text-base">
-                        برای دسترسی به دوره، پشتیبانی تلگرام را فعال کنید. بلافاصله پس از فعال‌سازی، همه جلسات برای شما باز می‌شوند.
-                      </p>
                     </div>
 
                     {(() => {
