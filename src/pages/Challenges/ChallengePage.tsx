@@ -56,6 +56,7 @@ const ChallengePage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const load = useCallback(async (action = 'get') => {
+    if (action === 'get') setLoading(true);
     try { setErrorMsg(null); setState(await challengeApi(action, { ...ident, preview: isPreview })); }
     catch (e: any) { setErrorMsg(e.message); }
     finally { setLoading(false); }
