@@ -140,7 +140,7 @@ const ChallengeBuilder: React.FC = () => {
               </div>
             </F>
             <div className="grid grid-cols-2 gap-3 md:col-span-2">
-              {[['gamification_enabled', 'گیمیفیکیشن'], ['streak_enabled', 'استریک'], ['leaderboard_enabled', 'لیدربورد'], ['notifications_enabled', 'اعلان‌ها'], ['ai_review_default', 'بررسی AI (پیش‌فرض)'], ['coach_review_default', 'بررسی مربی (پیش‌فرض)']].map(([k, l]) => (
+              {[['gamification_enabled', 'گیمیفیکیشن'], ['streak_enabled', 'استریک'], ['leaderboard_enabled', 'لیدربورد'], ['notifications_enabled', 'اعلان‌ها'], ['ai_review_default', 'بررسی AI (پیش‌فرض)'], ['coach_review_default', 'بررسی مربی (پیش‌فرض)'], ['unlock_next_on_complete', 'باز شدن روز بعد پس از انجام ماموریت']].map(([k, l]) => (
                 <label key={k} className="flex items-center justify-between rounded-lg border p-3 text-sm">{l}<Switch checked={!!ch[k]} onCheckedChange={(v) => set(k, v)} /></label>
               ))}
             </div>
