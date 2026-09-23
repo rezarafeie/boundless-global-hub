@@ -277,4 +277,3 @@ Deno.serve(async (req) => {
   }
 });
 
-export { selectVariant };
