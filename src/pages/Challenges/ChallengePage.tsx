@@ -562,8 +562,8 @@ const Leaderboard: React.FC<{ lb: any }> = ({ lb }) => {
 };
 
 const MessengerGate: React.FC<{ ch: any; m: any; onCheck: () => void }> = ({ ch, m, onCheck }) => (
-  <div dir="rtl" className="mx-auto max-w-lg px-4 py-12">
-    <Card className="border-2"><CardContent className="space-y-5 p-6 md:p-8">
+  <div dir="rtl" className="mx-auto w-full max-w-lg px-4 py-12">
+    <Card className="min-w-0 overflow-hidden border-2"><CardContent className="min-w-0 space-y-5 p-5 sm:p-6 md:p-8">
       <div className="flex items-center gap-3"><div className="rounded-full bg-primary/10 p-3"><ShieldCheck className="h-6 w-6 text-primary" /></div>
         <div><h1 className="text-lg font-bold">فعال‌سازی پشتیبانی تلگرام</h1><p className="text-sm text-muted-foreground">{ch.title}</p></div></div>
       <p className="text-sm leading-7 text-muted-foreground">برای شرکت در چالش، ربات و پشتیبانی تلگرام را فعال کنید. پیام‌های مربی، ماموریت‌ها و نتیجه بررسی درخواست از همین مسیر برای شما ارسال می‌شود.</p>
@@ -584,7 +584,7 @@ const ApplicationStatus: React.FC<{ ch: any; app: any; status: 'pending' | 'reje
         <div className={`rounded-full p-3 ${status === 'pending' ? 'bg-primary/10' : 'bg-destructive/10'}`}>
           {status === 'pending' ? <Clock className="h-6 w-6 text-primary" /> : <XCircle className="h-6 w-6 text-destructive" />}
         </div>
-        <div><h1 className="text-lg font-bold">{status === 'pending' ? 'در انتظار تایید مربی' : 'درخواست تایید نشد'}</h1><p className="text-sm text-muted-foreground">{ch.title}</p></div>
+        <div className="min-w-0"><h1 className="text-lg font-bold">{status === 'pending' ? 'در انتظار تایید مربی' : 'درخواست تایید نشد'}</h1><p className="break-words text-sm text-muted-foreground">{ch.title}</p></div>
       </div>
       {status === 'pending' ? (
         <p className="text-sm leading-7 text-muted-foreground">درخواست شما ثبت شد و مربی در حال بررسی آن است. به محض تایید، از طریق تلگرام و ایمیل خبر می‌دهیم و ماموریت‌ها باز می‌شوند.</p>
@@ -592,8 +592,8 @@ const ApplicationStatus: React.FC<{ ch: any; app: any; status: 'pending' | 'reje
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm leading-7"><p className="font-semibold">دلیل:</p><p className="whitespace-pre-wrap">{app?.reason || '—'}</p></div>
       )}
       {Array.isArray(app?.summary) && app.summary.length > 0 && (
-        <div className="rounded-lg bg-muted/50 p-4"><p className="mb-2 text-sm font-semibold">پاسخ‌های شما</p>
-          <dl className="space-y-1 text-sm">{app.summary.map(([k, v]: any, i: number) => <div key={i} className="flex gap-2"><dt className="shrink-0 text-muted-foreground">{k}:</dt><dd className="break-words">{String(v)}</dd></div>)}</dl></div>
+        <div className="min-w-0 overflow-hidden rounded-lg bg-muted/50 p-4"><p className="mb-3 text-sm font-semibold">پاسخ‌های شما</p>
+          <dl className="min-w-0 space-y-3 text-sm">{app.summary.map(([k, v]: any, i: number) => <div key={i} className="min-w-0 sm:grid sm:grid-cols-[max-content_minmax(0,1fr)] sm:gap-2"><dt className="text-muted-foreground">{k}:</dt><dd className="min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere]">{String(v)}</dd></div>)}</dl></div>
       )}
       <div className="flex gap-2">
         {onEdit && <Button className="flex-1" onClick={onEdit}>اصلاح و ارسال دوباره</Button>}
