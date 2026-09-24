@@ -6,6 +6,7 @@ import { fetchUsdTomanRate } from "../_shared/rafieipay.ts";
 import {
   loadStructure, syncParticipant, emitEvent, reportMetrics, recalcParticipant, completeMission,
   grantReward, participantStats, unlockedDay, currentDayNumber, dayWindow, selectVariant, processRewards,
+  processExpiredMissions,
 } from "../_shared/challenge.ts";
 
 const ZARINPAL_MERCHANT_ID = Deno.env.get("ZARINPAL_MERCHANT_ID") || "";
@@ -77,7 +78,10 @@ async function fullState(ch: any, uid: number | null) {
     participant = data;
   }
   const today = currentDayNumber(ch);
-  if (participant && ch.status === "active") await syncParticipant(ch, participant, { days, variants });
+  if (participant && ch.status === "active") {
+    await syncParticipant(ch, participant, { days, variants });
+    await processExpiredMissions(ch, participant, { days, variants });
+  }
   const visibleDay = participant ? await unlockedDay(ch, participant) : today;
   const publicDays = days.map((d: any) => {
     const w = dayWindow(ch, d);

@@ -504,3 +504,48 @@ export async function syncParticipant(ch: Challenge, p: Participant, structure?:
   for (const r of rows ?? []) if ((await syncProgressRow(ch, p, r, byId.get(r.day_id))) === "completed") completedAny = true;
   if ((ch as any).unlock_next_on_complete) await ensureProgress(ch, p, s);
 }
+
+// Reconcile expired missions from both cron and page/API reads. This also repairs
+// legacy participants whose required days before their join were stored as
+// `skipped`, which previously bypassed missed-day penalties forever.
+export async function processExpiredMissions(
+  ch: Challenge,
+  p: Participant,
+  structure?: { days: any[]; variants: any[] },
+  now = Date.now(),
+) {
+  const s = structure ?? await loadStructure(ch.id);
+  const dayById = new Map(s.days.map((d: any) => [d.id, d]));
+  const { data: rows } = await supabase.from("challenge_progress").select("*")
+    .eq("participant_id", p.id).in("status", [...OPEN, "skipped"]);
+  let missed = 0;
+
+  for (const row of rows ?? []) {
+    const day: any = dayById.get(row.day_id);
+    const deadline = row.deadline_at ? Date.parse(row.deadline_at) : null;
+    if (!deadline || now <= deadline) continue;
+    // Optional days remain safely skippable. Required historical days must be
+    // treated as missed so configured penalties are applied consistently.
+    if (row.status === "skipped" && day?.required === false) continue;
+
+    const { data: changed } = await supabase.from("challenge_progress")
+      .update({ status: "missed", missed_at: row.missed_at ?? new Date(now).toISOString() })
+      .eq("id", row.id).in("status", [...OPEN, "skipped"]).select("id").maybeSingle();
+    if (!changed) continue;
+
+    missed++;
+    const hadStreak = p.streak;
+    await recalcParticipant(ch, p);
+    await emitEvent(ch, p, "mission_missed", `day:${row.day_number}`, {
+      day: row.day_number,
+      mission_title: day?.title,
+    });
+    if (ch.streak_enabled && hadStreak > 0 && day?.required !== false) {
+      await emitEvent(ch, p, "streak_broken", `day:${row.day_number}`, {});
+      await applyPenalties(ch, p, "streak_broken", `day:${row.day_number}`);
+    }
+    if (day?.required !== false) await applyPenalties(ch, p, "mission_missed", `day:${row.day_number}`);
+  }
+
+  return missed;
+}
