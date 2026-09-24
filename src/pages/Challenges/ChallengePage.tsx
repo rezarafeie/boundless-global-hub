@@ -98,6 +98,7 @@ const ChallengePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [started, setStarted] = useState(false);
+  const [pinnedDay, setPinnedDay] = useState<number | null>(null);
   const isPreview = params.get('preview') === '1';
   const ident = useMemo(() => ({ userId: user?.id, email: (user as any)?.email, slug }), [user?.id, slug]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -165,7 +166,7 @@ const ChallengePage: React.FC = () => {
 
   const progress: any[] = state.progress || [];
   const openRow = progress.find((r) => ['available', 'started', 'needs_revision'].includes(r.status));
-  const selectedDay = Number(params.get('day')) || openRow?.day_number || state.today;
+  const selectedDay = Number(params.get('day')) || pinnedDay || openRow?.day_number || state.today;
   const current = progress.find((r) => r.day_number === selectedDay) ?? progress[progress.length - 1];
   const dayInfo = state.days.find((d: any) => d.day_number === current?.day_number);
   const isToday = current?.day_number === state.today;
@@ -245,9 +246,15 @@ const ChallengePage: React.FC = () => {
               </div>
             )}
 
+            {current.status === 'completed' && openRow && openRow.day_number > current.day_number && (
+              <div className="flex flex-col items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4 text-center sm:flex-row sm:justify-between sm:text-right">
+                <p className="text-sm font-medium">🎉 ماموریت روز {faNum(openRow.day_number)} برایت باز شد.</p>
+                <Button onClick={() => { setPinnedDay(openRow.day_number); setStarted(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>رفتن به روز {faNum(openRow.day_number)}</Button>
+              </div>
+            )}
             {canWork && current.assignment && (
               started || current.status !== 'available' ? (
-                <AssignmentSection assignmentId={current.assignment_id} bare onChange={() => load('sync')} />
+                <AssignmentSection assignmentId={current.assignment_id} bare onChange={() => { setPinnedDay(current.day_number); load('sync'); }} />
               ) : (
                 <Button size="lg" className="h-14 w-full text-base font-bold" disabled={busy}
                   onClick={async () => { setStarted(true); await challengeApi('start', { ...ident, progressId: current.id }).catch(() => {}); }}>

@@ -76,8 +76,9 @@ export const AssignmentSection: React.FC<Props> = ({ lessonId, assignmentId, onC
   const [submissions, setSubmissions] = useState<Record<string, AssignmentSubmission>>({});
   const [loading, setLoading] = useState(true);
 
+  const loadedOnce = useRef(false);
   const load = useCallback(async () => {
-    setLoading(true);
+    if (!loadedOnce.current) setLoading(true);
     let q = supabase.from('assignments').select('*').eq('status', 'published');
     q = assignmentId ? q.eq('id', assignmentId) : q.eq('lesson_id', lessonId ?? '');
     const { data: aData } = await q.order('created_at');
@@ -102,6 +103,7 @@ export const AssignmentSection: React.FC<Props> = ({ lessonId, assignmentId, onC
       });
       setSubmissions(map);
     }
+    loadedOnce.current = true;
     setLoading(false);
   }, [lessonId, assignmentId, studentId]);
 
