@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bell, CheckCircle2, Clock, Flame, Gift, Loader2, Target, Trophy, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bell, CheckCircle2, Clock, Flame, Gift, Hash, ListChecks, Loader2, MessageSquare, Target, Trophy, Type, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { AssignmentSection } from '@/components/Assignment/AssignmentSection';
 import RewardValue from '@/components/Gamification/RewardValue';
@@ -31,6 +31,27 @@ const Countdown: React.FC<{ to?: string | null }> = ({ to }) => {
   const [, tick] = useState(0);
   useEffect(() => { const t = setInterval(() => tick((v) => v + 1), 30000); return () => clearInterval(t); }, []);
   return <span>{remaining(to)}</span>;
+};
+
+const segmentsWithOnboarding = (challenge: any, onboardingForm?: any) => {
+  const segments = segmentsOf(challenge);
+  const fields = Array.isArray(onboardingForm?.fields) ? onboardingForm.fields : [];
+  const replaceLabels = (key: string, options: any[]) => {
+    const field = fields.find((item: any) => item.field_key === key && item.field_type === 'dropdown');
+    const labels = Array.isArray(field?.options) ? field.options : [];
+    if (!labels.length) return options;
+    return labels.map((item: any, index: number) => ({
+      value: options[index]?.value ?? String(typeof item === 'object' && item ? item.value ?? item.label : item),
+      label: String(typeof item === 'object' && item ? item.label ?? item.value : item),
+    }));
+  };
+  return {
+    ...segments,
+    stages: replaceLabels('stage', segments.stages),
+    budgets: replaceLabels('budget', segments.budgets),
+    business_models: replaceLabels('business_model', segments.business_models),
+    boundless_codes: replaceLabels('boundless_code', segments.boundless_codes),
+  };
 };
 
 const List: React.FC<{ title: string; items?: any[] }> = ({ title, items }) =>
@@ -118,7 +139,7 @@ const ChallengePage: React.FC = () => {
   );
 
   const ch = state.challenge;
-  const seg = segmentsOf(ch);
+  const seg = segmentsWithOnboarding(ch, state.onboardingForm);
   const p = state.participant;
   const run = async (action: string, extra: Record<string, unknown> = {}) => {
     setBusy(true);
@@ -127,7 +148,7 @@ const ChallengePage: React.FC = () => {
     finally { setBusy(false); }
   };
 
-  if (!p) return <Onboarding ch={ch} seg={seg} isAuthenticated={isAuthenticated} busy={busy} onJoin={(profile) => run('join', { profile })} />;
+  if (!p) return <Onboarding ch={ch} seg={seg} onboardingForm={state.onboardingForm} isAuthenticated={isAuthenticated} busy={busy} onJoin={(profile) => run('join', { profile })} />;
 
   const progress: any[] = state.progress || [];
   const openRow = progress.find((r) => ['available', 'started', 'needs_revision'].includes(r.status));
@@ -327,45 +348,133 @@ const RevisionBox: React.FC<{ sub: any }> = ({ sub }) => {
   );
 };
 
-const Onboarding: React.FC<{ ch: any; seg: any; isAuthenticated: boolean; busy: boolean; onJoin: (p: any) => void }> = ({ ch, seg, isAuthenticated, busy, onJoin }) => {
+type OnboardingQuestion = {
+  key: string;
+  label: string;
+  type: 'text' | 'long_text' | 'number' | 'choice';
+  required?: boolean;
+  help?: string | null;
+  options?: { value: string; label: string }[];
+  answerKey?: string;
+};
+
+const mapLinkedOptions = (raw: unknown, canonical: any[]) => {
+  const labels = Array.isArray(raw) ? raw.map((x) => String(typeof x === 'object' && x ? (x as any).label ?? (x as any).value : x)) : [];
+  return labels.map((label, index) => ({ value: canonical[index]?.value ?? label, label }));
+};
+
+const Onboarding: React.FC<{ ch: any; seg: any; onboardingForm?: any; isAuthenticated: boolean; busy: boolean; onJoin: (p: any) => void }> = ({ ch, seg, onboardingForm, isAuthenticated, busy, onJoin }) => {
   const [f, setF] = useState<any>({});
+  const [step, setStep] = useState(0);
   const set = (k: string, v: string) => setF((x: any) => ({ ...x, [k]: v }));
-  const Pick = ({ k, label, opts }: { k: string; label: string; opts: any[] }) => (
-    <div className="space-y-1"><Label>{label}</Label>
-      <Select value={f[k] ?? ''} onValueChange={(v) => set(k, v)}>
-        <SelectTrigger><SelectValue placeholder="انتخاب کنید" /></SelectTrigger>
-        <SelectContent>{opts.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-      </Select>
-    </div>
-  );
-  const ok = f.boundless_code && f.business_model && f.stage && f.budget;
+  const linkedFields = Array.isArray(onboardingForm?.fields) ? onboardingForm.fields : [];
+  const linkedKeys = new Set(linkedFields.map((field: any) => field.field_key));
+  const standard: OnboardingQuestion[] = [
+    { key: 'boundless_code', label: 'کدام کد دوره بدون مرز؟', type: 'choice', required: true, options: seg.boundless_codes },
+    { key: 'business_model', label: 'مدل کسب‌وکار تو چیست؟', type: 'choice', required: true, options: seg.business_models },
+    { key: 'stage', label: 'الان در چه مرحله‌ای هستی؟', type: 'choice', required: true, options: seg.stages },
+    { key: 'budget', label: 'بودجه تو برای این مسیر چقدر است؟', type: 'choice', required: true, options: seg.budgets },
+  ];
+  const linked: OnboardingQuestion[] = linkedFields
+    .filter((field: any) => !['message', 'ai_analysis'].includes(field.field_type))
+    .map((field: any) => {
+      const key = String(field.field_key || field.id);
+      const canonical = key === 'stage' ? seg.stages : key === 'budget' ? seg.budgets : [];
+      const choices = field.field_type === 'dropdown'
+        ? (canonical.length ? mapLinkedOptions(field.options, canonical) : mapLinkedOptions(field.options, []))
+        : undefined;
+      return {
+        key,
+        answerKey: String(field.field_key || field.id),
+        label: field.label,
+        type: field.field_type === 'dropdown' ? 'choice' : field.field_type === 'long_text' ? 'long_text' : field.field_type === 'number' ? 'number' : 'text',
+        required: !!field.required,
+        help: field.help_text,
+        options: choices,
+      };
+    });
+  const extras: OnboardingQuestion[] = [
+    { key: 'monthly_revenue', label: 'فروش/درآمد ماهانه فعلی (اختیاری)', type: 'number' },
+    { key: 'goal', label: 'هدف اصلی تو در این چالش', type: 'long_text' },
+    { key: 'website', label: 'وب‌سایت یا لندینگ (اختیاری)', type: 'text' },
+    { key: 'socials', label: 'شبکه‌های اجتماعی (اختیاری)', type: 'text' },
+  ];
+  const questions = [
+    ...standard.filter((question) => !linkedKeys.has(question.key)),
+    ...linked,
+    ...extras.filter((question) => !linkedKeys.has(question.key)),
+  ];
+  const current = questions[step];
+  const currentValid = !current?.required || String(f[current.key] ?? '').trim().length > 0;
+  const requiredComplete = ['boundless_code', 'business_model', 'stage', 'budget'].every((key) => String(f[key] ?? '').trim());
+  const submit = () => onJoin({
+    ...f,
+    onboarding_answers: Object.fromEntries(linked.map((question) => [question.answerKey ?? question.key, f[question.key] ?? null])),
+  });
   return (
-    <div dir="rtl" className="mx-auto max-w-2xl space-y-6 px-4 py-8">
-      <div>
-        <h1 className="text-2xl font-bold">{ch.title}</h1>
-        {ch.description && <p className="mt-2 whitespace-pre-line text-muted-foreground">{ch.description}</p>}
-        <p className="mt-2 text-sm text-muted-foreground">{faNum(ch.days_count)} روز · شروع {new Date(ch.start_date).toLocaleDateString('fa-IR')}</p>
-      </div>
+    <div dir="rtl" className="min-h-[calc(100dvh-5rem)] bg-gradient-to-br from-background via-background to-primary/5 px-4 py-8">
+      <div className="mx-auto max-w-2xl space-y-6">
       {!isAuthenticated ? (
         <Card><CardContent className="space-y-3 p-6 text-center"><p>برای شرکت در چالش وارد حساب کاربری شوید.</p><Button asChild><Link to={`/auth?redirect=/challenges/${ch.slug}`}>ورود</Link></Button></CardContent></Card>
       ) : !['scheduled', 'active'].includes(ch.status) ? (
         <Card><CardContent className="p-6 text-center text-muted-foreground">ثبت‌نام در این چالش بسته است.</CardContent></Card>
       ) : (
-        <Card>
-          <CardHeader><CardTitle className="text-base">پروفایل کوتاه — ماموریت‌ها بر اساس همین شخصی‌سازی می‌شوند</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <Pick k="boundless_code" label="کدام کد دوره بدون مرز؟" opts={seg.boundless_codes} />
-            <Pick k="business_model" label="مدل کسب‌وکار" opts={seg.business_models} />
-            <Pick k="stage" label="الان در چه مرحله‌ای هستی؟" opts={seg.stages} />
-            <Pick k="budget" label="بودجه" opts={seg.budgets} />
-            <div className="space-y-1"><Label>فروش/درآمد ماهانه فعلی (اختیاری)</Label><Input inputMode="numeric" value={f.monthly_revenue ?? ''} onChange={(e) => set('monthly_revenue', e.target.value)} /></div>
-            <div className="space-y-1"><Label>هدف اصلی تو در این چالش</Label><Textarea value={f.goal ?? ''} onChange={(e) => set('goal', e.target.value)} /></div>
-            <div className="space-y-1"><Label>وبسایت/لندینگ (اختیاری)</Label><Input dir="ltr" value={f.website ?? ''} onChange={(e) => set('website', e.target.value)} /></div>
-            <div className="space-y-1"><Label>شبکه‌های اجتماعی (اختیاری)</Label><Input dir="ltr" value={f.socials ?? ''} onChange={(e) => set('socials', e.target.value)} /></div>
-            <Button size="lg" className="w-full" disabled={!ok || busy} onClick={() => onJoin(f)}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : 'شروع چالش'}</Button>
-          </CardContent>
-        </Card>
+        <>
+          <div>
+            <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+              <span>گام {faNum(step + 1)} از {faNum(questions.length + 1)}</span><span>{faNum(Math.round((step / Math.max(1, questions.length)) * 100))}٪</span>
+            </div>
+            <Progress value={(step / Math.max(1, questions.length)) * 100} className="h-2" />
+          </div>
+          <Card className="border-2 shadow-lg">
+            <CardContent className="flex min-h-[430px] flex-col p-6 md:p-10">
+              <div className="flex-1">
+                {step === 0 ? (
+                  <div className="space-y-4 py-8 text-center">
+                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10"><MessageSquare className="h-10 w-10 text-primary" /></div>
+                    <h1 className="text-3xl font-bold md:text-4xl">{onboardingForm?.title || ch.title}</h1>
+                    <p className="whitespace-pre-line leading-relaxed text-muted-foreground">{onboardingForm?.description || ch.description || 'چند سؤال کوتاه برای شخصی‌سازی ماموریت‌های چالش'}</p>
+                    <p className="text-sm text-muted-foreground">پاسخ‌ها مسیر و ماموریت‌های مناسب تو را مشخص می‌کنند.</p>
+                  </div>
+                ) : current ? (
+                  <div className="space-y-5">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+                        {current.type === 'choice' ? <ListChecks className="h-6 w-6 text-primary" /> : current.type === 'number' ? <Hash className="h-6 w-6 text-primary" /> : <Type className="h-6 w-6 text-primary" />}
+                      </div>
+                      <div className="min-w-0 flex-1"><h2 className="text-xl font-bold leading-8 md:text-2xl">{current.label}{current.required && <span className="mr-1 text-destructive">*</span>}</h2>{current.help && <p className="mt-1 text-sm text-muted-foreground">{current.help}</p>}</div>
+                    </div>
+                    {current.type === 'choice' ? (
+                      <div className="grid gap-2 pt-2">{(current.options || []).map((option) => <Button key={option.value} type="button" variant="outline" onClick={() => set(current.key, option.value)} className={`h-auto min-h-14 justify-start whitespace-normal px-4 py-3 text-right leading-7 ${f[current.key] === option.value ? 'border-primary bg-primary/10' : ''}`}>{option.label}</Button>)}</div>
+                    ) : current.type === 'long_text' ? (
+                      <Textarea rows={6} value={f[current.key] ?? ''} onChange={(e) => set(current.key, e.target.value)} className="text-base" autoFocus />
+                    ) : (
+                      <Input type={current.type === 'number' ? 'number' : 'text'} value={f[current.key] ?? ''} onChange={(e) => set(current.key, e.target.value)} className="h-14 text-lg" autoFocus />
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="text-center"><CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-primary" /><h2 className="text-2xl font-bold">بازبینی پاسخ‌ها</h2><p className="mt-1 text-sm text-muted-foreground">قبل از شروع چالش، پاسخ‌هایت را بررسی کن.</p></div>
+                    <div className="max-h-[300px] space-y-2 overflow-y-auto">{questions.map((question) => {
+                      const selected = question.options?.find((option) => option.value === f[question.key]);
+                      return <div key={question.key} className="rounded-lg bg-muted/50 p-3"><p className="text-xs text-muted-foreground">{question.label}</p><p className="mt-1 whitespace-pre-wrap text-sm font-medium">{selected?.label || f[question.key] || '—'}</p></div>;
+                    })}</div>
+                  </div>
+                )}
+              </div>
+              <div className="mt-6 flex items-center justify-between gap-3 border-t pt-6">
+                <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0 || busy}><ArrowRight className="ml-1 h-4 w-4" />قبلی</Button>
+                {step < questions.length ? (
+                  <Button size="lg" className="min-w-36" disabled={!currentValid || busy} onClick={() => setStep((s) => s + 1)}>{step === 0 ? 'شروع' : 'بعدی'}<ArrowLeft className="mr-1 h-4 w-4" /></Button>
+                ) : (
+                  <Button size="lg" className="min-w-36" disabled={!requiredComplete || busy} onClick={submit}>{busy && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}شروع چالش</Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </>
       )}
+      </div>
     </div>
   );
 };

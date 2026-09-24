@@ -73,6 +73,14 @@ async function leaderboard(ch: any, myId?: string) {
 
 async function fullState(ch: any, uid: number | null) {
   const { days, variants } = await loadStructure(ch.id);
+  let onboardingForm: any = null;
+  if (ch.onboarding_form_id) {
+    const [{ data: form }, { data: fields }] = await Promise.all([
+      supabase.from("telegram_forms").select("id, title, slug, description, is_active, require_login").eq("id", ch.onboarding_form_id).maybeSingle(),
+      supabase.from("telegram_form_fields").select("id, field_key, label, field_type, required, options, help_text, order_index").eq("form_id", ch.onboarding_form_id).order("order_index"),
+    ]);
+    if (form) onboardingForm = { ...form, fields: fields ?? [] };
+  }
   let participant: any = null;
   if (uid) {
     const { data } = await supabase.from("challenge_participants").select("*").eq("challenge_id", ch.id).eq("user_id", uid).maybeSingle();
@@ -95,7 +103,7 @@ async function fullState(ch: any, uid: number | null) {
   });
   const base: any = {
     challenge: { ...ch, messages: undefined, notification_settings: undefined, penalty_rules: undefined },
-    days: publicDays, today, unlocked_day: visibleDay, participant,
+    days: publicDays, today, unlocked_day: visibleDay, participant, onboardingForm,
   };
   if (!participant) return base;
 
@@ -210,12 +218,18 @@ Deno.serve(async (req) => {
       if (!["scheduled", "active"].includes(ch.status)) return json({ success: false, error: "ثبت‌نام در این چالش باز نیست" }, 400);
       const pr = body.profile ?? {};
       const clean = (v: unknown, n = 300) => (v == null || v === "" ? null : String(v).slice(0, n));
-      const { data: existing } = await supabase.from("challenge_participants").select("id").eq("challenge_id", ch.id).eq("user_id", uid).maybeSingle();
+      const { data: existing } = await supabase.from("challenge_participants").select("id, profile").eq("challenge_id", ch.id).eq("user_id", uid).maybeSingle();
       const row = {
         challenge_id: ch.id, user_id: uid,
         boundless_code: clean(pr.boundless_code, 20), business_model: clean(pr.business_model, 60), stage: clean(pr.stage, 60),
         budget: clean(pr.budget, 30), monthly_revenue: pr.monthly_revenue ? Number(pr.monthly_revenue) || null : null,
         goal: clean(pr.goal, 1000), website: clean(pr.website, 300), socials: clean(pr.socials, 600),
+        profile: {
+          ...(existing?.profile && typeof existing.profile === "object" ? existing.profile : {}),
+          ...(pr.profile && typeof pr.profile === "object" ? pr.profile : {}),
+          onboarding_answers: pr.onboarding_answers && typeof pr.onboarding_answers === "object" ? pr.onboarding_answers : {},
+          onboarding_form_id: ch.onboarding_form_id ?? null,
+        },
       };
       const { data: p, error } = existing
         ? await supabase.from("challenge_participants").update(row).eq("id", existing.id).select("*").single()
