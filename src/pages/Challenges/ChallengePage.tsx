@@ -33,6 +33,27 @@ const Countdown: React.FC<{ to?: string | null }> = ({ to }) => {
   return <span>{remaining(to)}</span>;
 };
 
+const segmentsWithOnboarding = (challenge: any, onboardingForm?: any) => {
+  const segments = segmentsOf(challenge);
+  const fields = Array.isArray(onboardingForm?.fields) ? onboardingForm.fields : [];
+  const replaceLabels = (key: string, options: any[]) => {
+    const field = fields.find((item: any) => item.field_key === key && item.field_type === 'dropdown');
+    const labels = Array.isArray(field?.options) ? field.options : [];
+    if (!labels.length) return options;
+    return labels.map((item: any, index: number) => ({
+      value: options[index]?.value ?? String(typeof item === 'object' && item ? item.value ?? item.label : item),
+      label: String(typeof item === 'object' && item ? item.label ?? item.value : item),
+    }));
+  };
+  return {
+    ...segments,
+    stages: replaceLabels('stage', segments.stages),
+    budgets: replaceLabels('budget', segments.budgets),
+    business_models: replaceLabels('business_model', segments.business_models),
+    boundless_codes: replaceLabels('boundless_code', segments.boundless_codes),
+  };
+};
+
 const List: React.FC<{ title: string; items?: any[] }> = ({ title, items }) =>
   items && items.length ? (
     <div>
@@ -118,7 +139,7 @@ const ChallengePage: React.FC = () => {
   );
 
   const ch = state.challenge;
-  const seg = segmentsOf(ch);
+  const seg = segmentsWithOnboarding(ch, state.onboardingForm);
   const p = state.participant;
   const run = async (action: string, extra: Record<string, unknown> = {}) => {
     setBusy(true);
@@ -431,7 +452,15 @@ const Onboarding: React.FC<{ ch: any; seg: any; onboardingForm?: any; isAuthenti
                       <Input type={current.type === 'number' ? 'number' : 'text'} value={f[current.key] ?? ''} onChange={(e) => set(current.key, e.target.value)} className="h-14 text-lg" autoFocus />
                     )}
                   </div>
-                ) : null}
+                ) : (
+                  <div className="space-y-4">
+                    <div className="text-center"><CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-primary" /><h2 className="text-2xl font-bold">بازبینی پاسخ‌ها</h2><p className="mt-1 text-sm text-muted-foreground">قبل از شروع چالش، پاسخ‌هایت را بررسی کن.</p></div>
+                    <div className="max-h-[300px] space-y-2 overflow-y-auto">{questions.map((question) => {
+                      const selected = question.options?.find((option) => option.value === f[question.key]);
+                      return <div key={question.key} className="rounded-lg bg-muted/50 p-3"><p className="text-xs text-muted-foreground">{question.label}</p><p className="mt-1 whitespace-pre-wrap text-sm font-medium">{selected?.label || f[question.key] || '—'}</p></div>;
+                    })}</div>
+                  </div>
+                )}
               </div>
               <div className="mt-6 flex items-center justify-between gap-3 border-t pt-6">
                 <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0 || busy}><ArrowRight className="ml-1 h-4 w-4" />قبلی</Button>
