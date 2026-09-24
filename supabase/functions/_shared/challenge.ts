@@ -96,7 +96,69 @@ const DEFAULT_MESSAGES: Record<string, { title: string; text: string }> = {
   penalty_released: { title: "✅ به چالش برگشتی", text: "{name}، {feedback}\n{mission_url}" },
   inactive: { title: "دلمون برات تنگ شده 👋", text: "{name}، چند وقتی است در {challenge_title} فعالیتی نداشتی. ماموریت امروز منتظرته.\n{challenge_url}" },
   challenge_completed: { title: "🏆 چالش تمام شد", text: "{name}، {challenge_title} به پایان رسید. امتیاز نهایی: {xp} — پیشرفت: {progress}٪" },
+  application_received: { title: "درخواستت ثبت شد ⏳", text: "{name} عزیز، درخواست شرکت در {challenge_title} دریافت شد و در انتظار تایید مربی است. نتیجه را از همین‌جا به تو خبر می‌دهیم." },
+  application_approved: { title: "درخواستت تایید شد ✅", text: "{name} عزیز، مربی درخواستت برای {challenge_title} را تایید کرد. از همین حالا وارد چالش شو:\n{challenge_url}" },
+  application_rejected: { title: "درخواستت تایید نشد", text: "{name} عزیز، درخواستت برای {challenge_title} فعلاً تایید نشد.\n\nدلیل: {reason}\n\nمی‌توانی اطلاعاتت را اصلاح کنی و دوباره بفرستی:\n{challenge_url}" },
 };
+
+/* ---------------- coach approval ---------------- */
+
+function esc(s: unknown) {
+  return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+export async function applicationSummary(ch: Challenge, p: Participant) {
+  const { data: user } = await supabase.from("chat_users").select("full_name, name, phone, email").eq("id", p.user_id).maybeSingle();
+  const lines: [string, unknown][] = [
+    ["نام", user?.full_name ?? user?.name], ["موبایل", user?.phone], ["ایمیل", user?.email],
+    ["کد دوره", p.boundless_code], ["مدل کسب‌وکار", p.business_model], ["مرحله", p.stage], ["بودجه", p.budget],
+    ["درآمد ماهانه", p.monthly_revenue], ["هدف", p.goal], ["وبسایت", p.website], ["شبکه‌های اجتماعی", p.socials],
+  ];
+  const answers = p.profile?.onboarding_answers && typeof p.profile.onboarding_answers === "object" ? p.profile.onboarding_answers : {};
+  let labels: Record<string, string> = {};
+  if (ch.onboarding_form_id) {
+    const { data: fields } = await supabase.from("telegram_form_fields").select("field_key, label").eq("form_id", ch.onboarding_form_id);
+    labels = Object.fromEntries((fields ?? []).map((f: any) => [f.field_key, f.label]));
+  }
+  for (const [k, v] of Object.entries(answers)) if (!["stage", "budget", "business_model", "boundless_code"].includes(k)) lines.push([labels[k] ?? k, v]);
+  return lines.filter(([, v]) => v != null && String(v).trim() !== "");
+}
+
+export async function notifyCoachOfApplication(ch: Challenge, p: Participant) {
+  const email = String(ch.coach_email ?? "rezarafeie13@gmail.com").trim().toLowerCase();
+  const rows = await applicationSummary(ch, p);
+  const title = `درخواست جدید چالش «${ch.title}»`;
+  const text = rows.map(([k, v]) => `<b>${esc(k)}:</b> ${esc(v)}`).join("\n");
+  const adminUrl = `${SITE}/enroll/admin/challenges/${ch.id}?tab=applications`;
+  const { data: coach } = await supabase.from("chat_users").select("id, telegram_chat_id, bale_chat_id").ilike("email", email).limit(1).maybeSingle();
+  const keyboard = [[{ text: "✅ تایید", callback_data: `chal_ok:${p.id}` }, { text: "❌ رد", callback_data: `chal_no:${p.id}` }]];
+  try {
+    if (coach?.telegram_chat_id) await sendMessage(Number(coach.telegram_chat_id), `📝 <b>${esc(title)}</b>\n\n${text}`, { keyboard } as any);
+    else if (coach?.bale_chat_id) await baleSendMessage(Number(coach.bale_chat_id), stripHtml(`${title}\n\n${text}\n\n${adminUrl}`));
+  } catch (e) { console.warn("coach bot notify failed", e); }
+  const html = `<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;line-height:1.9"><h2>${esc(title)}</h2>${rows.map(([k, v]) => `<p><b>${esc(k)}:</b> ${esc(v)}</p>`).join("")}<p><a href="${adminUrl}" style="background:#2563eb;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">بررسی و تایید / رد</a></p></div>`;
+  try { await sendEmail(email, title, html); } catch (e) { console.warn("coach email failed", e); }
+}
+
+export async function reviewApplication(participantId: string, decision: "approve" | "reject", reason: string | null, by: string) {
+  const { data: p } = await supabase.from("challenge_participants").select("*").eq("id", participantId).maybeSingle();
+  if (!p) return { ok: false, error: "شرکت‌کننده یافت نشد" };
+  const { data: ch } = await supabase.from("challenges").select("*").eq("id", p.challenge_id).maybeSingle();
+  if (!ch) return { ok: false, error: "چالش یافت نشد" };
+  if (decision === "approve" && p.approval_status === "approved") return { ok: true, already: true, participant: p, challenge: ch };
+  const now = new Date().toISOString();
+  const patch = decision === "approve"
+    ? { approval_status: "approved", status: "active", approved_at: now, joined_at: now, reviewed_at: now, reviewed_by: by, rejection_reason: null }
+    : { approval_status: "rejected", status: "rejected", reviewed_at: now, reviewed_by: by, rejection_reason: reason || "—" };
+  const { data: fresh } = await supabase.from("challenge_participants").update(patch).eq("id", p.id).select("*").single();
+  if (decision === "approve") {
+    await emitEvent(ch, fresh, "application_approved", `approved:${now}`, {});
+    if (ch.status === "active") await syncParticipant(ch, fresh);
+  } else {
+    await emitEvent(ch, fresh, "application_rejected", `rejected:${now}`, { reason: reason || "—" });
+  }
+  return { ok: true, participant: fresh, challenge: ch };
+}
 
 function render(tpl: string, vars: Record<string, unknown>) {
   return tpl.replace(/\{(\w+)\}/g, (_m, k) => (vars[k] == null ? "" : String(vars[k])));

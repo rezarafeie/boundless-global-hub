@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, ArrowRight, Bell, CheckCircle2, Clock, Flame, Gift, Hash, ListChecks, Loader2, MessageSquare, Target, Trophy, Type, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bell, CheckCircle2, Clock, Flame, Gift, Hash, ListChecks, Loader2, MessageSquare, Target, Trophy, Type, Zap, Send, ShieldCheck, XCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { AssignmentSection } from '@/components/Assignment/AssignmentSection';
 import RewardValue from '@/components/Gamification/RewardValue';
@@ -148,7 +148,20 @@ const ChallengePage: React.FC = () => {
     finally { setBusy(false); }
   };
 
-  if (!p) return <Onboarding ch={ch} seg={seg} onboardingForm={state.onboardingForm} isAuthenticated={isAuthenticated} busy={busy} onJoin={(profile) => run('join', { profile })} />;
+  if (!isAuthenticated) return (
+    <div dir="rtl" className="mx-auto max-w-md px-4 py-16">
+      <Card><CardContent className="space-y-4 p-6 text-center">
+        <h1 className="text-lg font-bold">{ch.title}</h1>
+        <p className="text-sm text-muted-foreground">برای شرکت در چالش ابتدا وارد حساب کاربری شوید.</p>
+        <Button asChild className="w-full"><Link to={`/auth?redirect=/challenges/${ch.slug}`}>ورود / ثبت‌نام</Link></Button>
+      </CardContent></Card>
+    </div>
+  );
+  const editing = params.get('edit') === '1';
+  if ((!p || (p.approval_status === 'rejected' && editing)) && state.messenger && !state.messenger.ready) return <MessengerGate ch={ch} m={state.messenger} onCheck={() => load()} />;
+  if (p && p.approval_status === 'pending') return <ApplicationStatus ch={ch} app={state.application} status="pending" onRefresh={() => load()} />;
+  if (p && p.approval_status === 'rejected' && !editing) return <ApplicationStatus ch={ch} app={state.application} status="rejected" onRefresh={() => load()} onEdit={() => setParams({ edit: '1' })} />;
+  if (!p || (p.approval_status === 'rejected' && editing)) return <Onboarding ch={ch} seg={seg} onboardingForm={state.onboardingForm} isAuthenticated={isAuthenticated} busy={busy} onJoin={async (profile) => { if (await run('join', { profile })) setParams({}, { replace: true }); }} />;
 
   const progress: any[] = state.progress || [];
   const openRow = progress.find((r) => ['available', 'started', 'needs_revision'].includes(r.status));
@@ -547,5 +560,47 @@ const Leaderboard: React.FC<{ lb: any }> = ({ lb }) => {
     </Card>
   );
 };
+
+const MessengerGate: React.FC<{ ch: any; m: any; onCheck: () => void }> = ({ ch, m, onCheck }) => (
+  <div dir="rtl" className="mx-auto max-w-lg px-4 py-12">
+    <Card className="border-2"><CardContent className="space-y-5 p-6 md:p-8">
+      <div className="flex items-center gap-3"><div className="rounded-full bg-primary/10 p-3"><ShieldCheck className="h-6 w-6 text-primary" /></div>
+        <div><h1 className="text-lg font-bold">فعال‌سازی پشتیبانی تلگرام</h1><p className="text-sm text-muted-foreground">{ch.title}</p></div></div>
+      <p className="text-sm leading-7 text-muted-foreground">برای شرکت در چالش، ربات و پشتیبانی تلگرام را فعال کنید. پیام‌های مربی، ماموریت‌ها و نتیجه بررسی درخواست از همین مسیر برای شما ارسال می‌شود.</p>
+      <ul className="space-y-2 text-sm">
+        <li className="flex items-center gap-2">{m.botLinked ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Clock className="h-4 w-4 text-muted-foreground" />}اتصال به ربات</li>
+        <li className="flex items-center gap-2">{m.supportActivated ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Clock className="h-4 w-4 text-muted-foreground" />}فعال‌سازی پشتیبانی</li>
+      </ul>
+      <Button asChild size="lg" className="h-12 w-full text-base"><a href={m.link} target="_blank" rel="noreferrer"><Send className="ml-2 h-4 w-4" />فعال‌سازی در تلگرام</a></Button>
+      <Button variant="outline" className="w-full" onClick={onCheck}><RefreshCw className="ml-2 h-4 w-4" />فعال کردم، ادامه</Button>
+    </CardContent></Card>
+  </div>
+);
+
+const ApplicationStatus: React.FC<{ ch: any; app: any; status: 'pending' | 'rejected'; onRefresh: () => void; onEdit?: () => void }> = ({ ch, app, status, onRefresh, onEdit }) => (
+  <div dir="rtl" className="mx-auto max-w-lg px-4 py-12">
+    <Card className="border-2"><CardContent className="space-y-5 p-6 md:p-8">
+      <div className="flex items-center gap-3">
+        <div className={`rounded-full p-3 ${status === 'pending' ? 'bg-primary/10' : 'bg-destructive/10'}`}>
+          {status === 'pending' ? <Clock className="h-6 w-6 text-primary" /> : <XCircle className="h-6 w-6 text-destructive" />}
+        </div>
+        <div><h1 className="text-lg font-bold">{status === 'pending' ? 'در انتظار تایید مربی' : 'درخواست تایید نشد'}</h1><p className="text-sm text-muted-foreground">{ch.title}</p></div>
+      </div>
+      {status === 'pending' ? (
+        <p className="text-sm leading-7 text-muted-foreground">درخواست شما ثبت شد و مربی در حال بررسی آن است. به محض تایید، از طریق تلگرام و ایمیل خبر می‌دهیم و ماموریت‌ها باز می‌شوند.</p>
+      ) : (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm leading-7"><p className="font-semibold">دلیل:</p><p className="whitespace-pre-wrap">{app?.reason || '—'}</p></div>
+      )}
+      {Array.isArray(app?.summary) && app.summary.length > 0 && (
+        <div className="rounded-lg bg-muted/50 p-4"><p className="mb-2 text-sm font-semibold">پاسخ‌های شما</p>
+          <dl className="space-y-1 text-sm">{app.summary.map(([k, v]: any, i: number) => <div key={i} className="flex gap-2"><dt className="shrink-0 text-muted-foreground">{k}:</dt><dd className="break-words">{String(v)}</dd></div>)}</dl></div>
+      )}
+      <div className="flex gap-2">
+        {onEdit && <Button className="flex-1" onClick={onEdit}>اصلاح و ارسال دوباره</Button>}
+        <Button variant="outline" className="flex-1" onClick={onRefresh}><RefreshCw className="ml-2 h-4 w-4" />بررسی وضعیت</Button>
+      </div>
+    </CardContent></Card>
+  </div>
+);
 
 export default ChallengePage;

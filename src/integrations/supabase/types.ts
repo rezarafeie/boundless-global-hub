@@ -1835,6 +1835,8 @@ export type Database = {
       }
       challenge_participants: {
         Row: {
+          approval_status: string
+          approved_at: string | null
           best_streak: number
           boundless_code: string | null
           budget: string | null
@@ -1849,6 +1851,9 @@ export type Database = {
           last_activity_at: string
           monthly_revenue: number | null
           profile: Json
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           socials: string | null
           stage: string | null
           status: string
@@ -1859,6 +1864,8 @@ export type Database = {
           xp: number
         }
         Insert: {
+          approval_status?: string
+          approved_at?: string | null
           best_streak?: number
           boundless_code?: string | null
           budget?: string | null
@@ -1873,6 +1880,9 @@ export type Database = {
           last_activity_at?: string
           monthly_revenue?: number | null
           profile?: Json
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           socials?: string | null
           stage?: string | null
           status?: string
@@ -1883,6 +1893,8 @@ export type Database = {
           xp?: number
         }
         Update: {
+          approval_status?: string
+          approved_at?: string | null
           best_streak?: number
           boundless_code?: string | null
           budget?: string | null
@@ -1897,6 +1909,9 @@ export type Database = {
           last_activity_at?: string
           monthly_revenue?: number | null
           profile?: Json
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           socials?: string | null
           stage?: string | null
           status?: string
@@ -2123,6 +2138,7 @@ export type Database = {
           ai_review_default: boolean
           allow_join_after_start: boolean
           allow_late_submission: boolean
+          coach_email: string | null
           coach_review_default: boolean
           cover_image: string | null
           created_at: string
@@ -2140,6 +2156,8 @@ export type Database = {
           notifications_enabled: boolean
           onboarding_form_id: string | null
           penalty_rules: Json
+          require_coach_approval: boolean
+          require_messenger_activation: boolean
           reward_rules: Json
           segments: Json
           slug: string
@@ -2156,6 +2174,7 @@ export type Database = {
           ai_review_default?: boolean
           allow_join_after_start?: boolean
           allow_late_submission?: boolean
+          coach_email?: string | null
           coach_review_default?: boolean
           cover_image?: string | null
           created_at?: string
@@ -2173,6 +2192,8 @@ export type Database = {
           notifications_enabled?: boolean
           onboarding_form_id?: string | null
           penalty_rules?: Json
+          require_coach_approval?: boolean
+          require_messenger_activation?: boolean
           reward_rules?: Json
           segments?: Json
           slug: string
@@ -2189,6 +2210,7 @@ export type Database = {
           ai_review_default?: boolean
           allow_join_after_start?: boolean
           allow_late_submission?: boolean
+          coach_email?: string | null
           coach_review_default?: boolean
           cover_image?: string | null
           created_at?: string
@@ -2206,6 +2228,8 @@ export type Database = {
           notifications_enabled?: boolean
           onboarding_form_id?: string | null
           penalty_rules?: Json
+          require_coach_approval?: boolean
+          require_messenger_activation?: boolean
           reward_rules?: Json
           segments?: Json
           slug?: string

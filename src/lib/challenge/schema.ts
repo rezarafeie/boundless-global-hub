@@ -56,7 +56,7 @@ export const PROGRESS_LABELS: Record<string, string> = {
 export const EVENT_KINDS = [
   'challenge_joined', 'challenge_started', 'mission_available', 'deadline_approaching', 'mission_submitted',
   'ai_feedback_ready', 'coach_feedback_ready', 'revision_requested', 'mission_completed', 'mission_missed',
-  'streak_achieved', 'streak_broken', 'first_sale', 'reward_unlocked', 'penalty_applied', 'payment_required', 'penalty_released', 'inactive', 'challenge_completed',
+  'streak_achieved', 'streak_broken', 'first_sale', 'reward_unlocked', 'penalty_applied', 'payment_required', 'penalty_released', 'inactive', 'challenge_completed', 'application_received', 'application_approved', 'application_rejected',
 ];
 export const CHANNELS: Option[] = [
   { value: 'telegram_bot', label: 'ربات تلگرام' }, { value: 'telegram_business', label: 'تلگرام بیزینس' },
@@ -100,7 +100,7 @@ export const JSON_TEMPLATE = {
     title: 'چالش ۳۰ روزه فروش بدون مرز', slug: 'boundless-sales-30', description: 'در ۳۰ روز به اولین فروش برس.',
     cover_image: null, start_date: '2026-10-01', days_count: 30, status: 'draft',
     eligible_all_boundless: true, eligible_course_ids: [], default_deadline_time: '23:59',
-    gamification_enabled: true, streak_enabled: true, notifications_enabled: true, leaderboard_enabled: true, unlock_next_on_complete: false, allow_late_submission: false, allow_join_after_start: false,
+    gamification_enabled: true, streak_enabled: true, notifications_enabled: true, leaderboard_enabled: true, unlock_next_on_complete: false, allow_late_submission: false, allow_join_after_start: false, require_messenger_activation: true, require_coach_approval: true, coach_email: 'rezarafeie13@gmail.com',
     ai_review_default: true, coach_review_default: false,
   },
   segments: { business_models: DEFAULT_SEGMENTS.business_models, stages: DEFAULT_SEGMENTS.stages, budgets: DEFAULT_SEGMENTS.budgets, boundless_codes: DEFAULT_SEGMENTS.boundless_codes },
@@ -151,6 +151,9 @@ export const JSON_TEMPLATE = {
       penalty_applied: { enabled: true, title: 'هشدار چالش', text: '{feedback}' },
       payment_required: { enabled: true, title: '⛔ چالش متوقف شد', text: '{name}، ماموریت روز {day} از دست رفت. برای بازگشت باید {usd} دلار جریمه پرداخت کنی.\n{challenge_url}' },
       penalty_released: { enabled: true, title: '✅ به چالش برگشتی', text: '{name}، {feedback}\n{mission_url}' },
+      application_received: { enabled: true, title: 'درخواستت ثبت شد ⏳', text: '{name} عزیز، درخواست شرکت در {challenge_title} در انتظار تایید مربی است.' },
+      application_approved: { enabled: true, title: 'درخواستت تایید شد ✅', text: '{name} عزیز، درخواستت تایید شد. ورود به چالش:\n{challenge_url}' },
+      application_rejected: { enabled: true, title: 'درخواستت تایید نشد', text: '{name} عزیز، درخواستت تایید نشد.\nدلیل: {reason}\n{challenge_url}' },
       inactive: { enabled: true, title: 'دلمون برات تنگ شده 👋', text: '{name}، چند وقتی است فعالیتی نداشتی. ماموریت امروز منتظرته.\n{challenge_url}' },
       challenge_completed: { enabled: true, title: '🏆 چالش تمام شد', text: '{name}، {challenge_title} به پایان رسید. امتیاز نهایی: {xp} — پیشرفت: {progress}٪' },
     },
@@ -216,6 +219,8 @@ export const JSON_GUIDE = `راهنمای ساختار JSON چالش:
   رویدادها: ${EVENT_KINDS.join(', ')}
   enabled: false یعنی آن پیام ارسال نشود؛ channels خالی یعنی همه کانال‌های فعال چالش.
   متغیرها: {name} (فقط نام کوچک) {challenge_title} {day} {days_count} {mission_title} {deadline} {remaining_time} {xp} {streak} {reward} {progress} {feedback} {reasons} (دلایل اصلاح) {usd} (مبلغ جریمه) {challenge_url} {mission_url}
+  application_received / application_approved / application_rejected: ثبت درخواست، تایید و رد مربی ({reason} = دلیل رد).
+• challenge.require_messenger_activation، require_coach_approval و coach_email: الزام فعال‌سازی تلگرام و تایید مربی.
   payment_required: وقتی جریمه پولی فعال می‌شود — penalty_released: پس از پرداخت یا بخشش مربی.
 • days: [{day_number, title, short_description, goal, estimated_minutes, xp, required, review_mode: auto|ai|human|ai_human, unlock_time, deadline_time, deadline_hours, notification_text, followups, stage_update:{enabled,prompt,suggest}, variants:[...] }].
 • variant: شرایط (business_models, stages, budgets, boundless_codes — خالی یعنی «همه»)، priority، is_fallback، محتوا (instructions, checklist[], tips[], example, resources[{title,url}], expected_result) و ارسال: assignment_id موجود، form_id موجود، یا assignment جدید {title, description, blocks[], ai_feedback_enabled, ai_feedback_prompt, passing_score, manual_review_enabled} یا form جدید {title, fields[]}.
@@ -318,7 +323,7 @@ export async function importChallengeJson(j: any, mode: 'create' | 'update', onL
       eligible_all_boundless: !!c.eligible_all_boundless, eligible_course_ids: c.eligible_course_ids ?? [],
       onboarding_form_id: onboardingFormId, default_deadline_time: c.default_deadline_time ?? '23:59',
       gamification_enabled: c.gamification_enabled ?? true, streak_enabled: c.streak_enabled ?? true,
-      notifications_enabled: c.notifications_enabled ?? true, leaderboard_enabled: c.leaderboard_enabled ?? true, unlock_next_on_complete: c.unlock_next_on_complete ?? false, allow_late_submission: c.allow_late_submission ?? false, allow_join_after_start: c.allow_join_after_start ?? false,
+      notifications_enabled: c.notifications_enabled ?? true, leaderboard_enabled: c.leaderboard_enabled ?? true, unlock_next_on_complete: c.unlock_next_on_complete ?? false, allow_late_submission: c.allow_late_submission ?? false, allow_join_after_start: c.allow_join_after_start ?? false, require_messenger_activation: c.require_messenger_activation ?? true, require_coach_approval: c.require_coach_approval ?? true, coach_email: c.coach_email ?? 'rezarafeie13@gmail.com',
       ai_review_default: c.ai_review_default ?? true, coach_review_default: c.coach_review_default ?? false,
       segments: j.segments ?? {}, xp_rules: j.xp_rules ?? {}, reward_rules: j.rewards ?? [], penalty_rules: j.penalties ?? [],
       notification_settings: { channels: j.notifications?.channels ?? {}, followups: j.notifications?.followups, inactive_hours: j.notifications?.inactive_hours },
@@ -398,7 +403,7 @@ export async function exportChallengeJson(id: string, opts: { includeAssignments
       title: c.title, slug: c.slug, description: c.description, cover_image: c.cover_image, start_date: c.start_date, days_count: c.days_count,
       status: c.status, eligible_all_boundless: c.eligible_all_boundless, eligible_course_ids: c.eligible_course_ids, default_deadline_time: c.default_deadline_time,
       gamification_enabled: c.gamification_enabled, streak_enabled: c.streak_enabled, notifications_enabled: c.notifications_enabled,
-      leaderboard_enabled: c.leaderboard_enabled, unlock_next_on_complete: c.unlock_next_on_complete, allow_late_submission: c.allow_late_submission, allow_join_after_start: c.allow_join_after_start, ai_review_default: c.ai_review_default, coach_review_default: c.coach_review_default,
+      leaderboard_enabled: c.leaderboard_enabled, unlock_next_on_complete: c.unlock_next_on_complete, allow_late_submission: c.allow_late_submission, allow_join_after_start: c.allow_join_after_start, require_messenger_activation: c.require_messenger_activation, require_coach_approval: c.require_coach_approval, coach_email: c.coach_email, ai_review_default: c.ai_review_default, coach_review_default: c.coach_review_default,
     },
     segments: c.segments, onboarding_form: c.onboarding_form_id ? { form_id: c.onboarding_form_id } : null,
     xp_rules: c.xp_rules, rewards: c.reward_rules, penalties: c.penalty_rules,

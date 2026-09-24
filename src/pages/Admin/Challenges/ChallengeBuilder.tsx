@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -108,6 +108,7 @@ const ChallengeBuilder: React.FC = () => {
           <TabsTrigger value="days">روزها و ماموریت‌ها</TabsTrigger>
           <TabsTrigger value="rules">امتیاز، جایزه، جریمه</TabsTrigger>
           <TabsTrigger value="notifications">اعلان و پیگیری</TabsTrigger>
+          <TabsTrigger value="applications">درخواست‌ها</TabsTrigger>
           <TabsTrigger value="participants">شرکت‌کننده‌ها</TabsTrigger>
           <TabsTrigger value="preview">پیش‌نمایش و پوشش</TabsTrigger>
         </TabsList>
@@ -140,10 +141,11 @@ const ChallengeBuilder: React.FC = () => {
               </div>
             </F>
             <div className="grid grid-cols-2 gap-3 md:col-span-2">
-              {[['gamification_enabled', 'گیمیفیکیشن'], ['streak_enabled', 'استریک'], ['leaderboard_enabled', 'لیدربورد'], ['notifications_enabled', 'اعلان‌ها'], ['ai_review_default', 'بررسی AI (پیش‌فرض)'], ['coach_review_default', 'بررسی مربی (پیش‌فرض)'], ['unlock_next_on_complete', 'باز شدن روز بعد پس از انجام ماموریت'], ['allow_late_submission', 'ارسال ماموریت روزهای گذشته'], ['allow_join_after_start', 'پذیرش عضویت پس از شروع (روزهای قبل از عضویت: رد شده)']].map(([k, l]) => (
+              {[['gamification_enabled', 'گیمیفیکیشن'], ['streak_enabled', 'استریک'], ['leaderboard_enabled', 'لیدربورد'], ['notifications_enabled', 'اعلان‌ها'], ['ai_review_default', 'بررسی AI (پیش‌فرض)'], ['coach_review_default', 'بررسی مربی (پیش‌فرض)'], ['unlock_next_on_complete', 'باز شدن روز بعد پس از انجام ماموریت'], ['allow_late_submission', 'ارسال ماموریت روزهای گذشته'], ['allow_join_after_start', 'پذیرش عضویت پس از شروع (روزهای قبل از عضویت: رد شده)'], ['require_messenger_activation', 'الزام فعال‌سازی ربات و پشتیبانی تلگرام'], ['require_coach_approval', 'نیاز به تایید مربی پس از آنبوردینگ']].map(([k, l]) => (
                 <label key={k} className="flex items-center justify-between rounded-lg border p-3 text-sm">{l}<Switch checked={!!ch[k]} onCheckedChange={(v) => set(k, v)} /></label>
               ))}
             </div>
+            <F label="ایمیل مربی (دریافت و تایید درخواست‌ها)"><Input dir="ltr" value={ch.coach_email ?? ''} onChange={(e) => set('coach_email', e.target.value.trim())} placeholder="rezarafeie13@gmail.com" /></F>
             <F label="گزینه‌های پروفایل (segments) — JSON" className="md:col-span-2">
               <JsonField value={Object.keys(ch.segments || {}).length ? ch.segments : seg} onChange={(v) => set('segments', v)} rows={6} />
             </F>
@@ -183,6 +185,10 @@ const ChallengeBuilder: React.FC = () => {
 
         <TabsContent value="notifications">
           <NotificationsTab ch={ch} set={set} />
+        </TabsContent>
+
+        <TabsContent value="applications">
+          <Applications ch={ch} />
         </TabsContent>
 
         <TabsContent value="participants">
@@ -582,6 +588,48 @@ const PreviewTab: React.FC<{ ch: any; seg: Segments; days: any[]; variants: any[
           ))}
         </CardContent>
       </Card>
+    </div>
+  );
+};
+
+
+const Applications: React.FC<{ ch: any }> = ({ ch }) => {
+  const [apps, setApps] = useState<any[] | null>(null);
+  const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const load = useCallback(async () => {
+    try { const r: any = await challengeApi('admin_action', { challengeId: ch.id, op: 'list_applications' }); setApps(r.applications ?? []); }
+    catch (e: any) { toast.error(e.message); setApps([]); }
+  }, [ch.id]);
+  useEffect(() => { load(); }, [load]);
+  const act = async (id: string, op: 'approve' | 'reject') => {
+    if (op === 'reject' && !reasons[id]?.trim()) { toast.error('دلیل رد را بنویسید'); return; }
+    setBusy(id);
+    try { await challengeApi('admin_action', { challengeId: ch.id, participantId: id, op, reason: reasons[id] }); toast.success(op === 'approve' ? 'تایید شد' : 'رد شد'); load(); }
+    catch (e: any) { toast.error(e.message); } finally { setBusy(null); }
+  };
+  if (!apps) return <p className="p-6 text-center text-sm text-muted-foreground">در حال بارگذاری…</p>;
+  if (!apps.length) return <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">درخواستی ثبت نشده است.</CardContent></Card>;
+  const label: Record<string, string> = { pending: 'در انتظار', approved: 'تایید شده', rejected: 'رد شده' };
+  return (
+    <div className="space-y-3">
+      {apps.map((a) => (
+        <Card key={a.id}><CardContent className="space-y-3 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-semibold">{a.summary?.[0]?.[1] ?? 'دانشجو'}</span>
+            <Badge variant={a.approval_status === 'pending' ? 'default' : a.approval_status === 'rejected' ? 'destructive' : 'secondary'}>{label[a.approval_status] ?? a.approval_status}</Badge>
+          </div>
+          <dl className="grid gap-1 text-sm md:grid-cols-2">{(a.summary ?? []).map(([k, v]: any, i: number) => <div key={i} className="flex gap-2"><dt className="shrink-0 text-muted-foreground">{k}:</dt><dd className="break-words">{String(v)}</dd></div>)}</dl>
+          {a.approval_status === 'rejected' && a.rejection_reason && <p className="text-sm text-destructive">دلیل رد: {a.rejection_reason}</p>}
+          {a.approval_status !== 'approved' && (
+            <div className="flex flex-col gap-2 md:flex-row">
+              <Input placeholder="دلیل رد (برای دانشجو ارسال می‌شود)" value={reasons[a.id] ?? ''} onChange={(e) => setReasons({ ...reasons, [a.id]: e.target.value })} />
+              <Button disabled={busy === a.id} onClick={() => act(a.id, 'approve')}>تایید</Button>
+              <Button variant="destructive" disabled={busy === a.id} onClick={() => act(a.id, 'reject')}>رد</Button>
+            </div>
+          )}
+        </CardContent></Card>
+      ))}
     </div>
   );
 };
