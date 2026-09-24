@@ -422,9 +422,9 @@ const Onboarding: React.FC<{ ch: any; seg: any; onboardingForm?: any; isAuthenti
         <>
           <div>
             <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-              <span>گام {faNum(step + 1)} از {faNum(questions.length + 1)}</span><span>{faNum(Math.round((step / Math.max(1, questions.length)) * 100))}٪</span>
+              <span>گام {faNum(step + 1)} از {faNum(questions.length + 2)}</span><span>{faNum(Math.round((step / Math.max(1, questions.length + 1)) * 100))}٪</span>
             </div>
-            <Progress value={(step / Math.max(1, questions.length)) * 100} className="h-2" />
+            <Progress value={(step / Math.max(1, questions.length + 1)) * 100} className="h-2" />
           </div>
           <Card className="border-2 shadow-lg">
             <CardContent className="flex min-h-[430px] flex-col p-6 md:p-10">
