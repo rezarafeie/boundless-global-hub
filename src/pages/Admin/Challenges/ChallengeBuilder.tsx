@@ -181,6 +181,7 @@ const ChallengeBuilder: React.FC = () => {
             <F label="جریمه‌ها — action.type: lose_xp | reset_streak | warning | custom | pay_to_return (value = مبلغ دلار؛ {usd} در پیام) | lock_course (فقط در صورت تعریف صریح)"><JsonField value={ch.penalty_rules} onChange={(v) => set('penalty_rules', v)} rows={8} /></F>
             <p className="text-xs text-muted-foreground">بعد از ویرایش «ذخیره تنظیمات» را بزنید.</p>
           </CardContent></Card>
+          <PenalizedList ch={ch} />
         </TabsContent>
 
         <TabsContent value="notifications">
