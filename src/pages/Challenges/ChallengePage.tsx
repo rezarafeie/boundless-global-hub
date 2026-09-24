@@ -246,12 +246,6 @@ const ChallengePage: React.FC = () => {
               </div>
             )}
 
-            {current.status === 'completed' && openRow && openRow.day_number > current.day_number && (
-              <div className="flex flex-col items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4 text-center sm:flex-row sm:justify-between sm:text-right">
-                <p className="text-sm font-medium">🎉 ماموریت روز {faNum(openRow.day_number)} برایت باز شد.</p>
-                <Button onClick={() => { setPinnedDay(openRow.day_number); setStarted(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>رفتن به روز {faNum(openRow.day_number)}</Button>
-              </div>
-            )}
             {canWork && current.assignment && (
               started || current.status !== 'available' ? (
                 <AssignmentSection assignmentId={current.assignment_id} bare onChange={() => { setPinnedDay(current.day_number); load('sync'); }} />
@@ -261,6 +255,13 @@ const ChallengePage: React.FC = () => {
                   شروع ماموریت امروز
                 </Button>
               )
+            )}
+
+            {current.status === 'completed' && openRow && openRow.day_number > current.day_number && (
+              <div className="flex flex-col items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4 text-center sm:flex-row sm:justify-between sm:text-right">
+                <p className="text-sm font-medium">🎉 ماموریت روز {faNum(openRow.day_number)} برایت باز شد.</p>
+                <Button onClick={() => { setPinnedDay(openRow.day_number); setStarted(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>رفتن به روز {faNum(openRow.day_number)}</Button>
+              </div>
             )}
             {canWork && !current.assignment && current.form && current.status !== 'completed' && (
               <Button asChild size="lg" className="h-14 w-full text-base font-bold">
