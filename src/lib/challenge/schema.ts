@@ -434,7 +434,13 @@ export function downloadJson(obj: unknown, name: string) {
 }
 
 export async function challengeApi(action: string, payload: Record<string, unknown> = {}) {
-  const { data, error } = await supabase.functions.invoke('challenge-api', { body: { action, ...payload } });
+  const sessionToken = typeof window !== 'undefined'
+    ? localStorage.getItem('messenger_session_token')
+    : null;
+  const { data, error } = await supabase.functions.invoke('challenge-api', {
+    body: { action, ...payload },
+    headers: sessionToken ? { 'x-session-token': sessionToken } : undefined,
+  });
   if (error) {
     let msg = error.message;
     try { const b = await (error as any).context?.json?.(); if (b?.error) msg = b.error; } catch { /* ignore */ }
