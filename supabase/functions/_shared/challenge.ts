@@ -129,7 +129,7 @@ export async function notifyCoachOfApplication(ch: Challenge, p: Participant) {
   const rows = await applicationSummary(ch, p);
   const title = `درخواست جدید چالش «${ch.title}»`;
   const text = rows.map(([k, v]) => `<b>${esc(k)}:</b> ${esc(v)}`).join("\n");
-  const adminUrl = `${SITE}/enroll/admin/challenges?challenge=${ch.id}&tab=applications`;
+  const adminUrl = `${SITE}/enroll/admin/challenges/${ch.id}?tab=applications`;
   const { data: coach } = await supabase.from("chat_users").select("id, telegram_chat_id, bale_chat_id").ilike("email", email).limit(1).maybeSingle();
   const keyboard = [[{ text: "✅ تایید", callback_data: `chal_ok:${p.id}` }, { text: "❌ رد", callback_data: `chal_no:${p.id}` }]];
   try {
