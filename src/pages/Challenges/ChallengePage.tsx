@@ -404,8 +404,8 @@ const Onboarding: React.FC<{ ch: any; seg: any; onboardingForm?: any; isAuthenti
     ...linked,
     ...extras.filter((question) => !linkedKeys.has(question.key)),
   ];
-  const current = questions[step];
-  const currentValid = !current?.required || String(f[current.key] ?? '').trim().length > 0;
+  const current = step > 0 ? questions[step - 1] : undefined;
+  const currentValid = step === 0 || !current?.required || String(f[current.key] ?? '').trim().length > 0;
   const requiredComplete = ['boundless_code', 'business_model', 'stage', 'budget'].every((key) => String(f[key] ?? '').trim());
   const submit = () => onJoin({
     ...f,
@@ -464,7 +464,7 @@ const Onboarding: React.FC<{ ch: any; seg: any; onboardingForm?: any; isAuthenti
               </div>
               <div className="mt-6 flex items-center justify-between gap-3 border-t pt-6">
                 <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0 || busy}><ArrowRight className="ml-1 h-4 w-4" />قبلی</Button>
-                {step < questions.length ? (
+                {step <= questions.length ? (
                   <Button size="lg" className="min-w-36" disabled={!currentValid || busy} onClick={() => setStep((s) => s + 1)}>{step === 0 ? 'شروع' : 'بعدی'}<ArrowLeft className="mr-1 h-4 w-4" /></Button>
                 ) : (
                   <Button size="lg" className="min-w-36" disabled={!requiredComplete || busy} onClick={submit}>{busy && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}شروع چالش</Button>
