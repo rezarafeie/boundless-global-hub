@@ -266,7 +266,7 @@ Deno.serve(async (req) => {
 
     if (action === "start") {
       await supabase.from("challenge_progress").update({ status: "started", started_at: new Date().toISOString() })
-        .eq("id", body.progressId).eq("participant_id", p.id).eq("status", "available");
+        .eq("id", body.progressId).eq("participant_id", p.id).in("status", ch.allow_late_submission ? ["available", "missed"] : ["available"]);
       await supabase.from("challenge_participants").update({ last_activity_at: new Date().toISOString() }).eq("id", p.id);
       return json({ success: true });
     }
@@ -274,7 +274,8 @@ Deno.serve(async (req) => {
     if (action === "complete_manual") {
       const { data: row } = await supabase.from("challenge_progress").select("*").eq("id", body.progressId).eq("participant_id", p.id).maybeSingle();
       if (!row || row.assignment_id || row.form_id) return json({ success: false, error: "این ماموریت نیاز به ارسال تمرین دارد" }, 400);
-      if (!["available", "started"].includes(row.status)) return json({ success: false, error: "وضعیت ماموریت اجازه این کار را نمی‌دهد" }, 400);
+      const okStatuses = ch.allow_late_submission ? ["available", "started", "missed"] : ["available", "started"];
+      if (!okStatuses.includes(row.status)) return json({ success: false, error: "وضعیت ماموریت اجازه این کار را نمی‌دهد" }, 400);
       const { data: day } = await supabase.from("challenge_days").select("*").eq("id", row.day_id).maybeSingle();
       if (day?.review_mode === "human" || day?.review_mode === "ai_human") {
         await supabase.from("challenge_progress").update({ status: "pending_review", submitted_at: new Date().toISOString() }).eq("id", row.id);

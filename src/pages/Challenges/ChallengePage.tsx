@@ -133,7 +133,8 @@ const ChallengePage: React.FC = () => {
   const current = progress.find((r) => r.day_number === selectedDay) ?? progress[progress.length - 1];
   const dayInfo = state.days.find((d: any) => d.day_number === current?.day_number);
   const isToday = current?.day_number === state.today;
-  const canWork = !p.profile?.payment_lock?.active && current && ['available', 'started', 'needs_revision', 'submitted', 'pending_ai', 'pending_review', 'completed'].includes(current.status);
+  const lateOk = !!ch.allow_late_submission;
+  const canWork = !p.profile?.payment_lock?.active && current && ['available', 'started', 'needs_revision', 'submitted', 'pending_ai', 'pending_review', 'completed', ...(lateOk ? ['missed'] : [])].includes(current.status);
 
   return (
     <div dir="rtl" className="mx-auto max-w-5xl space-y-6 px-4 py-6">
@@ -234,7 +235,7 @@ const ChallengePage: React.FC = () => {
             {current.submission?.admin_feedback && (
               <div className="rounded-lg border p-3 text-sm"><p className="mb-1 font-semibold">بازخورد مربی {current.submission.score != null && `(امتیاز ${faNum(current.submission.score)})`}</p><p className="whitespace-pre-line text-muted-foreground">{current.submission.admin_feedback}</p></div>
             )}
-            {current.status === 'missed' && <p className="rounded-lg bg-destructive/10 p-3 text-center text-sm text-destructive">مهلت این ماموریت تمام شده است.</p>}
+            {current.status === 'missed' && <p className="rounded-lg bg-destructive/10 p-3 text-center text-sm text-destructive">{lateOk ? 'مهلت این ماموریت تمام شده، اما هنوز می‌توانی آن را ارسال کنی.' : 'مهلت این ماموریت تمام شده است.'}</p>}
 
             {current.status === 'completed' && dayInfo?.stage_update_enabled && <StageUpdate seg={seg} p={p} day={dayInfo} busy={busy} onSave={(stage) => run('update_stage', { stage })} />}
           </CardContent>
