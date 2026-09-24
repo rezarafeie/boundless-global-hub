@@ -1,0 +1,1 @@
+ALTER TABLE public.challenges ADD COLUMN IF NOT EXISTS allow_late_submission boolean NOT NULL DEFAULT false; NOTIFY pgrst, 'reload schema';
