@@ -234,7 +234,7 @@ export async function ensureProgress(ch: Challenge, p: Participant, structure?: 
     const w = dayWindow(ch, d);
     const early = d.day_number > today;
     const variant = selectVariant(variants.filter((v: any) => v.day_id === d.id), p);
-    const skipped = d.day_number < joinedDay;
+    const skipped = d.day_number < joinedDay && !!(ch as any).allow_join_after_start;
     const { error } = await supabase.from("challenge_progress").insert({
       participant_id: p.id, challenge_id: ch.id, day_id: d.id, day_number: d.day_number,
       variant_id: variant?.id ?? null, assignment_id: variant?.assignment_id ?? null, form_id: variant?.form_id ?? null,
@@ -443,10 +443,20 @@ export async function applyPenalties(ch: Challenge, p: Participant, trigger: str
     const a = r.action ?? {};
     const profile = { ...(p.profile ?? {}) };
     if (a.type === "pay_to_return") {
-      // Paid penalty: participant is paused until they pay (USD, converted at live rate).
-      if (profile.payment_lock?.active) continue; // don't stack while already locked
-      const usd = Math.max(1, Number(a.value ?? 10));
-      profile.payment_lock = { active: true, usd, rule_key: r.key ?? t.type, ref, reason: a.message ?? null, at: new Date().toISOString() };
+      // Paid penalty: participant is paused until they pay. Amount = per-day USD × missed days.
+      const unit = Math.max(1, Number(a.value ?? 10));
+      const cur = profile.payment_lock?.active ? profile.payment_lock : null;
+      if (cur) {
+        const refs: string[] = Array.isArray(cur.refs) ? cur.refs : [cur.ref];
+        if (refs.includes(ref)) continue;
+        refs.push(ref);
+        profile.payment_lock = { ...cur, refs, unit_usd: cur.unit_usd ?? unit, usd: (cur.unit_usd ?? unit) * refs.length, authority: null, toman: null };
+        await supabase.from("challenge_participants").update({ profile }).eq("id", p.id);
+        p.profile = profile;
+        continue; // already notified; amount accumulates silently
+      }
+      const usd = unit;
+      profile.payment_lock = { active: true, usd, unit_usd: unit, refs: [ref], rule_key: r.key ?? t.type, ref, reason: a.message ?? null, at: new Date().toISOString() };
       await supabase.from("challenge_participants").update({ profile }).eq("id", p.id);
       p.profile = profile;
       const custom = a.message ? { feedback: String(a.message).replace(/\{usd\}/g, String(usd)) } : {};
@@ -526,7 +536,7 @@ export async function processExpiredMissions(
     if (!deadline || now <= deadline) continue;
     // Optional days remain safely skippable. Required historical days must be
     // treated as missed so configured penalties are applied consistently.
-    if (row.status === "skipped" && day?.required === false) continue;
+    if (row.status === "skipped" && (day?.required === false || (ch as any).allow_join_after_start)) continue;
 
     const { data: changed } = await supabase.from("challenge_progress")
       .update({ status: "missed", missed_at: row.missed_at ?? new Date(now).toISOString() })
