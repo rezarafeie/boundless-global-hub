@@ -20,9 +20,10 @@ async function releasePaymentLock(ch: any, p: any, lock: any, meta: Record<strin
   const profile = { ...p.profile, payment_lock: null, payment_history: [...history, { ...lock, active: false, released_at: new Date().toISOString(), ...meta }] };
   await supabase.from("challenge_participants").update({ profile }).eq("id", p.id);
   p.profile = profile;
-  const dayNum = Number(String(lock.ref ?? "").replace("day:", "")) || null;
+  const refs: string[] = Array.isArray(lock.refs) && lock.refs.length ? lock.refs : [lock.ref];
+  const dayNums = refs.map((r) => Number(String(r ?? "").replace("day:", ""))).filter(Boolean);
   let q = supabase.from("challenge_progress").select("id").eq("participant_id", p.id).eq("status", "missed");
-  q = dayNum ? q.eq("day_number", dayNum) : q.order("day_number", { ascending: false }).limit(1);
+  q = dayNums.length ? q.in("day_number", dayNums) : q.order("day_number", { ascending: false }).limit(1);
   const { data: rows } = await q;
   for (const r of rows ?? []) {
     await supabase.from("challenge_progress").update({ status: "available", missed_at: null, deadline_at: new Date(Date.now() + 24 * 3600000).toISOString() }).eq("id", r.id);
@@ -124,13 +125,17 @@ async function fullState(ch: any, uid: number | null) {
   return {
     ...base,
     participant,
-    progress: (progress ?? []).map((r: any) => ({
-      ...r,
-      variant: vMap.get(r.variant_id) ? { ...vMap.get(r.variant_id), business_models: undefined, stages: undefined, budgets: undefined } : null,
-      assignment: aMap.get(r.assignment_id) ?? null,
-      form: fMap.get(r.form_id) ?? null,
-      submission: sMap.get(r.submission_id) ?? null,
-    })),
+    progress: (progress ?? []).map((r: any) => {
+      // While a paid penalty is active, mission content is withheld entirely.
+      if (participant.profile?.payment_lock?.active) return { ...r, variant: null, assignment: null, form: null, submission: null, locked: true };
+      return {
+        ...r,
+        variant: vMap.get(r.variant_id) ? { ...vMap.get(r.variant_id), business_models: undefined, stages: undefined, budgets: undefined } : null,
+        assignment: aMap.get(r.assignment_id) ?? null,
+        form: fMap.get(r.form_id) ?? null,
+        submission: sMap.get(r.submission_id) ?? null,
+      };
+    }),
     stats: {
       completed: st.completed, missed: st.missed, sales: st.sales, revenue: st.revenue,
       leads: st.metrics.reduce((a: number, m: any) => a + m.leads, 0),
