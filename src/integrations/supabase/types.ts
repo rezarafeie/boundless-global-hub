@@ -2121,6 +2121,7 @@ export type Database = {
       challenges: {
         Row: {
           ai_review_default: boolean
+          allow_late_submission: boolean
           coach_review_default: boolean
           cover_image: string | null
           created_at: string
@@ -2152,6 +2153,7 @@ export type Database = {
         }
         Insert: {
           ai_review_default?: boolean
+          allow_late_submission?: boolean
           coach_review_default?: boolean
           cover_image?: string | null
           created_at?: string
@@ -2183,6 +2185,7 @@ export type Database = {
         }
         Update: {
           ai_review_default?: boolean
+          allow_late_submission?: boolean
           coach_review_default?: boolean
           cover_image?: string | null
           created_at?: string
