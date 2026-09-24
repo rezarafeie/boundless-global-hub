@@ -187,35 +187,42 @@ const SalesAgentLeads: React.FC = () => {
       const salesAgentId = agentData.id;
       console.log('Sales agent ID:', salesAgentId, 'for user:', chatUserId);
 
-      // Fetch assignments for this agent
-      const { data: assignments, error: assignError } = await supabase
-        .from('lead_assignments')
-        .select(`
-          id,
-          enrollment_id,
-          assigned_at,
-          enrollments!inner(
+      // Fetch ALL assignments for this agent (paginate past the 1000-row cap)
+      const assignments: any[] = [];
+      const PAGE = 1000;
+      for (let from = 0; ; from += PAGE) {
+        const { data: page, error: assignError } = await supabase
+          .from('lead_assignments')
+          .select(`
             id,
-            full_name,
-            email,
-            phone,
-            chat_user_id,
-            payment_amount,
-            payment_status,
-            course_id,
-            courses!inner(id, title)
-          )
-        `)
-        .eq('sales_agent_id', salesAgentId)
-        .order('assigned_at', { ascending: false });
-
-      if (assignError) throw assignError;
+            enrollment_id,
+            assigned_at,
+            enrollments!inner(
+              id,
+              full_name,
+              email,
+              phone,
+              chat_user_id,
+              payment_amount,
+              payment_status,
+              course_id,
+              courses!inner(id, title)
+            )
+          `)
+          .eq('sales_agent_id', salesAgentId)
+          .order('assigned_at', { ascending: false })
+          .order('id', { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (assignError) throw assignError;
+        assignments.push(...(page || []));
+        if (!page || page.length < PAGE) break;
+      }
       
-      console.log('Found', assignments?.length || 0, 'lead assignments');
+      console.log('Found', assignments.length, 'lead assignments');
 
       // Extract unique courses from leads
       const courseMap = new Map<string, string>();
-      assignments?.forEach(a => {
+      assignments.forEach(a => {
         const enrollment = a.enrollments as any;
         if (enrollment?.courses?.id && enrollment?.courses?.title) {
           courseMap.set(enrollment.courses.id, enrollment.courses.title);
@@ -224,17 +231,29 @@ const SalesAgentLeads: React.FC = () => {
       const uniqueCourses = Array.from(courseMap.entries()).map(([id, title]) => ({ id, title }));
       setCourses(uniqueCourses);
 
-      // Get chat_user_ids for CRM lookup
-      const chatUserIds = assignments
-        ?.map(a => (a.enrollments as any)?.chat_user_id)
-        .filter(Boolean) || [];
+      // Get unique chat_user_ids for CRM lookup
+      const chatUserIds = [...new Set(
+        assignments.map(a => (a.enrollments as any)?.chat_user_id).filter(Boolean)
+      )] as number[];
 
-      // Fetch CRM notes with status
-      const { data: crmData } = await supabase
-        .from('crm_notes')
-        .select('user_id, type, status, created_at')
-        .in('user_id', chatUserIds)
-        .order('created_at', { ascending: false });
+      // Fetch CRM notes in small chunks (long ID lists break the request URL)
+      const crmData: { user_id: number; type: string; status: string | null; created_at: string }[] = [];
+      const CHUNK = 150;
+      for (let i = 0; i < chatUserIds.length; i += CHUNK) {
+        const ids = chatUserIds.slice(i, i + CHUNK);
+        for (let from = 0; ; from += PAGE) {
+          const { data: notes, error: crmError } = await supabase
+            .from('crm_notes')
+            .select('user_id, type, status, created_at')
+            .in('user_id', ids)
+            .order('created_at', { ascending: false })
+            .range(from, from + PAGE - 1);
+          if (crmError) { console.error('CRM notes fetch error:', crmError); break; }
+          crmData.push(...(notes || []) as any);
+          if (!notes || notes.length < PAGE) break;
+        }
+      }
+      crmData.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
 
       // Create CRM status map with latest status
       const crmMap = new Map<number, { count: number; hasCall: boolean; latestStatus: string | null }>();
