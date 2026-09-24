@@ -100,7 +100,7 @@ export const JSON_TEMPLATE = {
     title: 'چالش ۳۰ روزه فروش بدون مرز', slug: 'boundless-sales-30', description: 'در ۳۰ روز به اولین فروش برس.',
     cover_image: null, start_date: '2026-10-01', days_count: 30, status: 'draft',
     eligible_all_boundless: true, eligible_course_ids: [], default_deadline_time: '23:59',
-    gamification_enabled: true, streak_enabled: true, notifications_enabled: true, leaderboard_enabled: true, unlock_next_on_complete: false, allow_late_submission: false,
+    gamification_enabled: true, streak_enabled: true, notifications_enabled: true, leaderboard_enabled: true, unlock_next_on_complete: false, allow_late_submission: false, allow_join_after_start: false,
     ai_review_default: true, coach_review_default: false,
   },
   segments: { business_models: DEFAULT_SEGMENTS.business_models, stages: DEFAULT_SEGMENTS.stages, budgets: DEFAULT_SEGMENTS.budgets, boundless_codes: DEFAULT_SEGMENTS.boundless_codes },
@@ -209,6 +209,7 @@ export const JSON_GUIDE = `راهنمای ساختار JSON چالش:
 • xp_rules: on_time_bonus (امتیاز اضافه برای ارسال قبل از ددلاین)، streak_milestones (روزهای جشن استریک).
 • challenge.unlock_next_on_complete: true یعنی با انجام ماموریت، روز بعد زودتر از تاریخش باز شود.
 • challenge.allow_late_submission: true یعنی ماموریت‌های از دست‌رفته (روزهای گذشته) همچنان قابل ارسال باشند؛ روز از دست‌رفته در آمار ثبت می‌شود اما دانشجو می‌تواند همان ماموریت را دیرهنگام ارسال و کامل کند.
+• challenge.allow_join_after_start: true یعنی روزهای قبل از عضویت «رد شده» حساب می‌شوند (بدون جریمه)؛ false یعنی از دست رفته و مشمول جریمه. جریمه pay_to_return برای هر روز از دست رفته جمع می‌شود (value × تعداد روزها).
 • rewards: [{key, title, emoji, description, trigger:{type: missions_completed|xp|streak|challenge_completed|complete_before_day|first_sale|revenue|custom, value}, reward_type: discount_code|percent|credit|link, reward_value, link}].
 • penalties: [{key, trigger:{type: mission_missed|streak_broken|missed_count, value}, action:{type: lose_xp|reset_streak|warning|custom|pay_to_return|lock_course, value, message}}]. pay_to_return: شرکت‌کننده تا پرداخت value دلار (با نرخ روز) متوقف می‌شود و پس از پرداخت ماموریت از دست رفته ۲۴ ساعت باز می‌شود. lock_course فقط در صورت تعریف صریح دسترسی دوره را قفل می‌کند.
 • notifications: channels (telegram_bot, telegram_business, bale, email, in_app, sms)، followups [{hours_before}] پیش از ددلاین، inactive_hours، messages: {رویداد: {title, text, channels, enabled}}.
@@ -317,7 +318,7 @@ export async function importChallengeJson(j: any, mode: 'create' | 'update', onL
       eligible_all_boundless: !!c.eligible_all_boundless, eligible_course_ids: c.eligible_course_ids ?? [],
       onboarding_form_id: onboardingFormId, default_deadline_time: c.default_deadline_time ?? '23:59',
       gamification_enabled: c.gamification_enabled ?? true, streak_enabled: c.streak_enabled ?? true,
-      notifications_enabled: c.notifications_enabled ?? true, leaderboard_enabled: c.leaderboard_enabled ?? true, unlock_next_on_complete: c.unlock_next_on_complete ?? false, allow_late_submission: c.allow_late_submission ?? false,
+      notifications_enabled: c.notifications_enabled ?? true, leaderboard_enabled: c.leaderboard_enabled ?? true, unlock_next_on_complete: c.unlock_next_on_complete ?? false, allow_late_submission: c.allow_late_submission ?? false, allow_join_after_start: c.allow_join_after_start ?? false,
       ai_review_default: c.ai_review_default ?? true, coach_review_default: c.coach_review_default ?? false,
       segments: j.segments ?? {}, xp_rules: j.xp_rules ?? {}, reward_rules: j.rewards ?? [], penalty_rules: j.penalties ?? [],
       notification_settings: { channels: j.notifications?.channels ?? {}, followups: j.notifications?.followups, inactive_hours: j.notifications?.inactive_hours },
@@ -397,7 +398,7 @@ export async function exportChallengeJson(id: string, opts: { includeAssignments
       title: c.title, slug: c.slug, description: c.description, cover_image: c.cover_image, start_date: c.start_date, days_count: c.days_count,
       status: c.status, eligible_all_boundless: c.eligible_all_boundless, eligible_course_ids: c.eligible_course_ids, default_deadline_time: c.default_deadline_time,
       gamification_enabled: c.gamification_enabled, streak_enabled: c.streak_enabled, notifications_enabled: c.notifications_enabled,
-      leaderboard_enabled: c.leaderboard_enabled, unlock_next_on_complete: c.unlock_next_on_complete, allow_late_submission: c.allow_late_submission, ai_review_default: c.ai_review_default, coach_review_default: c.coach_review_default,
+      leaderboard_enabled: c.leaderboard_enabled, unlock_next_on_complete: c.unlock_next_on_complete, allow_late_submission: c.allow_late_submission, allow_join_after_start: c.allow_join_after_start, ai_review_default: c.ai_review_default, coach_review_default: c.coach_review_default,
     },
     segments: c.segments, onboarding_form: c.onboarding_form_id ? { form_id: c.onboarding_form_id } : null,
     xp_rules: c.xp_rules, rewards: c.reward_rules, penalties: c.penalty_rules,
