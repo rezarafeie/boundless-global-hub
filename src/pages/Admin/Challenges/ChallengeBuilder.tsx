@@ -181,6 +181,7 @@ const ChallengeBuilder: React.FC = () => {
             <F label="جریمه‌ها — action.type: lose_xp | reset_streak | warning | custom | pay_to_return (value = مبلغ دلار؛ {usd} در پیام) | lock_course (فقط در صورت تعریف صریح)"><JsonField value={ch.penalty_rules} onChange={(v) => set('penalty_rules', v)} rows={8} /></F>
             <p className="text-xs text-muted-foreground">بعد از ویرایش «ذخیره تنظیمات» را بزنید.</p>
           </CardContent></Card>
+          <PenalizedList ch={ch} />
         </TabsContent>
 
         <TabsContent value="notifications">
@@ -592,6 +593,53 @@ const PreviewTab: React.FC<{ ch: any; seg: Segments; days: any[]; variants: any[
   );
 };
 
+
+const PenalizedList: React.FC<{ ch: any }> = ({ ch }) => {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<string | null>(null);
+  const load = async () => {
+    setLoading(true);
+    const { data: parts } = await supabase.from('challenge_participants').select('id, user_id, profile').eq('challenge_id', ch.id).limit(2000);
+    const locked = (parts || []).filter((p: any) => p.profile?.payment_lock?.active);
+    const ids = locked.map((p: any) => p.user_id);
+    const { data: users } = ids.length ? await supabase.from('chat_users').select('id, name, full_name, phone').in('id', ids) : { data: [] as any[] };
+    const u = new Map((users || []).map((x: any) => [x.id, x]));
+    setRows(locked.map((p: any) => ({ ...p, user: u.get(p.user_id) })));
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, [ch.id]);
+  const forgive = async (p: any) => {
+    if (!confirm('جریمه این شرکت‌کننده بخشیده شود و چالش برایش باز شود؟')) return;
+    setBusy(p.id);
+    try { await challengeApi('admin_action', { challengeId: ch.id, participantId: p.id, op: 'waive_penalty' }); toast.success('جریمه بخشیده شد'); load(); }
+    catch (e: any) { toast.error(e.message); }
+    finally { setBusy(null); }
+  };
+  return (
+    <Card className="mt-4">
+      <CardHeader><CardTitle className="text-base">شرکت‌کننده‌های دارای جریمه ({rows.length})</CardTitle></CardHeader>
+      <CardContent className="space-y-2">
+        {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : !rows.length ? <p className="text-sm text-muted-foreground">شرکت‌کننده‌ای در حالت جریمه نیست.</p> : rows.map((p) => {
+          const l = p.profile.payment_lock;
+          const days = Array.isArray(l.days) ? l.days.length : l.missed_days ?? l.count;
+          return (
+            <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm">
+              <div className="min-w-0">
+                <p className="font-medium">{p.user?.full_name || p.user?.name || p.user_id}</p>
+                <p className="text-xs text-muted-foreground" dir="ltr">{p.user?.phone}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="destructive">{l.usd}${days ? ` · ${days} روز` : ''}</Badge>
+                <Button size="sm" disabled={busy === p.id} onClick={() => forgive(p)}>{busy === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'بخشیدن جریمه'}</Button>
+              </div>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+};
 
 const Applications: React.FC<{ ch: any }> = ({ ch }) => {
   const [apps, setApps] = useState<any[] | null>(null);
