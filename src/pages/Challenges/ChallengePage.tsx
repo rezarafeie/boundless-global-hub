@@ -227,7 +227,7 @@ const ChallengePage: React.FC = () => {
             {canWork && !current.assignment && current.form && current.status !== 'completed' && (
               <Button variant="outline" className="w-full" disabled={busy} onClick={() => run('sync')}>فرم را ارسال کردم، بررسی کن</Button>
             )}
-            {canWork && !current.assignment && !current.form && ['available', 'started'].includes(current.status) && (
+            {canWork && !current.assignment && !current.form && ['available', 'started', ...(lateOk ? ['missed'] : [])].includes(current.status) && (
               <Button size="lg" className="h-14 w-full text-base font-bold" disabled={busy} onClick={() => run('complete_manual', { progressId: current.id })}>انجام دادم ✅</Button>
             )}
             {current.status === 'needs_revision' && <RevisionBox sub={current.submission} />}
