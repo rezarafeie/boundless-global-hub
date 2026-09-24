@@ -533,7 +533,11 @@ export async function processExpiredMissions(
   for (const row of rows ?? []) {
     const day: any = dayById.get(row.day_id);
     const deadline = row.deadline_at ? Date.parse(row.deadline_at) : null;
-    if (!deadline || now <= deadline) continue;
+    // Days that ended (by calendar) before the participant joined count as missed
+    // immediately when late joining isn't allowed, even if a custom deadline is later.
+    const joinedDay = currentDayNumber(ch, Date.parse(p.joined_at)) || 1;
+    const preJoin = row.day_number < joinedDay && !(ch as any).allow_join_after_start && ["available", "started", "skipped"].includes(row.status);
+    if (!preJoin && (!deadline || now <= deadline)) continue;
     // Optional days remain safely skippable. Required historical days must be
     // treated as missed so configured penalties are applied consistently.
     if (row.status === "skipped" && (day?.required === false || (ch as any).allow_join_after_start)) continue;
