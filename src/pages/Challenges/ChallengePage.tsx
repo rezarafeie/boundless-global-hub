@@ -260,7 +260,7 @@ const ChallengePage: React.FC = () => {
             {current.status === 'completed' && openRow && openRow.day_number > current.day_number && (
               <div className="flex flex-col items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4 text-center sm:flex-row sm:justify-between sm:text-right">
                 <p className="text-sm font-medium">🎉 ماموریت روز {faNum(openRow.day_number)} برایت باز شد.</p>
-                <Button onClick={() => { setPinnedDay(openRow.day_number); setStarted(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>رفتن به روز {faNum(openRow.day_number)}</Button>
+                <Button onClick={() => { setPinnedDay(null); setStarted(false); setParams({ day: String(openRow.day_number) }); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>رفتن به روز {faNum(openRow.day_number)}</Button>
               </div>
             )}
             {canWork && !current.assignment && current.form && current.status !== 'completed' && (
