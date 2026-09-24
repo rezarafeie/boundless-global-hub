@@ -2,7 +2,7 @@
 // Opt-in per course via public.course_gamification_settings.enabled.
 import { supabase } from "./supabase.ts";
 import { sendMessage, tgCall } from "./telegram.ts";
-import { baleSendMessage, stripHtml } from "./bale.ts";
+import { baleSendMessage, stripHtml, baleCall } from "./bale.ts";
 import { sendEmail, sendSms } from "./support-followup.ts";
 import { gamMessage, gamText } from "./gamificationMessages.ts";
 
@@ -444,6 +444,31 @@ export async function buildStatus(userId: number, courseId: string) {
   };
 }
 
+/* ---------------- message attachments (file / voice / photo / video) ---------------- */
+type GamAttachment = { type: string; url: string; name?: string; caption?: string };
+const ATTACH_METHOD: Record<string, [string, string]> = {
+  voice: ["sendVoice", "voice"], audio: ["sendAudio", "audio"], photo: ["sendPhoto", "photo"],
+  video: ["sendVideo", "video"], document: ["sendDocument", "document"],
+};
+function attachmentsOf(messages: any, kind: string): GamAttachment[] {
+  const list = messages?.[kind]?.attachments;
+  return Array.isArray(list) ? list.filter((a: any) => a?.url && typeof a.url === "string").slice(0, 10) : [];
+}
+async function sendAttachments(target: "telegram" | "bale", chatId: number, list: GamAttachment[], extra: Record<string, unknown> = {}) {
+  const errors: string[] = [];
+  for (const a of list) {
+    const [method, field] = ATTACH_METHOD[a.type] ?? ATTACH_METHOD.document;
+    const payload = { chat_id: chatId, [field]: a.url, ...(a.caption ? { caption: a.caption } : {}), ...extra };
+    const call = (m: string, pl: Record<string, unknown>) => target === "bale" ? baleCall(m, pl) : tgCall(m, pl);
+    let r: any = await call(method, payload).catch((e) => ({ ok: false, description: String(e) }));
+    // voice notes must be OGG/Opus on Telegram — fall back to audio, then document
+    if (!r?.ok && method === "sendVoice") r = await call("sendAudio", { chat_id: chatId, audio: a.url, ...extra }).catch(() => null);
+    if (!r?.ok && method !== "sendDocument") r = await call("sendDocument", { chat_id: chatId, document: a.url, ...extra }).catch(() => null);
+    if (!r?.ok) errors.push(`${a.type}: ${JSON.stringify(r)}`);
+  }
+  return errors;
+}
+
 /* ---------------- notifications ---------------- */
 
 export async function notifyStudent(
@@ -494,6 +519,7 @@ export async function notifyStudent(
     ...vars,
   });
   const body = `${msg.title}\n\n${msg.text}\n\n${courseTitle}`;
+  const attachments = attachmentsOf(s?.messages ?? {}, kind);
   const channels = new Set<string>(delivered);
   const errors: Record<string, string> = {};
 
@@ -501,7 +527,11 @@ export async function notifyStudent(
   if (user.telegram_chat_id && !channels.has("telegram_bot")) {
     try {
       const response = await sendMessage(Number(user.telegram_chat_id), body);
-      if ((response as any)?.ok) channels.add("telegram_bot");
+      if ((response as any)?.ok) {
+        channels.add("telegram_bot");
+        const ae = await sendAttachments("telegram", Number(user.telegram_chat_id), attachments);
+        if (ae.length) errors.telegram_bot_files = ae.join(" | ");
+      }
       else errors.telegram_bot = JSON.stringify(response);
     } catch (e) { errors.telegram_bot = String(e); }
   }
@@ -511,7 +541,11 @@ export async function notifyStudent(
   if (!channels.has("telegram_bot") && (user as any).bale_chat_id && !channels.has("bale_bot")) {
     try {
       const response = await baleSendMessage(Number((user as any).bale_chat_id), stripHtml(body));
-      if ((response as any)?.ok) channels.add("bale_bot");
+      if ((response as any)?.ok) {
+        channels.add("bale_bot");
+        const ae = await sendAttachments("bale", Number((user as any).bale_chat_id), attachments);
+        if (ae.length) errors.bale_bot_files = ae.join(" | ");
+      }
       else errors.bale_bot = JSON.stringify(response);
     } catch (e) { errors.bale_bot = String(e); }
   }
@@ -539,14 +573,19 @@ export async function notifyStudent(
           text: body,
           business_connection_id: bcid,
         });
-        if ((response as any)?.ok) channels.add("telegram_business");
+        if ((response as any)?.ok) {
+          channels.add("telegram_business");
+          const ae = await sendAttachments("telegram", Number(act.telegram_id), attachments, { business_connection_id: bcid });
+          if (ae.length) errors.telegram_business_files = ae.join(" | ");
+        }
         else errors.telegram_business = JSON.stringify(response);
       }
     }
   } catch (e) { errors.telegram_business = String(e); }
 
   if (user.email && !channels.has("email")) {
-    const html = `<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;line-height:1.9">${body.replace(/\n/g, "<br/>")}</div>`;
+    const files = attachments.map((a) => `<p><a href="${a.url}">📎 ${a.name || a.type}</a></p>`).join("");
+    const html = `<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;line-height:1.9">${body.replace(/\n/g, "<br/>")}${files}</div>`;
     const r = await sendEmail(user.email, msg.title, html);
     if (r.ok) channels.add("email");
     else errors.email = r.error ?? "unknown email error";
