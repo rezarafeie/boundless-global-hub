@@ -28,6 +28,17 @@ import {
 
 } from './telegram.ts';
 import { ensureAccessWindow as gamEnsureAccessWindow } from './gamification.ts';
+import { reviewApplication as chalReview } from './challenge.ts';
+
+// Only the challenge's coach (by email) may approve/reject from the bot.
+async function chalCoachCheck(chat_id: number, participantId: string) {
+  const { data: part } = await supabase.from('challenge_participants').select('challenge_id').eq('id', participantId).maybeSingle();
+  if (!part) return null;
+  const { data: ch } = await supabase.from('challenges').select('coach_email').eq('id', part.challenge_id).maybeSingle();
+  const { data: me } = await supabase.from('chat_users').select('email').eq(chatIdColumn(), chat_id).maybeSingle();
+  const coach = String(ch?.coach_email ?? 'rezarafeie13@gmail.com').trim().toLowerCase();
+  return me?.email && String(me.email).trim().toLowerCase() === coach ? coach : null;
+}
 
 // After a student activates Telegram support, complete any gamification welcome
 // channels that could not be delivered at enrollment time (Telegram was not linked yet).
@@ -3207,6 +3218,20 @@ async function handleUpdate(update: any) {
     const data: string = cq.data;
     await answerCallback(cq.id);
 
+    if (data.startsWith('chal_ok:') || data.startsWith('chal_no:')) {
+      const pid = data.slice(8);
+      const coach = await chalCoachCheck(chat_id, pid);
+      if (!coach) { await sendMessage(chat_id, '⛔ فقط مربی این چالش می‌تواند درخواست را بررسی کند.'); return; }
+      if (data.startsWith('chal_ok:')) {
+        const r = await chalReview(pid, 'approve', null, coach);
+        await sendMessage(chat_id, r.ok ? '✅ درخواست تایید شد و پیام پذیرش برای دانشجو ارسال شد.' : `❌ ${(r as any).error}`);
+      } else {
+        await setSession(chat_id, null, 'awaiting_challenge_reject', { participant_id: pid });
+        await sendMessage(chat_id, '✍️ دلیل رد درخواست را بنویسید (این متن برای دانشجو ارسال می‌شود):');
+      }
+      return;
+    }
+
     // Handle login + form + webinar callbacks before user-resolution
     if (data === 'login:start') { await startLogin(chat_id, message_id); return; }
     if (data === 'form:cancel') { await cancelForm(chat_id, message_id); return; }
@@ -4206,6 +4231,15 @@ async function handleUpdate(update: any) {
   }
 
   const session = await getSession(chat_id);
+  if (session?.state === 'awaiting_challenge_reject' && text) {
+    const pid = String(session.context?.participant_id ?? '');
+    const coach = await chalCoachCheck(chat_id, pid);
+    await clearSession(chat_id);
+    if (!coach) { await sendMessage(chat_id, '⛔ دسترسی ندارید.'); return; }
+    const r = await chalReview(pid, 'reject', text, coach);
+    await sendMessage(chat_id, r.ok ? '❌ درخواست رد شد و دلیل برای دانشجو ارسال شد.' : `⚠️ ${(r as any).error}`);
+    return;
+  }
   if (session?.state === 'awaiting_form_field') {
     await handleFormMessage(chat_id, user.id, msg, session);
     return;
