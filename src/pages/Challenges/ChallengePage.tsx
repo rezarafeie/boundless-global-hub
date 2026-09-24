@@ -148,7 +148,20 @@ const ChallengePage: React.FC = () => {
     finally { setBusy(false); }
   };
 
-  if (!p) return <Onboarding ch={ch} seg={seg} onboardingForm={state.onboardingForm} isAuthenticated={isAuthenticated} busy={busy} onJoin={(profile) => run('join', { profile })} />;
+  if (!isAuthenticated) return (
+    <div dir="rtl" className="mx-auto max-w-md px-4 py-16">
+      <Card><CardContent className="space-y-4 p-6 text-center">
+        <h1 className="text-lg font-bold">{ch.title}</h1>
+        <p className="text-sm text-muted-foreground">برای شرکت در چالش ابتدا وارد حساب کاربری شوید.</p>
+        <Button asChild className="w-full"><Link to={`/auth?redirect=/challenges/${ch.slug}`}>ورود / ثبت‌نام</Link></Button>
+      </CardContent></Card>
+    </div>
+  );
+  const editing = params.get('edit') === '1';
+  if ((!p || (p.approval_status === 'rejected' && editing)) && state.messenger && !state.messenger.ready) return <MessengerGate ch={ch} m={state.messenger} onCheck={() => load()} />;
+  if (p && p.approval_status === 'pending') return <ApplicationStatus ch={ch} app={state.application} status="pending" onRefresh={() => load()} />;
+  if (p && p.approval_status === 'rejected' && !editing) return <ApplicationStatus ch={ch} app={state.application} status="rejected" onRefresh={() => load()} onEdit={() => setParams({ edit: '1' })} />;
+  if (!p || (p.approval_status === 'rejected' && editing)) return <Onboarding ch={ch} seg={seg} onboardingForm={state.onboardingForm} isAuthenticated={isAuthenticated} busy={busy} onJoin={async (profile) => { if (await run('join', { profile })) setParams({}, { replace: true }); }} />;
 
   const progress: any[] = state.progress || [];
   const openRow = progress.find((r) => ['available', 'started', 'needs_revision'].includes(r.status));
