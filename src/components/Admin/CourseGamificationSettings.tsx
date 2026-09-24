@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Trash2, Plus, Loader2, RotateCcw, MessageSquare } from 'lucide-react';
+import { Trash2, Plus, Loader2, RotateCcw, MessageSquare, Paperclip, Mic, Square } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { GAM_MESSAGES } from '@/lib/gamificationMessages';
@@ -219,6 +219,9 @@ const CourseGamificationSettings = forwardRef<CourseGamificationSettingsHandle, 
                         value={current.text ?? ''}
                         onChange={(e) => setMsg({ text: e.target.value })}
                       />
+                      {group === 'notification' && (
+                        <MessageAttachments value={current.attachments ?? []} onChange={(attachments) => setMsg({ attachments })} />
+                      )}
                       {!!d.vars.length && (
                         <div className="text-[11px] text-muted-foreground">
                           متغیرها: {d.vars.map((v) => `{${v}}`).join(' ، ')}
@@ -330,3 +333,79 @@ const CourseGamificationSettings = forwardRef<CourseGamificationSettingsHandle, 
 CourseGamificationSettings.displayName = 'CourseGamificationSettings';
 
 export default CourseGamificationSettings;
+
+
+type Attachment = { type: 'document' | 'voice' | 'audio' | 'photo' | 'video'; url: string; name?: string; caption?: string };
+const TYPE_LABEL: Record<Attachment['type'], string> = { document: 'فایل', voice: 'ویس', audio: 'صوت', photo: 'عکس', video: 'ویدیو' };
+const detectType = (f: File): Attachment['type'] =>
+  f.type.startsWith('image/') ? 'photo' : f.type.startsWith('video/') ? 'video'
+    : /ogg|opus/.test(f.type) ? 'voice' : f.type.startsWith('audio/') ? 'audio' : 'document';
+
+const MessageAttachments: React.FC<{ value: Attachment[]; onChange: (v: Attachment[]) => void }> = ({ value, onChange }) => {
+  const { toast } = useToast();
+  const [busy, setBusy] = useState(false);
+  const [rec, setRec] = useState<MediaRecorder | null>(null);
+  const upload = async (blob: Blob, name: string, type: Attachment['type']) => {
+    setBusy(true);
+    try {
+      const ext = name.includes('.') ? name.split('.').pop() : 'bin';
+      const path = `gamification/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from('messenger-files').upload(path, blob, { contentType: blob.type || undefined });
+      if (error) throw error;
+      const { data } = supabase.storage.from('messenger-files').getPublicUrl(path);
+      onChange([...(value ?? []), { type, url: data.publicUrl, name }]);
+    } catch (e: any) {
+      toast({ title: 'آپلود ناموفق بود', description: e.message, variant: 'destructive' });
+    } finally { setBusy(false); }
+  };
+  const startRec = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = ['audio/ogg;codecs=opus', 'audio/webm;codecs=opus', 'audio/mp4'].find((m) => MediaRecorder.isTypeSupported(m)) || '';
+      const r = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      const chunks: BlobPart[] = [];
+      r.ondataavailable = (e) => chunks.push(e.data);
+      r.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const type = r.mimeType || 'audio/webm';
+        const ext = type.includes('ogg') ? 'ogg' : type.includes('mp4') ? 'm4a' : 'webm';
+        upload(new Blob(chunks, { type }), `voice.${ext}`, ext === 'ogg' ? 'voice' : 'audio');
+        setRec(null);
+      };
+      r.start();
+      setRec(r);
+    } catch { toast({ title: 'دسترسی به میکروفون ممکن نشد', variant: 'destructive' }); }
+  };
+  return (
+    <div className="space-y-2 rounded-md bg-muted/40 p-2">
+      {(value ?? []).map((a, i) => (
+        <div key={i} className="flex items-center gap-2 text-xs">
+          <select className="rounded border bg-background px-1 py-1" value={a.type}
+            onChange={(e) => onChange(value.map((x, j) => (j === i ? { ...x, type: e.target.value as Attachment['type'] } : x)))}>
+            {Object.entries(TYPE_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+          </select>
+          {a.type === 'voice' || a.type === 'audio'
+            ? <audio controls src={a.url} className="h-8 max-w-[220px]" />
+            : <a href={a.url} target="_blank" rel="noreferrer" className="truncate text-primary underline">{a.name || a.url}</a>}
+          <Input className="h-8 flex-1 text-xs" placeholder="کپشن (اختیاری)" value={a.caption ?? ''}
+            onChange={(e) => onChange(value.map((x, j) => (j === i ? { ...x, caption: e.target.value } : x)))} />
+          <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => onChange(value.filter((_, j) => j !== i))}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ))}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="button" size="sm" variant="outline" disabled={busy} asChild>
+          <label className="cursor-pointer">
+            {busy ? <Loader2 className="ml-1 h-3.5 w-3.5 animate-spin" /> : <Paperclip className="ml-1 h-3.5 w-3.5" />}افزودن فایل
+            <input type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f, f.name, detectType(f)); e.target.value = ''; }} />
+          </label>
+        </Button>
+        {rec
+          ? <Button type="button" size="sm" variant="destructive" onClick={() => rec.stop()}><Square className="ml-1 h-3.5 w-3.5" />توقف ضبط</Button>
+          : <Button type="button" size="sm" variant="outline" disabled={busy} onClick={startRec}><Mic className="ml-1 h-3.5 w-3.5" />ضبط ویس</Button>}
+        <span className="text-[11px] text-muted-foreground">بعد از متن، در بات و تلگرام بیزینس ارسال می‌شود.</span>
+      </div>
+    </div>
+  );
+};
