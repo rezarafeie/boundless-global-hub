@@ -10,26 +10,20 @@ import {
 } from "../_shared/challenge.ts";
 
 async function messengerStatus(ch: any, uid: number) {
-  const [{ data: u }, { data: act }, { data: st }] = await Promise.all([
+  const [{ data: u }, { data: st }] = await Promise.all([
     supabase.from("chat_users").select("telegram_chat_id, bale_chat_id").eq("id", uid).maybeSingle(),
-    supabase.from("support_activations").select("id").eq("user_id", uid).eq("status", "activated").limit(1).maybeSingle(),
     supabase.from("admin_settings").select("telegram_bot_username" as any).eq("id", 1).maybeSingle(),
   ]);
-  const botLinked = !!(u?.telegram_chat_id || u?.bale_chat_id);
-  const supportActivated = !!act;
-  const bot = String((st as any)?.telegram_bot_username || "rafiei_bot").replace(/^@/, "");
-  let link = `https://telegram.me/${bot}`;
-  if (!supportActivated) {
-    const eligible: string[] = Array.isArray(ch.eligible_course_ids) ? ch.eligible_course_ids : [];
-    let q = supabase.from("enrollments").select("id, course_id").eq("chat_user_id", uid).in("payment_status", ["success", "completed"]).order("created_at", { ascending: false }).limit(1);
-    if (eligible.length) q = q.in("course_id", eligible);
-    const { data: en } = await q.maybeSingle();
-    if (en?.course_id) {
-      const { data: rows } = await supabase.rpc("ensure_support_activation", { p_user_id: uid, p_course_id: en.course_id, p_enrollment_id: en.id });
-      const row: any = Array.isArray(rows) ? rows[0] : rows;
-      if (row?.activation_token) link = `https://telegram.me/${bot}?start=sact_${row.activation_token}`;
-    }
+  let { data: act } = await supabase.from("challenge_activations").select("token, status").eq("challenge_id", ch.id).eq("user_id", uid).maybeSingle();
+  if (!act) {
+    const token = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+    const { data } = await supabase.from("challenge_activations").insert({ challenge_id: ch.id, user_id: uid, token }).select("token, status").single();
+    act = data ?? { token, status: "pending" };
   }
+  const botLinked = !!(u?.telegram_chat_id || u?.bale_chat_id);
+  const supportActivated = act?.status === "activated";
+  const bot = String((st as any)?.telegram_bot_username || "rafiei_bot").replace(/^@/, "");
+  const link = `https://telegram.me/${bot}?start=chact_${act!.token}`;
   const required = ch.require_messenger_activation !== false;
   return { required, botLinked, supportActivated, ready: !required || (botLinked && supportActivated), link };
 }
