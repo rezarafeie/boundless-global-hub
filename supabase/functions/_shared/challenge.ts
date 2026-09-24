@@ -497,7 +497,7 @@ export async function reportMetrics(ch: Challenge, p: Participant, input: { date
 export async function syncParticipant(ch: Challenge, p: Participant, structure?: { days: any[]; variants: any[] }) {
   const s = structure ?? await loadStructure(ch.id);
   await ensureProgress(ch, p, s);
-  const open = (ch as any).allow_late_submission ? [...OPEN, "missed"] : OPEN;
+  const open = (ch as any).allow_late_submission ? [...OPEN, "missed", "skipped"] : OPEN;
   const { data: rows } = await supabase.from("challenge_progress").select("*").eq("participant_id", p.id).in("status", open);
   const byId = new Map(s.days.map((d: any) => [d.id, d]));
   let completedAny = false;
