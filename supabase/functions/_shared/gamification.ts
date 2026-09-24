@@ -584,7 +584,8 @@ export async function notifyStudent(
   } catch (e) { errors.telegram_business = String(e); }
 
   if (user.email && !channels.has("email")) {
-    const html = `<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;line-height:1.9">${body.replace(/\n/g, "<br/>")}</div>`;
+    const files = attachments.map((a) => `<p><a href="${a.url}">📎 ${a.name || a.type}</a></p>`).join("");
+    const html = `<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;line-height:1.9">${body.replace(/\n/g, "<br/>")}${files}</div>`;
     const r = await sendEmail(user.email, msg.title, html);
     if (r.ok) channels.add("email");
     else errors.email = r.error ?? "unknown email error";
