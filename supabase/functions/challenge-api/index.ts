@@ -54,12 +54,31 @@ async function releasePaymentLock(ch: any, p: any, lock: any, meta: Record<strin
 const VISIBLE = ["scheduled", "active", "paused", "finished"];
 
 async function isAdmin(req: Request) {
-  const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
-  if (!token) return false;
-  const { data } = await supabase.auth.getUser(token);
-  if (!data?.user) return false;
-  const { data: u } = await supabase.from("academy_users").select("role").eq("id", data.user.id).maybeSingle();
-  return u?.role === "admin";
+  const bearer = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  if (bearer) {
+    const { data } = await supabase.auth.getUser(bearer);
+    if (data?.user) {
+      const { data: academyUser } = await supabase.from("academy_users").select("role").eq("id", data.user.id).maybeSingle();
+      if (academyUser?.role === "admin") return true;
+    }
+  }
+
+  const sessionToken = req.headers.get("x-session-token") ?? "";
+  if (!sessionToken) return false;
+  const { data: session } = await supabase.from("user_sessions")
+    .select("user_id, last_activity")
+    .eq("session_token", sessionToken)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!session?.user_id) return false;
+  const lastActivity = session.last_activity ? Date.parse(session.last_activity) : 0;
+  if (!lastActivity || Date.now() - lastActivity > 24 * 60 * 60 * 1000) return false;
+
+  const [{ data: user }, { data: roles }] = await Promise.all([
+    supabase.from("chat_users").select("role, is_messenger_admin").eq("id", session.user_id).maybeSingle(),
+    supabase.from("user_roles").select("role_name").eq("user_id", session.user_id).eq("is_active", true),
+  ]);
+  return user?.role === "admin" || user?.is_messenger_admin === true || (roles ?? []).some((role: any) => role.role_name === "admin");
 }
 
 async function leaderboard(ch: any, myId?: string) {
