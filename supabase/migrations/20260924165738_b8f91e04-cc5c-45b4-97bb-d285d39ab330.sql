@@ -1,0 +1,1 @@
+ALTER TABLE public.challenges ADD COLUMN IF NOT EXISTS allow_join_after_start boolean NOT NULL DEFAULT false; NOTIFY pgrst, 'reload schema';
