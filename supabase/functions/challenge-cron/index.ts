@@ -2,7 +2,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { supabase } from "../_shared/supabase.ts";
 import {
   loadStructure, syncParticipant, emitEvent, applyPenalties, recalcParticipant, processRewards,
-  currentDayNumber, humanRemaining, tehranDate, participantStats, HOUR,
+  currentDayNumber, humanRemaining, tehranDate, participantStats, processExpiredMissions, HOUR,
 } from "../_shared/challenge.ts";
 
 const json = (b: unknown, s = 200) =>
@@ -39,25 +39,14 @@ Deno.serve(async (req) => {
         result.participants++;
         try {
           await syncParticipant(ch, p, structure);
+          result.missed += await processExpiredMissions(ch, p, structure, now);
           const { data: open } = await supabase.from("challenge_progress").select("*").eq("participant_id", p.id)
             .in("status", ["available", "started", "needs_revision"]);
           for (const r of open ?? []) {
             const day: any = dayById.get(r.day_id);
             const deadline = r.deadline_at ? Date.parse(r.deadline_at) : null;
             if (!deadline) continue;
-            if (now > deadline) {
-              await supabase.from("challenge_progress").update({ status: "missed", missed_at: new Date(now).toISOString() }).eq("id", r.id).in("status", ["available", "started", "needs_revision"]);
-              result.missed++;
-              const hadStreak = p.streak;
-              await recalcParticipant(ch, p);
-              await emitEvent(ch, p, "mission_missed", `day:${r.day_number}`, { day: r.day_number, mission_title: day?.title });
-              if (ch.streak_enabled && hadStreak > 0 && day?.required !== false) {
-                await emitEvent(ch, p, "streak_broken", `day:${r.day_number}`, {});
-                await applyPenalties(ch, p, "streak_broken", `day:${r.day_number}`);
-              }
-              if (day?.required !== false) await applyPenalties(ch, p, "mission_missed", `day:${r.day_number}`);
-              continue;
-            }
+            if (now > deadline) continue;
             const followups = Array.isArray(day?.followups) ? day.followups : followupsBase;
             for (const f of followups) {
               const h = Number(f.hours_before);
