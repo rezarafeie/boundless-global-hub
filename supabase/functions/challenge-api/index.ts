@@ -6,8 +6,33 @@ import { fetchUsdTomanRate } from "../_shared/rafieipay.ts";
 import {
   loadStructure, syncParticipant, emitEvent, reportMetrics, recalcParticipant, completeMission,
   grantReward, participantStats, unlockedDay, currentDayNumber, dayWindow, selectVariant, processRewards,
-  processExpiredMissions,
+  processExpiredMissions, notifyCoachOfApplication, reviewApplication, applicationSummary,
 } from "../_shared/challenge.ts";
+
+async function messengerStatus(ch: any, uid: number) {
+  const [{ data: u }, { data: act }, { data: st }] = await Promise.all([
+    supabase.from("chat_users").select("telegram_chat_id, bale_chat_id").eq("id", uid).maybeSingle(),
+    supabase.from("support_activations").select("id").eq("user_id", uid).eq("status", "activated").limit(1).maybeSingle(),
+    supabase.from("admin_settings").select("telegram_bot_username" as any).eq("id", 1).maybeSingle(),
+  ]);
+  const botLinked = !!(u?.telegram_chat_id || u?.bale_chat_id);
+  const supportActivated = !!act;
+  const bot = String((st as any)?.telegram_bot_username || "rafiei_bot").replace(/^@/, "");
+  let link = `https://telegram.me/${bot}`;
+  if (!supportActivated) {
+    const eligible: string[] = Array.isArray(ch.eligible_course_ids) ? ch.eligible_course_ids : [];
+    let q = supabase.from("enrollments").select("id, course_id").eq("chat_user_id", uid).in("payment_status", ["success", "completed"]).order("created_at", { ascending: false }).limit(1);
+    if (eligible.length) q = q.in("course_id", eligible);
+    const { data: en } = await q.maybeSingle();
+    if (en?.course_id) {
+      const { data: rows } = await supabase.rpc("ensure_support_activation", { p_user_id: uid, p_course_id: en.course_id, p_enrollment_id: en.id });
+      const row: any = Array.isArray(rows) ? rows[0] : rows;
+      if (row?.activation_token) link = `https://telegram.me/${bot}?start=sact_${row.activation_token}`;
+    }
+  }
+  const required = ch.require_messenger_activation !== false;
+  return { required, botLinked, supportActivated, ready: !required || (botLinked && supportActivated), link };
+}
 
 const ZARINPAL_MERCHANT_ID = Deno.env.get("ZARINPAL_MERCHANT_ID") || "";
 
@@ -45,7 +70,7 @@ async function isAdmin(req: Request) {
 
 async function leaderboard(ch: any, myId?: string) {
   const { data: parts } = await supabase.from("challenge_participants")
-    .select("id, user_id, xp, streak, best_streak, first_sale_at").eq("challenge_id", ch.id).limit(2000);
+    .select("id, user_id, xp, streak, best_streak, first_sale_at").eq("challenge_id", ch.id).eq("approval_status", "approved").limit(2000);
   const list = parts ?? [];
   const ids = list.map((p: any) => p.user_id);
   const { data: users } = ids.length ? await supabase.from("chat_users").select("id, name, full_name").in("id", ids.slice(0, 1000)) : { data: [] };
@@ -87,6 +112,14 @@ async function fullState(ch: any, uid: number | null) {
     participant = data;
   }
   const today = currentDayNumber(ch);
+  const messenger = uid ? await messengerStatus(ch, uid) : null;
+  if (participant && participant.approval_status && participant.approval_status !== "approved") {
+    return {
+      challenge: { ...ch, messages: undefined, notification_settings: undefined, penalty_rules: undefined },
+      days: [], today, unlocked_day: 0, participant, onboardingForm, messenger,
+      application: { status: participant.approval_status, reason: participant.rejection_reason, summary: await applicationSummary(ch, participant) },
+    };
+  }
   if (participant && ch.status === "active") {
     await syncParticipant(ch, participant, { days, variants });
     await processExpiredMissions(ch, participant, { days, variants });
@@ -103,7 +136,7 @@ async function fullState(ch: any, uid: number | null) {
   });
   const base: any = {
     challenge: { ...ch, messages: undefined, notification_settings: undefined, penalty_rules: undefined },
-    days: publicDays, today, unlocked_day: visibleDay, participant, onboardingForm,
+    days: publicDays, today, unlocked_day: visibleDay, participant, onboardingForm, messenger,
   };
   if (!participant) return base;
 
@@ -218,7 +251,11 @@ Deno.serve(async (req) => {
       if (!["scheduled", "active"].includes(ch.status)) return json({ success: false, error: "ثبت‌نام در این چالش باز نیست" }, 400);
       const pr = body.profile ?? {};
       const clean = (v: unknown, n = 300) => (v == null || v === "" ? null : String(v).slice(0, n));
-      const { data: existing } = await supabase.from("challenge_participants").select("id, profile").eq("challenge_id", ch.id).eq("user_id", uid).maybeSingle();
+      const { data: existing } = await supabase.from("challenge_participants").select("id, profile, approval_status").eq("challenge_id", ch.id).eq("user_id", uid).maybeSingle();
+      if (existing?.approval_status === "pending") return json({ success: false, error: "درخواست شما در انتظار تایید مربی است" }, 400);
+      const ms = await messengerStatus(ch, uid!);
+      if (!ms.ready) return json({ success: false, error: "ابتدا ربات و پشتیبانی تلگرام را فعال کنید" }, 400);
+      const needsApproval = ch.require_coach_approval !== false && existing?.approval_status !== "approved";
       const row = {
         challenge_id: ch.id, user_id: uid,
         boundless_code: clean(pr.boundless_code, 20), business_model: clean(pr.business_model, 60), stage: clean(pr.stage, 60),
@@ -230,12 +267,16 @@ Deno.serve(async (req) => {
           onboarding_answers: pr.onboarding_answers && typeof pr.onboarding_answers === "object" ? pr.onboarding_answers : {},
           onboarding_form_id: ch.onboarding_form_id ?? null,
         },
+        ...(needsApproval ? { approval_status: "pending", status: "pending_approval", rejection_reason: null } : existing ? {} : { approval_status: "approved", approved_at: new Date().toISOString() }),
       };
       const { data: p, error } = existing
         ? await supabase.from("challenge_participants").update(row).eq("id", existing.id).select("*").single()
         : await supabase.from("challenge_participants").insert(row).select("*").single();
       if (error) return json({ success: false, error: error.message }, 400);
-      if (!existing) await emitEvent(ch, p, "challenge_joined", "joined", {});
+      if (needsApproval) {
+        await emitEvent(ch, p, "application_received", `applied:${Date.now()}`, {});
+        await notifyCoachOfApplication(ch, p);
+      } else if (!existing) await emitEvent(ch, p, "challenge_joined", "joined", {});
       return json({ success: true, ...(await fullState(ch, uid)) });
     }
 
@@ -243,6 +284,9 @@ Deno.serve(async (req) => {
     if (!p && action !== "admin_action") return json({ success: false, error: "ابتدا در چالش ثبت‌نام کنید" }, 400);
 
     if (action === "sync") return json({ success: true, ...(await fullState(ch, uid)) });
+    if (p && p.approval_status && p.approval_status !== "approved" && action !== "admin_action") {
+      return json({ success: false, error: "درخواست شما هنوز تایید نشده است" }, 403);
+    }
 
     /* ---------- paid penalty (pay to return) ---------- */
     const lock = p?.profile?.payment_lock;
@@ -328,6 +372,17 @@ Deno.serve(async (req) => {
 
     if (action === "admin_action") {
       if (!(await isAdmin(req))) return json({ success: false, error: "دسترسی ادمین لازم است" }, 403);
+      if (body.op === "list_applications") {
+        const { data: apps } = await supabase.from("challenge_participants").select("*").eq("challenge_id", ch.id).not("reviewed_at", "is", null).order("joined_at", { ascending: false }).limit(500);
+        const { data: pend } = await supabase.from("challenge_participants").select("*").eq("challenge_id", ch.id).eq("approval_status", "pending").order("joined_at", { ascending: false }).limit(500);
+        const all = [...(pend ?? []), ...(apps ?? []).filter((a: any) => a.approval_status !== "pending")];
+        const out = await Promise.all(all.map(async (a: any) => ({ id: a.id, approval_status: a.approval_status, rejection_reason: a.rejection_reason, reviewed_at: a.reviewed_at, reviewed_by: a.reviewed_by, joined_at: a.joined_at, summary: await applicationSummary(ch, a) })));
+        return json({ success: true, applications: out });
+      }
+      if (body.op === "approve" || body.op === "reject") {
+        const r = await reviewApplication(String(body.participantId), body.op, body.reason ? String(body.reason).slice(0, 1000) : null, "admin");
+        return json({ success: r.ok, error: (r as any).error });
+      }
       const { data: target } = await supabase.from("challenge_participants").select("*").eq("id", body.participantId).eq("challenge_id", ch.id).maybeSingle();
       if (!target) return json({ success: false, error: "شرکت‌کننده یافت نشد" }, 404);
       const op = String(body.op ?? "");
