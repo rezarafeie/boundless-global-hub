@@ -1627,6 +1627,56 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_activations: {
+        Row: {
+          activated_at: string | null
+          challenge_id: string
+          created_at: string
+          id: string
+          opened_bot_at: string | null
+          status: string
+          telegram_chat_id: number | null
+          telegram_id: number | null
+          token: string
+          updated_at: string
+          user_id: number
+        }
+        Insert: {
+          activated_at?: string | null
+          challenge_id: string
+          created_at?: string
+          id?: string
+          opened_bot_at?: string | null
+          status?: string
+          telegram_chat_id?: number | null
+          telegram_id?: number | null
+          token: string
+          updated_at?: string
+          user_id: number
+        }
+        Update: {
+          activated_at?: string | null
+          challenge_id?: string
+          created_at?: string
+          id?: string
+          opened_bot_at?: string | null
+          status?: string
+          telegram_chat_id?: number | null
+          telegram_id?: number | null
+          token?: string
+          updated_at?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_activations_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenge_daily_metrics: {
         Row: {
           challenge_id: string

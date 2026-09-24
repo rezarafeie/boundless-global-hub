@@ -3834,6 +3834,41 @@ async function handleUpdate(update: any) {
   }
 
   // ===== Support activation deep-link: /start sact_<token> =====
+  if (startPayload?.startsWith('chact_')) {
+    const token = startPayload.slice('chact_'.length);
+    const { data: act } = await supabase.from('challenge_activations').select('id, user_id, challenge_id, status').eq('token', token).maybeSingle();
+    if (!act) { await sendMessage(chat_id, '❌ لینک فعال‌سازی چالش نامعتبر است. از صفحه چالش دوباره تلاش کنید.'); return; }
+    const [{ data: ch }, { data: cu }] = await Promise.all([
+      supabase.from('challenges').select('title, slug').eq('id', act.challenge_id).maybeSingle(),
+      supabase.from('chat_users').select('name, first_name, full_name').eq('id', act.user_id).maybeSingle(),
+    ]);
+    try {
+      await supabase.from('chat_users').update(chatIdPatch(null)).eq(chatIdColumn(), chat_id);
+      await supabase.from('chat_users').update(chatIdPatch(chat_id)).eq('id', act.user_id);
+    } catch (e) { console.warn('chact auto-login failed', e); }
+    await supabase.from('challenge_activations').update({
+      status: act.status === 'activated' ? 'activated' : 'opened_bot', telegram_chat_id: chat_id,
+      opened_bot_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+    }).eq('id', act.id);
+    const name = String((cu as any)?.first_name || (cu as any)?.full_name || (cu as any)?.name || 'دوست عزیز').trim().split(/\s+/)[0];
+    const title = (ch as any)?.title || 'چالش';
+    const prefill = `سلام، می‌خواهم پشتیبانی چالش «${title}» را فعال کنم.\nکد فعال‌سازی: CH-${token}`;
+    const supportUrl = isBaleChannel()
+      ? `https://ble.ir/rafieiacademy?text=${encodeURIComponent(prefill)}`
+      : `https://telegram.me/rafieiacademy?text=${encodeURIComponent(prefill)}`;
+    if (act.status === 'activated') {
+      await tgCall('sendMessage', { chat_id, text: `✅ ${escapeHtml(name)} عزیز، پشتیبانی چالش «${escapeHtml(title)}» قبلاً فعال شده است.`, parse_mode: 'HTML',
+        reply_markup: { inline_keyboard: [[{ text: '🎯 ادامه ثبت‌نام در چالش', url: `https://academy.rafiei.co/challenges/${(ch as any)?.slug}` }]] } });
+      return;
+    }
+    await tgCall('sendMessage', {
+      chat_id, parse_mode: 'HTML',
+      text: `درود ${escapeHtml(name)} عزیز 🌱\n\nبرای فعال‌سازی پشتیبانی چالش «<b>${escapeHtml(title)}</b>» روی دکمه زیر بزن و در چت پشتیبانی فقط گزینه <b>ارسال</b> را بزن.\nبلافاصله پس از ارسال، پشتیبانی فعال می‌شود و لینک ادامه ثبت‌نام برایت ارسال می‌شود.`,
+      reply_markup: { inline_keyboard: [[{ text: '🚀 فعال‌سازی پشتیبانی چالش', url: supportUrl }]] },
+    });
+    return;
+  }
+
   if (startPayload?.startsWith('sact_')) {
     const token = startPayload.slice('sact_'.length);
     const { data: act } = await supabase
@@ -3911,6 +3946,28 @@ async function handleUpdate(update: any) {
       },
     });
     return;
+  }
+
+  // ===== Challenge support activation (message sent to Telegram Business support) =====
+  if (text && /CH-([a-f0-9]{16})/i.test(text)) {
+    const token = text.match(/CH-([a-f0-9]{16})/i)![1].toLowerCase();
+    const { data: act } = await supabase.from('challenge_activations').select('id, user_id, challenge_id, status').eq('token', token).maybeSingle();
+    if (act) {
+      const { data: ch } = await supabase.from('challenges').select('title, slug').eq('id', act.challenge_id).maybeSingle();
+      await supabase.from('challenge_activations').update({
+        status: 'activated', telegram_id: chat_id, activated_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      }).eq('id', act.id);
+      const link = `https://academy.rafiei.co/challenges/${(ch as any)?.slug}`;
+      const payload: any = {
+        chat_id, parse_mode: 'HTML',
+        text: `✅ پشتیبانی چالش «<b>${escapeHtml((ch as any)?.title || '')}</b>» فعال شد.\n\nحالا برگرد به صفحه چالش و فرم شروع را تکمیل کن تا درخواستت برای مربی ارسال شود.`,
+        reply_markup: { inline_keyboard: [[{ text: '🎯 تکمیل فرم شروع چالش', url: link }]] },
+      };
+      if (business_connection_id) payload.business_connection_id = business_connection_id;
+      const r: any = await tgCall('sendMessage', payload);
+      if (!r?.ok && business_connection_id) console.warn('challenge activation business reply failed', r);
+      return;
+    }
   }
 
   // ===== Auto-detect webinar support-activation message (Telegram Business / support chat) =====
