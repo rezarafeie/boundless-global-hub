@@ -59,7 +59,9 @@ const PenaltyLock: React.FC<{ ident: any; slug: string; lock: any }> = ({ ident,
       <CardContent className="space-y-3 p-5">
         <p className="font-bold text-destructive">چالش برای تو متوقف شده است</p>
         <p className="text-sm text-muted-foreground">{lock.reason ? String(lock.reason).replace(/\{usd\}/g, String(lock.usd)) : `یک روز از چالش را از دست دادی. برای بازگشت باید ${faNum(lock.usd)} دلار جریمه پرداخت کنی.`}</p>
+        {Array.isArray(lock.refs) && lock.refs.length > 1 && <p className="text-sm text-muted-foreground">{faNum(lock.refs.length)} روز از دست رفته × {faNum(lock.unit_usd ?? 1)} دلار</p>}
         <p className="text-sm">مبلغ: <b>{faNum(lock.usd)} دلار</b>{toman ? ` (≈ ${faNum(toman)} تومان با نرخ امروز)` : ''}</p>
+        <p className="text-xs text-muted-foreground">تا پرداخت جریمه، محتوای ماموریت‌ها نمایش داده نمی‌شود.</p>
         <p className="text-xs text-muted-foreground">پس از پرداخت، ماموریت از دست رفته ۲۴ ساعت دوباره برایت باز می‌شود.</p>
         <Button className="w-full sm:w-auto" disabled={busy} onClick={pay}>{busy && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}پرداخت جریمه و بازگشت به چالش</Button>
       </CardContent>
@@ -175,7 +177,7 @@ const ChallengePage: React.FC = () => {
       {ch.status === 'paused' && <Card><CardContent className="p-5 text-center text-muted-foreground">چالش موقتاً متوقف شده است.</CardContent></Card>}
 
       {/* today's mission */}
-      {current && (
+      {current && !p.profile?.payment_lock?.active && (
         <Card className="border-2 border-primary/30">
           <CardHeader className="pb-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
