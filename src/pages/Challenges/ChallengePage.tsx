@@ -10,12 +10,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, ArrowRight, Bell, CheckCircle2, Clock, Flame, Gift, Hash, ListChecks, Loader2, MessageSquare, Target, Trophy, Type, Zap, Send, ShieldCheck, XCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bell, CheckCircle2, Clock, Flame, Gift, Hash, ListChecks, Loader2, MessageSquare, Trophy, Type, Zap, Send, ShieldCheck, XCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { AssignmentSection } from '@/components/Assignment/AssignmentSection';
 import RewardValue from '@/components/Gamification/RewardValue';
 import { challengeApi, labelOf, PROGRESS_LABELS, segmentsOf } from '@/lib/challenge/schema';
 import CoachView from './CoachView';
+import ChallengeMissionCard from './ChallengeMissionCard';
 
 const faNum = (n: number | string | null | undefined) => Number(n ?? 0).toLocaleString('fa-IR');
 const remaining = (iso?: string | null) => {
@@ -215,39 +216,12 @@ const ChallengePage: React.FC = () => {
 
       {/* today's mission */}
       {current && !p.profile?.payment_lock?.active && (
-        <Card className="border-2 border-primary/30">
-          <CardHeader className="pb-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle className="flex items-center gap-2 text-lg"><Target className="h-5 w-5 text-primary" />{isToday ? 'ماموریت امروز' : `ماموریت روز ${faNum(current.day_number)}`}</CardTitle>
-              <Badge variant="outline">{PROGRESS_LABELS[current.status] ?? current.status}</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div>
-              <h2 className="text-xl font-bold">{dayInfo?.title}</h2>
-              {dayInfo?.goal && <p className="mt-1 text-sm text-muted-foreground">🎯 {dayInfo.goal}</p>}
-              <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                {dayInfo?.estimated_minutes && <Badge variant="secondary">⏱ {faNum(dayInfo.estimated_minutes)} دقیقه</Badge>}
-                <Badge variant="secondary">⚡ {faNum(dayInfo?.xp)} امتیاز</Badge>
-                {current.deadline_at && !['completed', 'missed', 'skipped'].includes(current.status) && <Badge variant="secondary">⏰ <Countdown to={current.deadline_at} /></Badge>}
-              </div>
-            </div>
-
-            {current.variant && (
-              <div className="space-y-4 rounded-lg bg-muted/50 p-4">
-                {current.variant.instructions && <p className="whitespace-pre-line text-sm leading-7">{current.variant.instructions}</p>}
-                <List title="چک‌لیست" items={current.variant.checklist} />
-                <List title="نکته‌ها" items={current.variant.tips} />
-                {current.variant.example && <div><p className="mb-1 text-sm font-semibold">مثال</p><p className="whitespace-pre-line text-sm text-muted-foreground">{current.variant.example}</p></div>}
-                {current.variant.resources?.length > 0 && (
-                  <div><p className="mb-1 text-sm font-semibold">منابع</p>
-                    <ul className="space-y-1 text-sm">{current.variant.resources.map((r: any, i: number) => <li key={i}><a className="text-primary underline" href={r.url} target="_blank" rel="noreferrer">{r.title ?? r.url}</a></li>)}</ul>
-                  </div>
-                )}
-                {current.variant.expected_result && <p className="text-sm"><span className="font-semibold">نتیجه مورد انتظار: </span>{current.variant.expected_result}</p>}
-              </div>
-            )}
-
+        <ChallengeMissionCard
+          dayInfo={dayInfo}
+          mission={current}
+          isToday={isToday}
+          countdown={current.deadline_at && !['completed', 'missed', 'skipped'].includes(current.status) ? <Countdown to={current.deadline_at} /> : null}
+        >
             {canWork && current.assignment && (
               started || current.status !== 'available' ? (
                 <AssignmentSection assignmentId={current.assignment_id} bare onChange={() => { setPinnedDay(current.day_number); load('sync'); }} />
@@ -284,8 +258,7 @@ const ChallengePage: React.FC = () => {
             {['missed', 'skipped'].includes(current.status) && <p className="rounded-lg bg-destructive/10 p-3 text-center text-sm text-destructive">{lateOk ? 'مهلت این ماموریت تمام شده، اما هنوز می‌توانی آن را ارسال کنی.' : 'مهلت این ماموریت تمام شده است.'}</p>}
 
             {current.status === 'completed' && dayInfo?.stage_update_enabled && <StageUpdate seg={seg} p={p} day={dayInfo} busy={busy} onSave={(stage) => run('update_stage', { stage })} />}
-          </CardContent>
-        </Card>
+        </ChallengeMissionCard>
       )}
 
       {/* timeline */}

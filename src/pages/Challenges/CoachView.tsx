@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,10 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, CheckCircle2, XCircle, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { challengeApi } from '@/lib/challenge/schema';
+import ChallengeMissionCard from './ChallengeMissionCard';
 
 const faNum = (n: number | string | null | undefined) => Number(n ?? 0).toLocaleString('fa-IR');
 const items = (v: any): any[] => (Array.isArray(v) ? v : []);
-const txt = (x: any) => (typeof x === 'string' ? x : x?.title ?? x?.label ?? x?.url ?? JSON.stringify(x));
 
 const Applications: React.FC<{ slug: string }> = ({ slug }) => {
   const [apps, setApps] = useState<any[] | null>(null);
@@ -56,53 +56,36 @@ const CoachView: React.FC<{ state: any }> = ({ state }) => {
   const ch = state.challenge;
   const [day, setDay] = useState<number>(state.days?.[0]?.day_number ?? 1);
   const d = (state.days ?? []).find((x: any) => x.day_number === day);
+  const [variantId, setVariantId] = useState<string>('');
+  const variants = d?.variants ?? [];
+  const variant = variants.find((item: any) => item.id === variantId) ?? variants[0];
+  useEffect(() => { setVariantId(''); }, [day]);
   return (
-    <div dir="rtl" className="mx-auto max-w-4xl space-y-4 px-4 py-6">
-      <Card className="border-primary/30"><CardContent className="flex items-center gap-3 p-4">
-        <ShieldCheck className="h-5 w-5 text-primary" />
-        <div><h1 className="font-bold">{ch.title}</h1><p className="text-xs text-muted-foreground">نمای مربی — همه روزها و ماموریت‌ها باز است</p></div>
+    <div dir="rtl" className="mx-auto max-w-5xl space-y-6 px-4 py-6">
+      <Card className="border-primary/20"><CardContent className="space-y-4 p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div><h1 className="text-xl font-bold sm:text-2xl">{ch.title}</h1><p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><ShieldCheck className="h-4 w-4 text-primary" />نمای مربی — همه روزها باز است</p></div>
+          <Badge className="text-sm">روز {faNum(day)} از {faNum(ch.days_count)}</Badge>
+        </div>
       </CardContent></Card>
       <Tabs defaultValue="missions">
-        <TabsList><TabsTrigger value="missions">ماموریت‌ها</TabsTrigger><TabsTrigger value="apps">درخواست‌های عضویت</TabsTrigger></TabsList>
-        <TabsContent value="missions" className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {(state.days ?? []).map((x: any) => (
-              <Button key={x.id} size="sm" variant={x.day_number === day ? 'default' : 'outline'} onClick={() => setDay(x.day_number)}>روز {faNum(x.day_number)}</Button>
-            ))}
-          </div>
+        <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="missions">ماموریت‌ها</TabsTrigger><TabsTrigger value="apps">درخواست‌های عضویت</TabsTrigger></TabsList>
+        <TabsContent value="missions" className="space-y-6">
           {d && (
-            <Card><CardContent className="space-y-4 p-5">
-              <div>
-                <h2 className="text-lg font-bold">روز {faNum(d.day_number)}: {d.title}</h2>
-                {d.short_description && <p className="text-sm text-muted-foreground">{d.short_description}</p>}
-                {d.goal && <p className="mt-1 text-sm"><b>هدف:</b> {d.goal}</p>}
-                <p className="mt-1 text-xs text-muted-foreground">{faNum(d.xp)} XP{d.estimated_minutes ? ` · ${faNum(d.estimated_minutes)} دقیقه` : ''}{d.required === false ? ' · اختیاری' : ''}</p>
-              </div>
-              {(d.variants ?? []).length === 0 && <p className="text-sm text-muted-foreground">برای این روز ماموریتی تعریف نشده.</p>}
-              {(d.variants ?? []).map((v: any) => (
-                <div key={v.id} className="space-y-2 rounded-lg border p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold">{v.title || 'ماموریت'}</p>
-                    {v.is_fallback && <Badge variant="secondary">پیش‌فرض</Badge>}
-                    {[...items(v.business_models), ...items(v.stages), ...items(v.budgets)].map((t: string) => <Badge key={t} variant="outline">{t}</Badge>)}
-                  </div>
-                  {v.instructions && <p className="whitespace-pre-wrap text-sm">{v.instructions}</p>}
-                  {v.expected_result && <p className="text-sm"><b>نتیجه مورد انتظار:</b> {v.expected_result}</p>}
-                  {v.example && <p className="text-sm text-muted-foreground"><b>مثال:</b> {v.example}</p>}
-                  {[['چک‌لیست', v.checklist], ['نکات', v.tips], ['منابع', v.resources]].map(([t, l]: any) => items(l).length ? (
-                    <div key={t}><p className="text-sm font-semibold">{t}</p><ul className="list-inside list-disc text-sm text-muted-foreground">{items(l).map((x, i) => <li key={i}>{txt(x)}</li>)}</ul></div>
-                  ) : null)}
-                  {v.assignment && (
-                    <div className="rounded-md bg-muted p-3 text-sm">
-                      <p className="font-semibold">تکلیف: {v.assignment.title}</p>
-                      {v.assignment.description && <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{v.assignment.description}</p>}
-                    </div>
-                  )}
-                  {v.form && <p className="text-sm">فرم: {v.form.title}</p>}
-                </div>
-              ))}
-            </CardContent></Card>
+            <>
+              {variants.length > 1 && <div className="flex flex-wrap gap-2">{variants.map((item: any) => <Button key={item.id} size="sm" variant={item.id === variant?.id ? 'default' : 'outline'} onClick={() => setVariantId(item.id)}>{item.title || 'ماموریت'}{item.is_fallback ? ' — پیش‌فرض' : ''}</Button>)}</div>}
+              {variant ? (
+                <ChallengeMissionCard dayInfo={d} mission={{ day_number: d.day_number, status: 'available', variant }} statusLabel="باز برای مربی">
+                  {variant.assignment && <div className="rounded-lg border p-4 text-sm"><p className="font-semibold">تکلیف: {variant.assignment.title}</p>{variant.assignment.description && <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{variant.assignment.description}</p>}</div>}
+                  {variant.form && <Button asChild size="lg" className="h-14 w-full text-base font-bold"><a href={`/f/${variant.form.slug ?? variant.form.id}`} target="_blank" rel="noreferrer">مشاهده فرم ماموریت</a></Button>}
+                </ChallengeMissionCard>
+              ) : <Card><CardContent className="p-5 text-center text-sm text-muted-foreground">برای این روز ماموریتی تعریف نشده است.</CardContent></Card>}
+            </>
           )}
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-base">مسیر {faNum(ch.days_count)} روزه</CardTitle></CardHeader>
+            <CardContent><div className="grid grid-cols-5 gap-2 sm:grid-cols-10">{(state.days ?? []).map((item: any) => <Button key={item.id} title={item.title} variant={item.day_number === day ? 'secondary' : 'outline'} onClick={() => setDay(item.day_number)} className="h-auto min-w-0 flex-col gap-0.5 px-2 py-2 text-xs"><span className="text-base">🟢</span><span>{faNum(item.day_number)}</span></Button>)}</div></CardContent>
+          </Card>
         </TabsContent>
         <TabsContent value="apps"><Applications slug={ch.slug} /></TabsContent>
       </Tabs>
