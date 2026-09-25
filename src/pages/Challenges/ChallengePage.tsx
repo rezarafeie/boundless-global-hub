@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { AssignmentSection } from '@/components/Assignment/AssignmentSection';
 import RewardValue from '@/components/Gamification/RewardValue';
 import { challengeApi, labelOf, PROGRESS_LABELS, segmentsOf } from '@/lib/challenge/schema';
+import CoachView from './CoachView';
 
 const faNum = (n: number | string | null | undefined) => Number(n ?? 0).toLocaleString('fa-IR');
 const remaining = (iso?: string | null) => {
@@ -128,6 +129,7 @@ const ChallengePage: React.FC = () => {
 
   if (loading || authLoading) return <div className="flex justify-center py-24"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!state?.challenge) return <p dir="rtl" className="py-24 text-center text-muted-foreground">{errorMsg ?? 'چالش یافت نشد.'}</p>;
+  if (state.coach) return <CoachView state={state} />;
   if (state.preview) return (
     <div dir="rtl" className="mx-auto max-w-3xl space-y-4 px-4 py-6">
       <Card className="border-dashed"><CardContent className="p-4 text-sm text-muted-foreground">پیش‌نمایش پیش‌نویس — این چالش هنوز منتشر نشده و دانشجوها آن را نمی‌بینند.</CardContent></Card>
