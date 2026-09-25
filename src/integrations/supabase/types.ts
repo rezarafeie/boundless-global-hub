@@ -2199,6 +2199,9 @@ export type Database = {
           eligible_course_ids: string[]
           end_date: string | null
           gamification_enabled: boolean
+          hide_daily_checkin: boolean
+          hide_leaderboard: boolean
+          hide_rewards: boolean
           id: string
           leaderboard_enabled: boolean
           messages: Json
@@ -2235,6 +2238,9 @@ export type Database = {
           eligible_course_ids?: string[]
           end_date?: string | null
           gamification_enabled?: boolean
+          hide_daily_checkin?: boolean
+          hide_leaderboard?: boolean
+          hide_rewards?: boolean
           id?: string
           leaderboard_enabled?: boolean
           messages?: Json
@@ -2271,6 +2277,9 @@ export type Database = {
           eligible_course_ids?: string[]
           end_date?: string | null
           gamification_enabled?: boolean
+          hide_daily_checkin?: boolean
+          hide_leaderboard?: boolean
+          hide_rewards?: boolean
           id?: string
           leaderboard_enabled?: boolean
           messages?: Json
