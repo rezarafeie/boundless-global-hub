@@ -141,7 +141,7 @@ const ChallengeBuilder: React.FC = () => {
               </div>
             </F>
             <div className="grid grid-cols-2 gap-3 md:col-span-2">
-              {[['gamification_enabled', 'گیمیفیکیشن'], ['streak_enabled', 'استریک'], ['leaderboard_enabled', 'لیدربورد'], ['notifications_enabled', 'اعلان‌ها'], ['ai_review_default', 'بررسی AI (پیش‌فرض)'], ['coach_review_default', 'بررسی مربی (پیش‌فرض)'], ['unlock_next_on_complete', 'باز شدن روز بعد پس از انجام ماموریت'], ['allow_late_submission', 'ارسال ماموریت روزهای گذشته'], ['allow_join_after_start', 'پذیرش عضویت پس از شروع (روزهای قبل از عضویت: رد شده)'], ['require_messenger_activation', 'الزام فعال‌سازی ربات و پشتیبانی تلگرام'], ['require_coach_approval', 'نیاز به تایید مربی پس از آنبوردینگ']].map(([k, l]) => (
+              {[['gamification_enabled', 'گیمیفیکیشن'], ['streak_enabled', 'استریک'], ['leaderboard_enabled', 'لیدربورد'], ['notifications_enabled', 'اعلان‌ها'], ['ai_review_default', 'بررسی AI (پیش‌فرض)'], ['coach_review_default', 'بررسی مربی (پیش‌فرض)'], ['unlock_next_on_complete', 'باز شدن روز بعد پس از انجام ماموریت'], ['allow_late_submission', 'ارسال ماموریت روزهای گذشته'], ['allow_join_after_start', 'پذیرش عضویت پس از شروع (روزهای قبل از عضویت: رد شده)'], ['require_messenger_activation', 'الزام فعال‌سازی ربات و پشتیبانی تلگرام'], ['require_coach_approval', 'نیاز به تایید مربی پس از آنبوردینگ'], ['hide_leaderboard', 'مخفی کردن لیدربورد'], ['hide_daily_checkin', 'مخفی کردن گزارش روزانه فروش'], ['hide_rewards', 'مخفی کردن جوایز']].map(([k, l]) => (
                 <label key={k} className="flex items-center justify-between rounded-lg border p-3 text-sm">{l}<Switch checked={!!ch[k]} onCheckedChange={(v) => set(k, v)} /></label>
               ))}
             </div>

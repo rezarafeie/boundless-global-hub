@@ -307,8 +307,10 @@ const ChallengePage: React.FC = () => {
         </CardContent>
       </Card>
 
+      {(!ch.hide_daily_checkin || !ch.hide_rewards) && (
       <div className="grid gap-6 md:grid-cols-2">
-        <Metrics state={state} busy={busy} onSave={(m) => run('report_metrics', { metrics: m })} />
+        {!ch.hide_daily_checkin && <Metrics state={state} busy={busy} onSave={(m) => run('report_metrics', { metrics: m })} />}
+        {!ch.hide_rewards && (
         <Card>
           <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-base"><Gift className="h-4 w-4" />جوایز</CardTitle></CardHeader>
           <CardContent className="space-y-2">
@@ -322,9 +324,11 @@ const ChallengePage: React.FC = () => {
             ))}
           </CardContent>
         </Card>
+        )}
       </div>
+      )}
 
-      {state.leaderboard && <Leaderboard lb={state.leaderboard} />}
+      {state.leaderboard && !ch.hide_leaderboard && <Leaderboard lb={state.leaderboard} />}
 
       <Card>
         <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-base"><Bell className="h-4 w-4" />اعلان‌های چالش</CardTitle></CardHeader>
