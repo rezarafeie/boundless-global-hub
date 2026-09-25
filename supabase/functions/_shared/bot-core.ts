@@ -28,7 +28,7 @@ import {
 
 } from './telegram.ts';
 import { ensureAccessWindow as gamEnsureAccessWindow } from './gamification.ts';
-import { reviewApplication as chalReview } from './challenge.ts';
+import { reviewApplication as chalReview, coachEmails as chalCoachEmails } from './challenge.ts';
 
 // Only the challenge's coach (by email) may approve/reject from the bot.
 async function chalCoachCheck(chat_id: number, participantId: string) {
@@ -36,8 +36,8 @@ async function chalCoachCheck(chat_id: number, participantId: string) {
   if (!part) return null;
   const { data: ch } = await supabase.from('challenges').select('coach_email').eq('id', part.challenge_id).maybeSingle();
   const { data: me } = await supabase.from('chat_users').select('email').eq(chatIdColumn(), chat_id).maybeSingle();
-  const coach = String(ch?.coach_email ?? 'rezarafeie13@gmail.com').trim().toLowerCase();
-  return me?.email && String(me.email).trim().toLowerCase() === coach ? coach : null;
+  const mine = String(me?.email ?? '').trim().toLowerCase();
+  return mine && chalCoachEmails(ch ?? {}).includes(mine) ? mine : null;
 }
 
 // After a student activates Telegram support, complete any gamification welcome

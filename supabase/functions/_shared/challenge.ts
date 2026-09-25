@@ -124,12 +124,20 @@ export async function applicationSummary(ch: Challenge, p: Participant) {
   return lines.filter(([, v]) => v != null && String(v).trim() !== "");
 }
 
+export function coachEmails(ch: { coach_email?: string | null }): string[] {
+  const list = String(ch?.coach_email ?? "rezarafeie13@gmail.com").split(/[\s,،;]+/).map((e) => e.trim().toLowerCase()).filter((e) => e.includes("@"));
+  return Array.from(new Set(list));
+}
+
 export async function notifyCoachOfApplication(ch: Challenge, p: Participant) {
-  const email = String(ch.coach_email ?? "rezarafeie13@gmail.com").trim().toLowerCase();
+  for (const email of coachEmails(ch)) await notifyOneCoach(ch, p, email);
+}
+
+async function notifyOneCoach(ch: Challenge, p: Participant, email: string) {
   const rows = await applicationSummary(ch, p);
   const title = `درخواست جدید چالش «${ch.title}»`;
   const text = rows.map(([k, v]) => `<b>${esc(k)}:</b> ${esc(v)}`).join("\n");
-  const adminUrl = `${SITE}/enroll/admin/challenges/${ch.id}?tab=applications`;
+  const adminUrl = `${SITE}/challenges/${ch.slug}`;
   const { data: coach } = await supabase.from("chat_users").select("id, telegram_chat_id, bale_chat_id").ilike("email", email).limit(1).maybeSingle();
   const keyboard = [[{ text: "✅ تایید", callback_data: `chal_ok:${p.id}` }, { text: "❌ رد", callback_data: `chal_no:${p.id}` }]];
   try {
