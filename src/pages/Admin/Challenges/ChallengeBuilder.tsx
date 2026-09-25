@@ -145,7 +145,29 @@ const ChallengeBuilder: React.FC = () => {
                 <label key={k} className="flex items-center justify-between rounded-lg border p-3 text-sm">{l}<Switch checked={!!ch[k]} onCheckedChange={(v) => set(k, v)} /></label>
               ))}
             </div>
-            <F label="ایمیل مربی (دریافت و تایید درخواست‌ها)"><Input dir="ltr" value={ch.coach_email ?? ''} onChange={(e) => set('coach_email', e.target.value.trim())} placeholder="rezarafeie13@gmail.com" /></F>
+            <F label="مربی‌ها (همه روزها باز + دریافت و تایید درخواست‌ها در ربات، تلگرام و ایمیل)" className="md:col-span-2">
+              {(() => {
+                const list = String(ch.coach_email ?? '').split(/[\s,،;]+/).filter((e) => e.includes('@'));
+                const save = (l: string[]) => set('coach_email', Array.from(new Set(l.map((e) => e.toLowerCase()))).join(','));
+                return (
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                      {list.map((e) => (
+                        <span key={e} dir="ltr" className="inline-flex items-center gap-1 rounded-full border bg-muted px-3 py-1 text-xs">
+                          {e}<button type="button" className="text-muted-foreground hover:text-destructive" onClick={() => save(list.filter((x) => x !== e))}>×</button>
+                        </span>
+                      ))}
+                      {!list.length && <span className="text-xs text-muted-foreground">هنوز مربی‌ای اضافه نشده</span>}
+                    </div>
+                    <form className="flex gap-2" onSubmit={(ev) => { ev.preventDefault(); const inp = (ev.currentTarget.elements.namedItem('coach') as HTMLInputElement); const v = inp.value.trim(); if (!/^\S+@\S+\.\S+$/.test(v)) return; save([...list, v]); inp.value = ''; }}>
+                      <Input name="coach" dir="ltr" placeholder="coach@example.com" />
+                      <Button type="submit" variant="outline">افزودن مربی</Button>
+                    </form>
+                    <p className="text-xs text-muted-foreground">مربی باید با همین ایمیل در سایت حساب داشته باشد و ربات تلگرام را فعال کرده باشد تا درخواست‌ها را در تلگرام بگیرد. با باز کردن صفحه چالش، نمای مربی نمایش داده می‌شود.</p>
+                  </div>
+                );
+              })()}
+            </F>
             <F label="گزینه‌های پروفایل (segments) — JSON" className="md:col-span-2">
               <JsonField value={Object.keys(ch.segments || {}).length ? ch.segments : seg} onChange={(v) => set('segments', v)} rows={6} />
             </F>

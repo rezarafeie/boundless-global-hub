@@ -6,7 +6,7 @@ import { fetchUsdTomanRate } from "../_shared/rafieipay.ts";
 import {
   loadStructure, syncParticipant, emitEvent, reportMetrics, recalcParticipant, completeMission,
   grantReward, participantStats, unlockedDay, currentDayNumber, dayWindow, selectVariant, processRewards,
-  processExpiredMissions, notifyCoachOfApplication, reviewApplication, applicationSummary,
+  processExpiredMissions, notifyCoachOfApplication, coachEmails, reviewApplication, applicationSummary,
 } from "../_shared/challenge.ts";
 
 async function messengerStatus(ch: any, uid: number) {
@@ -79,6 +79,51 @@ async function isAdmin(req: Request) {
     supabase.from("user_roles").select("role_name").eq("user_id", session.user_id).eq("is_active", true),
   ]);
   return user?.role === "admin" || user?.is_messenger_admin === true || (roles ?? []).some((role: any) => role.role_name === "admin");
+}
+
+// Verified email of the caller (Supabase JWT or messenger session) — never trusts body input.
+async function verifiedEmail(req: Request): Promise<string | null> {
+  const bearer = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  if (bearer) {
+    const { data } = await supabase.auth.getUser(bearer);
+    if (data?.user?.email) return data.user.email.trim().toLowerCase();
+  }
+  const token = req.headers.get("x-session-token") ?? "";
+  if (!token) return null;
+  const { data: session } = await supabase.from("user_sessions").select("user_id, last_activity").eq("session_token", token).eq("is_active", true).maybeSingle();
+  if (!session?.user_id) return null;
+  const last = session.last_activity ? Date.parse(session.last_activity) : 0;
+  if (!last || Date.now() - last > 24 * 60 * 60 * 1000) return null;
+  const { data: u } = await supabase.from("chat_users").select("email").eq("id", session.user_id).maybeSingle();
+  return u?.email ? String(u.email).trim().toLowerCase() : null;
+}
+
+async function isCoach(req: Request, ch: any) {
+  const email = await verifiedEmail(req);
+  return !!email && coachEmails(ch).includes(email);
+}
+
+// Coach view: every day fully open with all mission variants and linked assignments.
+async function coachState(ch: any) {
+  const { days, variants } = await loadStructure(ch.id);
+  const aIds = variants.map((v: any) => v.assignment_id).filter(Boolean);
+  const fIds = variants.map((v: any) => v.form_id).filter(Boolean);
+  const [{ data: assignments }, { data: forms }] = await Promise.all([
+    aIds.length ? supabase.from("assignments").select("*").in("id", aIds) : Promise.resolve({ data: [] as any[] }),
+    fIds.length ? supabase.from("telegram_forms").select("id, title, slug").in("id", fIds) : Promise.resolve({ data: [] as any[] }),
+  ]);
+  const aMap = new Map((assignments ?? []).map((a: any) => [a.id, a]));
+  const fMap = new Map((forms ?? []).map((f: any) => [f.id, f]));
+  return {
+    coach: true,
+    challenge: { ...ch, messages: undefined, notification_settings: undefined, penalty_rules: undefined },
+    today: currentDayNumber(ch),
+    days: days.map((d: any) => ({
+      ...d,
+      variants: variants.filter((v: any) => v.day_id === d.id).sort((a: any, b: any) => (b.priority ?? 0) - (a.priority ?? 0))
+        .map((v: any) => ({ ...v, assignment: aMap.get(v.assignment_id) ?? null, form: fMap.get(v.form_id) ?? null })),
+    })),
+  };
 }
 
 async function leaderboard(ch: any, myId?: string) {
@@ -249,7 +294,9 @@ Deno.serve(async (req) => {
 
     const ch = await getChallenge();
     if (!ch) return json({ success: false, error: "چالش یافت نشد" }, 404);
-    const admin = ["admin_action"].includes(action) ? await isAdmin(req) : false;
+    const coach = ["get", "admin_action"].includes(action) ? await isCoach(req, ch) : false;
+    const admin = ["admin_action"].includes(action) ? (await isAdmin(req)) || coach : false;
+    if (action === "get" && coach && !body.asStudent) return json({ success: true, ...(await coachState(ch)) });
     // Draft preview: read-only view of an unpublished challenge (no joining/actions)
     if (!VISIBLE.includes(ch.status) && action === "get" && body.preview) {
       return json({ success: true, preview: true, ...(await fullState(ch, null)) });
@@ -384,7 +431,8 @@ Deno.serve(async (req) => {
     }
 
     if (action === "admin_action") {
-      if (!(await isAdmin(req))) return json({ success: false, error: "دسترسی ادمین لازم است" }, 403);
+      if (!admin) return json({ success: false, error: "دسترسی ادمین لازم است" }, 403);
+      if (coach && !(await isAdmin(req)) && !["list_applications", "approve", "reject"].includes(String(body.op))) return json({ success: false, error: "دسترسی مربی به این عملیات مجاز نیست" }, 403);
       if (body.op === "list_applications") {
         const { data: apps } = await supabase.from("challenge_participants").select("*").eq("challenge_id", ch.id).not("reviewed_at", "is", null).order("joined_at", { ascending: false }).limit(500);
         const { data: pend } = await supabase.from("challenge_participants").select("*").eq("challenge_id", ch.id).eq("approval_status", "pending").order("joined_at", { ascending: false }).limit(500);
