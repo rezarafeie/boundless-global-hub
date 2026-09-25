@@ -84,7 +84,7 @@ const CoachView: React.FC<{ state: any }> = ({ state }) => {
           )}
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">مسیر {faNum(ch.days_count)} روزه</CardTitle></CardHeader>
-            <CardContent><div className="grid grid-cols-5 gap-2 sm:grid-cols-10">{(state.days ?? []).map((item: any) => <button key={item.id} title={item.title} onClick={() => setDay(item.day_number)} className={`flex flex-col items-center rounded-lg border p-2 text-xs transition hover:border-primary ${item.day_number === day ? 'border-primary bg-primary/10' : 'border-border'}`}><span className="text-base">🟢</span><span>{faNum(item.day_number)}</span></button>)}</div></CardContent>
+            <CardContent><div className="grid grid-cols-5 gap-2 sm:grid-cols-10">{(state.days ?? []).map((item: any) => <Button key={item.id} title={item.title} variant={item.day_number === day ? 'secondary' : 'outline'} onClick={() => setDay(item.day_number)} className="h-auto min-w-0 flex-col gap-0.5 px-2 py-2 text-xs"><span className="text-base">🟢</span><span>{faNum(item.day_number)}</span></Button>)}</div></CardContent>
           </Card>
         </TabsContent>
         <TabsContent value="apps"><Applications slug={ch.slug} /></TabsContent>
