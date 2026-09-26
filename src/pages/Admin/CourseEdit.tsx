@@ -1050,6 +1050,11 @@ mba
                           <p className="text-xs text-muted-foreground mt-2">
                             متغیرهای در دسترس: {"{{name}}"}, {"{{course_title}}"}
                           </p>
+                          <ActivationExtraMessagesEditor
+                            event="welcome"
+                            value={formData.activation_extra_messages}
+                            onChange={(next) => setFormData(prev => ({ ...prev, activation_extra_messages: next }))}
+                          />
                         </div>
                       )}
 
@@ -1138,6 +1143,11 @@ mba
                               </Button>
                             </div>
                           </div>
+                          <ActivationExtraMessagesEditor
+                            event="activated"
+                            value={formData.activation_extra_messages}
+                            onChange={(next) => setFormData(prev => ({ ...prev, activation_extra_messages: next }))}
+                          />
                         </div>
                       )}
                     </div>
