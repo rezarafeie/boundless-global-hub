@@ -28,6 +28,7 @@ import {
 
 } from './telegram.ts';
 import { ensureAccessWindow as gamEnsureAccessWindow } from './gamification.ts';
+import { sendOrQueue as actSendOrQueue, sendExtraActivationMessages as actSendExtras } from './activation-messages.ts';
 import { reviewApplication as chalReview, coachEmails as chalCoachEmails } from './challenge.ts';
 
 // Only the challenge's coach (by email) may approve/reject from the bot.
@@ -3297,7 +3298,7 @@ async function handleUpdate(update: any) {
 
         // Load course + user, build welcome + buttons
         const [{ data: course }, { data: cu }] = await Promise.all([
-          supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activated_media_url, telegram_bot_activated_media_type, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', cur.course_id).maybeSingle(),
+          supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activated_media_url, telegram_bot_activated_media_type, telegram_bot_activated_media_items, telegram_bot_activated_delay_minutes, activation_extra_messages, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', cur.course_id).maybeSingle(),
           supabase.from('chat_users').select('name, first_name, email').eq('id', cur.user_id).maybeSingle(),
         ]);
         const displayName = (cu as any)?.first_name || (cu as any)?.name || 'دوست عزیز';
@@ -3336,11 +3337,17 @@ async function handleUpdate(update: any) {
         try {
           await editMessage(chat_id, message_id, '✅ پشتیبانی شما فعال شد.', []);
         } catch {}
-        await sendRichMessage(chat_id, welcome, {
+        await actSendOrQueue({
+          chatId: chat_id,
+          text: welcome,
+          mediaItems: (course as any)?.telegram_bot_activated_media_items,
           mediaUrl: (course as any)?.telegram_bot_activated_media_url,
           mediaType: (course as any)?.telegram_bot_activated_media_type,
           keyboard: buttons.length ? (buttons as any) : undefined,
+          delayMinutes: (course as any)?.telegram_bot_activated_delay_minutes,
+          source: 'course_activated_main',
         });
+        await actSendExtras(course, 'activated', { userChatId: chat_id, name: displayName, courseTitle });
 
         // Gamification welcome goes AFTER the activation welcome message
         await gamificationWelcomeAfterActivation(cur.user_id, cur.course_id);
@@ -3882,7 +3889,7 @@ async function handleUpdate(update: any) {
     }
     // Load course + user for message rendering
     const [{ data: course }, { data: cu }] = await Promise.all([
-      supabase.from('courses').select('title, telegram_bot_welcome_message, bale_activation_link, bale_bot_welcome_message').eq('id', act.course_id).maybeSingle(),
+      supabase.from('courses').select('title, telegram_bot_welcome_message, bale_activation_link, bale_bot_welcome_message, activation_extra_messages').eq('id', act.course_id).maybeSingle(),
       supabase.from('chat_users').select('name, first_name').eq('id', act.user_id).maybeSingle(),
     ]);
     const displayName = (cu as any)?.first_name || (cu as any)?.name || 'دوست عزیز';
@@ -3945,6 +3952,7 @@ async function handleUpdate(update: any) {
         ],
       },
     });
+    await actSendExtras(course, 'welcome', { userChatId: chat_id, name: displayName, courseTitle });
     return;
   }
 
@@ -4110,7 +4118,7 @@ async function handleUpdate(update: any) {
         const targetChat = (act as any).telegram_id;
         if (targetChat) {
           const [{ data: course }, { data: cu }] = await Promise.all([
-            supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activated_media_url, telegram_bot_activated_media_type, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', act.course_id).maybeSingle(),
+            supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activated_media_url, telegram_bot_activated_media_type, telegram_bot_activated_media_items, telegram_bot_activated_delay_minutes, activation_extra_messages, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', act.course_id).maybeSingle(),
             supabase.from('chat_users').select('name, first_name, email').eq('id', act.user_id).maybeSingle(),
           ]);
           const displayName = (cu as any)?.first_name || (cu as any)?.name || 'دوست عزیز';
@@ -4149,10 +4157,15 @@ async function handleUpdate(update: any) {
           // Send welcome DM to the user's private chat with bot (if known)
           if (targetChat) {
             try {
-              await sendRichMessage(targetChat, welcome, {
+              await actSendOrQueue({
+                chatId: targetChat,
+                text: welcome,
+                mediaItems: (course as any)?.telegram_bot_activated_media_items,
                 mediaUrl: (course as any)?.telegram_bot_activated_media_url,
                 mediaType: (course as any)?.telegram_bot_activated_media_type,
                 keyboard: buttons.length ? (buttons as any) : undefined,
+                delayMinutes: (course as any)?.telegram_bot_activated_delay_minutes,
+                source: 'course_activated_main',
               });
             } catch (e) { console.warn('activated welcome DM failed', e); }
 
@@ -4166,20 +4179,29 @@ async function handleUpdate(update: any) {
           // Reply in the chat where the activation message was sent (business/support group)
           if (business_connection_id || (msg?.chat?.type && msg.chat.type !== 'private')) {
             try {
-              await sendRichMessage(
-                chat_id,
-                welcome,
-                {
-                  mediaUrl: (course as any)?.telegram_bot_activated_media_url,
-                  mediaType: (course as any)?.telegram_bot_activated_media_type,
-                  reply_to_message_id: msg.message_id,
-                  keyboard: buttons.length ? (buttons as any) : undefined,
-                  business_connection_id,
-                },
-              );
+              const delayMin = Number((course as any)?.telegram_bot_activated_delay_minutes) || 0;
+              await actSendOrQueue({
+                chatId: chat_id,
+                text: welcome,
+                mediaItems: (course as any)?.telegram_bot_activated_media_items,
+                mediaUrl: (course as any)?.telegram_bot_activated_media_url,
+                mediaType: (course as any)?.telegram_bot_activated_media_type,
+                replyTo: delayMin > 0 ? undefined : msg.message_id,
+                keyboard: buttons.length ? (buttons as any) : undefined,
+                businessConnectionId: business_connection_id,
+                delayMinutes: delayMin,
+                source: 'course_activated_main_business',
+              });
 
             } catch (e) { console.warn('activated welcome reply failed', e); }
           }
+
+          await actSendExtras(course, 'activated', {
+            userChatId: targetChat,
+            name: displayName,
+            courseTitle,
+            bcid: business_connection_id ?? null,
+          });
 
           // Gamification welcome goes AFTER the activation welcome messages
           await gamificationWelcomeAfterActivation(act.user_id, act.course_id);

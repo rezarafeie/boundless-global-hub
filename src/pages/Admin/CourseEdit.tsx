@@ -15,6 +15,7 @@ import MainLayout from '@/components/Layout/MainLayout';
 import TestStageButton from '@/components/Admin/TestStageButton';
 import MessageMediaButtonsEditor from '@/components/Admin/MessageMediaButtonsEditor';
 import CustomFollowupsEditor from '@/components/Admin/CustomFollowupsEditor';
+import ActivationExtraMessagesEditor from '@/components/Admin/ActivationExtraMessagesEditor';
 
 interface Course {
   id: string;
@@ -121,6 +122,9 @@ const CourseEdit: React.FC = () => {
     telegram_bot_activation_buttons: [] as { text: string; url: string }[],
     telegram_bot_activated_media_url: '',
     telegram_bot_activated_media_type: '',
+    telegram_bot_activated_media_items: [] as { url: string; type?: string | null }[],
+    telegram_bot_activated_delay_minutes: 0,
+    activation_extra_messages: [] as any[],
     telegram_activation_keyword: '',
     support_prefilled_message_template: '',
     support_followup_enabled: true,
@@ -237,6 +241,11 @@ const CourseEdit: React.FC = () => {
         telegram_bot_activation_buttons: Array.isArray((data as any).telegram_bot_activation_buttons) ? (data as any).telegram_bot_activation_buttons : [],
         telegram_bot_activated_media_url: (data as any).telegram_bot_activated_media_url || '',
         telegram_bot_activated_media_type: (data as any).telegram_bot_activated_media_type || '',
+        telegram_bot_activated_media_items: (Array.isArray((data as any).telegram_bot_activated_media_items) && (data as any).telegram_bot_activated_media_items.length)
+          ? (data as any).telegram_bot_activated_media_items
+          : ((data as any).telegram_bot_activated_media_url ? [{ url: (data as any).telegram_bot_activated_media_url, type: (data as any).telegram_bot_activated_media_type || null }] : []),
+        telegram_bot_activated_delay_minutes: Number((data as any).telegram_bot_activated_delay_minutes) || 0,
+        activation_extra_messages: Array.isArray((data as any).activation_extra_messages) ? (data as any).activation_extra_messages : [],
         telegram_activation_keyword: (data as any).telegram_activation_keyword || '',
         support_prefilled_message_template: (data as any).support_prefilled_message_template || '',
         support_followup_enabled: (data as any).support_followup_enabled ?? true,
@@ -372,6 +381,9 @@ const CourseEdit: React.FC = () => {
         telegram_bot_activation_buttons: (formData.telegram_bot_activation_buttons || []).filter((b: any) => b?.text?.trim() && b?.url?.trim()),
         telegram_bot_activated_media_url: formData.telegram_bot_activated_media_url?.trim() || null,
         telegram_bot_activated_media_type: formData.telegram_bot_activated_media_type?.trim() || null,
+        telegram_bot_activated_media_items: (formData.telegram_bot_activated_media_items || []).filter((m: any) => m?.url?.trim()),
+        telegram_bot_activated_delay_minutes: Math.max(0, Number(formData.telegram_bot_activated_delay_minutes) || 0),
+        activation_extra_messages: formData.activation_extra_messages || [],
         telegram_activation_keyword: formData.telegram_activation_keyword?.trim() || null,
         support_prefilled_message_template: formData.support_prefilled_message_template?.trim() || null,
         support_followup_enabled: formData.support_followup_enabled,
@@ -1038,6 +1050,11 @@ mba
                           <p className="text-xs text-muted-foreground mt-2">
                             متغیرهای در دسترس: {"{{name}}"}, {"{{course_title}}"}
                           </p>
+                          <ActivationExtraMessagesEditor
+                            event="welcome"
+                            value={formData.activation_extra_messages}
+                            onChange={(next) => setFormData(prev => ({ ...prev, activation_extra_messages: next }))}
+                          />
                         </div>
                       )}
 
@@ -1054,15 +1071,22 @@ mba
                           <div className="mt-3">
                             <MessageMediaButtonsEditor
                               hideButtons
-                              mediaUrl={formData.telegram_bot_activated_media_url}
-                              mediaType={formData.telegram_bot_activated_media_type}
+                              mediaUrl={null}
+                              mediaType={null}
+                              mediaItems={formData.telegram_bot_activated_media_items}
                               buttons={[]}
                               onChange={(p) => setFormData(prev => ({
                                 ...prev,
-                                ...(p.media_url !== undefined ? { telegram_bot_activated_media_url: p.media_url || '' } : {}),
-                                ...(p.media_type !== undefined ? { telegram_bot_activated_media_type: p.media_type || '' } : {}),
+                                ...(p.media_items !== undefined ? { telegram_bot_activated_media_items: p.media_items, telegram_bot_activated_media_url: '', telegram_bot_activated_media_type: '' } : {}),
                               }))}
                             />
+                          </div>
+                          <div className="flex items-center gap-2 mt-3">
+                            <Label className="text-xs">تاخیر ارسال (دقیقه)</Label>
+                            <Input type="number" min={0} className="h-8 w-24"
+                              value={formData.telegram_bot_activated_delay_minutes}
+                              onChange={(e) => setFormData(prev => ({ ...prev, telegram_bot_activated_delay_minutes: Math.max(0, Number(e.target.value) || 0) }))} />
+                            <span className="text-xs text-muted-foreground">۰ = ارسال فوری</span>
                           </div>
                           <p className="text-xs text-muted-foreground mt-2">
                             پس از فعال‌سازی پشتیبانی، این پیام همراه با دکمه‌های دسترسی دوره برای کاربر ارسال می‌شود. متغیرها: {"{{name}}"}, {"{{course_title}}"}
@@ -1119,6 +1143,11 @@ mba
                               </Button>
                             </div>
                           </div>
+                          <ActivationExtraMessagesEditor
+                            event="activated"
+                            value={formData.activation_extra_messages}
+                            onChange={(next) => setFormData(prev => ({ ...prev, activation_extra_messages: next }))}
+                          />
                         </div>
                       )}
                     </div>

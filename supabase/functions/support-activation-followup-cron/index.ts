@@ -11,6 +11,7 @@ import {
   runStage2,
   runStage3,
 } from "../_shared/support-followup.ts";
+import { processScheduledBotMessages } from "../_shared/activation-messages.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,6 +22,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    try { await processScheduledBotMessages(); } catch (e) { console.error("scheduled bot messages failed", e); }
     const { data: customRows, error: customErr } = await supabase
       .from("support_activation_custom_followups")
       .select("*")

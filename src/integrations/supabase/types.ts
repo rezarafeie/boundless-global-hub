@@ -867,6 +867,54 @@ export type Database = {
         }
         Relationships: []
       }
+      bot_scheduled_messages: {
+        Row: {
+          attempts: number
+          business_connection_id: string | null
+          channel: string
+          chat_id: number
+          created_at: string
+          id: string
+          keyboard: Json | null
+          last_error: string | null
+          media_items: Json
+          send_at: string
+          sent_at: string | null
+          source: string | null
+          text: string
+        }
+        Insert: {
+          attempts?: number
+          business_connection_id?: string | null
+          channel?: string
+          chat_id: number
+          created_at?: string
+          id?: string
+          keyboard?: Json | null
+          last_error?: string | null
+          media_items?: Json
+          send_at: string
+          sent_at?: string | null
+          source?: string | null
+          text?: string
+        }
+        Update: {
+          attempts?: number
+          business_connection_id?: string | null
+          channel?: string
+          chat_id?: number
+          created_at?: string
+          id?: string
+          keyboard?: Json | null
+          last_error?: string | null
+          media_items?: Json
+          send_at?: string
+          sent_at?: string | null
+          source?: string | null
+          text?: string
+        }
+        Relationships: []
+      }
       boundless_smart_test_submissions: {
         Row: {
           answers: Json
@@ -3434,6 +3482,7 @@ export type Database = {
       }
       courses: {
         Row: {
+          activation_extra_messages: Json
           bale_activation_link: string | null
           bale_bot_welcome_message: string | null
           bale_support_activation_enabled: boolean
@@ -3492,6 +3541,8 @@ export type Database = {
           support_prefilled_message_template: string | null
           telegram_activation_keyword: string | null
           telegram_activation_required: boolean | null
+          telegram_bot_activated_delay_minutes: number
+          telegram_bot_activated_media_items: Json
           telegram_bot_activated_media_type: string | null
           telegram_bot_activated_media_url: string | null
           telegram_bot_activated_message: string | null
@@ -3512,6 +3563,7 @@ export type Database = {
           woocommerce_product_id: number | null
         }
         Insert: {
+          activation_extra_messages?: Json
           bale_activation_link?: string | null
           bale_bot_welcome_message?: string | null
           bale_support_activation_enabled?: boolean
@@ -3570,6 +3622,8 @@ export type Database = {
           support_prefilled_message_template?: string | null
           telegram_activation_keyword?: string | null
           telegram_activation_required?: boolean | null
+          telegram_bot_activated_delay_minutes?: number
+          telegram_bot_activated_media_items?: Json
           telegram_bot_activated_media_type?: string | null
           telegram_bot_activated_media_url?: string | null
           telegram_bot_activated_message?: string | null
@@ -3590,6 +3644,7 @@ export type Database = {
           woocommerce_product_id?: number | null
         }
         Update: {
+          activation_extra_messages?: Json
           bale_activation_link?: string | null
           bale_bot_welcome_message?: string | null
           bale_support_activation_enabled?: boolean
@@ -3648,6 +3703,8 @@ export type Database = {
           support_prefilled_message_template?: string | null
           telegram_activation_keyword?: string | null
           telegram_activation_required?: boolean | null
+          telegram_bot_activated_delay_minutes?: number
+          telegram_bot_activated_media_items?: Json
           telegram_bot_activated_media_type?: string | null
           telegram_bot_activated_media_url?: string | null
           telegram_bot_activated_message?: string | null
