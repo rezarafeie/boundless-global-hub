@@ -1,73 +1,49 @@
-# Welcome to your Lovable project
+# Boundless Global Hub
 
-## Project info
+A full-stack learning and business platform built for Rafiei Academy's international-business ecosystem.
 
-**URL**: https://lovable.dev/projects/f1b84616-3d17-49e3-9831-9bf37bdf8198
+## Overview
+Boundless Global Hub combines course delivery, authentication, enrollment, student services, assessments, support, messaging, reservations, and AI-enabled workflows in a single product experience.
 
-## How can I edit this code?
+## Engineering Highlights
+- Multi-route React application with authenticated user experiences
+- Supabase-backed data, authentication and application services
+- Course enrollment and student hub workflows
+- Chat, announcements, notifications and support experiences
+- Assessment integrations and interactive learning flows
+- RTL/Persian-first product experience with multilingual foundations
+- Data-heavy UI built with React Query and reusable component primitives
 
-There are several ways of editing your application.
+## Tech Stack
+**Frontend:** React, TypeScript, Vite, React Router, Tailwind CSS, shadcn/ui  
+**Backend & Data:** Supabase, PostgreSQL-oriented data layer  
+**Application:** TanStack React Query, React Hook Form, Zod  
+**AI / Content:** Vercel AI SDK, Streamdown  
+**UX:** Framer Motion, Recharts, PWA tooling
 
-**Use Lovable**
+## Selected Product Areas
+- Authentication & unified user access
+- Courses & enrollment
+- Student dashboard
+- Interactive assignments and assessments
+- Messaging and notifications
+- Support and reservation workflows
+- Administrative and operational interfaces
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/f1b84616-3d17-49e3-9831-9bf37bdf8198) and start prompting.
+## Why this repository matters
+This project represents a production-oriented platform rather than a single-purpose demo: multiple business workflows, user roles, data models and integrations are brought together behind one application architecture.
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## Development
+```bash
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Build for production:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm run build
+```
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/f1b84616-3d17-49e3-9831-9bf37bdf8198) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+---
+Built and maintained as part of the Rafiei digital product ecosystem.
