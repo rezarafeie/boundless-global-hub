@@ -96,10 +96,13 @@ ${box("✅ نقاط قوت", list("strengths"), "#15803d")}${box("⚠️ نقا�
       const { data: coach } = await supabase.from("chat_users").select("telegram_chat_id, bale_chat_id").ilike("email", email).limit(1).maybeSingle();
       try {
         if (coach?.telegram_chat_id) await sendMessage(Number(coach.telegram_chat_id), tg, { keyboard } as any);
-        else if (coach?.bale_chat_id) await baleSendMessage(Number(coach.bale_chat_id), stripHtml(`${tg}\n\n${link}`));
-      } catch (e) { console.warn("submission bot notify failed", e); }
+      } catch (e) { console.warn("submission telegram notify failed", e); }
+      try {
+        if (coach?.bale_chat_id) await baleSendMessage(Number(coach.bale_chat_id), stripHtml(`${tg}\n\n🔎 مشاهده کامل: ${link}`));
+      } catch (e) { console.warn("submission bale notify failed", e); }
       try { await sendEmail(email, `${title} — ${name}`, html); } catch (e) { console.warn("submission email failed", e); }
     }
+    await supabase.from("assignment_ai_logs").insert({ assignment_id: a.id, submission_id: sub.id, kind: "coach_report", prompt: "", response: { sent_to: emails }, model: "-" });
   } catch (e) {
     console.error("notifySubmissionReview failed", e);
   }
