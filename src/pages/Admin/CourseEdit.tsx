@@ -124,6 +124,7 @@ const CourseEdit: React.FC = () => {
     telegram_bot_activated_media_type: '',
     telegram_bot_activated_media_items: [] as { url: string; type?: string | null }[],
     telegram_bot_activated_delay_minutes: 0,
+    telegram_bot_activated_enabled: true,
     activation_extra_messages: [] as any[],
     telegram_activation_keyword: '',
     support_prefilled_message_template: '',
@@ -245,6 +246,7 @@ const CourseEdit: React.FC = () => {
           ? (data as any).telegram_bot_activated_media_items
           : ((data as any).telegram_bot_activated_media_url ? [{ url: (data as any).telegram_bot_activated_media_url, type: (data as any).telegram_bot_activated_media_type || null }] : []),
         telegram_bot_activated_delay_minutes: Number((data as any).telegram_bot_activated_delay_minutes) || 0,
+        telegram_bot_activated_enabled: (data as any).telegram_bot_activated_enabled !== false,
         activation_extra_messages: Array.isArray((data as any).activation_extra_messages) ? (data as any).activation_extra_messages : [],
         telegram_activation_keyword: (data as any).telegram_activation_keyword || '',
         support_prefilled_message_template: (data as any).support_prefilled_message_template || '',
@@ -383,6 +385,7 @@ const CourseEdit: React.FC = () => {
         telegram_bot_activated_media_type: formData.telegram_bot_activated_media_type?.trim() || null,
         telegram_bot_activated_media_items: (formData.telegram_bot_activated_media_items || []).filter((m: any) => m?.url?.trim()),
         telegram_bot_activated_delay_minutes: Math.max(0, Number(formData.telegram_bot_activated_delay_minutes) || 0),
+        telegram_bot_activated_enabled: formData.telegram_bot_activated_enabled !== false,
         activation_extra_messages: formData.activation_extra_messages || [],
         telegram_activation_keyword: formData.telegram_activation_keyword?.trim() || null,
         support_prefilled_message_template: formData.support_prefilled_message_template?.trim() || null,
