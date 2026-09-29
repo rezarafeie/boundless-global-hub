@@ -1060,7 +1060,17 @@ mba
 
                       {formData.telegram_support_activation_enabled && (
                         <div className="bg-muted/40 p-3 rounded-lg mt-2">
-                          <Label htmlFor="telegram_bot_activated_message">پیام پس از فعال‌سازی پشتیبانی</Label>
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="telegram_bot_activated_message">پیام پس از فعال‌سازی پشتیبانی</Label>
+                            <div className="flex items-center gap-2">
+                              <Label htmlFor="telegram_bot_activated_enabled" className="text-xs text-muted-foreground">ارسال این پیام</Label>
+                              <Switch
+                                id="telegram_bot_activated_enabled"
+                                checked={formData.telegram_bot_activated_enabled !== false}
+                                onCheckedChange={(v) => setFormData(prev => ({ ...prev, telegram_bot_activated_enabled: v }))}
+                              />
+                            </div>
+                          </div>
                           <Textarea
                             id="telegram_bot_activated_message"
                             value={formData.telegram_bot_activated_message}
