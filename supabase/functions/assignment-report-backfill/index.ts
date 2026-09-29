@@ -11,10 +11,11 @@ Deno.serve(async (req) => {
   const ids = [...new Set((vars ?? []).map((v: any) => String(v.assignment_id)).filter((x) => /^[0-9a-f-]{36}$/i.test(x)))];
   if (!ids.length) return Response.json({ sent: 0, remaining: 0, e1 }, { headers: cors });
   const { data: subs, error: e2 } = await supabase.from('assignment_submissions')
-    .select('id').in('assignment_id', ids).neq('status', 'draft').order('submitted_at', { ascending: true });
+    .select('id, assignment_id, status, submitted_at').not('submitted_at', 'is', null).order('submitted_at', { ascending: true }).limit(1000);
   const { data: done } = await supabase.from('assignment_ai_logs').select('submission_id').eq('kind', 'coach_report');
   const sentSet = new Set((done ?? []).map((d: any) => d.submission_id));
-  const todo = (subs ?? []).filter((s: any) => !sentSet.has(s.id));
+  const idSet = new Set(ids);
+  const todo = (subs ?? []).filter((s: any) => idSet.has(String(s.assignment_id)) && s.status !== 'draft' && !sentSet.has(s.id));
   let sent = 0;
   for (const s of todo.slice(0, limit)) {
     await notifySubmissionReview(s.id);
