@@ -6,6 +6,7 @@ const corsHeaders = {
 };
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { notifySubmissionReview } from '../_shared/assignment-report.ts';
 
 const MODEL = 'google/gemini-3-flash-preview';
 
@@ -162,6 +163,7 @@ ${answersFormatted}
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ feedback })}\n\n`));
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
+          if (feedback) await notifySubmissionReview(submission_id);
         } catch (e) {
           console.error('stream error', e);
           try { controller.close(); } catch { /* ignore */ }

@@ -1,3 +1,4 @@
+import { notifySubmissionReview } from '../_shared/assignment-report.ts';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -103,6 +104,8 @@ ${answersFormatted}
       response: feedback,
       model: 'google/gemini-2.5-flash',
     });
+
+    await notifySubmissionReview(submission_id);
 
     return new Response(JSON.stringify({ ok: true, feedback }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
