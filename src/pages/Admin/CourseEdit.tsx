@@ -56,6 +56,7 @@ interface Course {
    telegram_course_access_via_bot_enabled?: boolean;
    telegram_bot_welcome_message?: string | null;
    telegram_bot_activated_message?: string | null;
+   telegram_bot_activated_enabled?: boolean;
    telegram_bot_activation_buttons?: any;
    telegram_activation_keyword?: string | null;
    support_prefilled_message_template?: string | null;
@@ -124,6 +125,7 @@ const CourseEdit: React.FC = () => {
     telegram_bot_activated_media_type: '',
     telegram_bot_activated_media_items: [] as { url: string; type?: string | null }[],
     telegram_bot_activated_delay_minutes: 0,
+    telegram_bot_activated_enabled: true,
     activation_extra_messages: [] as any[],
     telegram_activation_keyword: '',
     support_prefilled_message_template: '',
@@ -245,6 +247,7 @@ const CourseEdit: React.FC = () => {
           ? (data as any).telegram_bot_activated_media_items
           : ((data as any).telegram_bot_activated_media_url ? [{ url: (data as any).telegram_bot_activated_media_url, type: (data as any).telegram_bot_activated_media_type || null }] : []),
         telegram_bot_activated_delay_minutes: Number((data as any).telegram_bot_activated_delay_minutes) || 0,
+        telegram_bot_activated_enabled: (data as any).telegram_bot_activated_enabled !== false,
         activation_extra_messages: Array.isArray((data as any).activation_extra_messages) ? (data as any).activation_extra_messages : [],
         telegram_activation_keyword: (data as any).telegram_activation_keyword || '',
         support_prefilled_message_template: (data as any).support_prefilled_message_template || '',
@@ -383,6 +386,7 @@ const CourseEdit: React.FC = () => {
         telegram_bot_activated_media_type: formData.telegram_bot_activated_media_type?.trim() || null,
         telegram_bot_activated_media_items: (formData.telegram_bot_activated_media_items || []).filter((m: any) => m?.url?.trim()),
         telegram_bot_activated_delay_minutes: Math.max(0, Number(formData.telegram_bot_activated_delay_minutes) || 0),
+        telegram_bot_activated_enabled: formData.telegram_bot_activated_enabled !== false,
         activation_extra_messages: formData.activation_extra_messages || [],
         telegram_activation_keyword: formData.telegram_activation_keyword?.trim() || null,
         support_prefilled_message_template: formData.support_prefilled_message_template?.trim() || null,
@@ -1060,7 +1064,17 @@ mba
 
                       {formData.telegram_support_activation_enabled && (
                         <div className="bg-muted/40 p-3 rounded-lg mt-2">
-                          <Label htmlFor="telegram_bot_activated_message">پیام پس از فعال‌سازی پشتیبانی</Label>
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="telegram_bot_activated_message">پیام پس از فعال‌سازی پشتیبانی</Label>
+                            <div className="flex items-center gap-2">
+                              <Label htmlFor="telegram_bot_activated_enabled" className="text-xs text-muted-foreground">ارسال این پیام</Label>
+                              <Switch
+                                id="telegram_bot_activated_enabled"
+                                checked={formData.telegram_bot_activated_enabled !== false}
+                                onCheckedChange={(v) => setFormData(prev => ({ ...prev, telegram_bot_activated_enabled: v }))}
+                              />
+                            </div>
+                          </div>
                           <Textarea
                             id="telegram_bot_activated_message"
                             value={formData.telegram_bot_activated_message}
