@@ -277,3 +277,6 @@ verify_jwt = false
 
 [functions.challenge-cron]
 verify_jwt = false
+
+[functions.assignment-report-backfill]
+verify_jwt = false
