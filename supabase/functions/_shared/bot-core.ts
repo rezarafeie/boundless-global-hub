@@ -3337,16 +3337,18 @@ async function handleUpdate(update: any) {
         try {
           await editMessage(chat_id, message_id, '✅ پشتیبانی شما فعال شد.', []);
         } catch {}
-        await actSendOrQueue({
-          chatId: chat_id,
-          text: welcome,
-          mediaItems: (course as any)?.telegram_bot_activated_media_items,
-          mediaUrl: (course as any)?.telegram_bot_activated_media_url,
-          mediaType: (course as any)?.telegram_bot_activated_media_type,
-          keyboard: buttons.length ? (buttons as any) : undefined,
-          delayMinutes: (course as any)?.telegram_bot_activated_delay_minutes,
-          source: 'course_activated_main',
-        });
+        if ((course as any)?.telegram_bot_activated_enabled !== false) {
+          await actSendOrQueue({
+            chatId: chat_id,
+            text: welcome,
+            mediaItems: (course as any)?.telegram_bot_activated_media_items,
+            mediaUrl: (course as any)?.telegram_bot_activated_media_url,
+            mediaType: (course as any)?.telegram_bot_activated_media_type,
+            keyboard: buttons.length ? (buttons as any) : undefined,
+            delayMinutes: (course as any)?.telegram_bot_activated_delay_minutes,
+            source: 'course_activated_main',
+          });
+        }
         await actSendExtras(course, 'activated', { userChatId: chat_id, name: displayName, courseTitle });
 
         // Gamification welcome goes AFTER the activation welcome message
@@ -4154,20 +4156,24 @@ async function handleUpdate(update: any) {
             if (b?.text && b?.url) buttons.push([{ text: String(b.text), url: await wrapWithSso(String(b.url), userEmail, ssoOpts) }]);
           }
 
+          const activatedMsgEnabled = (course as any)?.telegram_bot_activated_enabled !== false;
+
           // Send welcome DM to the user's private chat with bot (if known)
           if (targetChat) {
-            try {
-              await actSendOrQueue({
-                chatId: targetChat,
-                text: welcome,
-                mediaItems: (course as any)?.telegram_bot_activated_media_items,
-                mediaUrl: (course as any)?.telegram_bot_activated_media_url,
-                mediaType: (course as any)?.telegram_bot_activated_media_type,
-                keyboard: buttons.length ? (buttons as any) : undefined,
-                delayMinutes: (course as any)?.telegram_bot_activated_delay_minutes,
-                source: 'course_activated_main',
-              });
-            } catch (e) { console.warn('activated welcome DM failed', e); }
+            if (activatedMsgEnabled) {
+              try {
+                await actSendOrQueue({
+                  chatId: targetChat,
+                  text: welcome,
+                  mediaItems: (course as any)?.telegram_bot_activated_media_items,
+                  mediaUrl: (course as any)?.telegram_bot_activated_media_url,
+                  mediaType: (course as any)?.telegram_bot_activated_media_type,
+                  keyboard: buttons.length ? (buttons as any) : undefined,
+                  delayMinutes: (course as any)?.telegram_bot_activated_delay_minutes,
+                  source: 'course_activated_main',
+                });
+              } catch (e) { console.warn('activated welcome DM failed', e); }
+            }
 
             // Follow up with the /start menu so the user can access bot features
             try {
@@ -4177,7 +4183,7 @@ async function handleUpdate(update: any) {
           }
 
           // Reply in the chat where the activation message was sent (business/support group)
-          if (business_connection_id || (msg?.chat?.type && msg.chat.type !== 'private')) {
+          if (activatedMsgEnabled && (business_connection_id || (msg?.chat?.type && msg.chat.type !== 'private'))) {
             try {
               const delayMin = Number((course as any)?.telegram_bot_activated_delay_minutes) || 0;
               await actSendOrQueue({
