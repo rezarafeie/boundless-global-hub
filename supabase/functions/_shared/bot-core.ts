@@ -3298,7 +3298,7 @@ async function handleUpdate(update: any) {
 
         // Load course + user, build welcome + buttons
         const [{ data: course }, { data: cu }] = await Promise.all([
-          supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activated_media_url, telegram_bot_activated_media_type, telegram_bot_activated_media_items, telegram_bot_activated_delay_minutes, activation_extra_messages, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', cur.course_id).maybeSingle(),
+          supabase.from('courses').select('title, telegram_bot_activated_enabled, telegram_bot_activated_message, telegram_bot_activated_media_url, telegram_bot_activated_media_type, telegram_bot_activated_media_items, telegram_bot_activated_delay_minutes, activation_extra_messages, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', cur.course_id).maybeSingle(),
           supabase.from('chat_users').select('name, first_name, email').eq('id', cur.user_id).maybeSingle(),
         ]);
         const displayName = (cu as any)?.first_name || (cu as any)?.name || 'دوست عزیز';
@@ -4120,7 +4120,7 @@ async function handleUpdate(update: any) {
         const targetChat = (act as any).telegram_id;
         if (targetChat) {
           const [{ data: course }, { data: cu }] = await Promise.all([
-            supabase.from('courses').select('title, telegram_bot_activated_message, telegram_bot_activated_media_url, telegram_bot_activated_media_type, telegram_bot_activated_media_items, telegram_bot_activated_delay_minutes, activation_extra_messages, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', act.course_id).maybeSingle(),
+            supabase.from('courses').select('title, telegram_bot_activated_enabled, telegram_bot_activated_message, telegram_bot_activated_media_url, telegram_bot_activated_media_type, telegram_bot_activated_media_items, telegram_bot_activated_delay_minutes, activation_extra_messages, telegram_bot_activation_buttons, telegram_channel_link, redirect_url, support_link, slug').eq('id', act.course_id).maybeSingle(),
             supabase.from('chat_users').select('name, first_name, email').eq('id', act.user_id).maybeSingle(),
           ]);
           const displayName = (cu as any)?.first_name || (cu as any)?.name || 'دوست عزیز';
