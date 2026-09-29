@@ -56,6 +56,7 @@ interface Course {
    telegram_course_access_via_bot_enabled?: boolean;
    telegram_bot_welcome_message?: string | null;
    telegram_bot_activated_message?: string | null;
+   telegram_bot_activated_enabled?: boolean;
    telegram_bot_activation_buttons?: any;
    telegram_activation_keyword?: string | null;
    support_prefilled_message_template?: string | null;
