@@ -3542,6 +3542,7 @@ export type Database = {
           telegram_activation_keyword: string | null
           telegram_activation_required: boolean | null
           telegram_bot_activated_delay_minutes: number
+          telegram_bot_activated_enabled: boolean
           telegram_bot_activated_media_items: Json
           telegram_bot_activated_media_type: string | null
           telegram_bot_activated_media_url: string | null
@@ -3623,6 +3624,7 @@ export type Database = {
           telegram_activation_keyword?: string | null
           telegram_activation_required?: boolean | null
           telegram_bot_activated_delay_minutes?: number
+          telegram_bot_activated_enabled?: boolean
           telegram_bot_activated_media_items?: Json
           telegram_bot_activated_media_type?: string | null
           telegram_bot_activated_media_url?: string | null
@@ -3704,6 +3706,7 @@ export type Database = {
           telegram_activation_keyword?: string | null
           telegram_activation_required?: boolean | null
           telegram_bot_activated_delay_minutes?: number
+          telegram_bot_activated_enabled?: boolean
           telegram_bot_activated_media_items?: Json
           telegram_bot_activated_media_type?: string | null
           telegram_bot_activated_media_url?: string | null
