@@ -28,7 +28,7 @@ export async function notifySubmissionReview(submissionId: string) {
 
     // Context: challenge mission or course assignment
     let context = "";
-    let link = `${SITE}/enroll/admin/assignments/${a.id}/submissions`;
+    let link = `${SITE}/admin/assignments/${a.id}/submissions`;
     let emails: string[] = [DEFAULT_COACH];
     const { data: variants } = await supabase.from("challenge_variants").select("challenge_id, day_id").eq("assignment_id", a.id).limit(1);
     const v = variants?.[0];
