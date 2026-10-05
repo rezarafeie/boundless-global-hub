@@ -197,13 +197,19 @@ export const BlockRenderer: React.FC<Props> = ({ block, value, onChange, disable
           toast.error('برای آپلود ابتدا وارد شوید');
           return;
         }
-        const path = `${studentId}/${submissionId || 'draft'}/${Date.now()}-${file.name}`;
-        const { error } = await supabase.storage.from('assignment-uploads').upload(path, file);
+        const extMatch = file.name.match(/\.([a-zA-Z0-9]{1,8})$/);
+        const ext = extMatch ? extMatch[1].toLowerCase() : 'bin';
+        const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const path = `assignments/${studentId}/${submissionId || 'draft'}/${safeName}`;
+        const { error } = await supabase.storage
+          .from('messenger-files')
+          .upload(path, file, { contentType: file.type || undefined, upsert: false });
         if (error) {
-          toast.error('خطا در آپلود فایل');
+          console.error('assignment upload failed', error);
+          toast.error(`خطا در آپلود فایل: ${error.message}`);
           return;
         }
-        const { data } = supabase.storage.from('assignment-uploads').getPublicUrl(path);
+        const { data } = supabase.storage.from('messenger-files').getPublicUrl(path);
         onChange({ url: data.publicUrl, name: file.name, size: file.size, path });
         toast.success('فایل آپلود شد');
       };
