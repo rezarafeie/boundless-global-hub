@@ -1,5 +1,5 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { fieldsFrom, normalizePhone, triggerMatches, renderReply } from '../_shared/social-enrollment.ts';
+import { fieldsFrom, normalizePhone, triggerMatches, renderReply, eligibleFreeCourse } from '../_shared/social-enrollment.ts';
 
 Deno.test('form completion registers only the configured form', () => {
   const rule = { enabled: true, event_type: 'autoform_completed', trigger_value: '123' };
@@ -23,4 +23,10 @@ Deno.test('mapped form answers preserve real email and normalize Persian phone',
 Deno.test('success response includes Telegram and Bale links from existing activation flow', () => {
   assertEquals(renderReply('{telegram_link}\n{bale_link}', { telegram_link: 'https://t.me/a?start=sact_123', bale_link: 'https://ble.ir/a?start=sact_123' }),
     'https://t.me/a?start=sact_123\nhttps://ble.ir/a?start=sact_123');
+});
+Deno.test('paid courses never become completed free enrollments', () => {
+  assertEquals(eligibleFreeCourse(0), true);
+  assertEquals(eligibleFreeCourse('0.00'), true);
+  assertEquals(eligibleFreeCourse(26000000), false);
+  assertEquals(eligibleFreeCourse(null), false);
 });

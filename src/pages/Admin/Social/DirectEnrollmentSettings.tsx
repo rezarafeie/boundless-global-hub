@@ -33,7 +33,14 @@ export default function DirectEnrollmentSettings() {
   const [error, setError] = useState('');
   const call = async (body: unknown) => {
     const { data, error } = await supabase.functions.invoke('social-enrollment-admin', { body, headers: token ? { 'x-session-token': token } : undefined });
-    if (error || data?.error) throw new Error(data?.error || error?.message || 'خطا');
+    if (error || data?.error) {
+      let message = data?.error || error?.message || 'خطا';
+      if (error && 'context' in error && error.context instanceof Response) {
+        const details = await error.context.json().catch(() => null);
+        if (details?.error) message = details.error;
+      }
+      throw new Error(message);
+    }
     return data;
   };
   const load = async () => {
