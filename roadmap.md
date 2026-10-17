@@ -1,5 +1,5 @@
 ## Boundless Smart Test V2 conversational rebuild
-- [ ] Correct duplicate lead cleanup and verify one record per user/course without deleting enrollment history
+- [x] Correct duplicate lead cleanup and test one record per user/course without deleting enrollment history (live admin check unavailable for external authentication)
 - [x] Audit complete V1 journey, content, and reusable media
 - [x] Audit V2 contracts, AI flow, persistence, result, and admin
 - [x] Approve implementation plan for conversational journey

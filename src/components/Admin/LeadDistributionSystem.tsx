@@ -35,6 +35,7 @@ import {
   Phone
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { uniqueCourseLeads } from '@/lib/uniqueCourseLeads';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
@@ -365,6 +366,7 @@ const LeadDistributionSystem: React.FC = () => {
         .from('enrollments')
         .select('id', { count: 'exact', head: true })
         .eq('course_id', selectedCourse)
+        .is('duplicate_lead_of', null)
         .in('payment_status', ['success', 'completed']);
 
       // Add date filters if specified
@@ -393,6 +395,7 @@ const LeadDistributionSystem: React.FC = () => {
         .from('enrollments')
         .select('id')
         .eq('course_id', selectedCourse)
+        .is('duplicate_lead_of', null)
         .in('payment_status', ['success', 'completed']);
 
       if (dateFrom) {
@@ -432,7 +435,8 @@ const LeadDistributionSystem: React.FC = () => {
           chat_user_id,
           courses!inner(title)
         `)
-        .eq('course_id', selectedCourse);
+        .eq('course_id', selectedCourse)
+        .is('duplicate_lead_of', null);
 
       // Add payment status filter
       if (paymentStatus === 'all') {
@@ -701,6 +705,7 @@ const LeadDistributionSystem: React.FC = () => {
         .from('enrollments')
         .select('id')
         .eq('course_id', selectedCourse)
+        .is('duplicate_lead_of', null)
         .in('payment_status', ['success', 'completed']);
 
       if (dateFrom) {
