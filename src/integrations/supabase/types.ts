@@ -9871,6 +9871,31 @@ export type Database = {
         Args: { p_agent_user_id: number; p_enrollment_id: string }
         Returns: boolean
       }
+      claim_social_enrollment_event: {
+        Args: never
+        Returns: {
+          attempts: number
+          created_at: string
+          enrollment_id: string | null
+          event_key: string
+          event_type: string
+          id: string
+          last_error: string | null
+          locked_at: string | null
+          next_attempt_at: string
+          payload: Json
+          reply_sent_at: string | null
+          rule_id: string | null
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "social_enrollment_events"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       claim_support_custom_followup: {
         Args: {
           _custom_followup_id: string
