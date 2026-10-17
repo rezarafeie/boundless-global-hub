@@ -38,14 +38,14 @@ Deno.serve(async (req) => {
       throw new Error('Failed to fetch exchange rate from Tetherland');
     }
     
-    const tetherlandData: TetherlandResponse[] = await tetherlandResponse.json();
-    const usdtRate = tetherlandData.find((currency: any) => currency.status === 'USDT');
-    
-    if (!usdtRate) {
+    const tetherlandData: any = await tetherlandResponse.json();
+    const exchangeRate = Number(
+      tetherlandData?.data?.currencies?.USDT?.price ??
+      (Array.isArray(tetherlandData) ? tetherlandData.find((c: any) => c.status === 'USDT')?.price_USDT_IRT : undefined)
+    );
+    if (!exchangeRate || isNaN(exchangeRate)) {
       throw new Error('USDT rate not found in Tetherland response');
     }
-    
-    const exchangeRate = usdtRate.price_USDT_IRT;
     console.log(`📊 Current USDT to IRR rate: ${exchangeRate}`);
 
     // Get all courses that use dollar pricing
