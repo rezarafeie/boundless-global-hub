@@ -479,22 +479,11 @@ const LeadDistributionSystem: React.FC = () => {
         });
       });
 
-      // Conditionally remove duplicates by email and phone (keep the latest one)
+      // Use account identity and normalized fallback contacts, not raw email/phone pairs.
       let processedData = data || [];
       
       if (removeDuplicates) {
-        const uniqueEnrollments = data?.reduce((acc, enrollment) => {
-          const key = `${enrollment.email}-${enrollment.phone}`;
-          const existing = acc.get(key);
-          
-          if (!existing || new Date(enrollment.created_at) > new Date(existing.created_at)) {
-            acc.set(key, enrollment);
-          }
-          
-          return acc;
-        }, new Map()) || new Map();
-
-        processedData = Array.from(uniqueEnrollments.values());
+        processedData = uniqueCourseLeads((data || []).map(e => ({ ...e, is_assigned: assignmentMap.has(e.id) })));
       }
 
       // Check which ones are assigned (simplified check)
