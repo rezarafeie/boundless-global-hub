@@ -1,9 +1,9 @@
 ## Instagram direct enrollment
-- [ ] Build authenticated NovinHub event receiver and durable processing
-- [ ] Add course/form/keyword rules and delivery history to Social CRM settings
-- [ ] Reuse course enrollment, access, email and bot activation flows
-- [ ] Verify event matching, duplicate handling and delivery
-- [ ] Connect webhook in NovinHub (requires shared verification secret and provider setup)
+- [x] Build authenticated NovinHub event receiver and durable processing with retries active only while pending
+- [x] Add course/form/keyword rules and delivery history to Social CRM settings
+- [x] Reuse course enrollment, access, email and bot activation flows for free courses; paid courses remain payment-gated
+- [x] Verify six rule tests, authenticated event acceptance, duplicate handling, queue drain and editor rendering with sample data
+- [ ] Connect webhook in NovinHub and verify real form-to-enrollment-to-direct delivery (requires provider registration, actual form ID/payload and an authenticated admin; secret saved)
 
 ## Boundless Smart Test V2 conversational rebuild
 - [x] Correct duplicate lead cleanup and test one record per user/course without deleting enrollment history (live admin check unavailable for external authentication)
