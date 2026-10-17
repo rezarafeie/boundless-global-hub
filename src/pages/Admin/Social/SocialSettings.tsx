@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import DirectEnrollmentSettings from './DirectEnrollmentSettings';
 
 const SocialSettings: React.FC = () => {
   const [s, setS] = useState<any>(null);
@@ -91,6 +92,7 @@ const SocialSettings: React.FC = () => {
       <Button onClick={save} disabled={saving}>
         {saving ? 'در حال ذخیره...' : 'ذخیره تنظیمات'}
       </Button>
+      <DirectEnrollmentSettings />
     </div>
   );
 };
