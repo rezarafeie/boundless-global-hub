@@ -1,6 +1,6 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
-import { db, requireSocialAdmin } from '../_shared/social-enrollment.ts';
+import { db, requireSocialAdmin, eligibleFreeCourse } from '../_shared/social-enrollment.ts';
 
 const ruleSchema = z.object({
   id: z.string().uuid().optional(), name: z.string().trim().min(1).max(200), enabled: z.boolean(),
@@ -39,7 +39,7 @@ Deno.serve(async req => {
         client.from('courses').select('price').eq('id', rule.course_id).single(),
         client.from('social_accounts').select('id').eq('id', rule.account_id).eq('provider', 'instagram').eq('is_active', true).single(),
       ]);
-      if (!account || !course || Number(course.price) !== 0) return json({ error: 'صفحه معتبر و دوره رایگان انتخاب کنید؛ دوره پولی نیازمند پرداخت است' }, 400);
+      if (!account || !course || !eligibleFreeCourse(course.price)) return json({ error: 'صفحه معتبر و دوره رایگان انتخاب کنید؛ دوره پولی نیازمند پرداخت است' }, 400);
       const { data: conflicts } = await client.from('social_enrollment_rules').select('id,trigger_value').eq('account_id', rule.account_id).eq('event_type', rule.event_type).eq('enabled', true);
       if (rule.enabled && conflicts?.some(r => r.id !== id && r.trigger_value.trim().toLowerCase() === rule.trigger_value.trim().toLowerCase())) {
         return json({ error: 'برای این فرم یا کلمه کلیدی قبلاً قانون فعال وجود دارد' }, 400);

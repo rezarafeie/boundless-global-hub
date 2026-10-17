@@ -45,6 +45,8 @@ export function renderReply(template: string, values: Record<string, string>): s
   return template.replace(/\{(name|course_title|telegram_link|bale_link|enrollment_link)\}/g, (_, k) => values[k] || '');
 }
 
+export const eligibleFreeCourse = (price: unknown) => price !== null && price !== undefined && Number(price) === 0;
+
 export async function requireSocialAdmin(req: Request, client: ReturnType<typeof db>) {
   const token = req.headers.get('x-session-token');
   let userId: number | null = null;
@@ -54,7 +56,7 @@ export async function requireSocialAdmin(req: Request, client: ReturnType<typeof
     if (!error && data) userId = data.user_id;
   }
   if (!userId) {
-    const bearer = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+    const bearer = (req.headers.get('authorization') || token)?.replace(/^Bearer\s+/i, '');
     if (bearer) {
       const { data: auth } = await client.auth.getUser(bearer);
       if (auth.user?.id) {
@@ -66,7 +68,10 @@ export async function requireSocialAdmin(req: Request, client: ReturnType<typeof
   }
   const { data: roles } = await client.from('user_roles').select('role_name').eq('user_id', userId).eq('is_active', true)
     .in('role_name', ['admin', 'social_admin', 'enrollments_manager']);
-  if (!roles?.length) throw new Error('دسترسی مدیریت معتبر نیست');
+  if (roles?.length) return;
+  // Reuse the established server-side administrator assertion for legacy sessions.
+  const { data: adminId, error: adminError } = await client.rpc('assert_webinar_followup_admin', { p_session_token: token });
+  if (adminError || !adminId) throw new Error('دسترسی مدیریت معتبر نیست');
 }
 
 async function invoke(name: string, body: unknown) {
@@ -119,7 +124,7 @@ export async function processEnrollmentQueue(limit = 10) {
       const person = fieldsFrom(p, rule.field_mapping);
       const { data: course, error: courseErr } = await client.from('courses').select('id,title,slug,price').eq('id', rule.course_id).single();
       if (courseErr) throw courseErr;
-      if (Number(course.price) !== 0) throw new Error('ثبت‌نام مستقیم فقط برای دوره رایگان مجاز است؛ دوره پولی به پرداخت نیاز دارد');
+      if (!eligibleFreeCourse(course.price)) throw new Error('ثبت‌نام مستقیم فقط برای دوره رایگان مجاز است؛ دوره پولی به پرداخت نیاز دارد');
       if (!person.name || !/^09\d{9}$/.test(person.phone) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(person.email)) {
         if (!job.reply_sent_at) await novinhub.reply(conversationId, rule.missing_fields_message);
         await save({ status: 'needs_info', reply_sent_at: new Date().toISOString(), last_error: 'نام، موبایل یا ایمیل معتبر موجود نیست' });
@@ -130,6 +135,7 @@ export async function processEnrollmentQueue(limit = 10) {
         client.from('chat_users').select('id,phone,email').eq('phone', person.phone).maybeSingle(),
       ]);
       if (emailUser && normalizePhone(emailUser.phone || '') !== person.phone) throw new Error('ایمیل و شماره موبایل با حساب موجود مطابقت ندارند؛ بررسی مدیر لازم است');
+      if (phoneUser?.email && phoneUser.email.toLowerCase() !== person.email) throw new Error('ایمیل فرم با حساب شماره موبایل مطابقت ندارد؛ بررسی مدیر لازم است');
       if (emailUser && phoneUser && emailUser.id !== phoneUser.id) throw new Error('تعارض حساب ایمیل و موبایل؛ بررسی مدیر لازم است');
       const existingUser = phoneUser || emailUser;
       let enrollment: any;
@@ -160,11 +166,12 @@ export async function processEnrollmentQueue(limit = 10) {
       const activation = await invoke('support-activation-create', { user_id: enrollment.chat_user_id, course_id: course.id, enrollment_id: enrollment.id });
       const token = activation.activation?.activation_token;
       if (!token) throw new Error('کد فعال‌سازی ساخته نشد');
-      const telegramLink = `https://t.me/rafieiacademybot?start=${encodeURIComponent('sact_' + token)}`;
+      const telegramLink = activation.activation.support_prefilled_link;
+      if (!telegramLink) throw new Error('لینک پشتیبانی تلگرام ساخته نشد');
       // Use the configured support link returned by the website activation flow.
       const reply = renderReply(rule.reply_template, {
         name: person.name, course_title: course.title,
-        telegram_link: activation.activation.support_prefilled_link || telegramLink,
+        telegram_link: telegramLink,
         bale_link: activation.bale_link || '',
         enrollment_link: `https://academy.rafiei.co/enroll/success?enrollment=${enrollment.id}`,
       });
