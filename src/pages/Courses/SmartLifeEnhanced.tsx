@@ -1,3 +1,4 @@
+import { fetchLiveCoursePrice } from "@/lib/liveCoursePrice";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -79,13 +80,8 @@ const SmartLifeEnhanced: React.FC<SmartLifeEnhancedProps> = ({
     const fetchCourseData = async () => {
       if (!courseSlug) return;
       try {
-        const { data, error } = await supabase
-          .from('courses')
-          .select('id, price')
-          .eq('slug', courseSlug)
-          .single();
-        
-        if (data && !error) {
+        const data = await fetchLiveCoursePrice(courseSlug);
+        if (data) {
           setCourseId(data.id);
           setCoursePrice(data.price);
         }

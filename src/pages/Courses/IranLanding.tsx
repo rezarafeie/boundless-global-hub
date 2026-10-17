@@ -1,3 +1,4 @@
+import { fetchLiveCoursePrice } from "@/lib/liveCoursePrice";
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -163,8 +164,7 @@ const IranLanding = () => {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await supabase
-          .from("courses").select("id, price").eq("slug", courseSlug).maybeSingle();
+        const data = await fetchLiveCoursePrice(courseSlug);
         if (data) {
           setCourseId(data.id);
           if (data.price) setCoursePrice(Number(data.price));

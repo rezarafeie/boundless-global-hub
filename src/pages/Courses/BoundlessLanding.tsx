@@ -1,3 +1,4 @@
+import { fetchLiveCoursePrice } from "@/lib/liveCoursePrice";
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -119,13 +120,8 @@ const BoundlessLanding = () => {
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
-        const { data, error } = await supabase
-          .from('courses')
-          .select('id, price')
-          .eq('slug', 'boundless')
-          .single();
-        
-        if (data && !error) {
+        const data = await fetchLiveCoursePrice('boundless');
+        if (data) {
           setCourseId(data.id);
           setCoursePrice(data.price);
         }

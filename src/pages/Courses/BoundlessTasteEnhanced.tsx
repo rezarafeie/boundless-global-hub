@@ -1,3 +1,4 @@
+import { fetchLiveCoursePrice } from "@/lib/liveCoursePrice";
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -51,13 +52,8 @@ const BoundlessTasteEnhanced: React.FC<BoundlessTasteEnhancedProps> = ({
     const fetchCourseData = async () => {
       if (!courseSlug) return;
       try {
-        const { data, error } = await supabase
-          .from('courses')
-          .select('id, price')
-          .eq('slug', courseSlug)
-          .single();
-        
-        if (data && !error) {
+        const data = await fetchLiveCoursePrice(courseSlug);
+        if (data) {
           setCourseId(data.id);
           setCoursePrice(data.price);
         }
