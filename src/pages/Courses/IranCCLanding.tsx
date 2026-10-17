@@ -1,3 +1,4 @@
+import { fetchLiveCoursePrice } from "@/lib/liveCoursePrice";
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -136,8 +137,7 @@ const IranCCLanding: React.FC = () => {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await supabase
-          .from("courses").select("id, price").eq("slug", courseSlug).maybeSingle();
+        const data = await fetchLiveCoursePrice(courseSlug);
         if (data?.price) setCoursePrice(Number(data.price));
       } catch (e) { console.error(e); }
     })();
