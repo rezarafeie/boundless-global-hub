@@ -1,0 +1,2 @@
+CREATE POLICY "Server manages enrollment rules" ON public.social_enrollment_rules FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Server manages enrollment events" ON public.social_enrollment_events FOR ALL TO service_role USING (true) WITH CHECK (true);

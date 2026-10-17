@@ -280,3 +280,12 @@ verify_jwt = false
 
 [functions.assignment-report-backfill]
 verify_jwt = false
+
+[functions.novinhub-webhook]
+verify_jwt = false
+
+[functions.social-enrollment-admin]
+verify_jwt = false
+
+[functions.social-enrollment-worker]
+verify_jwt = false
