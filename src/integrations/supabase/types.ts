@@ -6964,6 +6964,125 @@ export type Database = {
           },
         ]
       }
+      social_enrollment_events: {
+        Row: {
+          attempts: number
+          created_at: string
+          enrollment_id: string | null
+          event_key: string
+          event_type: string
+          id: string
+          last_error: string | null
+          locked_at: string | null
+          next_attempt_at: string
+          payload: Json
+          reply_sent_at: string | null
+          rule_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          enrollment_id?: string | null
+          event_key: string
+          event_type: string
+          id?: string
+          last_error?: string | null
+          locked_at?: string | null
+          next_attempt_at?: string
+          payload: Json
+          reply_sent_at?: string | null
+          rule_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          enrollment_id?: string | null
+          event_key?: string
+          event_type?: string
+          id?: string
+          last_error?: string | null
+          locked_at?: string | null
+          next_attempt_at?: string
+          payload?: Json
+          reply_sent_at?: string | null
+          rule_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_enrollment_events_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "social_enrollment_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_enrollment_rules: {
+        Row: {
+          account_id: string
+          course_id: string
+          created_at: string
+          enabled: boolean
+          event_type: string
+          field_mapping: Json
+          id: string
+          missing_fields_message: string
+          name: string
+          reply_template: string
+          trigger_value: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          course_id: string
+          created_at?: string
+          enabled?: boolean
+          event_type?: string
+          field_mapping?: Json
+          id?: string
+          missing_fields_message?: string
+          name: string
+          reply_template?: string
+          trigger_value: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          course_id?: string
+          created_at?: string
+          enabled?: boolean
+          event_type?: string
+          field_mapping?: Json
+          id?: string
+          missing_fields_message?: string
+          name?: string
+          reply_template?: string
+          trigger_value?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_enrollment_rules_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_enrollment_rules_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_knowledge_base: {
         Row: {
           content: string
