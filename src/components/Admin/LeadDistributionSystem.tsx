@@ -35,6 +35,7 @@ import {
   Phone
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { uniqueCourseLeads } from '@/lib/uniqueCourseLeads';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
@@ -365,6 +366,7 @@ const LeadDistributionSystem: React.FC = () => {
         .from('enrollments')
         .select('id', { count: 'exact', head: true })
         .eq('course_id', selectedCourse)
+        .is('duplicate_lead_of', null)
         .in('payment_status', ['success', 'completed']);
 
       // Add date filters if specified
@@ -393,6 +395,7 @@ const LeadDistributionSystem: React.FC = () => {
         .from('enrollments')
         .select('id')
         .eq('course_id', selectedCourse)
+        .is('duplicate_lead_of', null)
         .in('payment_status', ['success', 'completed']);
 
       if (dateFrom) {
@@ -432,7 +435,8 @@ const LeadDistributionSystem: React.FC = () => {
           chat_user_id,
           courses!inner(title)
         `)
-        .eq('course_id', selectedCourse);
+        .eq('course_id', selectedCourse)
+        .is('duplicate_lead_of', null);
 
       // Add payment status filter
       if (paymentStatus === 'all') {
@@ -479,22 +483,11 @@ const LeadDistributionSystem: React.FC = () => {
         });
       });
 
-      // Conditionally remove duplicates by email and phone (keep the latest one)
+      // Use account identity and normalized fallback contacts, not raw email/phone pairs.
       let processedData = data || [];
       
       if (removeDuplicates) {
-        const uniqueEnrollments = data?.reduce((acc, enrollment) => {
-          const key = `${enrollment.email}-${enrollment.phone}`;
-          const existing = acc.get(key);
-          
-          if (!existing || new Date(enrollment.created_at) > new Date(existing.created_at)) {
-            acc.set(key, enrollment);
-          }
-          
-          return acc;
-        }, new Map()) || new Map();
-
-        processedData = Array.from(uniqueEnrollments.values());
+        processedData = uniqueCourseLeads((data || []).map(e => ({ ...e, is_assigned: assignmentMap.has(e.id) })));
       }
 
       // Check which ones are assigned (simplified check)
@@ -712,6 +705,7 @@ const LeadDistributionSystem: React.FC = () => {
         .from('enrollments')
         .select('id')
         .eq('course_id', selectedCourse)
+        .is('duplicate_lead_of', null)
         .in('payment_status', ['success', 'completed']);
 
       if (dateFrom) {

@@ -35,6 +35,7 @@ import {
 
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { uniqueCourseLeads } from '@/lib/uniqueCourseLeads';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns-jalali';
 
@@ -344,6 +345,7 @@ const SimplifiedLeadManagement: React.FC = () => {
           courses!inner(title)
         `)
         .eq('course_id', selectedCourse)
+        .is('duplicate_lead_of', null)
         .order('created_at', { ascending: false });
 
       // Apply payment status filter at DB level
@@ -487,6 +489,10 @@ const SimplifiedLeadManagement: React.FC = () => {
 
 
 
+      // Preserve assigned representatives before filtering and counting unique leads.
+      processedLeads = uniqueCourseLeads(processedLeads);
+      const allLeads = processedLeads.map(l => ({ is_assigned: l.is_assigned, agent_id: l.assigned_agent_id }));
+
       // Apply assignment status filter
       if (statusFilter === 'assigned') {
         processedLeads = processedLeads.filter(l => l.is_assigned);
@@ -502,10 +508,6 @@ const SimplifiedLeadManagement: React.FC = () => {
       setLeads(processedLeads);
       
       // Update stats based on all processed leads (before agent filter)
-      const allLeads = (enrollments || []).map(e => ({
-        is_assigned: !!assignmentMap.get(e.id),
-        agent_id: assignmentMap.get(e.id) || null
-      }));
       const totalAssigned = allLeads.filter(l => l.is_assigned).length;
       setStats(prev => ({
         ...prev,
@@ -1294,12 +1296,18 @@ const SimplifiedLeadManagement: React.FC = () => {
     setShowDuplicates(true);
     setDuplicatesLoading(true);
     try {
-      const { data, error } = await (supabase as any).rpc('find_duplicate_enrollments', {
-        p_session_token: sessionToken,
-        p_course_id: selectedCourse || null,
-      });
-      if (error) throw error;
-      setDuplicateRows((data || []) as DuplicateRow[]);
+      const rows: DuplicateRow[] = [];
+      for (let offset = 0; ; offset += 1000) {
+        const { data, error } = await supabase.rpc('find_duplicate_enrollments', {
+          p_session_token: sessionToken,
+          p_course_id: selectedCourse || null,
+        }).range(offset, offset + 999);
+        if (error) throw error;
+        const batch = (data || []) as DuplicateRow[];
+        rows.push(...batch);
+        if (batch.length < 1000) break;
+      }
+      setDuplicateRows(rows);
     } catch (e: any) {
       toast({ title: 'خطا در بررسی تکراری‌ها', description: e.message, variant: 'destructive' });
       setDuplicateRows([]);
@@ -1316,7 +1324,8 @@ const SimplifiedLeadManagement: React.FC = () => {
       const { data, error } = await (supabase as any).rpc('remove_duplicate_enrollments', {
         p_session_token: sessionToken,
         p_course_id: selectedCourse || null,
-        p_ids: duplicateRows.map((d) => d.duplicate_id),
+        // Recompute the full selected-course set on the server, not a truncated preview.
+        p_ids: null,
       });
       if (error) throw error;
       toast({ title: 'موفق', description: `${data ?? 0} رکورد تکراری حذف شد` });
@@ -2519,11 +2528,11 @@ const SimplifiedLeadManagement: React.FC = () => {
           <DialogHeader>
             <DialogTitle>حذف ثبت‌نام‌های تکراری</DialogTitle>
             <DialogDescription>
-              رکوردهای تکراری بر اساس «شماره تماس + دوره» شناسایی می‌شوند.
+              رکوردهای تکراری بر اساس «کاربر + دوره» شناسایی می‌شوند؛ در نبود حساب، شماره تماس یا ایمیل استفاده می‌شود.
               {selectedCourse
                 ? ` (دوره: ${courses.find(c => c.id === selectedCourse)?.title || '—'})`
                 : ' (همه دوره‌ها)'}
-              {' '}رکورد اصلی (پرداخت موفق یا قدیمی‌ترین) همیشه نگه داشته می‌شود و ثبت‌نام‌های پرداخت‌شده هرگز حذف نمی‌شوند.
+              {' '}برای هر کاربر در هر دوره یک لید نمایش داده می‌شود. تمام ثبت‌نام‌ها، پرداخت‌ها و دسترسی‌های دوره محفوظ می‌مانند.
             </DialogDescription>
           </DialogHeader>
 
@@ -2571,7 +2580,7 @@ const SimplifiedLeadManagement: React.FC = () => {
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
                   <p className="text-xs text-amber-700 dark:text-amber-300">
-                    این عمل غیرقابل بازگشت است و یادداشت‌ها و واگذاری‌های مربوط به این رکوردها نیز حذف می‌شوند.
+                    فقط لیدهای تکراری از فهرست کنار گذاشته می‌شوند؛ یادداشت‌ها، واگذاری‌ها و سوابق ثبت‌نام حذف نمی‌شوند.
                   </p>
                 </div>
               </div>
