@@ -30,3 +30,8 @@ Deno.test('paid courses never become completed free enrollments', () => {
   assertEquals(eligibleFreeCourse(26000000), false);
   assertEquals(eligibleFreeCourse(null), false);
 });
+Deno.test('NovinHub form messages auto-detect name, phone and email', () => {
+  const p = { auto_form_id: 9808, messages: [{ text: 'رضا' }, { text: 'رفیعی' }, { text: '۰۹۱۲۰۷۸۴۴۵۷' }, { text: 'ReRafeie@gmail.com' }] };
+  assertEquals(fieldsFrom(p, {}), { name: 'رضا رفیعی', phone: '09120784457', email: 'rerafeie@gmail.com' });
+  assertEquals(triggerMatches({ enabled: true, event_type: 'autoform_completed', trigger_value: '9808' }, { type: 'autoform_completed', payload: p }), true);
+});

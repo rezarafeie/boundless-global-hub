@@ -27,14 +27,35 @@ export function fieldsFrom(payload: any, mapping: Record<string, string>) {
   }
   const input = { ...payload, answers: Array.isArray(payload.answers) ? answers : payload.answers };
   const take = (key: string) => String(valueAt(input, mapping[key] || key) ?? '').trim();
-  return { name: take('name'), phone: normalizePhone(take('phone')), email: take('email').toLowerCase() };
+  let name = take('name'), phone = normalizePhone(take('phone')), email = take('email').toLowerCase();
+  // NovinHub auto-forms deliver answers as an ordered list of user messages; auto-detect fields.
+  const texts: string[] = [];
+  const lists = [payload.messages, payload.auto_form_messages, payload.answers, payload.responses];
+  for (const list of lists) {
+    if (!Array.isArray(list)) continue;
+    for (const m of list) {
+      if (m && (m.direction === 'out' || m.is_outgoing || m.is_auto_response)) continue;
+      const t = typeof m === 'string' ? m : (m?.text ?? m?.content ?? m?.answer ?? m?.value);
+      if (t != null && String(t).trim()) texts.push(String(t).trim());
+    }
+    if (texts.length) break;
+  }
+  const names: string[] = [];
+  for (const t of texts) {
+    const asPhone = normalizePhone(t);
+    if (/^09\d{9}$/.test(asPhone)) { if (!/^09\d{9}$/.test(phone)) phone = asPhone; continue; }
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) { if (!email.includes('@')) email = t.toLowerCase(); continue; }
+    if (!/^\d+$/.test(normalizePhone(t) || 'x') && t.length <= 60) names.push(t);
+  }
+  if (!name && names.length) name = names.slice(0, 2).join(' ');
+  return { name, phone, email };
 }
 
 export function triggerMatches(rule: any, event: any): boolean {
   if (!rule.enabled || rule.event_type !== event.type) return false;
   const p = event.payload;
   if (event.type === 'autoform_completed') {
-    return String(p.automation_form_id ?? p.automationForm?.id ?? p.form_id ?? p.form?.id ?? '') === rule.trigger_value;
+    return String(p.auto_form_id ?? p.autoform_id ?? p.automation_form_id ?? p.automationForm?.id ?? p.auto_form?.id ?? p.form_id ?? p.form?.id ?? '') === String(rule.trigger_value).trim();
   }
   if (p.is_auto_response || p.direction === 'out' || p.is_outgoing) return false;
   const text = String(p.text ?? p.content ?? '').normalize('NFKC').trim().toLowerCase();
