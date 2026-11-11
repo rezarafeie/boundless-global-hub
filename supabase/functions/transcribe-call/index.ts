@@ -177,9 +177,9 @@ Deno.serve(async (req) => {
     if (body.pending) {
       const settings = await getSettings()
       if (!settings.enabled || !settings.transcription_enabled) return json({ success: true, skipped: true }, 200, corsHeaders)
-      // Bounded run: up to 40 calls, 4 at a time, stop starting new work after ~95s.
+      // Bounded run: up to 40 calls, 4 at a time, stop starting new work after ~80s.
       const started = Date.now()
-      const BUDGET_MS = 95_000, MAX_ITEMS = 40, CONCURRENCY = 4
+      const BUDGET_MS = 80_000, MAX_ITEMS = 40, CONCURRENCY = 4
       const retryBefore = new Date(Date.now() - 30 * 60_000).toISOString()
       const { data: pending } = await admin
         .from('call_transcripts')
