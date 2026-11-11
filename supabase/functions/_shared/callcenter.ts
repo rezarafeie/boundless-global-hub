@@ -239,7 +239,9 @@ const DS_BASE = (Deno.env.get('DAFTARESHOMA_BASE_URL') || 'https://coreapi.dafta
  * every provider request is relayed through the Iran-hosted proxy. */
 export async function dsFetch(target: string, init: RequestInit = {}): Promise<Response> {
   const proxy = Deno.env.get('DAFTARESHOMA_PROXY_URL')
-  if (!proxy) return fetch(target, init)
+  const host = new URL(target).hostname.toLowerCase()
+  const isDs = host === 'daftareshoma.com' || host.endsWith('.daftareshoma.com')
+  if (!proxy || !isDs) return fetch(target, init)
   const secret = Deno.env.get('DAFTARESHOMA_PROXY_SECRET')
   if (!secret) throw new ProviderError('DAFTARESHOMA_PROXY_SECRET تنظیم نشده است', 500, null)
   const h = new Headers(init.headers)

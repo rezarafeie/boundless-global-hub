@@ -1,4 +1,4 @@
-import { requireInternalOrAdmin } from '../_shared/callcenter.ts'
+import { dsFetch, requireInternalOrAdmin } from '../_shared/callcenter.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 import {
   admin, authenticate, requirePermission, audit, AuthError,
