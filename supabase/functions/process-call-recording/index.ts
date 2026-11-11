@@ -66,7 +66,7 @@ async function fetchAndStore(callId: string) {
     throw uploadError
   }
 
-  await admin.from('call_recordings').update({
+  const {error:readyError} = await admin.from('call_recordings').update({
     status: 'ready',
     storage_path: path,
     mime_type: mime,
@@ -74,12 +74,14 @@ async function fetchAndStore(callId: string) {
     downloaded_at: new Date().toISOString(),
     error: null,
   }).eq('call_id', call.id)
+  if(readyError) throw new Error(readyError.message)
 
   await admin.from('calls').update({ processing_status: 'recording_ready' }).eq('id', call.id)
 
   const settings = await getSettings()
   if (settings.transcription_enabled && (call.talk_seconds ?? 0) >= (settings.min_call_seconds_for_ai ?? 30)) {
-    await invokeFn('transcribe-call', { callId: call.id })
+    const {error}=await admin.from('call_transcripts').upsert({call_id:call.id,processing_status:'pending',language:'fa'},{onConflict:'call_id',ignoreDuplicates:true})
+    if(error) throw new Error(error.message)
   }
 
   return { path, mime, size: bytes.length }
@@ -98,7 +100,7 @@ Deno.serve(async (req) => {
       const settings=await getSettings()
       if(!settings.enabled || !settings.recording_sync_enabled) return json({success:true,skipped:true},200,corsHeaders)
       // batch mode for the cron job
-      const { data: calls, error } = await admin.rpc('callcenter_pending_recordings', { batch_size: 25 })
+      const { data: calls, error } = await admin.rpc('callcenter_pending_recordings', { batch_size: 2 })
       if (error) throw new Error(error.message)
 
       let processed = 0

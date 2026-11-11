@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
       const settings = await getSettings()
       if (!settings.ai_analysis_enabled) return json({ success: true, skipped: true }, 200, corsHeaders)
 
-      const { data: ready, error } = await admin.rpc('callcenter_pending_analysis', { batch_size: 8 })
+      const { data: ready, error } = await admin.rpc('callcenter_pending_analysis', { batch_size: 2 })
       if (error) throw new Error(error.message)
       const ids = (ready ?? []).map((r: any) => r.id)
 

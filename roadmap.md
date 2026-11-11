@@ -6,12 +6,14 @@
 - [ ] Connect webhook in NovinHub and verify real form-to-enrollment-to-direct delivery (requires provider registration, actual form ID/payload and an authenticated admin; secret saved)
 
 ## Call center completion
-- [ ] Verify real provider credentials and incoming webhook delivery
-- [ ] Repair scheduler authentication and background processing
-- [ ] Finish routing settings, safe simulator and captured-request viewer
-- [ ] Add accurate call reporting, live event status and customer history
-- [ ] Repair agent outcomes, follow-up dates, sync messages and banner recovery
-- [ ] Run security/routing tests and verify deployed flows; report external blockers
+- [x] Verify real incoming webhook delivery: 12 processed provider events across all five event types
+- [ ] Verify provider API connection (real report and sync requests return provider HTTP 500)
+- [x] Repair scheduler authentication and bounded background processing; observed completed recording/follow-up/attribution jobs and correctly recorded provider sync failure
+- [x] Finish capture-only routing settings, safe simulator and captured-request viewer
+- [x] Add call reporting with correct question date defaults, webhook-only live status and paginated customer history
+- [x] Repair agent outcomes, Tehran follow-up dates, sync messages and banner recovery; remove unauthorized automatic UI sync
+- [x] Run 12 security/routing/phone/time tests, check deployed functions and confirm clean preview compilation
+- [ ] Verify signed-in admin routing/outcome/follow-up UI end-to-end (external authentication has no injectable session)
 - [ ] Connect read-only MCP (requires provider connection URL and credential)
 - [ ] Enable production Call Control only after provider response contract and staged verification
 

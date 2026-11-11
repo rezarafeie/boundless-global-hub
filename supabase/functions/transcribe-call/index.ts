@@ -101,7 +101,8 @@ Deno.serve(async (req) => {
         .from('call_transcripts')
         .select('call_id')
         .in('processing_status', ['pending', 'failed'])
-        .limit(10)
+        .order('updated_at',{ascending:true})
+        .limit(2)
       let processed = 0
       for (const t of pending ?? []) {
         try { await run(t.call_id); processed++ } catch (e) { console.error('transcribe failed', t.call_id, (e as Error).message) }

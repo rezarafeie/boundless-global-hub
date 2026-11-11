@@ -352,6 +352,7 @@ Deno.serve(async (req) => {
         return json({ requests: data, total: count, page, pageSize }, 200, corsHeaders)
       }
       case 'stats-qa': {
+        requirePermission(ctx,'calls.analytics')
         const { data, error } = await admin.rpc('callcenter_stats_qa', { question_kind: p.question_kind,
           from_date: p.from ?? null, to_date: p.to ?? null,
           self_agent: ctx.restrictedToSelf ? ctx.userId : null })
@@ -420,11 +421,14 @@ Deno.serve(async (req) => {
       }
 
       case 'complete-followup': {
-        await admin.from('call_followups').update({
+        requirePermission(ctx,'calls.create')
+        if(!['completed','cancelled'].includes(p.status??'completed')) throw new AuthError('Invalid follow-up status',400)
+        const {error} = await admin.from('call_followups').update({
           status: p.status ?? 'completed',
           completed_at: new Date().toISOString(),
           completed_by: ctx.userId,
         }).eq('id', p.followupId)
+        if(error) throw new Error(error.message)
         await audit(ctx, 'followup.completed', 'call_followup', p.followupId, {})
         return json({ success: true }, 200, corsHeaders)
       }
@@ -484,14 +488,15 @@ Deno.serve(async (req) => {
       case 'lookup': {
         const match = await matchCrmRecords(normalizePhone(p.phone).normalized)
         let history: any[] = []
-        const tail = phoneTail(p.phone)
+        const tail = normalizePhone(p.phone).normalized
         if (tail) {
           const { data } = await scope(admin.from('calls')
             .select('id, direction, status, started_at, talk_seconds, agent_id'), ctx)
-            .or(`caller_number_normalized.like.%${tail},destination_number_normalized.like.%${tail}`)
+            .or(`caller_number_normalized.eq.${tail},destination_number_normalized.eq.${tail}`)
             .order('started_at', { ascending: false }).limit(10)
           history = data ?? []
         }
+        if(ctx.restrictedToSelf && (!history.length || (match.agent_id && Number(match.agent_id)!==ctx.userId))) return json({success:true,match:null,history},200,corsHeaders)
         return json({ success: true, match, history }, 200, corsHeaders)
       }
 

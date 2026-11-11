@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
       webinar_registration_id: match?.webinar_registration_id ?? null,
       order_id: match?.order_id ?? null,
       match_confidence: match?.match_confidence ?? 'manual',
-      source: body.source ?? 'crm_click_to_call',
+      source: 'crm_click_reservation',
       processing_status: 'pending',
       raw_payload: { originate: providerResponse, endpoint },
     }).eq('id',claimed.id).select('id').maybeSingle()
