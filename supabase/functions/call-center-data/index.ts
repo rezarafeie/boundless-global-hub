@@ -352,6 +352,7 @@ Deno.serve(async (req) => {
         return json({ requests: data, total: count, page, pageSize }, 200, corsHeaders)
       }
       case 'stats-qa': {
+        requirePermission(ctx,'calls.analytics')
         const { data, error } = await admin.rpc('callcenter_stats_qa', { question_kind: p.question_kind,
           from_date: p.from ?? null, to_date: p.to ?? null,
           self_agent: ctx.restrictedToSelf ? ctx.userId : null })
@@ -420,11 +421,14 @@ Deno.serve(async (req) => {
       }
 
       case 'complete-followup': {
-        await admin.from('call_followups').update({
+        requirePermission(ctx,'calls.create')
+        if(!['completed','cancelled'].includes(p.status??'completed')) throw new AuthError('Invalid follow-up status',400)
+        const {error} = await admin.from('call_followups').update({
           status: p.status ?? 'completed',
           completed_at: new Date().toISOString(),
           completed_by: ctx.userId,
         }).eq('id', p.followupId)
+        if(error) throw new Error(error.message)
         await audit(ctx, 'followup.completed', 'call_followup', p.followupId, {})
         return json({ success: true }, 200, corsHeaders)
       }
