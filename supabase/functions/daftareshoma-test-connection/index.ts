@@ -25,6 +25,7 @@ Deno.serve(async req => {
     let probe: any = null
     if (req.headers.get('x-internal-secret')) { try { probe = (await req.json())?.probe ?? null } catch { /* none */ } }
     const data = await dsRequest(probe?.path ?? '/api/Customize/CustomerCallSearch', {method:probe?.method ?? 'POST',body:probe ? probe.body : {fromDate:day,toDate:day,limit:1,pagination:1},query:probe?.query,authMode:probe?.authMode,timeoutMs:20000})
+    if (probe) return json({success:true,probeResult:JSON.stringify(data).slice(0,1500)},200,corsHeaders)
     if (!Array.isArray(data?.data)) throw new Error('پاسخ گزارش تماس دفتر شما معتبر نیست')
     return json({success:true,endpoint:'/api/Customize/CustomerCallSearch',providerTotal:Number(data.totalCount)||0,proxy},200,corsHeaders)
   } catch(e) {
