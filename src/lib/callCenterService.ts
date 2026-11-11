@@ -217,11 +217,11 @@ export async function streamCallTranscript(callId: string, onEvent: (e: Transcri
         else if (line.startsWith('data:')) data.push(line.slice(5).trim());
       }
       if (!data.length) continue;
-      try {
-        const payload = JSON.parse(data.join('\n'));
-        onEvent({ type: event, ...payload } as TranscriptStreamEvent);
-        if (event === 'done' || event === 'error') finished = true;
-      } catch { /* ignore malformed frame */ }
+      let payload: any;
+      try { payload = JSON.parse(data.join('\n')); } catch { continue; }
+      if (event === 'done' || event === 'error') finished = true;
+      if (event === 'error') { reader.cancel().catch(() => {}); throw new Error(payload?.error || 'خطای نامشخص'); }
+      onEvent({ type: event, ...payload } as TranscriptStreamEvent);
     }
   }
   if (!finished) throw new Error('اتصال قبل از پایان قطع شد؛ پردازش در پس‌زمینه ادامه دارد');
