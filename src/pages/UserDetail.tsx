@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import CallButton from '@/components/CallCenter/CallButton';
+import CustomerCallHistory from '@/components/CallCenter/CustomerCallHistory';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -201,7 +202,7 @@ const UserDetail: React.FC = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="overview" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-9 h-auto">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-5 h-auto">
               <TabsTrigger value="overview" className="flex items-center gap-1 text-xs md:text-sm">
                 <User className="w-3 h-3 md:w-4 md:h-4" />
                 <span className="hidden sm:inline">اطلاعات کلی</span>
@@ -246,6 +247,7 @@ const UserDetail: React.FC = () => {
                 <span className="hidden sm:inline">مدیریت نقش</span>
                 <span className="sm:hidden">نقش</span>
               </TabsTrigger>
+              <TabsTrigger value="calls" className="gap-1"><Phone className="h-4 w-4"/>تماس‌ها</TabsTrigger>
             </TabsList>
             
             <TabsContent value="overview" className="space-y-4">
@@ -280,6 +282,7 @@ const UserDetail: React.FC = () => {
             <TabsContent value="financial" className="space-y-4">
               <UserFinancialHistory userId={user.id} />
             </TabsContent>
+            <TabsContent value="calls"><CustomerCallHistory userId={user.id}/></TabsContent>
 
             <TabsContent value="telegram" className="space-y-4">
               <UserTelegramDetails userId={user.id} />

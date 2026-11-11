@@ -505,11 +505,13 @@ Deno.serve(async (req) => {
         const settings = await getSettings()
         const { data: sync } = await admin.from('daftareshoma_sync_state').select('*').eq('id', 1).maybeSingle()
         const { data: rules } = await admin.from('call_automation_rules').select('*').order('display_order')
+        const {data:jobs}=await admin.from('call_center_jobs').select('kind,status,error,started_at,finished_at,result').order('created_at',{ascending:false}).limit(14)
         return json({
           success: true,
           settings,
           sync,
           rules: rules ?? [],
+          jobs:jobs??[],
           tokenConfigured: !!Deno.env.get('DAFTARESHOMA_API_TOKEN'),
           webhookConfigured: !!Deno.env.get('DAFTARESHOMA_WEBHOOK_SECRET'),
           webhookUrl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/daftareshoma-webhook`,

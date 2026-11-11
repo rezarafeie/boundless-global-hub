@@ -105,6 +105,7 @@ const CallCenterSettings: React.FC = () => {
             <div><span className="text-muted-foreground">تعداد تماس همگام‌شده: </span>{Number(state.sync?.calls_synced ?? 0).toLocaleString('fa-IR')}</div>
             {state.sync?.last_error && <div className="text-destructive text-xs">خطای اخیر: {state.sync.last_error}</div>}
           </div>
+          {state.jobs?.length>0&&<div className="space-y-1 text-xs border-t pt-3">{state.jobs.slice(0,7).map((j:any,i:number)=><div key={i} className="flex flex-wrap justify-between gap-2"><span>{{sync:'همگام‌سازی',recording:'ضبط',transcript:'متن مکالمه',analysis:'تحلیل',followups:'پیگیری',attribution:'انتساب فروش',events:'بازیابی اعلان'}[j.kind as string]||j.kind}</span><span className={j.status==='failed'?'text-destructive':'text-muted-foreground'}>{j.result?.skipped?'خاموش در تنظیمات':j.status==='completed'?'انجام شد':j.status==='failed'?'ناموفق':j.status==='processing'?'در حال انجام':'در انتظار'} — {tehranDateTime(j.finished_at||j.started_at)}</span></div>)}</div>}
           <div className="space-y-1">
             <Label className="text-xs">آدرس Webhook (در پنل دفتر شما ثبت کنید)</Label>
             <div className="flex gap-2">
