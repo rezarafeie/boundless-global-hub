@@ -1039,10 +1039,6 @@ const SalesAgentLeads: React.FC = () => {
                     
                     <TabsContent value="overview" className="mt-4">
                       <UserOverview user={selectedUser} />
-                      <div className="mt-4 space-y-2">
-                        <h4 className="text-sm font-semibold">تاریخچه تماس‌ها</h4>
-                        <LeadCallHistory phone={selectedUser.phone || selectedLead?.phone} />
-                      </div>
                     </TabsContent>
                     
                     <TabsContent value="enrollments" className="mt-4">
