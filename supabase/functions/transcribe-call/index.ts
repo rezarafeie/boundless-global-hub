@@ -48,7 +48,10 @@ async function transcribeAudio(blob: Blob, filename: string): Promise<{ text: st
 
 async function run(callId: string) {
   const { data: recording } = await admin.from('call_recordings').select('*').eq('call_id', callId).maybeSingle()
-  if (!recording?.storage_path) throw new Error('فایل ضبط شده برای این تماس موجود نیست')
+  if (!recording?.storage_path || recording.status !== 'ready') {
+    await admin.from('call_transcripts').update({ processing_status: 'skipped', error: 'فایل ضبط معتبر موجود نیست' }).eq('call_id', callId)
+    throw new Error('فایل ضبط شده برای این تماس موجود نیست')
+  }
 
   await admin.from('call_transcripts').upsert({
     call_id: callId, processing_status: 'transcribing', language: 'fa', error: null,
