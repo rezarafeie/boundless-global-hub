@@ -45,7 +45,7 @@ ${catalog || '(کاتالوگ در دسترس نیست)'}
 فقط و فقط JSON معتبر برگردان، بدون متن اضافه و بدون markdown.
 امتیازها بین ۰ تا ۱۰۰ باشند. متن خروجی فارسی باشد.
 ساختار دقیق:
-{"summary":"","customer_intent":"","sentiment":"positive|neutral|negative|mixed","purchase_intent_score":0,"customer_needs":[],"pain_points":[],"objections":[],"products_mentioned":[],"recommended_products":[],"next_action":"","follow_up_required":true,"recommended_follow_up_at":null,"sales_scores":{"opening":0,"discovery":0,"explanation":0,"objection_handling":0,"closing":0,"overall":0},"agent_feedback":"","customer_summary":"","strengths":[""],"weaknesses":[""],"improvements":[{"quote":"جملهٔ گفته‌شده","better":"جملهٔ پیشنهادی","why":""}],"follow_up_suggestions":[{"when":"","channel":"تماس|تلگرام|بله|پیامک","message":""}]}`
+{"summary":"","customer_intent":"","sentiment":"positive|neutral|negative|mixed","purchase_intent_score":0,"customer_needs":[],"pain_points":[],"objections":[],"products_mentioned":[],"recommended_products":[],"next_action":"","follow_up_required":true,"recommended_follow_up_at":"ISO 8601 یا null","sales_scores":{"opening":0,"discovery":0,"explanation":0,"objection_handling":0,"closing":0,"overall":0},"agent_feedback":"","customer_summary":"","strengths":[""],"weaknesses":[""],"improvements":[{"quote":"جملهٔ گفته‌شده","better":"جملهٔ پیشنهادی","why":""}],"follow_up_suggestions":[{"when":"","channel":"تماس|تلگرام|بله|پیامک","message":""}]}`
 
   const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
@@ -92,7 +92,7 @@ ${catalog || '(کاتالوگ در دسترس نیست)'}
     recommended_products: parsed.recommended_products ?? [],
     next_action: parsed.next_action ?? null,
     follow_up_required: parsed.follow_up_required !== false,
-    recommended_follow_up_at: parsed.recommended_follow_up_at ?? null,
+    recommended_follow_up_at: (() => { const d = new Date(parsed.recommended_follow_up_at); return parsed.recommended_follow_up_at && !isNaN(d.getTime()) && /^\d{4}-/.test(String(parsed.recommended_follow_up_at)) ? d.toISOString() : null })(),
     opening_score: clamp(scores.opening),
     discovery_score: clamp(scores.discovery),
     explanation_score: clamp(scores.explanation),
