@@ -95,6 +95,8 @@ Deno.serve(async (req) => {
     await requireInternalOrAdmin(req)
 
     if (body.pending) {
+      const settings=await getSettings()
+      if(!settings.enabled || !settings.recording_sync_enabled) return json({success:true,skipped:true},200,corsHeaders)
       // batch mode for the cron job
       const { data: calls, error } = await admin.rpc('callcenter_pending_recordings', { batch_size: 25 })
       if (error) throw new Error(error.message)

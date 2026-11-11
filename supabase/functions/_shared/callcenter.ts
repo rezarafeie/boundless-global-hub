@@ -569,11 +569,10 @@ export function customerNumberOf(call: { direction: string; caller_number_normal
 /** Resolves the internal agent (chat_users.id) from an extension or agent phone. */
 export async function resolveAgentByExtension(extension: string | null): Promise<number | null> {
   if (!extension) return null
-  const tail = phoneTail(extension)
-  if (tail) {
-    const { data } = await admin.from('chat_users').select('id').like('phone', `%${tail}`).limit(1)
-    if (data?.length) return data[0].id
-  }
+  const { data: mappings } = await admin.from('call_agent_extensions').select('user_id,extension').eq('is_active',true)
+  const canonical=normalizePhone(extension).normalized
+  const ids=new Set((mappings??[]).filter((r:any)=>r.extension===extension || normalizePhone(r.extension).normalized===canonical).map((r:any)=>r.user_id).filter(Boolean))
+  if(ids.size===1) return Number([...ids][0])
   return null
 }
 
@@ -608,7 +607,7 @@ export async function invokeFn(name: string, body: Record<string, unknown>) {
   try {
     const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/${name}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json',
-        Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`, 'x-internal-secret': secret },
+        'x-internal-secret': secret },
       body: JSON.stringify(body),
     })
     if (!response.ok) throw new Error(`Function ${name} returned ${response.status}`)

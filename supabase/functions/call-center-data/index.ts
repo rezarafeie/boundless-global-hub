@@ -17,7 +17,7 @@ const CALL_SELECT = `
   *,
   call_recordings(id, status, storage_path, duration_seconds, mime_type),
   call_transcripts(processing_status),
-  call_ai_analysis(overall_sales_score, purchase_intent_score, sentiment, summary, next_action, follow_up_required)
+  call_ai_analysis(*)
 `
 
 function scope(query: any, ctx: AuthContext, column = 'agent_id') {
@@ -136,9 +136,8 @@ async function callDetail(ctx: AuthContext, callId: string) {
     const { data: u } = await admin.from('chat_users').select('id, name, full_name, phone, email, created_at').eq('id', data.user_id).maybeSingle()
     customer = u
   }
-  const tail = phoneTail(data.direction === 'outgoing' ? data.destination_number_normalized : data.caller_number_normalized)
-  const { data: orders } = tail
-    ? await admin.from('enrollments').select('id, full_name, payment_amount, payment_status, created_at, courses(title)').like('phone', `%${tail}`).order('created_at', { ascending: false }).limit(10)
+  const { data: orders } = data.user_id
+    ? await admin.from('enrollments').select('id, full_name, payment_amount, payment_status, created_at, courses(title)').eq('chat_user_id',data.user_id).order('created_at', { ascending: false }).limit(10)
     : { data: [] as any[] }
 
   return { call: decorated, customer, orders: orders ?? [] }
@@ -328,7 +327,7 @@ Deno.serve(async (req) => {
       }
       case 'save-routing-config': {
         requirePermission(ctx, 'calls.admin')
-        if (!p.config || typeof p.config !== 'object' || !['capture','live'].includes(p.config.mode)) throw new AuthError('Invalid config', 400)
+        if (!p.config || typeof p.config !== 'object' || p.config.mode !== 'capture') throw new AuthError('هدایت واقعی هنوز تأیید نشده است', 400)
         const { error } = await admin.from('call_routing_config').upsert({ id: 1, config: p.config })
         if (error) throw new Error(error.message)
         await audit(ctx, 'routing.config_saved', 'call_routing_config', '1')
@@ -354,7 +353,7 @@ Deno.serve(async (req) => {
       }
       case 'stats-qa': {
         const { data, error } = await admin.rpc('callcenter_stats_qa', { question_kind: p.question_kind,
-          from_date: p.from ?? new Date(Date.now()-30*86400000).toISOString().slice(0,10), to_date: p.to ?? new Date().toISOString().slice(0,10),
+          from_date: p.from ?? null, to_date: p.to ?? null,
           self_agent: ctx.restrictedToSelf ? ctx.userId : null })
         if (error) throw new Error(error.message)
         return json({ success: true, result: data }, 200, corsHeaders)
@@ -399,10 +398,11 @@ Deno.serve(async (req) => {
         if (Object.keys(patch).length) {
           let q = admin.from('calls').update(patch).eq('id', p.callId)
           q = scope(q, ctx)
-          await q
+          const { error } = await q
+          if(error) throw new Error(error.message)
         }
         if (p.followup?.due_at) {
-          await admin.from('call_followups').insert({
+          const { error } = await admin.from('call_followups').insert({
             call_id: p.callId,
             agent_id: ctx.userId,
             type: p.followup.type ?? 'call_back',
@@ -413,6 +413,7 @@ Deno.serve(async (req) => {
             due_at: p.followup.due_at,
             created_by: `user:${ctx.userId}`,
           })
+          if(error) throw new Error(error.message)
         }
         await audit(ctx, 'call.disposition_changed', 'call', p.callId, { disposition: p.disposition })
         return json({ success: true }, 200, corsHeaders)
@@ -429,7 +430,10 @@ Deno.serve(async (req) => {
       }
 
       case 'create-followup': {
-        const { data } = await admin.from('call_followups').insert({
+        requirePermission(ctx, 'calls.create')
+        const due = p.due_at ?? p.dueAt
+        if(!due || !Number.isFinite(new Date(due).getTime())) throw new AuthError('زمان پیگیری معتبر نیست',400)
+        const { data, error } = await admin.from('call_followups').insert({
           call_id: p.callId ?? null,
           user_id: p.userId ?? null,
           lead_id: p.leadId ?? null,
@@ -439,9 +443,10 @@ Deno.serve(async (req) => {
           priority: p.priority ?? 'medium',
           title: p.title ?? 'پیگیری',
           description: p.description ?? null,
-          due_at: p.due_at ?? p.dueAt,
+          due_at: new Date(due).toISOString(),
           created_by: `user:${ctx.userId}`,
         }).select('id').maybeSingle()
+        if(error || !data) throw new Error(error?.message ?? 'پیگیری ذخیره نشد')
         await audit(ctx, 'followup.created', 'call_followup', data?.id ?? null, {})
         return json({ success: true, id: data?.id }, 200, corsHeaders)
       }
@@ -465,6 +470,7 @@ Deno.serve(async (req) => {
           .select('*')
           .in('status', ['ringing', 'initiated', 'in_progress', 'answered'])
           .is('ended_at', null)
+          .not('last_event_at','is',null)
           .gte('started_at', since)
           .order('started_at', { ascending: false })
           .limit(10)
@@ -505,6 +511,7 @@ Deno.serve(async (req) => {
           sync,
           rules: rules ?? [],
           tokenConfigured: !!Deno.env.get('DAFTARESHOMA_API_TOKEN'),
+          webhookConfigured: !!Deno.env.get('DAFTARESHOMA_WEBHOOK_SECRET'),
           webhookUrl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/daftareshoma-webhook`,
         }, 200, corsHeaders)
       }
@@ -520,7 +527,8 @@ Deno.serve(async (req) => {
         ]
         const patch: Record<string, unknown> = {}
         for (const k of allowed) if (k in (p.settings ?? {})) patch[k] = p.settings[k]
-        await admin.from('call_center_settings').update(patch).eq('id', 1)
+        const {error} = await admin.from('call_center_settings').update(patch).eq('id', 1)
+        if(error) throw new Error(error.message)
         await audit(ctx, 'integration.settings_changed', 'call_center_settings', '1', patch)
         return json({ success: true }, 200, corsHeaders)
       }
