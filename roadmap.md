@@ -6,7 +6,8 @@
 - [ ] Connect webhook in NovinHub and verify real form-to-enrollment-to-direct delivery (requires provider registration, actual form ID/payload and an authenticated admin; secret saved)
 
 ## Call center completion
-- [ ] Verify real provider credentials and incoming webhook delivery (real API test returns provider HTTP 500; no incoming event yet)
+- [x] Verify real incoming webhook delivery: 12 processed provider events across all five event types
+- [ ] Verify provider API connection (real report and sync requests return provider HTTP 500)
 - [x] Repair scheduler authentication and bounded background processing; observed completed recording/follow-up/attribution jobs and correctly recorded provider sync failure
 - [x] Finish capture-only routing settings, safe simulator and captured-request viewer
 - [x] Add call reporting with correct question date defaults, webhook-only live status and paginated customer history
