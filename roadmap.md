@@ -5,6 +5,16 @@
 - [x] Verify six rule tests, authenticated event acceptance, duplicate handling, queue drain and editor rendering with sample data
 - [ ] Connect webhook in NovinHub and verify real form-to-enrollment-to-direct delivery (requires provider registration, actual form ID/payload and an authenticated admin; secret saved)
 
+## Call center completion
+- [ ] Verify real provider credentials and incoming webhook delivery
+- [ ] Repair scheduler authentication and background processing
+- [ ] Finish routing settings, safe simulator and captured-request viewer
+- [ ] Add accurate call reporting, live event status and customer history
+- [ ] Repair agent outcomes, follow-up dates, sync messages and banner recovery
+- [ ] Run security/routing tests and verify deployed flows; report external blockers
+- [ ] Connect read-only MCP (requires provider connection URL and credential)
+- [ ] Enable production Call Control only after provider response contract and staged verification
+
 ## Boundless Smart Test V2 conversational rebuild
 - [x] Correct duplicate lead cleanup and test one record per user/course without deleting enrollment history (live admin check unavailable for external authentication)
 - [x] Audit complete V1 journey, content, and reusable media
