@@ -1,5 +1,6 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { admin, invokeFn, getSettings, json } from '../_shared/callcenter.ts'
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void }
 
 // Public requests can wake only work already authorized by the database timer.
 // They cannot enqueue work, change its type, supply call IDs, or bypass settings.

@@ -33,7 +33,7 @@ const LiveCallBanner: React.FC<{ className?: string }> = ({ className }) => {
 
   const load = useCallback(async () => {
     try {
-      const res = await callCenter.liveCalls(3);
+      const res = await callCenter.liveCalls(15);
       failures.current = 0;
       setCalls((res.calls ?? []) as LiveCall[]);
     } catch {
@@ -94,7 +94,8 @@ const LiveCallBanner: React.FC<{ className?: string }> = ({ className }) => {
                 {incoming ? 'تماس ورودی' : 'تماس خروجی'}
                 <span dir="ltr" className="font-mono">{number ?? 'نامشخص'}</span>
                 <Badge variant="secondary" className="font-mono">{elapsed(call.started_at)}</Badge>
-                {call.status === 'ringing' && <Badge className="bg-emerald-600 hover:bg-emerald-600">در حال زنگ خوردن</Badge>}
+                {call.status === 'ringing' && <Badge>در حال زنگ خوردن</Badge>}
+                {['answered','in_progress'].includes(call.status) && <Badge variant="secondary">در حال مکالمه</Badge>}
               </div>
               <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 {call.customer_name
