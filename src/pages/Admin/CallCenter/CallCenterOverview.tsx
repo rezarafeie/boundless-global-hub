@@ -89,7 +89,7 @@ const CallCenterOverview: React.FC<{ agentView?: boolean }> = ({ agentView }) =>
         </div>
         {!agentView && <Button variant="outline" onClick={sync} disabled={syncing} className="gap-2">
           <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} /> همگام‌سازی
-        </Button>
+        </Button>}
       </div>
 
       <section className="space-y-2"><h3 className="text-sm font-medium">فعالیت اخیر از اعلان‌های دفتر شما</h3><LiveCallBanner /></section>

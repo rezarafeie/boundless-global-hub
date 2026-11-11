@@ -1,3 +1,5 @@
+import CallButton from '@/components/CallCenter/CallButton';
+import LeadCallHistory from '@/components/CallCenter/LeadCallHistory';
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -916,6 +918,9 @@ const SalesAgentLeads: React.FC = () => {
                           <Phone className="h-3 w-3" />
                           {formatPhone(lead.phone)}
                         </a>
+                        <span onClick={(e) => e.stopPropagation()} className="inline-block">
+                          <CallButton phone={lead.phone} name={lead.full_name} leadId={lead.id} source="sales_agent_leads" />
+                        </span>
                       </TableCell>
                       <TableCell className="max-w-[150px] truncate">{lead.course_title}</TableCell>
                       <TableCell>{getPaymentStatusBadge(lead.payment_status)}</TableCell>
@@ -973,6 +978,7 @@ const SalesAgentLeads: React.FC = () => {
                     <a href={`tel:${formatPhone(selectedLead.phone)}`} className="text-primary hover:underline text-sm">
                       {formatPhone(selectedLead.phone)}
                     </a>
+                    <CallButton phone={selectedLead.phone} name={selectedLead.full_name} leadId={selectedLead.id} source="sales_agent_leads" />
                   </div>
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
@@ -1033,6 +1039,10 @@ const SalesAgentLeads: React.FC = () => {
                     
                     <TabsContent value="overview" className="mt-4">
                       <UserOverview user={selectedUser} />
+                      <div className="mt-4 space-y-2">
+                        <h4 className="text-sm font-semibold">تاریخچه تماس‌ها</h4>
+                        <LeadCallHistory phone={selectedUser.phone || selectedLead?.phone} />
+                      </div>
                     </TabsContent>
                     
                     <TabsContent value="enrollments" className="mt-4">
