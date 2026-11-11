@@ -5,6 +5,7 @@ import {
 } from '../_shared/callcenter.ts'
 import {
   streamTranscription, streamCorrection, acceptCorrection, TRANSCRIBE_MODEL, CORRECTION_MODEL,
+  streamDiarizedCorrection, parseSegments, acceptDiarized, segmentsToText, DIARIZE_MODEL, type Segment,
 } from '../_shared/call-transcription.ts'
 
 /**
@@ -35,7 +36,7 @@ async function transcribeOpenAI(blob: Blob, filename: string) {
   return { text: String(data.text ?? '').trim(), model }
 }
 
-async function run(callId: string, emit: Emit = () => {}) {
+async function run(callId: string, emit: Emit = () => {}, forceAnalysis = false) {
   const { data: recording } = await admin.from('call_recordings').select('*').eq('call_id', callId).maybeSingle()
   if (!recording?.storage_path || recording.status !== 'ready') {
     await admin.from('call_transcripts').update({ processing_status: 'skipped', error: 'فایل ضبط معتبر موجود نیست' }).eq('call_id', callId)
@@ -75,20 +76,29 @@ async function run(callId: string, emit: Emit = () => {}) {
 
     let finalText = raw
     let correctionModel: string | null = null
+    let segments: Segment[] | null = null
     if (raw && useGateway) {
       emit('stage', { stage: 'correct' })
       try {
-        const corrected = await streamCorrection(raw, (d) => emit('corrected', { delta: d }))
-        if (acceptCorrection(raw, corrected)) { finalText = corrected; correctionModel = CORRECTION_MODEL }
-        else emit('notice', { message: 'تصحیح بیش از حد متن را تغییر داد؛ متن اصلی نگه داشته شد' })
+        const out = await streamDiarizedCorrection(file, raw, (d) => emit('corrected', { delta: d }))
+        const segs = parseSegments(out)
+        if (acceptDiarized(raw, segs)) {
+          segments = segs; finalText = segmentsToText(segs); correctionModel = DIARIZE_MODEL
+          emit('segments', { segments })
+        } else throw new Error('diarization rejected')
       } catch (e) {
-        console.error('correction failed', callId, (e as Error).message)
-        emit('notice', { message: 'تصحیح املایی انجام نشد؛ متن اصلی ذخیره شد' })
+        console.error('diarize failed, falling back', callId, (e as Error).message)
+        try {
+          const corrected = await streamCorrection(raw)
+          if (acceptCorrection(raw, corrected)) { finalText = corrected; correctionModel = CORRECTION_MODEL }
+        } catch { emit('notice', { message: 'تصحیح انجام نشد؛ متن اصلی ذخیره شد' }) }
       }
     }
 
     const { error: saveError } = await admin.from('call_transcripts').update({
       transcript: finalText,
+      segments,
+      speaker_diarization: segments ? { labels: { agent: 'فروشنده', customer: 'مشتری' }, model: DIARIZE_MODEL } : null,
       correction_model: correctionModel,
       corrected_at: correctionModel ? new Date().toISOString() : null,
       processing_status: finalText ? 'completed' : 'empty',
@@ -99,7 +109,10 @@ async function run(callId: string, emit: Emit = () => {}) {
     await admin.from('calls').update({ processing_status: 'transcribed' }).eq('id', callId)
 
     const settings = await getSettings()
-    if (settings.ai_analysis_enabled && finalText) await invokeFn('analyze-call', { callId }).catch(() => {})
+    if (finalText && (forceAnalysis || settings.ai_analysis_enabled)) {
+      emit('stage', { stage: 'analyze' })
+      try { await invokeFn('analyze-call', { callId }) } catch { emit('notice', { message: 'تحلیل تماس ناموفق بود؛ بعداً دوباره تلاش کنید' }) }
+    }
 
     return { length: finalText.length, provider, corrected: !!correctionModel, transcript: finalText }
   } catch (e) {
@@ -126,7 +139,7 @@ function sseResponse(callId: string): Response {
   // Keep the connection alive through proxies while the model is thinking.
   const ping = setInterval(() => { if (open) try { controller.enqueue(encoder.encode(': ping\n\n')) } catch { open = false } }, 10000)
 
-  const work = run(callId, emit)
+  const work = run(callId, emit, true)
     .then((r) => emit('done', r))
     .catch((e) => emit('error', { error: (e as Error).message }))
     .finally(() => { clearInterval(ping); if (open) try { controller.close() } catch { /* closed */ } })

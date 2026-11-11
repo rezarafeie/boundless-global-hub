@@ -1,4 +1,4 @@
-import { streamResponse, transcribeAudioStream } from 'npm:@lovable.dev/ai-gateway@0.1.11'
+import { streamChatCompletion, streamResponse, transcribeAudioStream } from 'npm:@lovable.dev/ai-gateway@0.1.11'
 
 /**
  * Persian call transcription pipeline:
@@ -8,6 +8,7 @@ import { streamResponse, transcribeAudioStream } from 'npm:@lovable.dev/ai-gatew
  */
 export const TRANSCRIBE_MODEL = 'openai/gpt-4o-transcribe' as const
 export const CORRECTION_MODEL = 'openai/gpt-6-astra' as const
+export const DIARIZE_MODEL = 'google/gemini-3.8-flash' as const
 
 export const CORRECTION_INSTRUCTIONS = `تو ویرایشگر املایی متن پیاده‌شدهٔ تماس‌های تلفنی فارسی (فروش و پشتیبانی یک آکادمی آموزشی) هستی.
 فقط غلط‌ها را تصحیح کن و هیچ چیز دیگری را تغییر نده:
@@ -63,3 +64,55 @@ export async function streamCorrection(raw: string, onDelta?: Delta): Promise<st
   }
   return text.trim()
 }
+
+export type Segment = { speaker: 'agent' | 'customer'; text: string }
+
+const DIARIZE_PROMPT = `فایل صوتی یک تماس تلفنی فارسی بین «فروشنده» (کارشناس آکادمی رفیعی) و «مشتری» است. با دقت به صدا گوش کن و متن کامل و دقیق مکالمه را بنویس.
+قوانین:
+- هر نوبت صحبت در یک خط جدا و با پیشوند دقیق «فروشنده: » یا «مشتری: ».
+- دقیقاً همان چیزی که گفته شده؛ محاوره‌ای، بدون خلاصه، بدون بازنویسی، بدون افزودن و بدون حذف. فقط املای درست، نیم‌فاصله و علائم نگارشی.
+- نام‌های رایج: آکادمی رفیعی، سید عباس رفیعی، دوره مزه بدون مرز، بدون مرز، پشتیبانی تلگرام/بله.
+- بخش نامفهوم را با [نامفهوم] مشخص کن.
+- یک پیش‌نویس ماشینی (ممکن است غلط داشته باشد) برای کمک داده شده؛ مرجع اصلی صداست.
+فقط خطوط مکالمه را خروجی بده.`
+
+export function parseSegments(text: string): Segment[] {
+  const out: Segment[] = []
+  for (const line of text.split('\n')) {
+    const m = line.trim().match(/^(فروشنده|مشتری)\s*[:：]\s*(.*)$/)
+    if (m) out.push({ speaker: m[1] === 'فروشنده' ? 'agent' : 'customer', text: m[2].trim() })
+    else if (line.trim() && out.length) out[out.length - 1].text += ' ' + line.trim()
+  }
+  return out.filter((s) => s.text)
+}
+
+/** Listens to the audio itself and returns corrected, speaker-separated lines. */
+export async function streamDiarizedCorrection(file: Blob, raw: string, onDelta?: Delta): Promise<string> {
+  const buf = new Uint8Array(await file.arrayBuffer())
+  let bin = ''
+  for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000))
+  const stream = await streamChatCompletion({
+    model: DIARIZE_MODEL,
+    messages: [{ role: 'user', content: [
+      { type: 'text', text: `${DIARIZE_PROMPT}\n\nپیش‌نویس:\n${raw.slice(0, 20000)}` },
+      { type: 'input_audio', input_audio: { data: btoa(bin), format: 'mp3' } },
+    ] }],
+  } as any)
+  let text = ''
+  for await (const ev of stream as AsyncIterable<any>) {
+    const d = ev?.choices?.[0]?.delta?.content
+    if (typeof d === 'string' && d) { text += d; onDelta?.(d) }
+    else if (ev?.error) throw new Error('تفکیک گوینده ناموفق بود')
+  }
+  return text.trim()
+}
+
+export function acceptDiarized(raw: string, segments: Segment[]): boolean {
+  if (segments.length < 2) return false
+  const len = segments.reduce((n, s) => n + s.text.length, 0)
+  const ratio = len / Math.max(1, raw.trim().length)
+  return ratio >= 0.6 && ratio <= 1.6
+}
+
+export const segmentsToText = (segs: Segment[]) =>
+  segs.map((s) => `${s.speaker === 'agent' ? 'فروشنده' : 'مشتری'}: ${s.text}`).join('\n')

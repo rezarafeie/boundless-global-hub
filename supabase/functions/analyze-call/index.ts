@@ -24,7 +24,7 @@ async function analyze(callId: string) {
   const { data: call } = await admin.from('calls').select('*').eq('id', callId).maybeSingle()
   if (!call) throw new Error('تماس یافت نشد')
 
-  const { data: t } = await admin.from('call_transcripts').select('transcript').eq('call_id', callId).maybeSingle()
+  const { data: t } = await admin.from('call_transcripts').select('transcript, segments').eq('call_id', callId).maybeSingle()
   const transcript = t?.transcript?.trim()
   if (!transcript) throw new Error('متن مکالمه برای تحلیل موجود نیست')
 
@@ -40,11 +40,12 @@ async function analyze(callId: string) {
 کاتالوگ فعلی دوره‌ها:
 ${catalog || '(کاتالوگ در دسترس نیست)'}
 
-مکالمهٔ تلفنی بین کارشناس و مشتری را تحلیل کن.
+مکالمهٔ تلفنی بین کارشناس (فروشنده) و مشتری را تحلیل کن. خطوط با «فروشنده:» و «مشتری:» مشخص شده‌اند.
+پیشنهادها باید مشخص و مستند به همین مکالمه باشند (در صورت امکان جملهٔ واقعی را نقل کن و جملهٔ بهتر را پیشنهاد بده).
 فقط و فقط JSON معتبر برگردان، بدون متن اضافه و بدون markdown.
 امتیازها بین ۰ تا ۱۰۰ باشند. متن خروجی فارسی باشد.
 ساختار دقیق:
-{"summary":"","customer_intent":"","sentiment":"positive|neutral|negative|mixed","purchase_intent_score":0,"customer_needs":[],"pain_points":[],"objections":[],"products_mentioned":[],"recommended_products":[],"next_action":"","follow_up_required":true,"recommended_follow_up_at":null,"sales_scores":{"opening":0,"discovery":0,"explanation":0,"objection_handling":0,"closing":0,"overall":0},"agent_feedback":"","customer_summary":""}`
+{"summary":"","customer_intent":"","sentiment":"positive|neutral|negative|mixed","purchase_intent_score":0,"customer_needs":[],"pain_points":[],"objections":[],"products_mentioned":[],"recommended_products":[],"next_action":"","follow_up_required":true,"recommended_follow_up_at":null,"sales_scores":{"opening":0,"discovery":0,"explanation":0,"objection_handling":0,"closing":0,"overall":0},"agent_feedback":"","customer_summary":"","strengths":[""],"weaknesses":[""],"improvements":[{"quote":"جملهٔ گفته‌شده","better":"جملهٔ پیشنهادی","why":""}],"follow_up_suggestions":[{"when":"","channel":"تماس|تلگرام|بله|پیامک","message":""}]}`
 
   const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
