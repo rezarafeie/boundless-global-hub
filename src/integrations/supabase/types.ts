@@ -1238,6 +1238,39 @@ export type Database = {
         }
         Relationships: []
       }
+      call_center_jobs: {
+        Row: {
+          created_at: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          kind: string
+          result: Json | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          kind: string
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       call_center_settings: {
         Row: {
           ai_analysis_enabled: boolean
@@ -9937,6 +9970,26 @@ export type Database = {
         Args: { at_time?: string; canonical_phone: string }
         Returns: Json
       }
+      callcenter_claim_scheduled_job: {
+        Args: never
+        Returns: {
+          created_at: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          kind: string
+          result: Json | null
+          started_at: string | null
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "call_center_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      callcenter_enqueue_scheduled_jobs: { Args: never; Returns: undefined }
       callcenter_normalize_phone: { Args: { phone: string }; Returns: string }
       callcenter_pending_analysis: {
         Args: { batch_size?: number }
