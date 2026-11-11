@@ -1,0 +1,1 @@
+CREATE POLICY call_center_jobs_server_only ON public.call_center_jobs FOR ALL TO service_role USING(true) WITH CHECK(true);
