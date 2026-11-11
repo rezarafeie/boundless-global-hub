@@ -104,12 +104,13 @@ Deno.serve(async (req) => {
         .from('call_transcripts')
         .select('call_id')
         .in('processing_status', ['pending', 'failed'])
-        .order('updated_at',{ascending:true})
-        .limit(2)
+        .order('created_at',{ascending:false})
+        .limit(6)
       let processed = 0
-      for (const t of pending ?? []) {
+      // Newest calls first, processed in parallel so the backlog clears within a few rounds.
+      await Promise.all((pending ?? []).map(async t => {
         try { await run(t.call_id); processed++ } catch (e) { console.error('transcribe failed', t.call_id, (e as Error).message) }
-      }
+      }))
       return json({ success: true, processed }, 200, corsHeaders)
     }
 
