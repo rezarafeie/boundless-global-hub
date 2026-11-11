@@ -53,6 +53,12 @@ async function fetchAndStore(callId: string) {
   const mime = res.headers.get('content-type')?.split(';')[0] || 'audio/mpeg'
   const ext = EXT_BY_MIME[mime] ?? 'mp3'
   const bytes = new Uint8Array(await res.arrayBuffer())
+  // DaftareShoma sometimes returns a near-empty MP3 stub (header only, <0.5s) for calls that were
+  // not really recorded. Storing it would play as silence and produce a hallucinated transcript.
+  if (bytes.length < 8000 && (call.talk_seconds ?? 0) >= 5) {
+    await admin.from('call_recordings').update({ status: 'unavailable', error: `فایل ضبط دفتر شما خالی است (${bytes.length} بایت)` }).eq('call_id', call.id)
+    throw new Error('فایل ضبط دفتر شما خالی است')
+  }
 
   const started = call.started_at ? new Date(call.started_at) : new Date()
   const path = `${started.getUTCFullYear()}/${String(started.getUTCMonth() + 1).padStart(2, '0')}/${call.id}/recording.${ext}`
@@ -100,7 +106,7 @@ Deno.serve(async (req) => {
       const settings=await getSettings()
       if(!settings.enabled || !settings.recording_sync_enabled) return json({success:true,skipped:true},200,corsHeaders)
       // batch mode for the cron job
-      const { data: calls, error } = await admin.rpc('callcenter_pending_recordings', { batch_size: 2 })
+      const { data: calls, error } = await admin.rpc('callcenter_pending_recordings', { batch_size: 8 })
       if (error) throw new Error(error.message)
 
       let processed = 0

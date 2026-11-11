@@ -1,5 +1,5 @@
 import { corsHeaders } from '../_shared/cors.ts'
-import { requireInternalOrAdmin, dsRequest, AuthError, ProviderError, json } from '../_shared/callcenter.ts'
+import { requireInternalOrAdmin, dsRequest, dsFetch, AuthError, ProviderError, json } from '../_shared/callcenter.ts'
 
 async function pingProxy() {
   const proxy = Deno.env.get('DAFTARESHOMA_PROXY_URL'); const secret = Deno.env.get('DAFTARESHOMA_PROXY_SECRET')
@@ -24,7 +24,13 @@ Deno.serve(async req => {
     const day = new Date().toISOString().slice(0,10)
     let probe: any = null
     if (req.headers.get('x-internal-secret')) { try { probe = (await req.json())?.probe ?? null } catch { /* none */ } }
+    if (probe?.download) {
+      const r = await dsFetch(String(probe.download))
+      const b = new Uint8Array(await r.arrayBuffer())
+      return json({success:true,status:r.status,ct:r.headers.get('content-type'),up:r.headers.get('X-Upstream-Status'),size:b.length,head:new TextDecoder().decode(b.slice(0,400))},200,corsHeaders)
+    }
     const data = await dsRequest(probe?.path ?? '/api/Customize/CustomerCallSearch', {method:probe?.method ?? 'POST',body:probe ? probe.body : {fromDate:day,toDate:day,limit:1,pagination:1},query:probe?.query,authMode:probe?.authMode,timeoutMs:20000})
+    if (probe) return json({success:true,probeResult:JSON.stringify(data).slice(0,1500)},200,corsHeaders)
     if (!Array.isArray(data?.data)) throw new Error('پاسخ گزارش تماس دفتر شما معتبر نیست')
     return json({success:true,endpoint:'/api/Customize/CustomerCallSearch',providerTotal:Number(data.totalCount)||0,proxy},200,corsHeaders)
   } catch(e) {
