@@ -9970,6 +9970,58 @@ export type Database = {
         Args: { at_time?: string; canonical_phone: string }
         Returns: Json
       }
+      callcenter_claim_outgoing: {
+        Args: { agent_user: number; customer_phone: string }
+        Returns: {
+          agent_id: number | null
+          ai_score: number | null
+          answered_at: string | null
+          assigned_team_id: string | null
+          caller_number: string | null
+          caller_number_normalized: string | null
+          campaign_id: string | null
+          consultation_id: string | null
+          created_at: string
+          destination_number: string | null
+          destination_number_normalized: string | null
+          direction: string
+          disposition: string | null
+          ended_at: string | null
+          extension: string | null
+          id: string
+          last_event_at: string | null
+          lead_id: string | null
+          link_source: string | null
+          match_confidence: string | null
+          match_status: string | null
+          notes: string | null
+          order_id: string | null
+          processing_error: string | null
+          processing_status: string
+          provider: string
+          provider_call_id: string
+          purchase_intent_score: number | null
+          raw_payload: Json
+          recording_id: string | null
+          resulted_in_sale: boolean
+          source: string | null
+          started_at: string | null
+          status: string
+          support_ticket_id: string | null
+          talk_seconds: number | null
+          total_seconds: number | null
+          updated_at: string
+          user_id: number | null
+          waiting_seconds: number | null
+          webinar_registration_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "calls"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       callcenter_claim_scheduled_job: {
         Args: never
         Returns: {
