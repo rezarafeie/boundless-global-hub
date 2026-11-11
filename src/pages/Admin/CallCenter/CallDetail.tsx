@@ -14,7 +14,7 @@ import {
 import RecordingPlayer from '@/components/CallCenter/RecordingPlayer';
 import CallButton from '@/components/CallCenter/CallButton';
 import {
-  callCenter, formatDuration, tehranDateTime, STATUS_LABELS, DIRECTION_LABELS,
+  callCenter, formatDuration, tehranDateTime, STATUS_LABELS, DIRECTION_LABELS, streamCallTranscript,
 } from '@/lib/callCenterService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -37,6 +37,7 @@ const CallDetail: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
   const [requestedStage, setRequestedStage] = useState<'auto' | 'recording' | 'transcript' | 'analysis' | null>(null);
+  const [live, setLive] = useState<{ stage: 'download' | 'transcribe' | 'correct' | null; raw: string; corrected: string; notice?: string } | null>(null);
   const [fuTitle, setFuTitle] = useState('');
   const [fuDue, setFuDue] = useState('');
   const [fuPriority, setFuPriority] = useState('medium');
@@ -76,7 +77,32 @@ const CallDetail: React.FC = () => {
     } catch (e) { toast({ title: 'خطا', description: (e as Error).message, variant: 'destructive' }); }
   };
 
+  const transcribeLive = async () => {
+    if (!callId) return;
+    setReprocessing(true);
+    setRequestedStage('transcript');
+    setLive({ stage: 'download', raw: '', corrected: '' });
+    try {
+      await streamCallTranscript(callId, (e) => {
+        if (e.type === 'stage') setLive((l) => l && { ...l, stage: e.stage });
+        else if (e.type === 'raw') setLive((l) => l && { ...l, raw: l.raw + e.delta });
+        else if (e.type === 'raw_done') setLive((l) => l && { ...l, raw: e.text });
+        else if (e.type === 'corrected') setLive((l) => l && { ...l, corrected: l.corrected + e.delta });
+        else if (e.type === 'notice') setLive((l) => l && { ...l, notice: e.message });
+        else if (e.type === 'error') throw new Error(e.error);
+      });
+      setLive(null);
+      await load();
+      toast({ title: 'متن مکالمه آماده شد' });
+    } catch (e) {
+      toast({ title: 'خطا در تبدیل به متن', description: (e as Error).message, variant: 'destructive' });
+      setLive(null);
+      load();
+    } finally { setReprocessing(false); setRequestedStage(null); }
+  };
+
   const reprocess = async (stage: 'auto' | 'recording' | 'transcript' | 'analysis') => {
+    if (stage === 'transcript') return transcribeLive();
     if (!callId) return;
     setReprocessing(true);
     setRequestedStage(stage);
@@ -87,9 +113,7 @@ const CallDetail: React.FC = () => {
         await new Promise((resolve) => setTimeout(resolve, 5000));
         const res: any = await callCenter.call(callId);
         setData(res);
-        const transcript = res.call?.transcript_detail?.[0] ?? res.call?.transcript_detail;
-        if (stage === 'transcript' && ['completed', 'empty', 'failed'].includes(transcript?.processing_status)) break;
-        if (stage !== 'transcript' && !['pending', 'downloading', 'transcribing', 'analyzing'].includes(res.call?.processing_status)) break;
+        if (!['pending', 'downloading', 'transcribing', 'analyzing'].includes(res.call?.processing_status)) break;
       }
     } catch (e) { toast({ title: 'خطا', description: (e as Error).message, variant: 'destructive' }); }
     finally { setReprocessing(false); setRequestedStage(null); }
@@ -219,12 +243,26 @@ const CallDetail: React.FC = () => {
             </Button>
           </CardHeader>
           <CardContent>
-            {tr?.transcript ? (
-              <div className="max-h-80 overflow-y-auto text-sm leading-7 whitespace-pre-wrap">{tr.transcript}</div>
+            {live ? (
+              <div className="space-y-2">
+                <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {live.stage === 'download' ? 'در حال آماده‌سازی فایل صوتی…' : live.stage === 'transcribe' ? 'در حال تبدیل گفتار به متن…' : 'در حال تصحیح غلط‌های املایی…'}
+                </p>
+                <div className="max-h-80 overflow-y-auto text-sm leading-7 whitespace-pre-wrap">
+                  {live.stage === 'correct' && live.corrected ? live.corrected : live.raw}
+                </div>
+                {live.notice && <p className="text-xs text-muted-foreground">{live.notice}</p>}
+              </div>
+            ) : tr?.transcript ? (
+              <div className="space-y-2">
+                <div className="max-h-80 overflow-y-auto text-sm leading-7 whitespace-pre-wrap">{tr.transcript}</div>
+                {tr.correction_model && <p className="text-xs text-muted-foreground">غلط‌های املایی با هوش مصنوعی تصحیح شده است.</p>}
+              </div>
             ) : tr?.processing_status === 'failed' ? (
               <p className="text-sm text-destructive">تبدیل ناموفق بود: {tr.error || 'خطای نامشخص'}</p>
-            ) : ['pending', 'transcribing'].includes(tr?.processing_status) || (reprocessing && requestedStage === 'transcript') ? (
-              <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> در حال تبدیل فایل صوتی به متن…</p>
+            ) : ['pending', 'transcribing'].includes(tr?.processing_status) ? (
+              <p className="text-sm text-muted-foreground">این تماس در صف تبدیل به متن است. برای دریافت فوری، دکمهٔ «تبدیل به متن» را بزنید.</p>
             ) : (
               <p className="text-sm text-muted-foreground">هنوز متنی برای این تماس ثبت نشده است. برای پیاده‌سازی گفتار به متن دکمهٔ بالا را بزنید (نیازمند فایل ضبط‌شده).</p>
             )}

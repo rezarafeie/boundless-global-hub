@@ -1580,6 +1580,8 @@ export type Database = {
       call_transcripts: {
         Row: {
           call_id: string
+          corrected_at: string | null
+          correction_model: string | null
           created_at: string
           error: string | null
           id: string
@@ -1587,6 +1589,7 @@ export type Database = {
           model: string | null
           processing_status: string
           provider: string | null
+          raw_transcript: string | null
           segments: Json | null
           speaker_diarization: Json | null
           transcript: string | null
@@ -1594,6 +1597,8 @@ export type Database = {
         }
         Insert: {
           call_id: string
+          corrected_at?: string | null
+          correction_model?: string | null
           created_at?: string
           error?: string | null
           id?: string
@@ -1601,6 +1606,7 @@ export type Database = {
           model?: string | null
           processing_status?: string
           provider?: string | null
+          raw_transcript?: string | null
           segments?: Json | null
           speaker_diarization?: Json | null
           transcript?: string | null
@@ -1608,6 +1614,8 @@ export type Database = {
         }
         Update: {
           call_id?: string
+          corrected_at?: string | null
+          correction_model?: string | null
           created_at?: string
           error?: string | null
           id?: string
@@ -1615,6 +1623,7 @@ export type Database = {
           model?: string | null
           processing_status?: string
           provider?: string | null
+          raw_transcript?: string | null
           segments?: Json | null
           speaker_diarization?: Json | null
           transcript?: string | null
