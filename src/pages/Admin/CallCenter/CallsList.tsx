@@ -36,7 +36,6 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [agents, setAgents] = useState<any[]>([]);
-  const [periodSyncVersion, setPeriodSyncVersion] = useState(0);
   const debouncedSearch = useDebounce(search, 400);
   const pageSize = 20;
 
@@ -60,30 +59,6 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
 
   useEffect(() => {
     let active = true;
-    if (!fromISO && !toISO) return () => { active = false; };
-    setLoading(true);
-    const syncSelectedPeriod = async () => {
-      const start = new Date(fromISO ?? Date.now() - 24 * 3600 * 1000);
-      const end = new Date(toISO ?? Date.now());
-      // The portal endpoint can time out on busy multi-day ranges. Daily
-      // windows reliably import every page while keeping all filters empty.
-      for (let cursor = start.getTime(); cursor <= end.getTime(); cursor += 24 * 3600 * 1000) {
-        const chunkEnd = Math.min(end.getTime(), cursor + 24 * 3600 * 1000 - 1);
-        await callCenter.syncNow(false, {
-          from: new Date(cursor).toISOString(),
-          to: new Date(chunkEnd).toISOString(),
-        });
-      }
-    };
-    syncSelectedPeriod()
-      .then(() => { if (active) setPeriodSyncVersion((value) => value + 1); })
-      .catch((e) => { if (active) toast({ title: 'خطا در دریافت تماس‌های بازه', description: (e as Error).message, variant: 'destructive' }); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [fromISO, toISO]);
-
-  useEffect(() => {
-    let active = true;
     const loadCalls = async () => {
       setLoading(true);
       try {
@@ -104,15 +79,9 @@ const CallsList: React.FC<Props> = ({ missedOnly }) => {
     };
     loadCalls();
     return () => { active = false; };
-  }, [page, debouncedSearch, direction, status, agentId, missedOnly, fromISO, toISO, periodSyncVersion]);
+  }, [page, debouncedSearch, direction, status, agentId, missedOnly, fromISO, toISO]);
 
   useEffect(() => { setPage(1); }, [debouncedSearch, direction, status, agentId, missedOnly, fromISO, toISO]);
-
-  useEffect(() => {
-    // The provider's all-time count is persisted once in sync state. Once it
-    // exceeds the locally stored count, subsequent mounts reuse that baseline.
-    callCenter.syncNow(false, { allTimeCount: true }).catch(() => {});
-  }, []);
 
   const pages = Math.max(1, Math.ceil(total / pageSize));
 
