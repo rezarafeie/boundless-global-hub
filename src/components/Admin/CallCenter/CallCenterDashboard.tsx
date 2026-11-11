@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LayoutDashboard, PhoneCall, ListTodo, Users, Settings } from 'lucide-react';
+import { LayoutDashboard, PhoneCall, ListTodo, Users, Settings, BarChart3 } from 'lucide-react';
+import CallReports from '@/components/CallCenter/CallReports';
 
 const CallCenterOverview = React.lazy(() => import('@/pages/Admin/CallCenter/CallCenterOverview'));
 const CallsList = React.lazy(() => import('@/pages/Admin/CallCenter/CallsList'));
@@ -18,6 +19,7 @@ const CallCenterDashboard: React.FC = () => (
       <TabsTrigger value="queues" className="gap-1"><ListTodo className="h-4 w-4" /> صف‌ها</TabsTrigger>
       <TabsTrigger value="agents" className="gap-1"><Users className="h-4 w-4" /> کارشناسان</TabsTrigger>
       <TabsTrigger value="settings" className="gap-1"><Settings className="h-4 w-4" /> تنظیمات</TabsTrigger>
+      <TabsTrigger value="reports" className="gap-1"><BarChart3 className="h-4 w-4" /> پرسش و گزارش</TabsTrigger>
     </TabsList>
 
     <TabsContent value="overview"><Suspense fallback={<Fallback />}><CallCenterOverview /></Suspense></TabsContent>
@@ -25,6 +27,7 @@ const CallCenterDashboard: React.FC = () => (
     <TabsContent value="queues"><Suspense fallback={<Fallback />}><CallQueues /></Suspense></TabsContent>
     <TabsContent value="agents"><Suspense fallback={<Fallback />}><CallAgents /></Suspense></TabsContent>
     <TabsContent value="settings"><Suspense fallback={<Fallback />}><CallCenterSettings /></Suspense></TabsContent>
+    <TabsContent value="reports"><CallReports /></TabsContent>
   </Tabs>
 );
 
