@@ -169,7 +169,7 @@ export const PRIORITY_LABELS: Record<string, string> = {
 };
 
 export type TranscriptStreamEvent =
-  | { type: 'stage'; stage: 'download' | 'transcribe' | 'correct' }
+  | { type: 'stage'; stage: 'download' | 'transcribe' | 'correct' | 'analyze' }
   | { type: 'raw'; delta: string }
   | { type: 'raw_done'; text: string }
   | { type: 'corrected'; delta: string }

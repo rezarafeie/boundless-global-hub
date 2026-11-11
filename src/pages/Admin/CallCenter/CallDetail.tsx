@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import {
   ArrowRight, Sparkles, FileText, Save, RefreshCw, Loader2, PhoneCall, User, Clock, Flame,
 } from 'lucide-react';
+import { CallInsights, ConversationBubbles, parseSpeakerLines } from '@/components/CallCenter/CallConversation';
 import RecordingPlayer from '@/components/CallCenter/RecordingPlayer';
 import CallButton from '@/components/CallCenter/CallButton';
 import {
@@ -37,7 +38,7 @@ const CallDetail: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
   const [requestedStage, setRequestedStage] = useState<'auto' | 'recording' | 'transcript' | 'analysis' | null>(null);
-  const [live, setLive] = useState<{ stage: 'download' | 'transcribe' | 'correct' | null; raw: string; corrected: string; notice?: string } | null>(null);
+  const [live, setLive] = useState<{ stage: 'download' | 'transcribe' | 'correct' | 'analyze' | null; raw: string; corrected: string; notice?: string } | null>(null);
   const [fuTitle, setFuTitle] = useState('');
   const [fuDue, setFuDue] = useState('');
   const [fuPriority, setFuPriority] = useState('medium');
@@ -202,37 +203,7 @@ const CallDetail: React.FC = () => {
           </Card>
         </div>
 
-        {ai && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2"><Sparkles className="h-4 w-4" /> تحلیل هوشمند تماس</CardTitle>
-              <CardDescription>این تحلیل توسط هوش مصنوعی تولید شده و ممکن است دقیق نباشد.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                {ai.overall_sales_score != null && <Badge variant="secondary">امتیاز کلی: {ai.overall_sales_score}</Badge>}
-                {ai.purchase_intent_score != null && (
-                  <Badge className="gap-1"><Flame className="h-3 w-3" /> قصد خرید: {ai.purchase_intent_score}</Badge>
-                )}
-                {ai.sentiment && <Badge variant="outline">حس کلی: {ai.sentiment}</Badge>}
-                {ai.customer_stage && <Badge variant="outline">مرحله: {ai.customer_stage}</Badge>}
-              </div>
-              {ai.summary && <p className="text-sm leading-7 whitespace-pre-wrap">{ai.summary}</p>}
-              {!!ai.objections?.length && (
-                <div><div className="text-xs text-muted-foreground mb-1">اعتراض‌ها و موانع</div>
-                  <ul className="list-disc pr-5 text-sm space-y-1">{ai.objections.map((o: string, i: number) => <li key={i}>{o}</li>)}</ul></div>
-              )}
-              {!!ai.next_action && (
-                <div><div className="text-xs text-muted-foreground mb-1">اقدامات پیشنهادی</div>
-                  <p className="text-sm leading-7">{ai.next_action}</p></div>
-              )}
-              {ai.agent_feedback && (
-                <div><div className="text-xs text-muted-foreground mb-1">بازخورد مربی‌گری</div>
-                  <p className="text-sm leading-7 whitespace-pre-wrap">{ai.agent_feedback}</p></div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+        {ai && <CallInsights ai={ai} />}
 
         <Card>
           <CardHeader className="pb-3 flex-row items-center justify-between gap-2 space-y-0">
@@ -247,17 +218,23 @@ const CallDetail: React.FC = () => {
               <div className="space-y-2">
                 <p className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  {live.stage === 'download' ? 'در حال آماده‌سازی فایل صوتی…' : live.stage === 'transcribe' ? 'در حال تبدیل گفتار به متن…' : 'در حال تصحیح غلط‌های املایی…'}
+                  {live.stage === 'download' ? 'در حال آماده‌سازی فایل صوتی…' : live.stage === 'transcribe' ? 'در حال تبدیل گفتار به متن…' : live.stage === 'correct' ? 'در حال تصحیح متن و جدا کردن فروشنده و مشتری…' : 'در حال تحلیل مکالمه و آماده‌سازی پیشنهادها…'}
                 </p>
-                <div className="max-h-80 overflow-y-auto text-sm leading-7 whitespace-pre-wrap">
-                  {live.stage === 'correct' && live.corrected ? live.corrected : live.raw}
+                <div className="max-h-[32rem] overflow-y-auto">
+                  {live.corrected && parseSpeakerLines(live.corrected).length
+                    ? <ConversationBubbles segments={parseSpeakerLines(live.corrected)} />
+                    : <p className="text-sm leading-7 whitespace-pre-wrap text-muted-foreground">{live.raw}</p>}
                 </div>
                 {live.notice && <p className="text-xs text-muted-foreground">{live.notice}</p>}
               </div>
             ) : tr?.transcript ? (
               <div className="space-y-2">
-                <div className="max-h-80 overflow-y-auto text-sm leading-7 whitespace-pre-wrap">{tr.transcript}</div>
-                {tr.correction_model && <p className="text-xs text-muted-foreground">غلط‌های املایی با هوش مصنوعی تصحیح شده است.</p>}
+                <div className="max-h-[32rem] overflow-y-auto">
+                  {Array.isArray(tr.segments) && tr.segments.length
+                    ? <ConversationBubbles segments={tr.segments} />
+                    : <p className="text-sm leading-7 whitespace-pre-wrap">{tr.transcript}</p>}
+                </div>
+                {tr.correction_model && <p className="text-xs text-muted-foreground">متن با گوش دادن دوبارهٔ هوش مصنوعی به صدا تصحیح شده است.</p>}
               </div>
             ) : tr?.processing_status === 'failed' ? (
               <p className="text-sm text-destructive">تبدیل ناموفق بود: {tr.error || 'خطای نامشخص'}</p>
