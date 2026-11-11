@@ -91,7 +91,7 @@ export const callCenter = {
   agents: (params: Record<string, unknown> = {}) => callFunction('call-center-data', { action: 'agents', params }),
   agentList: () => callFunction<{ agents: any[] }>('call-center-data', { action: 'agent-list', params: {} }),
   dispositions: () => callFunction<{ dispositions: any[] }>('call-center-data', { action: 'dispositions', params: {} }),
-  recordingUrl: (callId: string) => callFunction<{ url: string; mime: string }>('call-center-data', { action: 'recording-url', params: { callId } }),
+  recordingUrl: (callId: string) => callFunction<{ url: string | null; mime: string | null; reason?: string }>('call-center-data', { action: 'recording-url', params: { callId } }),
   transcript: (callId: string) => callFunction<{ transcript: any }>('call-center-data', { action: 'transcript', params: { callId } }),
   liveCalls: (windowMinutes = 3) =>
     callFunction<{ calls: CallRow[] }>('call-center-data', { action: 'live-calls', params: { windowMinutes } }),
