@@ -303,6 +303,12 @@ export async function dsRequest(
     try { parsed = text ? JSON.parse(text) : null } catch { /* keep text */ }
 
     if (!res.ok) {
+      const viaProxy = !!Deno.env.get('DAFTARESHOMA_PROXY_URL')
+      const proxyErr = parsed && typeof parsed === 'object' ? (parsed as any).proxy_error : undefined
+      if (viaProxy && proxyErr) throw new ProviderError(`خطای پروکسی ایران: ${proxyErr}`, res.status, parsed)
+      if (viaProxy && !res.headers.get('X-Rafiei-Proxy')) {
+        throw new ProviderError(`پروکسی ایران پاسخ معتبر نداد (${res.status}) — نسخه جدید فایل پروکسی روی سرور نیست یا PHP خطا داد`, res.status, parsed)
+      }
       const msg = res.status === 401 || res.status === 403
         ? 'توکن دفتر شما معتبر نیست یا دسترسی ندارد'
         : res.status === 429
