@@ -177,17 +177,26 @@ Deno.serve(async (req) => {
     if (body.pending) {
       const settings = await getSettings()
       if (!settings.enabled || !settings.transcription_enabled) return json({ success: true, skipped: true }, 200, corsHeaders)
+      // Bounded run: up to 40 calls, 4 at a time, stop starting new work after ~95s.
+      const started = Date.now()
+      const BUDGET_MS = 95_000, MAX_ITEMS = 40, CONCURRENCY = 4
+      const retryBefore = new Date(Date.now() - 30 * 60_000).toISOString()
       const { data: pending } = await admin
         .from('call_transcripts')
         .select('call_id')
-        .in('processing_status', ['pending', 'failed'])
+        .or(`processing_status.eq.pending,and(processing_status.eq.failed,updated_at.lt.${retryBefore})`)
         .order('created_at', { ascending: false })
-        .limit(6)
-      let processed = 0
-      await Promise.all((pending ?? []).map(async (t) => {
-        try { await run(t.call_id); processed++ } catch (e) { console.error('transcribe failed', t.call_id, (e as Error).message) }
-      }))
-      return json({ success: true, processed }, 200, corsHeaders)
+        .limit(MAX_ITEMS)
+      const queue = (pending ?? []).map((t) => t.call_id as string)
+      let processed = 0, failed = 0
+      const worker = async () => {
+        while (queue.length && Date.now() - started < BUDGET_MS) {
+          const id = queue.shift()!
+          try { await run(id); processed++ } catch (e) { failed++; console.error('transcribe failed', id, (e as Error).message) }
+        }
+      }
+      await Promise.all(Array.from({ length: CONCURRENCY }, worker))
+      return json({ success: true, processed, failed, remaining: queue.length }, 200, corsHeaders)
     }
 
     if (!body.callId) return json({ success: false, error: 'callId الزامی است' }, 400, corsHeaders)
