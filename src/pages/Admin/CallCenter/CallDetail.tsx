@@ -113,9 +113,7 @@ const CallDetail: React.FC = () => {
         await new Promise((resolve) => setTimeout(resolve, 5000));
         const res: any = await callCenter.call(callId);
         setData(res);
-        const transcript = res.call?.transcript_detail?.[0] ?? res.call?.transcript_detail;
-        if (stage === 'transcript' && ['completed', 'empty', 'failed'].includes(transcript?.processing_status)) break;
-        if (stage !== 'transcript' && !['pending', 'downloading', 'transcribing', 'analyzing'].includes(res.call?.processing_status)) break;
+        if (!['pending', 'downloading', 'transcribing', 'analyzing'].includes(res.call?.processing_status)) break;
       }
     } catch (e) { toast({ title: 'خطا', description: (e as Error).message, variant: 'destructive' }); }
     finally { setReprocessing(false); setRequestedStage(null); }
