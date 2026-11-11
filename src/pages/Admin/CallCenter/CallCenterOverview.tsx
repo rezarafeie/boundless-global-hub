@@ -26,7 +26,7 @@ const KPI: React.FC<{ icon: React.ElementType; label: string; value: React.React
 
 const dayKey = (iso: string) => new Date(iso).toLocaleDateString('fa-IR', { timeZone: 'Asia/Tehran', month: '2-digit', day: '2-digit' });
 
-const CallCenterOverview: React.FC = () => {
+const CallCenterOverview: React.FC<{ agentView?: boolean }> = ({ agentView }) => {
   const { toast } = useToast();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -87,9 +87,9 @@ const CallCenterOverview: React.FC = () => {
           <h2 className="text-xl font-bold">مرکز تماس</h2>
           <p className="text-sm text-muted-foreground">۳۰ روز گذشته</p>
         </div>
-        <Button variant="outline" onClick={sync} disabled={syncing} className="gap-2">
+        {!agentView && <Button variant="outline" onClick={sync} disabled={syncing} className="gap-2">
           <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} /> همگام‌سازی
-        </Button>
+        </Button>}
       </div>
 
       <section className="space-y-2"><h3 className="text-sm font-medium">فعالیت اخیر از اعلان‌های دفتر شما</h3><LiveCallBanner /></section>

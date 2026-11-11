@@ -537,7 +537,7 @@ const EnrollmentAdmin: React.FC = () => {
         return (
           <ErrorBoundary>
             <Suspense fallback={<LoadingSpinner />}>
-              <CallCenterDashboard />
+              <CallCenterDashboard agentView={isSalesAgent && !isMessengerAdmin && userRole !== 'sales_manager'} />
             </Suspense>
           </ErrorBoundary>
         );
