@@ -1,3 +1,4 @@
+import { requireInternalOrAdmin } from '../_shared/callcenter.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 import { admin, authenticate, requirePermission, audit, AuthError, getSettings, invokeFn, json } from '../_shared/callcenter.ts'
 
@@ -72,7 +73,7 @@ async function run(callId: string) {
     await admin.from('calls').update({ processing_status: 'transcribed' }).eq('id', callId)
 
     const settings = await getSettings()
-    if (settings.ai_analysis_enabled && text?.trim()) invokeFn('analyze-call', { callId })
+    if (settings.ai_analysis_enabled && text?.trim()) await invokeFn('analyze-call', { callId })
 
     return { length: text?.length ?? 0, provider }
   } catch (e) {
@@ -90,11 +91,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}))
 
-    if (!body.internal) {
-      const ctx = await authenticate(req, body.sessionToken)
-      requirePermission(ctx, 'calls.manage')
-      await audit(ctx, 'call.transcribe_requested', 'call', body.callId, {})
-    }
+    await requireInternalOrAdmin(req)
 
     if (body.pending) {
       const { data: pending } = await admin

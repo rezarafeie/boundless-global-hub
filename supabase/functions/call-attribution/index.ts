@@ -1,5 +1,6 @@
+import { requireInternalOrAdmin } from '../_shared/callcenter.ts'
 import { corsHeaders } from '../_shared/cors.ts'
-import { admin, authenticate, requirePermission, AuthError, getSettings, phoneTail, json } from '../_shared/callcenter.ts'
+import { admin, authenticate, requirePermission, AuthError, getSettings, normalizePhone, json } from '../_shared/callcenter.ts'
 
 /**
  * Phone-assisted revenue attribution.
@@ -7,16 +8,17 @@ import { admin, authenticate, requirePermission, AuthError, getSettings, phoneTa
  * the attribution window after one or more answered calls.
  */
 async function attributeEnrollment(enrollment: any, windowDays: number) {
-  const tail = phoneTail(enrollment.phone)
+  if (!['completed', 'success', 'paid'].includes(enrollment.payment_status)) return null
+  const tail = normalizePhone(enrollment.phone).normalized
   if (!tail) return null
 
-  const purchaseAt = new Date(enrollment.updated_at ?? enrollment.created_at)
+  const purchaseAt = new Date(enrollment.approved_at ?? enrollment.created_at)
   const windowStart = new Date(purchaseAt.getTime() - windowDays * 24 * 3600 * 1000)
 
   const { data: calls } = await admin
     .from('calls')
     .select('id, agent_id, started_at, talk_seconds, status')
-    .or(`caller_number_normalized.like.%${tail},destination_number_normalized.like.%${tail}`)
+    .or(`caller_number_normalized.eq.${tail},destination_number_normalized.eq.${tail}`)
     .eq('status', 'answered')
     .gte('started_at', windowStart.toISOString())
     .lte('started_at', purchaseAt.toISOString())
@@ -52,10 +54,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}))
-    if (!body.internal && !body.cron) {
-      const ctx = await authenticate(req, body.sessionToken)
-      requirePermission(ctx, 'calls.analytics')
-    }
+    await requireInternalOrAdmin(req)
 
     const settings = await getSettings()
     const windowDays = Number(body.windowDays ?? settings.attribution_window_days ?? 7)
@@ -63,14 +62,14 @@ Deno.serve(async (req) => {
 
     let query = admin
       .from('enrollments')
-      .select('id, phone, payment_amount, payment_status, created_at, updated_at')
-      .in('payment_status', ['completed', 'success'])
+      .select('id, phone, payment_amount, payment_status, created_at, approved_at, updated_at')
+      .in('payment_status', ['completed', 'success', 'paid'])
       .order('updated_at', { ascending: false })
       .limit(500)
 
     if (body.enrollmentId) query = admin
       .from('enrollments')
-      .select('id, phone, payment_amount, payment_status, created_at, updated_at')
+      .select('id, phone, payment_amount, payment_status, created_at, approved_at, updated_at')
       .eq('id', body.enrollmentId)
     else query = query.gte('updated_at', new Date(Date.now() - lookbackDays * 24 * 3600 * 1000).toISOString())
 

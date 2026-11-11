@@ -1,3 +1,5 @@
+import { requireCallAccess } from '../_shared/callcenter.ts'
+import { decideRoute } from '../_shared/call-routing.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 import {
   admin, authenticate, requirePermission, audit, AuthError,
@@ -123,9 +125,10 @@ async function callDetail(ctx: AuthContext, callId: string) {
   if (!data) throw new AuthError('تماس یافت نشد یا دسترسی ندارید', 404)
 
   const recording = Array.isArray(data.call_recordings) ? data.call_recordings[0] : data.call_recordings
-  if (data.recording_id && !recording?.storage_path && recording?.status !== 'downloading') {
-    invokeFn('process-call-recording', { callId: data.id, internal: true })
+  if (ctx.permissions.includes('calls.manage') && data.recording_id && !recording?.storage_path && recording?.status !== 'downloading') {
+    await invokeFn('process-call-recording', { callId: data.id, internal: true })
   }
+  if (!ctx.permissions.includes('calls.view_transcript')) { delete (data as any).transcript_detail; delete (data as any).call_transcripts }
   const [decorated] = await decorate([data])
 
   let customer: any = null
@@ -307,7 +310,56 @@ Deno.serve(async (req) => {
     const action = String(body.action ?? '')
     const p = body.params ?? {}
 
+    if (['recording-url','transcript','save-outcome','link-call','create-followup'].includes(action) && p.callId) await requireCallAccess(ctx, p.callId)
+    if (action === 'complete-followup') {
+      let q = admin.from('call_followups').select('id, call_id').eq('id', p.followupId)
+      if (ctx.restrictedToSelf) q = q.eq('agent_id', ctx.userId)
+      const { data: followup, error } = await q.maybeSingle()
+      if (error) throw new Error(error.message)
+      if (!followup) throw new AuthError('Followup not found', 404)
+      if (followup.call_id) await requireCallAccess(ctx, followup.call_id)
+    }
     switch (action) {
+      case 'get-routing-config': {
+        requirePermission(ctx, 'calls.admin')
+        const { data, error } = await admin.from('call_routing_config').select('config').eq('id', 1).single()
+        if (error) throw new Error(error.message)
+        return json({ success: true, config: data.config }, 200, corsHeaders)
+      }
+      case 'save-routing-config': {
+        requirePermission(ctx, 'calls.admin')
+        if (!p.config || typeof p.config !== 'object' || !['capture','live'].includes(p.config.mode)) throw new AuthError('Invalid config', 400)
+        const { error } = await admin.from('call_routing_config').upsert({ id: 1, config: p.config })
+        if (error) throw new Error(error.message)
+        await audit(ctx, 'routing.config_saved', 'call_routing_config', '1')
+        return json({ success: true }, 200, corsHeaders)
+      }
+      case 'simulate-routing': {
+        if (ctx.restrictedToSelf) throw new AuthError('Manager required', 403)
+        const at = p.at ? new Date(p.at) : new Date()
+        if (!Number.isFinite(at.getTime())) throw new AuthError('Invalid date', 400)
+        const [{ data, error }, { data: row, error: configError }] = await Promise.all([
+          admin.rpc('callcenter_caller_facts', { canonical_phone: normalizePhone(p.phone).normalized, at_time: at.toISOString() }),
+          admin.from('call_routing_config').select('config').eq('id', 1).single(),
+        ])
+        if (error || configError) throw new Error('Routing lookup failed')
+        return json({ decision: decideRoute(data ?? {}, row.config, at), caller_facts: data }, 200, corsHeaders)
+      }
+      case 'list-call-control-requests': {
+        requirePermission(ctx, 'calls.admin')
+        const page = Math.max(1, Math.floor(Number(p.page) || 1)), pageSize = Math.min(100, Math.max(1, Math.floor(Number(p.pageSize) || 20)))
+        const { data, count, error } = await admin.from('call_control_requests').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range((page-1)*pageSize, page*pageSize-1)
+        if (error) throw new Error(error.message)
+        return json({ requests: data, total: count, page, pageSize }, 200, corsHeaders)
+      }
+      case 'stats-qa': {
+        const { data, error } = await admin.rpc('callcenter_stats_qa', { question_kind: p.question_kind,
+          from_date: p.from ?? new Date(Date.now()-30*86400000).toISOString().slice(0,10), to_date: p.to ?? new Date().toISOString().slice(0,10),
+          self_agent: ctx.restrictedToSelf ? ctx.userId : null })
+        if (error) throw new Error(error.message)
+        return json({ success: true, result: data }, 200, corsHeaders)
+      }
+
       case 'overview':
         return json({ success: true, ...(await overview(ctx, p)) }, 200, corsHeaders)
 
@@ -381,13 +433,13 @@ Deno.serve(async (req) => {
           call_id: p.callId ?? null,
           user_id: p.userId ?? null,
           lead_id: p.leadId ?? null,
-          agent_id: p.agentId ?? ctx.userId,
+          agent_id: ctx.restrictedToSelf ? ctx.userId : (p.agentId ?? ctx.userId),
           type: p.type ?? 'call_back',
           status: 'pending',
           priority: p.priority ?? 'medium',
           title: p.title ?? 'پیگیری',
           description: p.description ?? null,
-          due_at: p.due_at,
+          due_at: p.due_at ?? p.dueAt,
           created_by: `user:${ctx.userId}`,
         }).select('id').maybeSingle()
         await audit(ctx, 'followup.created', 'call_followup', data?.id ?? null, {})
@@ -399,7 +451,7 @@ Deno.serve(async (req) => {
         await admin.from('calls').update({
           user_id: p.userId ?? null,
           lead_id: p.leadId ?? null,
-          match_confidence: 'manual',
+          match_confidence: 'manual', link_source: 'manual', match_status: 'matched',
         }).eq('id', p.callId)
         await audit(ctx, 'call.relinked', 'call', p.callId, { userId: p.userId, leadId: p.leadId })
         return json({ success: true }, 200, corsHeaders)
@@ -411,24 +463,25 @@ Deno.serve(async (req) => {
         const since = new Date(Date.now() - windowMs).toISOString()
         let q = admin.from('calls')
           .select('*')
-          .in('status', ['ringing', 'initiated'])
+          .in('status', ['ringing', 'initiated', 'in_progress', 'answered'])
           .is('ended_at', null)
           .gte('started_at', since)
           .order('started_at', { ascending: false })
           .limit(10)
-        if (ctx.restrictedToSelf) q = q.or(`agent_id.eq.${ctx.userId},agent_id.is.null`)
+        if (ctx.restrictedToSelf) q = q.eq('agent_id', ctx.userId)
         const { data, error } = await q
         if (error) return json({ success: false, error: error.message }, 500, corsHeaders)
         return json({ success: true, calls: await decorate(data ?? []) }, 200, corsHeaders)
       }
 
+      case 'history':
       case 'lookup': {
         const match = await matchCrmRecords(normalizePhone(p.phone).normalized)
         let history: any[] = []
         const tail = phoneTail(p.phone)
         if (tail) {
-          const { data } = await admin.from('calls')
-            .select('id, direction, status, started_at, talk_seconds, agent_id')
+          const { data } = await scope(admin.from('calls')
+            .select('id, direction, status, started_at, talk_seconds, agent_id'), ctx)
             .or(`caller_number_normalized.like.%${tail},destination_number_normalized.like.%${tail}`)
             .order('started_at', { ascending: false }).limit(10)
           history = data ?? []

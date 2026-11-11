@@ -1,356 +1,42 @@
 import { corsHeaders } from '../_shared/cors.ts'
-import {
-  admin, authenticate, requirePermission, audit, AuthError, dsPortalRequest, ProviderError,
-  normalizeProviderCall, matchCrmRecords, customerNumberOf, resolveAgentByExtension,
-  getSettings, json,
-} from '../_shared/callcenter.ts'
-
-
-const PAGE_SIZE = 25
-
-function extractRecords(data: any): Record<string, any>[] {
-  if (!data) return []
-  if (Array.isArray(data)) {
-    for (const item of data) {
-      if (item && typeof item === 'object' && 'calls' in item) {
-        const nested = extractRecords((item as Record<string, unknown>).calls)
-        if (nested.length) return nested
-      }
-    }
-    return data
-  }
-  for (const [key, value] of Object.entries(data)) {
-    if (key.toLowerCase() !== 'calls') continue
-    const nested = extractRecords(value)
-    if (nested.length) return nested
-  }
-  const keys = new Set(['items', 'data', 'result', 'results', 'records', 'callreports', 'calls', 'list', 'rows', 'entities'])
-  for (const [key, v] of Object.entries(data)) {
-    if (!keys.has(key.toLowerCase())) continue
-    if (Array.isArray(v) && v.length) {
-      if (key.toLowerCase() === 'calls') return v as Record<string, any>[]
-      const nested = extractRecords(v)
-      if (nested.length) return nested
-    }
-    if (v && typeof v === 'object') {
-      const nested = extractRecords(v)
-      if (nested.length) return nested
-    }
-  }
-  // Portal versions wrap the grid rows under varying model names. Fall back
-  // to the first nested object array rather than silently importing zero rows.
-  for (const value of Object.values(data)) {
-    if (Array.isArray(value) && value.length && typeof value[0] === 'object') return value as Record<string, any>[]
-    if (value && typeof value === 'object') {
-      const nested = extractRecords(value)
-      if (nested.length) return nested
-    }
-  }
-  return []
-}
-
-async function createMissedCallFollowup(call: any, settings: any, priorityOverride?: string) {
-  const { data: existing } = await admin
-    .from('call_followups')
-    .select('id')
-    .eq('call_id', call.id)
-    .neq('status', 'cancelled')
-    .maybeSingle()
-  if (existing) return
-
-  let priority = priorityOverride ?? 'medium'
-  if (!priorityOverride) {
-    const rules = settings.missed_call_priority_rules ?? {}
-    if (call.order_id) priority = rules.existing_customer ?? 'medium'
-    if (call.webinar_registration_id) priority = rules.recent_webinar ?? 'high'
-    if (call.consultation_id) priority = rules.active_consultation ?? 'high'
-    if (call.lead_id && !call.order_id) priority = rules.active_checkout ?? 'critical'
-    if (!call.user_id && !call.lead_id) priority = rules.unknown ?? 'medium'
-  }
-
-  await admin.from('call_followups').insert({
-    call_id: call.id,
-    user_id: call.user_id,
-    lead_id: call.lead_id,
-    agent_id: call.agent_id,
-    type: 'missed_call',
-    status: 'pending',
-    priority,
-    title: 'بازگشت تماس از دست رفته',
-    description: `تماس بی‌پاسخ از ${call.caller_number ?? 'نامشخص'}`,
-    due_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-    created_by: 'automation',
-  })
-
-  // NOTE: never insert into public `notifications` — that table is a site-wide
-  // banner feed visible to every visitor. Missed calls surface to the owning
-  // agent through `call_followups` inside the Call Center dashboard instead.
-}
-
-function extractTotal(data: any): number | null {
-  if (!data || typeof data !== 'object') return null
-  const totalKeys = new Set(['totalcount', 'total', 'count', 'totalrecords', 'recordscount', 'totalitems'])
-  for (const [key, value] of Object.entries(data)) {
-    if (totalKeys.has(key.toLowerCase())) {
-      const parsed = Number(value)
-      if (Number.isFinite(parsed) && parsed >= 0) return parsed
-    }
-  }
-  for (const value of Object.values(data)) {
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        const nested = extractTotal(item)
-        if (nested !== null) return nested
-      }
-    }
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      const nested = extractTotal(value)
-      if (nested !== null) return nested
-    }
-  }
-  return null
-}
-
-const portalDate = (date: Date) => `${date.toISOString().slice(0, 10)} ${date.toISOString().slice(11, 23)} `
-
-const portalSearchBody = (from: Date | null, to: Date | null, pageNumber: number) => ({
-  disablePaging: false,
-  pageNumber,
-  pageSize: PAGE_SIZE,
-  whereConditionText: from && to
-    ? `StartTime>=\"${portalDate(from)}\"  && StartTime<=\"${portalDate(to)}\" `
-    : '',
-  sortText: '',
-})
-
-async function runSync(ctx: any, opts: { full?: boolean; from?: string; to?: string; allTimeCount?: boolean } = {}) {
-  const settings = await getSettings()
-  const { data: state } = await admin.from('daftareshoma_sync_state').select('*').eq('id', 1).maybeSingle()
-
-  if (opts.allTimeCount) {
-    const { count: storedCount } = await admin.from('calls').select('id', { count: 'exact', head: true }).eq('provider', 'daftareshoma')
-    if ((state?.calls_synced ?? 0) > (storedCount ?? 0)) {
-      return { providerTotal: state.calls_synced, stored: storedCount ?? 0, counted: false }
-    }
-  }
-
-  await admin.from('daftareshoma_sync_state').update({ last_attempt_at: new Date().toISOString() }).eq('id', 1)
-
-  // the stored cursor can drift; never start later than the newest stored call
-  const { data: newestCall } = await admin
-    .from('calls').select('started_at').eq('provider', 'daftareshoma')
-    .order('started_at', { ascending: false }).limit(1).maybeSingle()
-  const cursorCandidates = [state?.last_synced_at, newestCall?.started_at]
-    .filter(Boolean).map((v) => new Date(v as string).getTime())
-  const cursor = cursorCandidates.length ? Math.min(...cursorCandidates) : null
-
-  let requestedFrom = opts.from ? new Date(opts.from) : null
-  const requestedTo = opts.to ? new Date(opts.to) : null
-  if (requestedFrom && Number.isNaN(requestedFrom.getTime())) throw new Error('تاریخ شروع معتبر نیست')
-  if (requestedTo && Number.isNaN(requestedTo.getTime())) throw new Error('تاریخ پایان معتبر نیست')
-  if (requestedFrom && requestedTo && requestedTo.getTime() - requestedFrom.getTime() > 7 * 24 * 3600 * 1000) {
-    throw new Error('بازه همگام‌سازی هر درخواست نباید بیشتر از ۷ روز باشد')
-  }
-
-  const since = requestedFrom ?? (opts.full
-    ? new Date(Date.now() - 30 * 24 * 3600 * 1000)
-    : cursor
-      ? new Date(cursor - 60 * 60 * 1000) // 1h overlap
-      : new Date(Date.now() - 3 * 24 * 3600 * 1000))
-
-
-  const now = new Date()
-  // query a bit into the future so provider-side clock / timezone drift never
-  // truncates the newest calls
-  const until = requestedTo ?? new Date(now.getTime() + 24 * 3600 * 1000)
-  const fromStr = since.toISOString()
-  const toStr = now.toISOString()
-  // documented API: POST /api/Customize/CustomerCallSearch
-  // provider timestamps are naive **UTC** (persianTime is the Tehran rendering),
-  // so the search window must be expressed in UTC too — sending Tehran local
-  // time pushed the lower bound 3.5h into the future and hid the newest calls.
-  const SEARCH_PATH = '/api/CustomerCall/Search'
-
-  let records: Record<string, any>[] = []
-  let attempts: any[] = []
-  try {
-    // Match the working customer portal request exactly. Leaving the condition
-    // empty requests all numbers, statuses, and call types.
-    const firstBody = portalSearchBody(opts.allTimeCount ? null : since, opts.allTimeCount ? null : until, 1)
-    const firstData = await dsPortalRequest(SEARCH_PATH, firstBody)
-    const res = { data: firstData, body: firstBody, attempts: [] as any[] }
-
-    records = extractRecords(res.data)
-    attempts = res.attempts
-
-    const providerTotal = extractTotal(res.data)
-    if (opts.allTimeCount) {
-      if (providerTotal === null) throw new Error('تعداد کل تماس‌ها در پاسخ دفترشما موجود نبود')
-      const { count: storedCount } = await admin.from('calls').select('id', { count: 'exact', head: true }).eq('provider', 'daftareshoma')
-      // calls_synced is the persisted provider total. Future incremental syncs
-      // add newly inserted calls to this baseline without recounting history.
-      await admin.from('daftareshoma_sync_state').update({
-        calls_synced: Math.max(providerTotal, storedCount ?? 0),
-        last_success_at: new Date().toISOString(),
-        last_error: null,
-      }).eq('id', 1)
-      return { providerTotal, stored: storedCount ?? 0, counted: true }
-    }
-
-    // Always paginate until a short/empty page. Older provider responses do
-    // not consistently expose totalCount (or vary its casing/nesting).
-    if (records.length) {
-      const totalCount = extractTotal(res.data)
-      const maxPages = totalCount ? Math.min(1000, Math.ceil(totalCount / PAGE_SIZE)) : 1000
-      for (let page = 2; page <= maxPages; page++) {
-        try {
-          const next = await dsPortalRequest(SEARCH_PATH, portalSearchBody(since, until, page))
-          const chunk = extractRecords(next)
-          if (!chunk.length) break
-          records = records.concat(chunk)
-          if (chunk.length < PAGE_SIZE) break
-        } catch { break }
-      }
-    }
-  } catch (e) {
-    const pe = e as ProviderError
-    attempts = (pe as any).attempts ?? []
-    await admin.from('daftareshoma_sync_state')
-      .update({ last_error: `${pe.message} — ${JSON.stringify(attempts).slice(0, 800)}` })
-      .eq('id', 1)
-    ;(pe as any).attempts = attempts
-    throw pe
-  }
-
-
-  let inserted = 0
-  let updated = 0
-  let latest = state?.last_synced_at ? new Date(state.last_synced_at) : since
-  let lastCallId = state?.last_call_id ?? null
-
-  // De-duplicate provider pages before writing.
-  const normalized = [...new Map(records.map((rec) => {
-    const call = normalizeProviderCall(rec)
-    return call ? [call.provider_call_id, call] : [crypto.randomUUID(), null]
-  })).values()].filter(Boolean) as NonNullable<ReturnType<typeof normalizeProviderCall>>[]
-
-  // Large historical/range imports use batched writes. CRM enrichment remains
-  // in the lightweight incremental path and recordings are always lazy.
-  if (normalized.length > 400 || requestedFrom) {
-    for (let offset = 0; offset < normalized.length; offset += PAGE_SIZE) {
-      const chunk = normalized.slice(offset, offset + PAGE_SIZE)
-      const ids = chunk.map((item) => item.provider_call_id)
-      const { data: existingRows } = await admin.from('calls').select('provider_call_id').eq('provider', 'daftareshoma').in('provider_call_id', ids)
-      const existingIds = new Set((existingRows ?? []).map((item: any) => item.provider_call_id))
-      const payloads = chunk.map((item) => ({ ...item, provider: 'daftareshoma' }))
-      const { error } = await admin.from('calls').upsert(payloads, { onConflict: 'provider,provider_call_id' })
-      if (error) throw new Error(`ذخیره تماس‌ها ناموفق بود: ${error.message}`)
-      const newCount = ids.filter((id) => !existingIds.has(id)).length
-      inserted += newCount
-      updated += ids.length - newCount
-      for (const item of chunk) {
-        if (item.started_at && new Date(item.started_at) > latest) {
-          latest = new Date(item.started_at)
-          lastCallId = item.provider_call_id
-        }
-      }
-    }
-  } else for (const n of normalized) {
-    const { data: existing } = await admin
-      .from('calls')
-      .select('id, status, recording_id, processing_status, disposition, user_id, lead_id, agent_id, notes')
-      .eq('provider', 'daftareshoma')
-      .eq('provider_call_id', n.provider_call_id)
-      .maybeSingle()
-
-    const customerNumber = customerNumberOf(n)
-    const match = settings.auto_lead_matching ? await matchCrmRecords(customerNumber) : null
-    const agentId = (existing?.agent_id ?? null) || (await resolveAgentByExtension(n.extension)) || match?.agent_id || null
-
-    const payload: Record<string, unknown> = {
-      ...n,
-      provider: 'daftareshoma',
-      agent_id: agentId,
-      user_id: match?.user_id ?? existing?.user_id ?? null,
-      lead_id: match?.lead_id ?? existing?.lead_id ?? null,
-      consultation_id: match?.consultation_id ?? null,
-      webinar_registration_id: match?.webinar_registration_id ?? null,
-      order_id: match?.order_id ?? null,
-      match_confidence: match?.match_confidence ?? 'unknown',
-    }
-    // never overwrite human input
-    if (existing?.disposition) delete (payload as any).disposition
-
-    const { data: saved } = await admin
-      .from('calls')
-      .upsert(payload, { onConflict: 'provider,provider_call_id' })
-      .select('*')
-      .maybeSingle()
-
-    if (!saved) continue
-    if (existing) updated++
-    else inserted++
-
-    if (n.started_at && new Date(n.started_at) > latest) {
-      latest = new Date(n.started_at)
-      lastCallId = n.provider_call_id
-    }
-
-    const isNewlyFinished = !existing || existing.status !== saved.status
-
-    // Missed-call automation
-    if (settings.auto_missed_call_followup && saved.direction === 'incoming' && saved.status !== 'answered' && isNewlyFinished) {
-      await createMissedCallFollowup(saved, settings)
-    }
-
-  }
-
-  await admin.from('daftareshoma_sync_state').update({
-    last_synced_at: latest.toISOString(),
-    last_call_id: lastCallId,
-    last_success_at: new Date().toISOString(),
-    last_error: null,
-    // Historical period imports are already represented by the one-time
-    // provider baseline, so only normal incremental syncs advance that total.
-    calls_synced: requestedFrom
-      ? Math.max(state?.calls_synced ?? 0, 0)
-      : Math.max(state?.calls_synced ?? 0, 0) + inserted,
-  }).eq('id', 1)
-
-  if (ctx) await audit(ctx, 'integration.sync_now', 'daftareshoma', null, { inserted, updated, fetched: records.length })
-
-  return { fetched: normalized.length, inserted, updated, from: fromStr, to: toStr }
-}
-
-Deno.serve(async (req) => {
+import { admin, requireInternalOrAdmin, AuthError, dsRequest, normalizeProviderCall, matchCrmRecords, customerNumberOf, resolveAgentByExtension, enrichCall, getSettings, json } from '../_shared/callcenter.ts'
+Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
-
   try {
-    const body = await req.json().catch(() => ({}))
-
-    // cron / internal invocation
-    if (body.internal || body.cron) {
-      const result = await runSync(null, { full: !!body.full, from: body.from, to: body.to, allTimeCount: !!body.allTimeCount })
-      return json({ success: true, ...result }, 200, corsHeaders)
+    await requireInternalOrAdmin(req)
+    const body = await req.json().catch(() => ({})), settings = await getSettings()
+    // Cron identity is established by the header, never by a JSON flag.
+    if (req.headers.has('x-cron-key') && (!settings.enabled || !settings.auto_sync_enabled)) return json({ success: true, skipped: true },200,corsHeaders)
+    const { data: state, error: stateError } = await admin.from('daftareshoma_sync_state').select('*').eq('id',1).maybeSingle()
+    if (stateError) throw new Error(stateError.message)
+    const to = body.to ? new Date(body.to) : new Date()
+    const from = body.from ? new Date(body.from) : body.full ? new Date('2020-01-01') : new Date(state?.last_synced_at ? new Date(state.last_synced_at).getTime()-86400000 : Date.now()-7*86400000)
+    if (!Number.isFinite(from.getTime()) || !Number.isFinite(to.getTime()) || from > to) throw new AuthError('Invalid date range',400)
+    let imported = 0, total = 0
+    for (let page = 1; ; page++) {
+      const response = await dsRequest('/api/Customize/CustomerCallSearch', { method: 'POST', body: {
+        fromDate: from.toISOString().slice(0,10), toDate: to.toISOString().slice(0,10), limit: 100, pagination: page } })
+      if (!Array.isArray(response?.data)) throw new Error('Invalid provider page')
+      total = Number(response.totalCount)
+      for (const raw of response.data) {
+        const n = normalizeProviderCall(raw)
+        if (!n) throw new Error('Provider call has no identifier')
+        const { data: old, error: lookupError } = await admin.from('calls').select('*').eq('provider','daftareshoma').eq('provider_call_id',n.provider_call_id).maybeSingle()
+        if (lookupError) throw new Error(lookupError.message)
+        const match = settings.auto_lead_matching && old?.link_source !== 'manual' ? await matchCrmRecords(customerNumberOf(n)) : null
+        const { customer_name: _name, ...links } = match ?? {}
+        const payload: any = { ...n, provider: 'daftareshoma', ended_at: n.ended_at ?? n.started_at,
+          ...(match ? { ...links, link_source: 'automatic' } : {}), agent_id: old?.agent_id ?? await resolveAgentByExtension(n.extension) ?? match?.agent_id ?? null }
+        const { data: call, error } = await admin.from('calls').upsert(payload,{onConflict:'provider,provider_call_id'}).select('*').single()
+        if (error) throw new Error(error.message)
+        await enrichCall(call,settings)
+        imported++
+      }
+      if (!response.data.length || (Number.isFinite(total) && page*100 >= total) || response.data.length < 100) break
+      if (page >= 1000) throw new Error('Sync page safety limit reached; cursor not advanced')
     }
-
-    const ctx = await authenticate(req, body.sessionToken)
-    requirePermission(ctx, 'calls.admin')
-    const result = await runSync(ctx, { full: !!body.full, from: body.from, to: body.to, allTimeCount: !!body.allTimeCount })
-    return json({ success: true, ...result }, 200, corsHeaders)
-  } catch (e) {
-    console.error('sync error', e)
-    if (e instanceof AuthError) {
-      return json({ success: false, error: e.message }, e.status, corsHeaders)
-    }
-    // provider/runtime failures are reported as 200 so the admin UI can show a
-    // readable diagnostic instead of a 502 that breaks the page
-    return json({
-      success: false,
-      error: (e as Error).message,
-      provider_status: e instanceof ProviderError ? e.status : null,
-      attempts: (e as any).attempts ?? [],
-    }, 200, corsHeaders)
-
-  }
+    const { error } = await admin.from('daftareshoma_sync_state').update({ last_synced_at: to.toISOString(), last_attempt_at: new Date().toISOString(), calls_synced: total, last_error: null }).eq('id',1)
+    if (error) throw new Error(error.message)
+    return json({success:true,imported,providerTotal:total},200,corsHeaders)
+  } catch(e) { return json({success:false,error:(e as Error).message},e instanceof AuthError ? e.status : 500,corsHeaders) }
 })

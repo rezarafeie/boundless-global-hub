@@ -9,43 +9,8 @@ export const admin = createClient(
 /* Phone normalization                                                 */
 /* ------------------------------------------------------------------ */
 
-export interface NormalizedPhone {
-  raw: string
-  normalized: string | null
-  e164: string | null
-}
-
-/**
- * Normalizes Iranian and international numbers so that
- * 09123456789 / +989123456789 / 989123456789 / 00989123456789
- * all resolve to the same key: "989123456789".
- * Internal extensions (<= 6 digits) are returned as-is.
- */
-export function normalizePhone(input?: string | null): NormalizedPhone {
-  const raw = (input ?? '').toString().trim()
-  if (!raw) return { raw, normalized: null, e164: null }
-
-  let d = raw.replace(/[^0-9]/g, '')
-  if (!d) return { raw, normalized: null, e164: null }
-
-  // internal extension
-  if (d.length <= 6) return { raw, normalized: d, e164: null }
-
-  if (d.startsWith('0098')) d = '98' + d.slice(4)
-  else if (d.startsWith('0') && d.length === 11) d = '98' + d.slice(1)
-  else if (d.length === 10 && d.startsWith('9')) d = '98' + d
-  else if (d.startsWith('00')) d = d.slice(2)
-
-  // Iranian landline without country code e.g. 02112345678 handled above
-  return { raw, normalized: d, e164: '+' + d }
-}
-
-/** Last 9 significant digits – used for fuzzy matching against stored records. */
-export function phoneTail(input?: string | null, len = 9): string | null {
-  const d = (input ?? '').replace(/[^0-9]/g, '')
-  if (d.length < len) return null
-  return d.slice(-len)
-}
+export { normalizePhone, phoneTail } from './call-phone.ts'
+import { normalizePhone, phoneTail } from './call-phone.ts'
 
 /* ------------------------------------------------------------------ */
 /* Permissions                                                         */
@@ -299,8 +264,8 @@ export async function dsRequest(
     const res = await fetch(url.toString(), {
       method: opts.method ?? 'GET',
       headers: {
-        // DaftareShoma expects the raw token (NO "Bearer" prefix) and rejects extra auth headers
-        'Authorization': token,
+        // Verified Customize API uses Bearer authentication.
+        'Authorization': `Bearer ${token.replace(/^Bearer\s+/i, '')}`,
         'Accept': 'application/json',
         ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
       },
@@ -561,6 +526,7 @@ export interface CrmMatch {
   order_id: string | null
   agent_id: number | null
   match_confidence: string
+  match_status?: string
   customer_name: string | null
 }
 
@@ -570,75 +536,29 @@ export async function matchCrmRecords(customerPhone: string | null): Promise<Crm
     user_id: null, lead_id: null, consultation_id: null, webinar_registration_id: null,
     order_id: null, agent_id: null, match_confidence: 'unknown', customer_name: null,
   }
-  const tail = phoneTail(customerPhone)
-  if (!tail) return empty
+  const canonical = normalizePhone(customerPhone).normalized
+  if (!canonical) return empty
+  const tables = ['chat_users', 'enrollments', 'consultation_bookings', 'webinar_participants']
+  const rows = await Promise.all(tables.map(async source_table => {
+    const { data, error } = await admin.rpc('callcenter_phone_records', { source_table, canonical_phone: canonical })
+    if (error) throw new Error(error.message)
+    return (data ?? []).map((r: any) => r.record)
+  }))
+  const [users, enrollments, consultations, participants] = rows
+  const identities = new Set(users.map((r: any) => String(r.id)))
+  for (const list of rows.slice(1)) for (const r of list) if (r.user_id) identities.add(String(r.user_id))
+  if (identities.size > 1) return { ...empty, match_status: 'ambiguous' }
+  const lead = enrollments[0], user = users[0]
+  const paid = enrollments.find((r: any) => ['completed','success','paid'].includes(r.payment_status))
+  const { data: facts, error } = await admin.rpc('callcenter_caller_facts', { canonical_phone: canonical, at_time: new Date().toISOString() })
+  if (error) throw new Error(error.message)
+  return { ...empty, user_id: user?.id ?? (identities.size ? Number([...identities][0]) : null),
+    lead_id: lead?.id ?? null, order_id: paid?.id ?? null,
+    consultation_id: consultations[0]?.id ?? null, webinar_registration_id: participants[0]?.id ?? null,
+    agent_id: facts?.assignedAgentId ?? null, customer_name: user?.full_name || user?.name || lead?.full_name || null,
+    match_confidence: user ? 'user' : lead ? 'lead' : consultations.length ? 'consultation' : participants.length ? 'webinar' : 'unknown',
+    match_status: rows.some(r => r.length) ? 'matched' : 'unmatched' }
 
-  const like = `%${tail}`
-  const result: CrmMatch = { ...empty }
-
-  // 1. Academy user
-  const { data: users } = await admin
-    .from('chat_users')
-    .select('id, name, full_name, phone')
-    .like('phone', like)
-    .limit(1)
-  if (users?.length) {
-    result.user_id = users[0].id
-    result.customer_name = users[0].full_name || users[0].name || null
-    result.match_confidence = 'user'
-  }
-
-  // 2. Enrollment (lead / order)
-  const { data: enrollments } = await admin
-    .from('enrollments')
-    .select('id, full_name, phone, payment_status, created_at, course_id')
-    .like('phone', like)
-    .order('created_at', { ascending: false })
-    .limit(5)
-  if (enrollments?.length) {
-    const paid = enrollments.find((e: any) => ['completed', 'success'].includes(e.payment_status))
-    const lead = enrollments[0]
-    result.lead_id = lead.id
-    result.order_id = paid?.id ?? null
-    result.customer_name ||= lead.full_name ?? null
-    if (result.match_confidence === 'unknown') result.match_confidence = 'lead'
-
-    const { data: assignment } = await admin
-      .from('lead_assignments')
-      .select('sales_agent_id, sales_agents(user_id)')
-      .eq('enrollment_id', lead.id)
-      .maybeSingle()
-    const agentUserId = (assignment as any)?.sales_agents?.user_id
-    if (agentUserId) result.agent_id = agentUserId
-  }
-
-  // 3. Consultation
-  const { data: consultations } = await admin
-    .from('consultation_bookings')
-    .select('id, phone, full_name, created_at')
-    .like('phone', like)
-    .order('created_at', { ascending: false })
-    .limit(1)
-  if (consultations?.length) {
-    result.consultation_id = consultations[0].id
-    result.customer_name ||= (consultations[0] as any).full_name ?? null
-    if (result.match_confidence === 'unknown') result.match_confidence = 'consultation'
-  }
-
-  // 4. Webinar registration (webinar_entries hold participants by phone)
-  const { data: participants } = await admin
-    .from('webinar_participants')
-    .select('id, phone, name, created_at')
-    .like('phone', like)
-    .order('created_at', { ascending: false })
-    .limit(1)
-  if (participants?.length) {
-    result.webinar_registration_id = participants[0].id
-    result.customer_name ||= (participants[0] as any).name ?? null
-    if (result.match_confidence === 'unknown') result.match_confidence = 'webinar'
-  }
-
-  return result
 }
 
 /** Determines which side of the call is the customer. */
@@ -682,14 +602,46 @@ export const json = (body: unknown, status = 200, extra: HeadersInit = {}) =>
 /* Async job dispatch (fire-and-forget between edge functions)         */
 /* ------------------------------------------------------------------ */
 
-export function invokeFn(name: string, body: Record<string, unknown>) {
-  const url = `${Deno.env.get('SUPABASE_URL')}/functions/v1/${name}`
-  return fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-    },
-    body: JSON.stringify({ ...body, internal: true }),
-  }).catch((e) => console.error(`invoke ${name} failed`, e))
+export async function invokeFn(name: string, body: Record<string, unknown>) {
+  const secret = Deno.env.get('CALLCENTER_INTERNAL_SECRET')
+  if (!secret) throw new Error('Internal dispatch is not configured')
+  try {
+    const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/${name}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json',
+        Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`, 'x-internal-secret': secret },
+      body: JSON.stringify(body),
+    })
+    if (!response.ok) throw new Error(`Function ${name} returned ${response.status}`)
+    return response
+  } catch (error) { console.error('Internal dispatch failed', name); throw error }
+}
+
+export function secretEquals(provided: string | null, expected: string | undefined): boolean {
+  if (!provided || !expected) return false
+  const a = new TextEncoder().encode(provided), b = new TextEncoder().encode(expected)
+  let diff = a.length ^ b.length
+  for (let i = 0; i < Math.max(a.length, b.length); i++) diff |= (a[i] ?? 0) ^ (b[i] ?? 0)
+  return diff === 0
+}
+export async function requireInternalOrAdmin(req: Request) {
+  if (secretEquals(req.headers.get('x-internal-secret'), Deno.env.get('CALLCENTER_INTERNAL_SECRET')) ||
+      secretEquals(req.headers.get('x-cron-key'), Deno.env.get('CALLCENTER_CRON_KEY'))) return
+  const ctx = await authenticate(req)
+  if (!ctx.isAdmin) throw new AuthError('Admin required', 403)
+}
+export async function requireCallAccess(ctx: AuthContext, id: string) {
+  let q = admin.from('calls').select('id').eq('id', id)
+  if (ctx.restrictedToSelf) q = q.eq('agent_id', ctx.userId)
+  const { data, error } = await q.maybeSingle()
+  if (error) throw new Error(error.message)
+  if (!data) throw new AuthError('Call not found', 404)
+}
+export async function enrichCall(call: any, settings: any) {
+  if (settings.auto_missed_call_followup && call.ended_at && call.direction === 'incoming' && call.status !== 'answered') {
+    const { error } = await admin.from('call_followups').insert({ call_id: call.id, user_id: call.user_id,
+      lead_id: call.lead_id, agent_id: call.agent_id, type: 'missed_call', status: 'pending',
+      priority: call.lead_id ? 'high' : 'medium', title: 'بازگشت تماس از دست رفته',
+      due_at: new Date(Date.now()+1800000).toISOString(), created_by: 'automation' })
+    if (error) throw new Error(error.message)
+  }
 }

@@ -1,3 +1,4 @@
+import { requireCallAccess } from '../_shared/callcenter.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 import { admin, authenticate, requirePermission, audit, AuthError, invokeFn, json } from '../_shared/callcenter.ts'
 
@@ -17,6 +18,8 @@ Deno.serve(async (req) => {
     const { data: call } = await admin.from('calls').select('id, recording_id').eq('id', callId).maybeSingle()
     if (!call) return json({ success: false, error: 'تماس یافت نشد' }, 404, corsHeaders)
 
+    await requireCallAccess(ctx, callId)
+    if (stage === 'analysis' || stage === 'auto') requirePermission(ctx, 'calls.ai_analysis')
     const { data: rec } = await admin.from('call_recordings').select('status').eq('call_id', callId).maybeSingle()
     const { data: tr } = await admin.from('call_transcripts').select('processing_status').eq('call_id', callId).maybeSingle()
 
@@ -25,12 +28,12 @@ Deno.serve(async (req) => {
     let dispatched = 'analysis'
     if (stage === 'recording' || (stage === 'auto' && rec?.status !== 'ready')) {
       dispatched = 'recording'
-      invokeFn('process-call-recording', { callId, internal: true })
+      await invokeFn('process-call-recording', { callId, internal: true })
     } else if (stage === 'transcript' || (stage === 'auto' && tr?.processing_status !== 'completed')) {
       dispatched = 'transcript'
-      invokeFn('transcribe-call', { callId, internal: true })
+      await invokeFn('transcribe-call', { callId, internal: true })
     } else {
-      invokeFn('analyze-call', { callId, internal: true })
+      await invokeFn('analyze-call', { callId, internal: true })
     }
 
     await audit(ctx, 'call.reprocess', 'call', callId, { stage: dispatched })

@@ -1301,6 +1301,33 @@ export type Database = {
         }
         Relationships: []
       }
+      call_control_requests: {
+        Row: {
+          body: Json
+          caller_facts: Json
+          created_at: string
+          decision: Json
+          headers: Json
+          id: string
+        }
+        Insert: {
+          body: Json
+          caller_facts?: Json
+          created_at?: string
+          decision: Json
+          headers: Json
+          id?: string
+        }
+        Update: {
+          body?: Json
+          caller_facts?: Json
+          created_at?: string
+          decision?: Json
+          headers?: Json
+          id?: string
+        }
+        Relationships: []
+      }
       call_dispositions: {
         Row: {
           color: string
@@ -1502,6 +1529,21 @@ export type Database = {
           },
         ]
       }
+      call_routing_config: {
+        Row: {
+          config: Json
+          id: number
+        }
+        Insert: {
+          config?: Json
+          id?: number
+        }
+        Update: {
+          config?: Json
+          id?: number
+        }
+        Relationships: []
+      }
       call_transcripts: {
         Row: {
           call_id: string
@@ -1555,6 +1597,18 @@ export type Database = {
           },
         ]
       }
+      callcenter_followup_keys: {
+        Row: {
+          call_id: string
+        }
+        Insert: {
+          call_id: string
+        }
+        Update: {
+          call_id?: string
+        }
+        Relationships: []
+      }
       calls: {
         Row: {
           agent_id: number | null
@@ -1573,10 +1627,14 @@ export type Database = {
           ended_at: string | null
           extension: string | null
           id: string
+          last_event_at: string | null
           lead_id: string | null
+          link_source: string | null
           match_confidence: string | null
+          match_status: string | null
           notes: string | null
           order_id: string | null
+          processing_error: string | null
           processing_status: string
           provider: string
           provider_call_id: string
@@ -1612,10 +1670,14 @@ export type Database = {
           ended_at?: string | null
           extension?: string | null
           id?: string
+          last_event_at?: string | null
           lead_id?: string | null
+          link_source?: string | null
           match_confidence?: string | null
+          match_status?: string | null
           notes?: string | null
           order_id?: string | null
+          processing_error?: string | null
           processing_status?: string
           provider?: string
           provider_call_id: string
@@ -1651,10 +1713,14 @@ export type Database = {
           ended_at?: string | null
           extension?: string | null
           id?: string
+          last_event_at?: string | null
           lead_id?: string | null
+          link_source?: string | null
           match_confidence?: string | null
+          match_status?: string | null
           notes?: string | null
           order_id?: string | null
+          processing_error?: string | null
           processing_status?: string
           provider?: string
           provider_call_id?: string
@@ -9867,6 +9933,130 @@ export type Database = {
         Returns: boolean
       }
       bytea_to_text: { Args: { data: string }; Returns: string }
+      callcenter_caller_facts: {
+        Args: { at_time?: string; canonical_phone: string }
+        Returns: Json
+      }
+      callcenter_normalize_phone: { Args: { phone: string }; Returns: string }
+      callcenter_pending_analysis: {
+        Args: { batch_size?: number }
+        Returns: {
+          agent_id: number | null
+          ai_score: number | null
+          answered_at: string | null
+          assigned_team_id: string | null
+          caller_number: string | null
+          caller_number_normalized: string | null
+          campaign_id: string | null
+          consultation_id: string | null
+          created_at: string
+          destination_number: string | null
+          destination_number_normalized: string | null
+          direction: string
+          disposition: string | null
+          ended_at: string | null
+          extension: string | null
+          id: string
+          last_event_at: string | null
+          lead_id: string | null
+          link_source: string | null
+          match_confidence: string | null
+          match_status: string | null
+          notes: string | null
+          order_id: string | null
+          processing_error: string | null
+          processing_status: string
+          provider: string
+          provider_call_id: string
+          purchase_intent_score: number | null
+          raw_payload: Json
+          recording_id: string | null
+          resulted_in_sale: boolean
+          source: string | null
+          started_at: string | null
+          status: string
+          support_ticket_id: string | null
+          talk_seconds: number | null
+          total_seconds: number | null
+          updated_at: string
+          user_id: number | null
+          waiting_seconds: number | null
+          webinar_registration_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "calls"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      callcenter_pending_recordings: {
+        Args: { batch_size?: number }
+        Returns: {
+          agent_id: number | null
+          ai_score: number | null
+          answered_at: string | null
+          assigned_team_id: string | null
+          caller_number: string | null
+          caller_number_normalized: string | null
+          campaign_id: string | null
+          consultation_id: string | null
+          created_at: string
+          destination_number: string | null
+          destination_number_normalized: string | null
+          direction: string
+          disposition: string | null
+          ended_at: string | null
+          extension: string | null
+          id: string
+          last_event_at: string | null
+          lead_id: string | null
+          link_source: string | null
+          match_confidence: string | null
+          match_status: string | null
+          notes: string | null
+          order_id: string | null
+          processing_error: string | null
+          processing_status: string
+          provider: string
+          provider_call_id: string
+          purchase_intent_score: number | null
+          raw_payload: Json
+          recording_id: string | null
+          resulted_in_sale: boolean
+          source: string | null
+          started_at: string | null
+          status: string
+          support_ticket_id: string | null
+          talk_seconds: number | null
+          total_seconds: number | null
+          updated_at: string
+          user_id: number | null
+          waiting_seconds: number | null
+          webinar_registration_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "calls"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      callcenter_phone_records: {
+        Args: { canonical_phone: string; source_table: string }
+        Returns: {
+          record: Json
+        }[]
+      }
+      callcenter_stats_qa: {
+        Args: {
+          from_date?: string
+          question_kind: string
+          self_agent?: number
+          to_date?: string
+        }
+        Returns: Json
+      }
       check_sales_agent_lead_access: {
         Args: { p_agent_user_id: number; p_enrollment_id: string }
         Returns: boolean
