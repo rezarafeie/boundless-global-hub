@@ -27,6 +27,7 @@ Deno.serve(async req => {
         const { customer_name: _name, ...links } = match ?? {}
         const payload: any = { ...n, provider: 'daftareshoma', ended_at: n.ended_at ?? n.started_at,
           ...(match ? { ...links, link_source: 'automatic' } : {}), agent_id: old?.agent_id ?? await resolveAgentByExtension(n.extension) ?? match?.agent_id ?? null }
+        if(!n.recording_id && old?.recording_id) payload.recording_id=old.recording_id
         const { data: call, error } = await admin.from('calls').upsert(payload,{onConflict:'provider,provider_call_id'}).select('*').single()
         if (error) throw new Error(error.message)
         await enrichCall(call,settings)
@@ -35,8 +36,11 @@ Deno.serve(async req => {
       if (!response.data.length || (Number.isFinite(total) && page*100 >= total) || response.data.length < 100) break
       if (page >= 1000) throw new Error('Sync page safety limit reached; cursor not advanced')
     }
-    const { error } = await admin.from('daftareshoma_sync_state').update({ last_synced_at: to.toISOString(), last_attempt_at: new Date().toISOString(), calls_synced: total, last_error: null }).eq('id',1)
+    const { error } = await admin.from('daftareshoma_sync_state').update({ last_synced_at: to.toISOString(), last_success_at:new Date().toISOString(), last_attempt_at: new Date().toISOString(), calls_synced: total, last_error: null }).eq('id',1)
     if (error) throw new Error(error.message)
     return json({success:true,imported,providerTotal:total},200,corsHeaders)
-  } catch(e) { return json({success:false,error:(e as Error).message},e instanceof AuthError ? e.status : 500,corsHeaders) }
+  } catch(e) {
+    if(!(e instanceof AuthError)) await admin.from('daftareshoma_sync_state').update({last_attempt_at:new Date().toISOString(),last_error:(e as Error).message}).eq('id',1)
+    return json({success:false,error:(e as Error).message},e instanceof AuthError ? e.status : 500,corsHeaders)
+  }
 })

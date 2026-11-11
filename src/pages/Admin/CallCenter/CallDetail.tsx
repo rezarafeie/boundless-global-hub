@@ -69,7 +69,7 @@ const CallDetail: React.FC = () => {
   const addFollowup = async () => {
     if (!fuTitle || !fuDue) { toast({ title: 'عنوان و زمان پیگیری الزامی است', variant: 'destructive' }); return; }
     try {
-      await callCenter.createFollowup({ callId, title: fuTitle, dueAt: new Date(fuDue).toISOString(), priority: fuPriority });
+      await callCenter.createFollowup({ callId, title: fuTitle, due_at: new Date(`${fuDue}:00+03:30`).toISOString(), priority: fuPriority });
       setFuTitle(''); setFuDue('');
       toast({ title: 'پیگیری ثبت شد' });
       load();
@@ -77,14 +77,15 @@ const CallDetail: React.FC = () => {
   };
 
   const reprocess = async (stage: 'auto' | 'recording' | 'transcript' | 'analysis') => {
+    if (!callId) return;
     setReprocessing(true);
     setRequestedStage(stage);
     try {
-      await callCenter.reprocess(callId!, stage);
+      await callCenter.reprocess(callId, stage);
       toast({ title: 'پردازش آغاز شد', description: 'نتیجه تا لحظاتی دیگر آماده می‌شود.' });
       for (let attempt = 0; attempt < 24; attempt += 1) {
         await new Promise((resolve) => setTimeout(resolve, 5000));
-        const res: any = await callCenter.call(callId!);
+        const res: any = await callCenter.call(callId);
         setData(res);
         const transcript = res.call?.transcript_detail?.[0] ?? res.call?.transcript_detail;
         if (stage === 'transcript' && ['completed', 'empty', 'failed'].includes(transcript?.processing_status)) break;
@@ -185,7 +186,7 @@ const CallDetail: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex flex-wrap gap-2">
-                {ai.overall_score != null && <Badge variant="secondary">امتیاز کلی: {ai.overall_score}</Badge>}
+                {ai.overall_sales_score != null && <Badge variant="secondary">امتیاز کلی: {ai.overall_sales_score}</Badge>}
                 {ai.purchase_intent_score != null && (
                   <Badge className="gap-1"><Flame className="h-3 w-3" /> قصد خرید: {ai.purchase_intent_score}</Badge>
                 )}
@@ -197,13 +198,13 @@ const CallDetail: React.FC = () => {
                 <div><div className="text-xs text-muted-foreground mb-1">اعتراض‌ها و موانع</div>
                   <ul className="list-disc pr-5 text-sm space-y-1">{ai.objections.map((o: string, i: number) => <li key={i}>{o}</li>)}</ul></div>
               )}
-              {!!ai.next_actions?.length && (
+              {!!ai.next_action && (
                 <div><div className="text-xs text-muted-foreground mb-1">اقدامات پیشنهادی</div>
-                  <ul className="list-disc pr-5 text-sm space-y-1">{ai.next_actions.map((o: string, i: number) => <li key={i}>{o}</li>)}</ul></div>
+                  <p className="text-sm leading-7">{ai.next_action}</p></div>
               )}
-              {ai.coaching_feedback && (
+              {ai.agent_feedback && (
                 <div><div className="text-xs text-muted-foreground mb-1">بازخورد مربی‌گری</div>
-                  <p className="text-sm leading-7 whitespace-pre-wrap">{ai.coaching_feedback}</p></div>
+                  <p className="text-sm leading-7 whitespace-pre-wrap">{ai.agent_feedback}</p></div>
               )}
             </CardContent>
           </Card>
@@ -256,7 +257,7 @@ const CallDetail: React.FC = () => {
             <CardContent className="space-y-3">
               <Input value={fuTitle} onChange={(e) => setFuTitle(e.target.value)} placeholder="عنوان پیگیری" />
               <div className="grid grid-cols-2 gap-2">
-                <Input type="datetime-local" value={fuDue} onChange={(e) => setFuDue(e.target.value)} dir="ltr" />
+                <Input aria-label="زمان پیگیری به وقت تهران" type="datetime-local" value={fuDue} onChange={(e) => setFuDue(e.target.value)} dir="ltr" />
                 <Select value={fuPriority} onValueChange={setFuPriority}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>

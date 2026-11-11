@@ -1,12 +1,19 @@
 import { admin, secretEquals, normalizeProviderCall, matchCrmRecords, customerNumberOf, resolveAgentByExtension, enrichCall, getSettings, json } from '../_shared/callcenter.ts'
 Deno.serve(async req => {
-  if (!secretEquals(req.headers.get('x-webhook-secret') || new URL(req.url).searchParams.get('secret'),Deno.env.get('DAFTARESHOMA_WEBHOOK_SECRET'))) return json({error:'unauthorized'},401)
+  const internal=secretEquals(req.headers.get('x-internal-secret'),Deno.env.get('CALLCENTER_INTERNAL_SECRET'))
+  if (!internal && !secretEquals(req.headers.get('x-webhook-secret') || new URL(req.url).searchParams.get('secret'),Deno.env.get('DAFTARESHOMA_WEBHOOK_SECRET'))) return json({error:'unauthorized'},401)
   let eventId: string | undefined
   try {
-    const raw = await req.json()
+    let raw = await req.json()
+    if(internal){
+      const {data:previous,error}=await admin.from('call_events').select('id,payload,status').eq('id',raw.retryEventId).single()
+      if(error || !previous) throw new Error('Retry event not found')
+      if(previous.status!=='failed') return json({success:true,duplicate:true})
+      raw=previous.payload;eventId=previous.id
+    }
     const type = String(raw.EventType ?? raw.eventType ?? raw.event ?? raw.EventName ?? raw.eventName ?? raw.type ?? '')
     const providerId = raw.EventId ?? raw.eventId ?? raw.event_id
-    const { data: event, error: eventError } = await admin.from('call_events').insert({provider_event_id:providerId ? String(providerId) : null,event_type:type,payload:raw,status:'received'}).select('id').single()
+    const { data: event, error: eventError } = eventId ? {data:{id:eventId},error:null} : await admin.from('call_events').insert({provider_event_id:providerId ? String(providerId) : null,event_type:type,payload:raw,status:'received'}).select('id').single()
     if (eventError) {
       if (eventError.code !== '23505' || !providerId) throw new Error(eventError.message)
       const {data:previous,error} = await admin.from('call_events').select('id,status').eq('provider_event_id',String(providerId)).single()
@@ -48,7 +55,7 @@ Deno.serve(async req => {
     if(error) throw new Error(error.message)
     return json({success:true})
   } catch(e) {
-    if(eventId) await admin.from('call_events').update({status:'failed'}).eq('id',eventId)
+    if(eventId) await admin.from('call_events').update({status:'failed',error:(e as Error).message}).eq('id',eventId)
     return json({success:false,error:(e as Error).message},500)
   }
 })

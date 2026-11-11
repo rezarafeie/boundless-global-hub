@@ -10,6 +10,7 @@ import { Copy, PlugZap, RefreshCw, ShieldCheck, Loader2 } from 'lucide-react';
 import { callCenter, tehranDateTime } from '@/lib/callCenterService';
 import { useToast } from '@/hooks/use-toast';
 import AgentExtensionsCard from '@/components/CallCenter/AgentExtensionsCard';
+import CallRoutingSettings from '@/components/CallCenter/CallRoutingSettings';
 
 const TOGGLES: { key: string; label: string; hint?: string }[] = [
   { key: 'enabled', label: 'فعال بودن مرکز تماس' },
@@ -70,7 +71,7 @@ const CallCenterSettings: React.FC = () => {
     setSyncing(true);
     try {
       const res: any = await callCenter.syncNow();
-      toast({ title: 'همگام‌سازی انجام شد', description: `${res.inserted} جدید / ${res.updated} به‌روزرسانی` });
+      toast({ title: 'همگام‌سازی انجام شد', description: `${res.imported ?? 0} تماس پردازش شد` });
       load();
     } catch (e) {
       toast({ title: 'همگام‌سازی ناموفق', description: (e as Error).message, variant: 'destructive' });
@@ -116,11 +117,11 @@ const CallCenterSettings: React.FC = () => {
           <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-1">
             <div className="font-medium">رویدادهایی که باید در پنل دفتر شما فعال شوند:</div>
             <ul className="list-disc pr-4 space-y-0.5 text-muted-foreground">
-              <li>اعلام شروع تماس ورودی (Call.incoming.started)</li>
-              <li>اعلام شروع انتقال تماس (Call.incoming.transferStarted)</li>
-              <li>اعلام پایان انتقال تماس (Call.incoming.transferCompleted)</li>
-              <li>اعلام پایان تماس ورودی (Call.incoming.ended)</li>
-              <li>اعلام پایان تماس خروجی (Call.outgoing.ended)</li>
+              <li>اعلام شروع تماس ورودی (CallIncomingStarted)</li>
+              <li>اعلام شروع انتقال تماس (CallIncomingTransferStarted)</li>
+              <li>اعلام پایان انتقال تماس (CallIncomingTransferCompleted)</li>
+              <li>اعلام پایان تماس ورودی (CallIncomingEnded)</li>
+              <li>اعلام پایان تماس خروجی (CallOutgoingEnded)</li>
             </ul>
             <div className="text-muted-foreground">با فعال‌سازی رویدادهای شروع تماس، بنر «تماس ورودی» به‌صورت زنده در داشبورد و مرکز تماس نمایش داده می‌شود.</div>
           </div>
@@ -168,6 +169,7 @@ const CallCenterSettings: React.FC = () => {
       </Card>
 
       <AgentExtensionsCard />
+      <CallRoutingSettings />
     </div>
   );
 };

@@ -25,6 +25,7 @@ import { UserOverview } from '@/components/Admin/UserProfile/UserOverview';
 import { UserEnrollments } from '@/components/Admin/UserProfile/UserEnrollments';
 import { UserLicenses } from '@/components/Admin/UserProfile/UserLicenses';
 import { UserActivity } from '@/components/Admin/UserProfile/UserActivity';
+import CustomerCallHistory from '@/components/CallCenter/CustomerCallHistory';
 
 interface UserData {
   id: number;
@@ -197,7 +198,7 @@ const UserProfile: React.FC = () => {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="flex flex-wrap w-full h-auto">
                 <TabsTrigger value="overview" className="flex items-center gap-2">
                   <User className="w-4 h-4" />
                   Overview
@@ -218,6 +219,7 @@ const UserProfile: React.FC = () => {
                   <Activity className="w-4 h-4" />
                   Activity
                 </TabsTrigger>
+                <TabsTrigger value="calls" className="flex items-center gap-2"><Phone className="w-4 h-4"/>تماس‌ها</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="mt-6">
@@ -244,6 +246,7 @@ const UserProfile: React.FC = () => {
               <TabsContent value="activity" className="mt-6">
                 <UserActivity userId={user.id} />
               </TabsContent>
+              <TabsContent value="calls" className="mt-6"><CustomerCallHistory userId={user.id}/></TabsContent>
             </Tabs>
           </div>
         )}

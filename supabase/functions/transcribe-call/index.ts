@@ -62,13 +62,14 @@ async function run(callId: string) {
     const filename = recording.storage_path.split('/').pop() || 'recording.mp3'
     const { text, provider, model } = await transcribeAudio(file, filename)
 
-    await admin.from('call_transcripts').update({
+    const {error: saveError} = await admin.from('call_transcripts').update({
       transcript: text,
       provider,
       model,
       processing_status: text?.trim() ? 'completed' : 'empty',
       error: null,
     }).eq('call_id', callId)
+    if(saveError) throw new Error(saveError.message)
 
     await admin.from('calls').update({ processing_status: 'transcribed' }).eq('id', callId)
 
@@ -94,6 +95,8 @@ Deno.serve(async (req) => {
     await requireInternalOrAdmin(req)
 
     if (body.pending) {
+      const settings=await getSettings()
+      if(!settings.enabled || !settings.transcription_enabled) return json({success:true,skipped:true},200,corsHeaders)
       const { data: pending } = await admin
         .from('call_transcripts')
         .select('call_id')

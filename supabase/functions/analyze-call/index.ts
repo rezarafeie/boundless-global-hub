@@ -104,7 +104,8 @@ ${catalog || '(کاتالوگ در دسترس نیست)'}
     model: MODEL,
   }
 
-  await admin.from('call_ai_analysis').upsert(record, { onConflict: 'call_id' })
+  const {error:saveError} = await admin.from('call_ai_analysis').upsert(record, { onConflict: 'call_id' })
+  if(saveError) throw new Error(saveError.message)
   await admin.from('calls').update({
     processing_status: 'completed', processing_error: null,
     ai_score: record.overall_sales_score,

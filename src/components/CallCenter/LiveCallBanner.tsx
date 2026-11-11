@@ -38,13 +38,14 @@ const LiveCallBanner: React.FC<{ className?: string }> = ({ className }) => {
       setCalls((res.calls ?? []) as LiveCall[]);
     } catch {
       failures.current += 1;
+      setCalls([]);
     }
   }, []);
 
   useEffect(() => {
     load();
     const id = setInterval(() => {
-      if (failures.current < 5 && document.visibilityState === 'visible') load();
+      if (document.visibilityState === 'visible') load();
     }, POLL_MS);
     const tick = setInterval(() => setTick((t) => t + 1), 1000);
     return () => { clearInterval(id); clearInterval(tick); };

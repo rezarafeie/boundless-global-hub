@@ -8,6 +8,7 @@ import {
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line, Legend,
 } from 'recharts';
+import LiveCallBanner from '@/components/CallCenter/LiveCallBanner';
 import { callCenter, formatDuration } from '@/lib/callCenterService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -48,7 +49,7 @@ const CallCenterOverview: React.FC = () => {
     setSyncing(true);
     try {
       const res: any = await callCenter.syncNow();
-      toast({ title: 'همگام‌سازی انجام شد', description: `${res.inserted} تماس جدید، ${res.updated} به‌روزرسانی` });
+      toast({ title: 'همگام‌سازی انجام شد', description: `${res.imported ?? 0} تماس پردازش شد` });
       load();
     } catch (e) {
       toast({ title: 'همگام‌سازی ناموفق', description: (e as Error).message, variant: 'destructive' });
@@ -91,18 +92,19 @@ const CallCenterOverview: React.FC = () => {
         </Button>
       </div>
 
+      <section className="space-y-2"><h3 className="text-sm font-medium">فعالیت اخیر از اعلان‌های دفتر شما</h3><LiveCallBanner /></section>
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         <KPI icon={PhoneCall} label="کل تماس‌ها" value={k.total ?? 0} />
-        <KPI icon={PhoneIncoming} label="ورودی" value={k.incoming ?? 0} tone="bg-blue-500/10 text-blue-600" />
-        <KPI icon={PhoneOutgoing} label="خروجی" value={k.outgoing ?? 0} tone="bg-emerald-500/10 text-emerald-600" />
-        <KPI icon={PhoneMissed} label="از دست رفته" value={k.missed ?? 0} tone="bg-red-500/10 text-red-600" />
+        <KPI icon={PhoneIncoming} label="ورودی" value={k.incoming ?? 0} tone="bg-secondary text-secondary-foreground" />
+        <KPI icon={PhoneOutgoing} label="خروجی" value={k.outgoing ?? 0} tone="bg-secondary text-secondary-foreground" />
+        <KPI icon={PhoneMissed} label="از دست رفته" value={k.missed ?? 0} tone="bg-secondary text-secondary-foreground" />
         <KPI icon={TrendingUp} label="نرخ پاسخ" value={`${k.answerRate ?? 0}٪`} />
         <KPI icon={Timer} label="کل مکالمه" value={formatDuration(k.totalTalk)} />
         <KPI icon={Clock} label="میانگین مکالمه" value={formatDuration(k.avgTalk)} />
-        <KPI icon={Clock} label="میانگین انتظار" value={formatDuration(k.avgWait)} tone="bg-amber-500/10 text-amber-600" />
+        <KPI icon={Clock} label="میانگین انتظار" value={formatDuration(k.avgWait)} tone="bg-secondary text-secondary-foreground" />
         <KPI icon={ListTodo} label="پیگیری‌های باز" value={k.followupsDue ?? 0} />
-        <KPI icon={AlertTriangle} label="پیگیری معوق" value={k.followupsOverdue ?? 0} tone="bg-red-500/10 text-red-600" />
-        <KPI icon={TrendingUp} label="فروش با کمک تماس" value={k.assistedSales ?? 0} tone="bg-emerald-500/10 text-emerald-600" />
+        <KPI icon={AlertTriangle} label="پیگیری معوق" value={k.followupsOverdue ?? 0} tone="bg-secondary text-secondary-foreground" />
+        <KPI icon={TrendingUp} label="فروش با کمک تماس" value={k.assistedSales ?? 0} tone="bg-secondary text-secondary-foreground" />
         <KPI icon={Sparkles} label="میانگین امتیاز AI" value={k.avgAiScore ?? '—'} />
       </div>
 
@@ -126,7 +128,7 @@ const CallCenterOverview: React.FC = () => {
                 <Tooltip />
                 <Legend />
                 <Line type="monotone" dataKey="answered" name="پاسخ داده شده" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="missed" name="از دست رفته" stroke="#ef4444" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="missed" name="از دست رفته" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
