@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CallButton from '@/components/CallCenter/CallButton';
+import LeadCallHistory from '@/components/CallCenter/LeadCallHistory';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -2267,6 +2268,11 @@ const SimplifiedLeadManagement: React.FC = () => {
                       </div>
                     )}
                   </div>
+                </div>
+
+                <div className="space-y-2 pt-4 border-t">
+                  <h4 className="text-sm font-semibold">تاریخچه تماس‌ها</h4>
+                  <LeadCallHistory phone={selectedLead.phone} />
                 </div>
 
                 {/* Actions */}
