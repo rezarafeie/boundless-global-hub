@@ -167,3 +167,62 @@ export const PRIORITY_LABELS: Record<string, string> = {
   medium: 'متوسط',
   low: 'پایین',
 };
+
+export type TranscriptStreamEvent =
+  | { type: 'stage'; stage: 'download' | 'transcribe' | 'correct' }
+  | { type: 'raw'; delta: string }
+  | { type: 'raw_done'; text: string }
+  | { type: 'corrected'; delta: string }
+  | { type: 'notice'; message: string }
+  | { type: 'done'; transcript: string; corrected: boolean }
+  | { type: 'error'; error: string };
+
+/** Streams speech-to-text + AI spelling correction for one call (SSE). */
+export async function streamCallTranscript(callId: string, onEvent: (e: TranscriptStreamEvent) => void, signal?: AbortSignal) {
+  const sessionToken = getSessionToken();
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-call`;
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const res = await fetch(url, {
+    method: 'POST',
+    signal,
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      ...(sessionToken ? { 'x-session-token': sessionToken } : {}),
+    },
+    body: JSON.stringify({ callId, stream: true, sessionToken }),
+  });
+  if (!res.ok || !res.body || !(res.headers.get('content-type') ?? '').includes('text/event-stream')) {
+    let msg = `خطا (${res.status})`;
+    try { const j = await res.json(); msg = j?.error || msg; } catch { /* not json */ }
+    throw new Error(msg);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+  let finished = false;
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let idx: number;
+    while ((idx = buf.indexOf('\n\n')) >= 0) {
+      const chunk = buf.slice(0, idx);
+      buf = buf.slice(idx + 2);
+      let event = 'message';
+      const data: string[] = [];
+      for (const line of chunk.split('\n')) {
+        if (line.startsWith('event:')) event = line.slice(6).trim();
+        else if (line.startsWith('data:')) data.push(line.slice(5).trim());
+      }
+      if (!data.length) continue;
+      try {
+        const payload = JSON.parse(data.join('\n'));
+        onEvent({ type: event, ...payload } as TranscriptStreamEvent);
+        if (event === 'done' || event === 'error') finished = true;
+      } catch { /* ignore malformed frame */ }
+    }
+  }
+  if (!finished) throw new Error('اتصال قبل از پایان قطع شد؛ پردازش در پس‌زمینه ادامه دارد');
+}
