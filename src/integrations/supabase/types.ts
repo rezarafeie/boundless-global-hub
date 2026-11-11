@@ -3995,6 +3995,8 @@ export type Database = {
       }
       daftareshoma_sync_state: {
         Row: {
+          backfill_date: string | null
+          backfill_page: number
           calls_synced: number
           created_at: string
           id: number
@@ -4006,6 +4008,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          backfill_date?: string | null
+          backfill_page?: number
           calls_synced?: number
           created_at?: string
           id?: number
@@ -4017,6 +4021,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          backfill_date?: string | null
+          backfill_page?: number
           calls_synced?: number
           created_at?: string
           id?: number
