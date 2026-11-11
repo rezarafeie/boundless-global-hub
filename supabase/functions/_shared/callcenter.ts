@@ -93,6 +93,11 @@ export async function authenticate(req: Request, bodyToken?: string): Promise<Au
   const roleNames = new Set<string>([user.role ?? 'user', ...(extraRoles ?? []).map((r: any) => r.role_name)])
   if (user.is_messenger_admin) roleNames.add('admin')
   if (user.is_support_agent) roleNames.add('support_agent')
+  // The panel identifies sales agents via the sales_agents table; mirror that here.
+  if (!roleNames.has('sales_agent')) {
+    const { data: agentRow } = await admin.from('sales_agents').select('id').eq('user_id', user.id).eq('is_active', true).maybeSingle()
+    if (agentRow) roleNames.add('sales_agent')
+  }
 
   const isAdmin = roleNames.has('admin')
   const permissions = new Set<Permission>()

@@ -11,7 +11,16 @@ const CallCenterSettings = React.lazy(() => import('@/pages/Admin/CallCenter/Cal
 
 const Fallback = () => <div className="p-8 text-center text-muted-foreground">در حال بارگذاری…</div>;
 
-const CallCenterDashboard: React.FC = () => (
+const CallCenterDashboard: React.FC<{ agentView?: boolean }> = ({ agentView }) => agentView ? (
+  <Tabs defaultValue="calls" dir="rtl" className="space-y-4">
+    <TabsList className="flex-wrap h-auto">
+      <TabsTrigger value="calls" className="gap-1"><PhoneCall className="h-4 w-4" /> تماس‌های من</TabsTrigger>
+      <TabsTrigger value="overview" className="gap-1"><LayoutDashboard className="h-4 w-4" /> آمار من</TabsTrigger>
+    </TabsList>
+    <TabsContent value="calls"><Suspense fallback={<Fallback />}><CallsList /></Suspense></TabsContent>
+    <TabsContent value="overview"><Suspense fallback={<Fallback />}><CallCenterOverview agentView /></Suspense></TabsContent>
+  </Tabs>
+) : (
   <Tabs defaultValue="overview" dir="rtl" className="space-y-4">
     <TabsList className="flex-wrap h-auto">
       <TabsTrigger value="overview" className="gap-1"><LayoutDashboard className="h-4 w-4" /> نمای کلی</TabsTrigger>
