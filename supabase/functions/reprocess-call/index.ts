@@ -1,4 +1,5 @@
 import { requireCallAccess } from '../_shared/callcenter.ts'
+import {validProcessingStage,requiresAiPermission} from '../_shared/call-policy.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 import { admin, authenticate, requirePermission, audit, AuthError, invokeFn, json } from '../_shared/callcenter.ts'
 
@@ -15,11 +16,13 @@ Deno.serve(async (req) => {
     if (!callId) return json({ success: false, error: 'callId الزامی است' }, 400, corsHeaders)
 
     const stage = body.stage ?? 'auto' // recording | transcript | analysis | auto
+    if(!validProcessingStage(stage)) throw new AuthError('Invalid processing stage',400)
     const { data: call } = await admin.from('calls').select('id, recording_id').eq('id', callId).maybeSingle()
     if (!call) return json({ success: false, error: 'تماس یافت نشد' }, 404, corsHeaders)
 
     await requireCallAccess(ctx, callId)
-    if (stage === 'analysis' || stage === 'auto') requirePermission(ctx, 'calls.ai_analysis')
+    if (requiresAiPermission(stage)) requirePermission(ctx, 'calls.ai_analysis')
+    if(stage==='transcript') requirePermission(ctx,'calls.view_transcript')
     const { data: rec } = await admin.from('call_recordings').select('status').eq('call_id', callId).maybeSingle()
     const { data: tr } = await admin.from('call_transcripts').select('processing_status').eq('call_id', callId).maybeSingle()
 

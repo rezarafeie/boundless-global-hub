@@ -1,7 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts'
 import {
   admin, authenticate, requirePermission, audit, checkRateLimit, AuthError,
-  dsTryEndpoints, ProviderError, normalizePhone, getSettings, matchCrmRecords, json, resolveAgentExtension,
+  dsRequest, ProviderError, normalizePhone, getSettings, matchCrmRecords, json, resolveAgentExtension,
 } from '../_shared/callcenter.ts'
 
 Deno.serve(async (req) => {
@@ -45,38 +45,36 @@ Deno.serve(async (req) => {
       : lineDigits.startsWith('0')
         ? `+98${lineDigits.slice(1)}`
         : lineDigits
-    const lineVariants = [...new Set([internationalLine, lineDigits])]
+    const {data:claim,error:claimError}=await admin.rpc('callcenter_claim_outgoing',{agent_user:ctx.userId,customer_phone:target.normalized})
+    if(claimError) throw new Error(claimError.message)
+    if(!claim?.length) throw new AuthError('درخواست تماس اخیر وجود دارد؛ پیش از تماس دوباره وضعیت آن را بررسی کنید.',409)
+    const claimed=claim[0]
 
     let providerResponse: any = null
     let endpoint: string | null = null
     try {
-      const res = await dsTryEndpoints(lineVariants.map((callerLine) => ({
-        path: '/api/Customize/OutgoingCall',
-        method: 'POST',
-        body: { from_number: agentPhone, to_number: dial, caller_extension: callerLine },
-      })))
-      endpoint = res.path
-      providerResponse = res.data
+      endpoint='/api/Customize/OutgoingCall'
+      providerResponse = await dsRequest(endpoint,{method:'POST',body:{from_number:agentPhone,to_number:dial,caller_extension:internationalLine}})
     } catch (e) {
       const pe = e as ProviderError
-      console.log('outgoing-call attempts', JSON.stringify((pe as any).attempts ?? []))
+      await admin.from('calls').update({status:'failed',processing_error:'Provider outcome uncertain; verify before redial'}).eq('id',claimed.id)
       await audit(ctx, 'call.outgoing_failed', 'call', null, { phone: target.normalized, agentPhone, callerLine: internationalLine, error: pe.message })
       const raw = JSON.stringify(pe.body ?? '')
       const lineMissing = raw.includes('خط وجود ندارد') || raw.includes('هفت رقم')
       const message = lineMissing
         ? `تماس برقرار نشد: شماره کارشناس «${agentPhone}» یا خط آکادمی «${internationalLine}» در پنل دفتر شما معتبر نیست.`
         : pe.message
-      return json({ success: false, error: message, detail: pe.body ?? null, agentPhone, phoneSource: resolved.source, callerLine: internationalLine, attempts: (pe as any).attempts ?? [] }, pe.status >= 400 && pe.status < 600 ? pe.status : 502, corsHeaders)
+      return json({ success: false, error: message }, pe.status >= 400 && pe.status < 600 ? pe.status : 502, corsHeaders)
     }
 
     const providerCallId = String(
       providerResponse?.uniqueId ?? providerResponse?.callId ?? providerResponse?.id ??
-      `pending-${crypto.randomUUID()}`,
+      claimed.provider_call_id,
     )
 
     const match = settings.auto_lead_matching ? await matchCrmRecords(target.normalized) : null
 
-    const { data: call } = await admin.from('calls').upsert({
+    const { data: call,error:saveError } = await admin.from('calls').update({
       provider: 'daftareshoma',
       provider_call_id: providerCallId,
       direction: 'outgoing',
@@ -88,16 +86,17 @@ Deno.serve(async (req) => {
       extension: internationalLine,
       started_at: new Date().toISOString(),
       agent_id: ctx.userId,
-      user_id: match?.user_id ?? body.userId ?? null,
-      lead_id: match?.lead_id ?? body.leadId ?? null,
-      consultation_id: match?.consultation_id ?? body.consultationId ?? null,
-      webinar_registration_id: match?.webinar_registration_id ?? body.webinarRegistrationId ?? null,
-      order_id: match?.order_id ?? body.orderId ?? null,
+      user_id: match?.user_id ?? null,
+      lead_id: match?.lead_id ?? null,
+      consultation_id: match?.consultation_id ?? null,
+      webinar_registration_id: match?.webinar_registration_id ?? null,
+      order_id: match?.order_id ?? null,
       match_confidence: match?.match_confidence ?? 'manual',
       source: body.source ?? 'crm_click_to_call',
       processing_status: 'pending',
       raw_payload: { originate: providerResponse, endpoint },
-    }, { onConflict: 'provider,provider_call_id' }).select('id').maybeSingle()
+    }).eq('id',claimed.id).select('id').maybeSingle()
+    if(saveError || !call) throw new Error('درخواست ارسال شد اما ثبت نتیجه ناموفق بود؛ دوباره تماس نگیرید.')
 
     await audit(ctx, 'call.outgoing_initiated', 'call', call?.id ?? null, {
       phone: target.normalized, agentPhone, phoneSource: resolved.source, callerLine: internationalLine, endpoint,
