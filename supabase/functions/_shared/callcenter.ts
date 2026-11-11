@@ -235,6 +235,24 @@ export async function checkRateLimit(actorId: number, action: string, max: numbe
 
 const DS_BASE = (Deno.env.get('DAFTARESHOMA_BASE_URL') || 'https://coreapi.daftareshoma.com').replace(/\/+$/, '')
 
+/** DaftareShoma is reachable only from Iran: when DAFTARESHOMA_PROXY_URL is set,
+ * every provider request is relayed through the Iran-hosted proxy. */
+export async function dsFetch(target: string, init: RequestInit = {}): Promise<Response> {
+  const proxy = Deno.env.get('DAFTARESHOMA_PROXY_URL')
+  if (!proxy) return fetch(target, init)
+  const secret = Deno.env.get('DAFTARESHOMA_PROXY_SECRET')
+  if (!secret) throw new ProviderError('DAFTARESHOMA_PROXY_SECRET تنظیم نشده است', 500, null)
+  const h = new Headers(init.headers)
+  const upstreamAuth = h.get('Authorization')
+  h.delete('Authorization')
+  if (upstreamAuth) h.set('X-Upstream-Authorization', upstreamAuth)
+  h.set('Authorization', `Bearer ${secret}`)
+  h.set('X-Upstream-Method', (init.method ?? 'GET').toUpperCase())
+  const url = new URL(proxy)
+  url.searchParams.set('target', target)
+  return fetch(url.toString(), { ...init, method: 'POST', headers: h })
+}
+
 export class ProviderError extends Error {
   status: number
   body: unknown
@@ -261,7 +279,7 @@ export async function dsRequest(
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 25000)
 
   try {
-    const res = await fetch(url.toString(), {
+    const res = await dsFetch(url.toString(), {
       method: opts.method ?? 'GET',
       headers: {
         // Verified Customize API uses Bearer authentication.
@@ -313,7 +331,7 @@ export async function dsPortalRequest(
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
-    const res = await fetch(DS_BASE + (path.startsWith('/') ? path : '/' + path), {
+    const res = await dsFetch(DS_BASE + (path.startsWith('/') ? path : '/' + path), {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token.replace(/^Bearer\s+/i, '')}`,

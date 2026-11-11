@@ -38,7 +38,7 @@ async function fetchAndStore(callId: string) {
     const url = meta?.url ?? meta?.Url ?? null
     if (meta?.success === false || !url) throw new Error(meta?.errorMessage || meta?.ErrorMessage || 'فایل ضبط در دسترس نیست')
 
-    const dl = await fetch(String(url))
+    const dl = await dsFetch(String(url))
     if (!dl.ok) throw new Error(`دانلود فایل ضبط ناموفق بود (${dl.status})`)
     res = dl
   } catch (e) {
