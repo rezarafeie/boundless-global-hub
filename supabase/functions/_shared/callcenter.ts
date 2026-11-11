@@ -284,8 +284,8 @@ export async function dsRequest(
     const res = await dsFetch(url.toString(), {
       method: opts.method ?? 'GET',
       headers: {
-        // Verified Customize API uses Bearer authentication.
-        'Authorization': (opts.authMode ?? Deno.env.get('DAFTARESHOMA_AUTH_MODE')) === 'raw'
+        // Verified live 2026-11-11: Customize API accepts the raw token (Bearer prefix returns 500).
+        'Authorization': (opts.authMode ?? Deno.env.get('DAFTARESHOMA_AUTH_MODE') ?? 'raw') === 'raw'
           ? token.replace(/^Bearer\s+/i, '')
           : `Bearer ${token.replace(/^Bearer\s+/i, '')}`,
         'Accept': 'application/json',
