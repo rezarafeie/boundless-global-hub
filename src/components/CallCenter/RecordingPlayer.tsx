@@ -20,7 +20,7 @@ const RecordingPlayer: React.FC<{ callId: string; canDownload?: boolean }> = ({ 
     let active = true;
     setLoading(true);
     callCenter.recordingUrl(callId)
-      .then((res) => { if (active) setUrl(res.url); })
+      .then((res) => { if (active) { setUrl(res.url); if (!res.url && res.reason) setError(res.reason); } })
       .catch((e) => { if (active) setError(e.message); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };

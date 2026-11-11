@@ -377,8 +377,8 @@ Deno.serve(async (req) => {
 
       case 'recording-url': {
         requirePermission(ctx, 'calls.listen_recording')
-        const { data: rec } = await admin.from('call_recordings').select('storage_path, mime_type').eq('call_id', p.callId).maybeSingle()
-        if (!rec?.storage_path) return json({ success: true, url: null, mime: null, reason: 'فایل ضبط هنوز دریافت نشده است' }, 200, corsHeaders)
+        const { data: rec } = await admin.from('call_recordings').select('storage_path, mime_type, status, error').eq('call_id', p.callId).maybeSingle()
+        if (!rec?.storage_path || rec.status !== 'ready') return json({ success: true, url: null, mime: null, reason: rec?.error || 'فایل ضبط هنوز دریافت نشده است' }, 200, corsHeaders)
         const { data: signed, error } = await admin.storage.from('call-recordings').createSignedUrl(rec.storage_path, 3600)
         if (error) return json({ success: false, error: error.message }, 500, corsHeaders)
         await audit(ctx, 'call.recording_accessed', 'call', p.callId, {})
