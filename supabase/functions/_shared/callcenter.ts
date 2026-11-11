@@ -267,7 +267,7 @@ export class ProviderError extends Error {
 
 export async function dsRequest(
   path: string,
-  opts: { method?: string; body?: unknown; query?: Record<string, string | number | undefined>; raw?: boolean; timeoutMs?: number } = {},
+  opts: { method?: string; body?: unknown; query?: Record<string, string | number | undefined>; raw?: boolean; timeoutMs?: number; authMode?: 'bearer' | 'raw' } = {},
 ): Promise<any> {
   const token = Deno.env.get('DAFTARESHOMA_API_TOKEN')
   if (!token) throw new ProviderError('DAFTARESHOMA_API_TOKEN تنظیم نشده است', 500, null)
@@ -284,8 +284,10 @@ export async function dsRequest(
     const res = await dsFetch(url.toString(), {
       method: opts.method ?? 'GET',
       headers: {
-        // Verified Customize API uses Bearer authentication.
-        'Authorization': `Bearer ${token.replace(/^Bearer\s+/i, '')}`,
+        // Verified live 2026-11-11: Customize API accepts the raw token (Bearer prefix returns 500).
+        'Authorization': (opts.authMode ?? Deno.env.get('DAFTARESHOMA_AUTH_MODE') ?? 'raw') === 'raw'
+          ? token.replace(/^Bearer\s+/i, '')
+          : `Bearer ${token.replace(/^Bearer\s+/i, '')}`,
         'Accept': 'application/json',
         ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
       },
