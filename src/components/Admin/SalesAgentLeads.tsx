@@ -994,6 +994,11 @@ const SalesAgentLeads: React.FC = () => {
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold">تاریخچه تماس‌ها</h4>
+                  <LeadCallHistory phone={selectedLead.phone} />
+                </div>
+
                 {/* Add Note Button */}
                 <Button 
                   onClick={() => setShowAddNote(true)}
