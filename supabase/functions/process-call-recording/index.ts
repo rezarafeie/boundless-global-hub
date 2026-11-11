@@ -1,3 +1,4 @@
+import { requireInternalOrAdmin } from '../_shared/callcenter.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 import {
   admin, authenticate, requirePermission, audit, AuthError,
@@ -35,7 +36,7 @@ async function fetchAndStore(callId: string) {
       timeoutMs: 30000,
     })
     const url = meta?.url ?? meta?.Url ?? null
-    if (!url) throw new Error(meta?.errorMessage || meta?.ErrorMessage || 'فایل ضبط در دسترس نیست')
+    if (meta?.success === false || !url) throw new Error(meta?.errorMessage || meta?.ErrorMessage || 'فایل ضبط در دسترس نیست')
 
     const dl = await fetch(String(url))
     if (!dl.ok) throw new Error(`دانلود فایل ضبط ناموفق بود (${dl.status})`)
@@ -78,7 +79,7 @@ async function fetchAndStore(callId: string) {
 
   const settings = await getSettings()
   if (settings.transcription_enabled && (call.talk_seconds ?? 0) >= (settings.min_call_seconds_for_ai ?? 30)) {
-    invokeFn('transcribe-call', { callId: call.id })
+    await invokeFn('transcribe-call', { callId: call.id })
   }
 
   return { path, mime, size: bytes.length }
@@ -91,20 +92,12 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}))
     const callId = body.callId
 
-    if (!body.internal) {
-      const ctx = await authenticate(req, body.sessionToken)
-      requirePermission(ctx, 'calls.manage')
-      await audit(ctx, 'call.recording_fetch', 'call', callId, {})
-    }
+    await requireInternalOrAdmin(req)
 
     if (body.pending) {
       // batch mode for the cron job
-      const { data: calls } = await admin
-        .from('calls')
-        .select('id, recording_id, call_recordings(status)')
-        .not('recording_id', 'is', null)
-        .order('started_at', { ascending: false })
-        .limit(25)
+      const { data: calls, error } = await admin.rpc('callcenter_pending_recordings', { batch_size: 25 })
+      if (error) throw new Error(error.message)
 
       let processed = 0
       for (const c of calls ?? []) {

@@ -289,3 +289,6 @@ verify_jwt = false
 
 [functions.social-enrollment-worker]
 verify_jwt = false
+
+[functions.call-control]
+verify_jwt = false

@@ -1,3 +1,5 @@
+import { invokeFn } from '../_shared/callcenter.ts'
+import { requireInternalOrAdmin } from '../_shared/callcenter.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 import { admin, authenticate, requirePermission, audit, AuthError, getSettings, json } from '../_shared/callcenter.ts'
 
@@ -18,7 +20,7 @@ const clamp = (v: unknown) => {
   return Math.max(0, Math.min(100, Math.round(n)))
 }
 
-async function run(callId: string) {
+async function analyze(callId: string) {
   const { data: call } = await admin.from('calls').select('*').eq('id', callId).maybeSingle()
   if (!call) throw new Error('تماس یافت نشد')
 
@@ -104,48 +106,41 @@ ${catalog || '(کاتالوگ در دسترس نیست)'}
 
   await admin.from('call_ai_analysis').upsert(record, { onConflict: 'call_id' })
   await admin.from('calls').update({
-    processing_status: 'completed',
+    processing_status: 'completed', processing_error: null,
     ai_score: record.overall_sales_score,
     purchase_intent_score: record.purchase_intent_score,
   }).eq('id', callId)
 
   // downstream automations (high-intent tasks, attribution)
-  await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/process-call-automations`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
-    body: JSON.stringify({ internal: true, callId }),
-  }).catch(() => {})
+  await invokeFn('process-call-automations', { callId })
 
   return record
 }
 
+async function run(callId: string) {
+  try { return await analyze(callId) } catch (e) {
+    await admin.from('calls').update({ processing_status: 'failed', processing_error: (e as Error).message }).eq('id', callId)
+    throw e
+  }
+}
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
 
   try {
     const body = await req.json().catch(() => ({}))
 
-    if (!body.internal) {
-      const ctx = await authenticate(req, body.sessionToken)
-      requirePermission(ctx, 'calls.ai_analysis')
-      await audit(ctx, 'call.ai_analysis_run', 'call', body.callId, {})
-    }
+    await requireInternalOrAdmin(req)
 
     if (body.pending) {
       const settings = await getSettings()
       if (!settings.ai_analysis_enabled) return json({ success: true, skipped: true }, 200, corsHeaders)
 
-      const { data: ready } = await admin
-        .from('call_transcripts')
-        .select('call_id')
-        .eq('processing_status', 'completed')
-        .limit(50)
-      const ids = (ready ?? []).map((r: any) => r.call_id)
-      const { data: analyzed } = await admin.from('call_ai_analysis').select('call_id').in('call_id', ids.length ? ids : ['00000000-0000-0000-0000-000000000000'])
-      const done = new Set((analyzed ?? []).map((a: any) => a.call_id))
+      const { data: ready, error } = await admin.rpc('callcenter_pending_analysis', { batch_size: 8 })
+      if (error) throw new Error(error.message)
+      const ids = (ready ?? []).map((r: any) => r.id)
 
       let processed = 0
-      for (const id of ids.filter((i) => !done.has(i)).slice(0, 8)) {
+      for (const id of ids) {
         try { await run(id); processed++ } catch (e) { console.error('analysis failed', id, (e as Error).message) }
       }
       return json({ success: true, processed }, 200, corsHeaders)

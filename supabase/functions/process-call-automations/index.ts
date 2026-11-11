@@ -1,3 +1,4 @@
+import { requireInternalOrAdmin } from '../_shared/callcenter.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 import { admin, authenticate, requirePermission, AuthError, getSettings, json } from '../_shared/callcenter.ts'
 
@@ -176,10 +177,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}))
 
-    if (!body.internal && !body.cron) {
-      const ctx = await authenticate(req, body.sessionToken)
-      requirePermission(ctx, 'calls.manage')
-    }
+    await requireInternalOrAdmin(req)
 
     if (body.callId) {
       const result = await processCall(body.callId)
