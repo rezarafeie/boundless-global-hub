@@ -484,14 +484,15 @@ Deno.serve(async (req) => {
       case 'lookup': {
         const match = await matchCrmRecords(normalizePhone(p.phone).normalized)
         let history: any[] = []
-        const tail = phoneTail(p.phone)
+        const tail = normalizePhone(p.phone).normalized
         if (tail) {
           const { data } = await scope(admin.from('calls')
             .select('id, direction, status, started_at, talk_seconds, agent_id'), ctx)
-            .or(`caller_number_normalized.like.%${tail},destination_number_normalized.like.%${tail}`)
+            .or(`caller_number_normalized.eq.${tail},destination_number_normalized.eq.${tail}`)
             .order('started_at', { ascending: false }).limit(10)
           history = data ?? []
         }
+        if(ctx.restrictedToSelf && (!history.length || (match.agent_id && Number(match.agent_id)!==ctx.userId))) return json({success:true,match:null,history},200,corsHeaders)
         return json({ success: true, match, history }, 200, corsHeaders)
       }
 
