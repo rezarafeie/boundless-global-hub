@@ -1458,7 +1458,8 @@ const EnrollSuccess: React.FC = () => {
                                 }
                               : async () => {
                                   const finalUrl = await resolveTelegramUrl('', 'support');
-                                  if (finalUrl) openInNewTab(finalUrl);
+                                  // Same-tab navigation: in-app browsers (Instagram) block new tabs opened after an await
+                                  if (finalUrl) window.location.href = finalUrl;
                                 }}
                             size="lg"
                             className="mt-6 h-16 w-full gap-2 rounded-lg bg-primary text-base font-bold text-primary-foreground shadow-sm hover:bg-primary/90 sm:gap-3 sm:text-lg"
