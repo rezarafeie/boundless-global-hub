@@ -16,7 +16,7 @@ import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { Star, Zap, Clock, Play, BookOpen, Users, Award, ArrowRight } from "lucide-react";
+import { Star, Zap, Clock, ArrowLeft } from "lucide-react";
 import { TetherlandService } from "@/lib/tetherlandService";
 import { useBlackFridayContext } from "@/contexts/BlackFridayContext";
 import BlackFridayBanner from "@/components/BlackFriday/BlackFridayBanner";
@@ -245,97 +245,37 @@ const Index = () => {
     const config = colorConfig[color as keyof typeof colorConfig];
     const IconComponent = config.icon;
 
+    const tag = course.price === 0 ? 'رایگان' : isOnPrelaunch ? 'پیش‌فروش' : isOnSale ? 'تخفیف ویژه' : null;
     return (
-      <div className="group h-full">
-        <div className="relative h-full">
-          <div className={`relative h-full min-h-[350px] bg-card border ${config.border} rounded-2xl overflow-hidden transition-all duration-300 group-hover:shadow-xl ${config.shadow} group-hover:-translate-y-1 flex flex-col`}>
-            
-            <div className="aspect-[16/9] overflow-hidden bg-muted">
-              <img src={courseImage(course.slug, course.title)} alt={course.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+      <article className="group flex h-full flex-col overflow-hidden rounded-[2rem] border border-border bg-card transition-all duration-500 hover:-translate-y-1 hover:shadow-float">
+        <Link to={`/courses/${course.slug}`} className="relative block aspect-[4/3] overflow-hidden bg-photo-shade">
+          <img src={courseImage(course.slug, course.title)} alt={course.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105" />
+          <div className="absolute inset-0 bg-gradient-to-t from-photo-shade via-photo-shade/30 to-transparent" />
+          {tag && <span className="absolute right-4 top-4 rounded-full border border-photo-ink/20 bg-photo-shade/40 px-3 py-1 text-xs font-medium text-photo-ink backdrop-blur-md">{tag}</span>}
+          <h3 className="absolute inset-x-5 bottom-5 text-2xl font-extrabold leading-snug text-photo-ink md:text-[1.7rem]">{course.title}</h3>
+        </Link>
+        <div className="flex flex-1 flex-col gap-5 p-5 md:p-6">
+          <p className="line-clamp-2 text-sm leading-7 text-muted-foreground">
+            {course.description || (color === 'blue' ? 'دوره جامع و کاربردی برای پیشرفت در هوش مصنوعی' : 'سیستم علمی و عملی برای کارآفرینی موفق در سطح بین‌المللی')}
+          </p>
+          <div className="mt-auto flex items-end justify-between gap-4 border-t border-border pt-5">
+            <div>
+              <div className="text-xs text-muted-foreground">{course.price === 0 ? 'هزینه' : 'سرمایه‌گذاری'}</div>
+              <div className="mt-1 text-lg font-extrabold text-foreground">{course.price === 0 ? 'رایگان' : (displayPrice || '...')}</div>
+              {(isOnSale || isOnPrelaunch) && originalPrice && <div className="text-xs text-muted-foreground line-through">{originalPrice}</div>}
             </div>
-            
-            {/* Card content */}
-            <div className="p-6 md:p-8 flex flex-col flex-1">
-              {/* Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className={`w-12 h-12 bg-gradient-to-br ${config.iconBg} rounded-xl flex items-center justify-center shadow-lg ${config.iconShadow}`}>
-                      <IconComponent className="w-6 h-6 text-background" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className={`text-lg md:text-xl font-bold text-foreground mb-2 ${config.hover} transition-colors`}>
-                        {course.title}
-                      </h3>
-                      
-                      {/* Compact badges */}
-                      <div className="flex flex-wrap gap-2">
-                        {course.price === 0 && (
-                          <Badge className="bg-muted text-foreground text-xs">رایگان</Badge>
-                        )}
-                        {isOnPrelaunch && (
-                          <Badge className="bg-muted text-foreground text-xs animate-pulse">پیش‌فروش</Badge>
-                        )}
-                        {!isOnPrelaunch && isOnSale && (
-                          <Badge className="bg-muted text-foreground text-xs animate-pulse">تخفیف ویژه</Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Price */}
-                {course.price > 0 && (
-                  <div className="text-left ml-4">
-                    <div className={`text-xl md:text-2xl font-bold bg-gradient-to-r ${config.textGradient} bg-clip-text text-transparent`}>
-                      {displayPrice || 'در حال محاسبه...'}
-                    </div>
-                    {course.use_dollar_price && course.usd_price && (
-                      <div className="text-sm text-muted-foreground">
-                        ${currentPrice}
-                      </div>
-                    )}
-                    {(isOnSale || isOnPrelaunch) && originalPrice && (
-                      <div className="text-xs text-muted-foreground line-through">
-                        {originalPrice}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Description */}
-              <div className="flex-1 mb-4">
-                <p className="text-muted-foreground leading-relaxed text-sm md:text-base line-clamp-3">
-                  {course.description || (color === 'blue' ? 'دوره جامع و کاربردی برای پیشرفت در هوش مصنوعی' : 'سیستم علمی و عملی برای کارآفرینی موفق در سطح بین‌المللی')}
-                </p>
-              </div>
-
-              {/* Actions */}
-              <div className="space-y-3 mt-auto">
-                <QuickEnrollPopover
-                  courseSlug={course.slug}
-                  fallbackHref={`/enroll?course=${course.slug}`}
-                >
-                  <Button
-                    className={`w-full h-12 bg-gradient-to-r ${config.buttonBg} text-background font-medium shadow-lg ${config.buttonShadow} transition-all duration-300 flex items-center justify-center gap-2`}
-                  >
-                    <span>{course.price === 0 ? 'شروع دوره رایگان' : 'ثبت‌نام در دوره'}</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </QuickEnrollPopover>
-                
-                <Button asChild variant="ghost" size="sm" className={`w-full ${config.ghostHover}`}>
-                  <Link to={`/courses/${course.slug}`} className="flex items-center justify-center gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    مشاهده جزئیات
-                  </Link>
+            <div className="flex items-center gap-2">
+              <Link to={`/courses/${course.slug}`} className="hidden h-11 items-center rounded-full border border-border px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted sm:inline-flex">جزئیات</Link>
+              <QuickEnrollPopover courseSlug={course.slug} fallbackHref={`/enroll?course=${course.slug}`}>
+                <Button className="h-11 rounded-full px-5">
+                  {course.price === 0 ? 'شروع رایگان' : 'ثبت‌نام'}
+                  <ArrowLeft className="h-4 w-4" />
                 </Button>
-              </div>
+              </QuickEnrollPopover>
             </div>
           </div>
         </div>
-      </div>
+      </article>
     );
   };
 
@@ -377,343 +317,82 @@ const Index = () => {
     },
   ];
 
+  const priced = (course: any) => {
+    const isOnSale = course.is_sale_enabled && course.sale_price && (!course.sale_expires_at || new Date(course.sale_expires_at) > new Date());
+    const isOnPrelaunch = course.is_pre_launch_enabled && course.pre_launch_price && (!course.pre_launch_ends_at || new Date(course.pre_launch_ends_at) > new Date());
+    const basePrice = course.use_dollar_price ? course.usd_price : course.price;
+    const currentPrice = isOnPrelaunch ? course.pre_launch_price : isOnSale ? course.sale_price : basePrice;
+    return { isOnSale, isOnPrelaunch, currentPrice };
+  };
+
+  const CourseRow = ({ eyebrow, title, sub, courses, color }: { eyebrow: string; title: string; sub: string; courses: any[]; color: string }) =>
+    courses.length === 0 ? null : (
+      <section className="px-4 py-16 md:py-24">
+        <div className="container mx-auto">
+          <div className="mb-10 flex flex-col gap-4 md:mb-14 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-2xl">
+              <span className="text-xs font-semibold tracking-wide text-muted-foreground">{eyebrow}</span>
+              <h2 className="mt-3 text-3xl font-extrabold leading-tight text-foreground md:text-5xl">{title}</h2>
+              <p className="mt-4 text-base leading-8 text-muted-foreground">{sub}</p>
+            </div>
+            <Link to="/courses" className="group inline-flex items-center gap-2 self-start text-sm font-semibold text-foreground md:self-auto">
+              همه دوره‌ها
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-border transition-transform group-hover:-translate-x-1"><ArrowLeft className="h-4 w-4" /></span>
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8">
+            {courses.map((course) => {
+              const p = priced(course);
+              return <CourseCardWithPrice key={course.id} course={course} {...p} color={color} />;
+            })}
+          </div>
+        </div>
+      </section>
+    );
+
+  const stats = [
+    { value: displayStudentsCount, label: 'دانشجو در سراسر جهان' },
+    { value: displayEnrollmentsCount, label: 'ثبت‌نام موفق' },
+    { value: totalCoursesCount, label: 'دوره فعال و به‌روز' },
+  ];
+
   return (
     <MainLayout>
-      {/* Black Friday Banner */}
       {isBlackFridayActive && blackFridaySettings?.end_date && (
         <BlackFridayBanner endDate={blackFridaySettings.end_date} />
       )}
-      
+
       <Hero ctaText="مشاهده دوره‌ها" ctaLink="/courses" />
+
+      <section className="px-4 pt-10 md:pt-14">
+        <div className="container mx-auto">
+          <div className="grid grid-cols-3 divide-x divide-x-reverse divide-border rounded-[2rem] border border-border bg-card">
+            {stats.map((st) => (
+              <div key={st.label} className="px-3 py-6 text-center md:py-10">
+                <div className="text-2xl font-extrabold tracking-tight text-foreground md:text-5xl">{st.value ? formatNumber(st.value) : '—'}</div>
+                <div className="mt-2 text-xs text-muted-foreground md:text-sm">{st.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <QuickAccess />
+
+      <CourseRow eyebrow="مسیر بدون مرز" title="زندگی و درآمدی که به جغرافیا محدود نیست" sub="از اولین قدم تا ساختن کسب‌وکار بین‌المللی؛ مسیری که هزاران نفر پیش از تو رفته‌اند." courses={boundlessCourses} color="green" />
+
       <FounderStory />
-      <IRClassBanner />
-      <IranCourseBanner />
-      <HubBanner />
 
-      {/* Academy Students Statistics Section */}
-      <section className="py-16 md:py-20 relative overflow-hidden">
-        {/* Glowing background effects */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-primary/5 to-foreground/5 rounded-full blur-3xl"></div>
-        </div>
-        
-        <div className="container px-4 relative">
-          <div className="text-center mb-12 md:mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-foreground/10 backdrop-blur-sm rounded-full mb-6 border border-primary/20 dark:border-primary/30">
-              <div className="w-2 h-2 bg-gradient-to-r from-primary to-foreground rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent">آمار آکادمی</span>
-            </div>
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 text-foreground">
-              <span className="bg-gradient-to-r from-primary via-foreground to-primary bg-clip-text text-transparent">
-                جامعه آکادمی رفیعی
-              </span>
-            </h2>
-            <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              آمار و اطلاعات جامعه بزرگ دانشجویان و فارغ‌التحصیلان آکادمی رفیعی
-            </p>
-          </div>
+      <CourseRow eyebrow="هوش مصنوعی" title="ابزاری که آینده را می‌سازد، امروز در دست توست" sub="آموزش عملی هوش مصنوعی برای زندگی هوشمندتر و کسب‌وکاری که سریع‌تر رشد می‌کند." courses={featuredCourses} color="blue" />
 
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto">
-            {/* Students Count */}
-            <div className="group relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-foreground/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-              <div className="relative bg-white/90 dark:bg-card/90 backdrop-blur-sm border border-primary/20 dark:border-primary/30 rounded-2xl p-4 md:p-8 text-center hover:border-primary/40 dark:hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 group-hover:-translate-y-0.5">
-                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-primary to-foreground rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-primary/30">
-                  <Users className="w-6 h-6 md:w-8 md:h-8 text-background" />
-                </div>
-                <div className="text-xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent mb-2 transition-all duration-500">
-                  {formatNumber(displayStudentsCount)}
-                </div>
-                <div className="text-sm md:text-base text-muted-foreground font-medium">دانشجو آکادمی</div>
-                <div className="text-xs md:text-sm text-muted-foreground/80 mt-2 flex items-center justify-center gap-1">
-                  <div className="w-1 h-1 bg-primary rounded-full animate-pulse"></div>
-                  سراسر جهان
-                </div>
-              </div>
-            </div>
-
-            {/* Enrollments Count */}
-            <div className="group relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-foreground/20 to-foreground/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-              <div className="relative bg-white/90 dark:bg-card/90 backdrop-blur-sm border border-border/50 dark:border-border/30 rounded-2xl p-4 md:p-8 text-center hover:border-border/50 dark:hover:border-border/50 hover:shadow-2xl hover:shadow-foreground/10 transition-all duration-500 group-hover:-translate-y-0.5">
-                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-foreground to-foreground rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-foreground/10">
-                  <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-background" />
-                </div>
-                <div className="text-xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground bg-clip-text text-transparent mb-2 transition-all duration-500">
-                  {formatNumber(displayEnrollmentsCount)}
-                </div>
-                <div className="text-sm md:text-base text-muted-foreground font-medium">ثبت‌نام موفق</div>
-                <div className="text-xs md:text-sm text-muted-foreground/80 mt-2 flex items-center justify-center gap-1">
-                  <div className="w-1 h-1 bg-primary rounded-full animate-pulse"></div>
-                  در تمام دوره‌ها
-                </div>
-              </div>
-            </div>
-
-            {/* Courses Count - Hidden on mobile */}
-            <div className="hidden md:block group relative col-span-2 lg:col-span-1">
-              <div className="absolute inset-0 bg-gradient-to-r from-foreground/20 to-foreground/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-              <div className="relative bg-white/90 dark:bg-card/90 backdrop-blur-sm border border-border/50 dark:border-border/30 rounded-2xl p-4 md:p-8 text-center hover:border-border/50 dark:hover:border-border/50 hover:shadow-2xl hover:shadow-foreground/10 transition-all duration-500 group-hover:-translate-y-0.5">
-                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-foreground to-foreground rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-foreground/10">
-                  <Award className="w-6 h-6 md:w-8 md:h-8 text-background" />
-                </div>
-                <div className="text-xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground bg-clip-text text-transparent mb-2">
-                  {formatNumber(totalCoursesCount)}
-                </div>
-                <div className="text-sm md:text-base text-muted-foreground font-medium">دوره تخصصی</div>
-                <div className="text-xs md:text-sm text-muted-foreground/80 mt-2">فعال و به‌روز</div>
-              </div>
-            </div>
-          </div>
+      <section className="px-4 pb-4">
+        <div className="container mx-auto space-y-4">
+          <HubBanner />
+          <IRClassBanner />
+          <IranCourseBanner />
         </div>
       </section>
 
-      {/* AI Courses Section */}
-      {featuredCourses.length > 0 && (
-        <section className="py-16 md:py-24 relative overflow-hidden">
-          {/* Glowing background effects */}
-          <div className="absolute inset-0">
-            <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-foreground/5 to-foreground/5 rounded-full blur-3xl"></div>
-          </div>
-          
-          <div className="container px-4 relative">
-            <div className="text-center mb-12 md:mb-20">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-foreground/10 to-foreground/10 backdrop-blur-sm rounded-full mb-6 border border-border/20 dark:border-border/20">
-                <div className="w-2 h-2 bg-gradient-to-r from-foreground to-foreground rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium bg-gradient-to-r from-foreground to-foreground bg-clip-text text-transparent">هوش مصنوعی</span>
-              </div>
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 text-foreground">
-                <span className="bg-gradient-to-r from-foreground via-foreground to-foreground bg-clip-text text-transparent">
-                  دوره‌های هوش مصنوعی
-                </span>
-              </h2>
-              <p className="text-sm md:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
-                آموزش عملی و کاربردی هوش مصنوعی برای تغییر زندگی و کسب‌وکار
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto">
-              {featuredCourses.map((course) => {
-                const isOnSale = course.is_sale_enabled && course.sale_price && 
-                  (!course.sale_expires_at || new Date(course.sale_expires_at) > new Date());
-                const isOnPrelaunch = course.is_pre_launch_enabled && course.pre_launch_price &&
-                  (!course.pre_launch_ends_at || new Date(course.pre_launch_ends_at) > new Date());
-                
-                // Fix price calculation for USD courses
-                const basePrice = course.use_dollar_price ? course.usd_price : course.price;
-                const currentPrice = isOnPrelaunch ? course.pre_launch_price : 
-                  isOnSale ? course.sale_price : basePrice;
-                
-                return (
-                  <CourseCardWithPrice 
-                    key={course.id}
-                    course={course}
-                    currentPrice={currentPrice}
-                    isOnSale={isOnSale}
-                    isOnPrelaunch={isOnPrelaunch}
-                    color="blue"
-                  />
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Boundless Courses Section */}
-      {boundlessCourses.length > 0 && (
-        <section className="py-16 md:py-24 relative overflow-hidden">
-          {/* Glowing background effects */}
-          <div className="absolute inset-0">
-            <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-foreground/5 to-foreground/5 rounded-full blur-3xl"></div>
-          </div>
-          
-          <div className="container px-4 relative">
-            <div className="text-center mb-12 md:mb-20">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-foreground/10 to-foreground/10 backdrop-blur-sm rounded-full mb-6 border border-border/20 dark:border-border/20">
-                <div className="w-2 h-2 bg-gradient-to-r from-foreground to-foreground rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium bg-gradient-to-r from-foreground to-foreground bg-clip-text text-transparent">بدون مرز</span>
-              </div>
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 text-foreground">
-                <span className="bg-gradient-to-r from-foreground via-foreground to-foreground bg-clip-text text-transparent">
-                  دوره‌های بدون مرز
-                </span>
-              </h2>
-              <p className="text-sm md:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
-                سیستم علمی و عملی برای کارآفرینی موفق در سطح بین‌المللی
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto">
-              {boundlessCourses.map((course) => {
-                const isOnSale = course.is_sale_enabled && course.sale_price && 
-                  (!course.sale_expires_at || new Date(course.sale_expires_at) > new Date());
-                const isOnPrelaunch = course.is_pre_launch_enabled && course.pre_launch_price &&
-                  (!course.pre_launch_ends_at || new Date(course.pre_launch_ends_at) > new Date());
-                
-                // Fix price calculation for USD courses
-                const basePrice = course.use_dollar_price ? course.usd_price : course.price;
-                const currentPrice = isOnPrelaunch ? course.pre_launch_price : 
-                  isOnSale ? course.sale_price : basePrice;
-                
-                return (
-                  <CourseCardWithPrice 
-                    key={course.id}
-                    course={course}
-                    currentPrice={currentPrice}
-                    isOnSale={isOnSale}
-                    isOnPrelaunch={isOnPrelaunch}
-                    color="green"
-                  />
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Courses CTA Section */}
-      <section className="py-16 md:py-20 relative overflow-hidden border-y border-border/20">
-        {/* Glowing background effects */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/2 -left-32 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
-          <div className="absolute top-1/2 -right-32 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
-        </div>
-        
-        <div className="container px-4 relative">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="mb-10">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-foreground/10 backdrop-blur-sm rounded-full mb-6 border border-primary/20">
-                <div className="w-2 h-2 bg-gradient-to-r from-primary to-foreground rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent">مجموعه کامل</span>
-              </div>
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 text-foreground">
-                <span className="bg-gradient-to-r from-primary via-foreground to-primary bg-clip-text text-transparent">
-                  همه دوره‌های آموزشی
-                </span>
-              </h2>
-              <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-                دسترسی به کلیه دوره‌های تخصصی، جامع و به‌روز آکادمی رفیعی در یک مکان
-              </p>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <Button 
-                asChild 
-                size="lg" 
-                className="w-full sm:w-auto h-14 px-10 bg-gradient-to-r from-primary to-foreground hover:from-primary/90 hover:to-foreground/90 text-background font-medium shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 group"
-              >
-                <Link to="/courses" className="flex items-center gap-2">
-                  <span>📚 مشاهده همه دوره‌ها</span>
-                </Link>
-              </Button>
-              <div className="flex items-center gap-3 text-sm text-muted-foreground bg-white/50 dark:bg-card/50 backdrop-blur-sm px-4 py-2 rounded-full border border-border/30">
-                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                <span>{totalCoursesCount > 0 ? `${totalCoursesCount} دوره تخصصی فعال` : '۳۰+ دوره تخصصی فعال'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Magazine CTA Section */}
-      <section className="py-16 md:py-20 relative overflow-hidden">
-        {/* Glowing background effects */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/2 -left-32 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
-          <div className="absolute top-1/2 -right-32 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-foreground/5 to-foreground/5 rounded-full blur-3xl"></div>
-        </div>
-        
-        <div className="container px-4 relative">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="mb-10">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-foreground/10 to-foreground/10 backdrop-blur-sm rounded-full mb-6 border border-border/20 dark:border-border/20">
-                <div className="w-2 h-2 bg-gradient-to-r from-foreground to-foreground rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium bg-gradient-to-r from-foreground to-foreground bg-clip-text text-transparent">مطالب ویژه</span>
-              </div>
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 text-foreground">
-                <span className="bg-gradient-to-r from-foreground via-foreground to-foreground bg-clip-text text-transparent">
-                  مجله آکادمی رفیعی
-                </span>
-              </h2>
-              <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-                مقالات تخصصی، تحلیل‌های عمیق و آخرین اخبار دنیای کسب‌وکار و فناوری
-              </p>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <Button 
-                asChild 
-                size="lg" 
-                className="w-full sm:w-auto h-14 px-10 bg-gradient-to-r from-foreground to-foreground hover:from-foreground hover:to-foreground text-background font-medium shadow-xl shadow-foreground/10 hover:shadow-2xl hover:shadow-foreground/10 transition-all duration-300 group"
-              >
-                <Link to="/magazine" className="flex items-center gap-2">
-                  <span>📖 مطالعه مجله</span>
-                </Link>
-              </Button>
-              <div className="flex items-center gap-3 text-sm text-muted-foreground bg-white/50 dark:bg-card/50 backdrop-blur-sm px-4 py-2 rounded-full border border-border/30 dark:border-border/30">
-                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                <span>مطالب هفتگی جدید</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      
-      {/* Assessment Center Promo */}
-      <section className="py-16">
-        <div className="container">
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            <div className="w-full md:w-1/2">
-              <h2 className="text-3xl font-bold tracking-tight mb-4">
-                {translations.assessmentCenterTitle}
-              </h2>
-              <p className="text-lg text-muted-foreground mb-6">
-                {translations.assessmentCenterDesc}
-              </p>
-              <Button asChild size="lg">
-                <Link to="/assessment-center">
-                  {translations.learnMore}
-                </Link>
-              </Button>
-            </div>
-            
-            <div className="w-full md:w-1/2">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-primary/10 p-6 rounded-lg text-center">
-                  <h3 className="font-medium text-lg mb-2">
-                    {translations.personalityTests}
-                  </h3>
-                </div>
-                <div className="bg-primary/10 p-6 rounded-lg text-center">
-                  <h3 className="font-medium text-lg mb-2">
-                    {translations.intelligenceTests}
-                  </h3>
-                </div>
-                <div className="bg-primary/10 p-6 rounded-lg text-center">
-                  <h3 className="font-medium text-lg mb-2">
-                    {translations.careerTests}
-                  </h3>
-                </div>
-                <div className="bg-primary/10 p-6 rounded-lg text-center">
-                  <h3 className="font-medium text-lg mb-2">
-                    {translations.emotionTests}
-                  </h3>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
       <PhotoQuote />
     </MainLayout>
   );

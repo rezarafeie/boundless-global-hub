@@ -164,19 +164,23 @@ const CourseArchive = () => {
 
   return (
     <MainLayout>
-      {/* Single Hero Section - Remove dark secondary hero */}
-      <Hero
-        title={translations.trainingCenter}
-        subtitle={translations.trainingCenterDesc}
-      />
+      <section className="px-4 pt-8 md:pt-14">
+        <div className="container mx-auto">
+          <span className="text-xs font-semibold tracking-wide text-muted-foreground">مرکز آموزش · رضا رفیعی</span>
+          <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-[1.3] text-foreground md:text-6xl">
+            هر مسیر بزرگ، با یک دوره درست شروع می‌شود.
+          </h1>
+          <p className="mt-5 max-w-2xl text-base leading-8 text-muted-foreground md:text-lg">{translations.trainingCenterDesc}</p>
+        </div>
+      </section>
 
-      <section id="courses" className="pb-24">
+      <section id="courses" className="pb-24 pt-10">
         <div className="container">
           
           {/* Mobile-Optimized Filter Tabs */}
-          <div className="mb-8">
+          <div className="mb-10">
             {/* Desktop Filters */}
-            <div className="hidden md:flex justify-center">
+            <div className="hidden md:flex">
               <div className="flex gap-1 p-1 bg-muted rounded-full">
                 {filters.map((filter) => (
                   <button
@@ -204,7 +208,7 @@ const CourseArchive = () => {
                       onClick={() => setActiveFilter(filter.id)}
                       className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border ${
                         activeFilter === filter.id
-                          ? 'bg-primary text-primary-foreground border-primary'
+                          ? 'bg-foreground text-background border-foreground'
                           : 'text-muted-foreground border-border bg-card'
                       }`}
                     >
@@ -219,7 +223,7 @@ const CourseArchive = () => {
           
           {/* Course Grid */}
           <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -230,7 +234,7 @@ const CourseArchive = () => {
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{ duration: 0.5, delay: Math.min(index, 6) * 0.06 }}
               >
                 <CourseCard {...course} />
               </motion.div>

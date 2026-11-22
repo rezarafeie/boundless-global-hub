@@ -109,39 +109,29 @@ const CourseCard: React.FC<CourseCardProps> = ({
   return (
     <article
       onClick={handleCardClick}
-      className="group relative flex h-full cursor-pointer flex-col rounded-3xl border border-border bg-card p-7 shadow-soft transition-all duration-500 ease-smooth hover:-translate-y-1 hover:shadow-float"
+      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-[2rem] border border-border bg-card transition-all duration-500 ease-smooth hover:-translate-y-1 hover:shadow-float"
     >
-      <div className="relative -mx-7 -mt-7 mb-2 aspect-[16/10] overflow-hidden rounded-t-3xl bg-muted">
-        <img src={courseImage(slug, title)} alt={title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 ease-smooth group-hover:scale-105" />
-        <div className="absolute inset-0 bg-gradient-to-t from-photo-shade/50 to-transparent" />
+      <div className="relative aspect-[4/3] overflow-hidden bg-photo-shade">
+        <img src={courseImage(slug, title)} alt={title} loading="lazy" className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105" />
+        <div className="absolute inset-0 bg-gradient-to-t from-photo-shade via-photo-shade/30 to-transparent" />
         <div className="absolute right-4 top-4 flex items-center gap-2">
-          {blackFridayDiscount > 0 && (
-            <BlackFridayBadge discount={blackFridayDiscount} className="text-xs scale-75" />
-          )}
-          <span className="rounded-full bg-photo-shade/50 px-3 py-1 text-[11px] font-medium text-photo-ink backdrop-blur-md">
-            {isPaid ? "ویژه" : "رایگان"}
+          {blackFridayDiscount > 0 && <BlackFridayBadge discount={blackFridayDiscount} className="text-xs scale-75" />}
+          <span className="rounded-full border border-photo-ink/20 bg-photo-shade/40 px-3 py-1 text-xs font-medium text-photo-ink backdrop-blur-md">
+            {status === "upcoming" ? "به‌زودی" : isPaid ? "ویژه" : "رایگان"}
           </span>
         </div>
+        <h3 className="absolute inset-x-5 bottom-5 line-clamp-2 text-xl font-extrabold leading-snug text-photo-ink md:text-2xl">{title}</h3>
       </div>
-
-      <h3 className="mt-5 text-xl font-bold leading-snug tracking-tight text-foreground line-clamp-2">{title}</h3>
-      {englishTitle && <p className="mt-1 text-xs text-muted-foreground">{englishTitle}</p>}
-      <p className="mt-3 flex-grow text-sm leading-7 text-muted-foreground line-clamp-3">{description}</p>
-
-      {instructor && (
-        <p className="mt-4 text-xs text-muted-foreground">{instructor}{level ? ` · ${level}` : ""}</p>
-      )}
-
-      <div className="mt-8 flex items-center justify-between border-t border-border pt-5">
-        <button
-          onClick={handleCtaClick}
-          className="text-sm font-semibold text-foreground"
-        >
-          {cta || (isPaid ? "مشاهده دوره" : translations.startFreeCourse)}
-        </button>
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform duration-500 ease-smooth group-hover:-translate-x-1">
-          <ArrowLeft size={16} />
-        </span>
+      <div className="flex flex-1 flex-col p-5 md:p-6">
+        <p className="line-clamp-2 flex-grow text-sm leading-7 text-muted-foreground">{description}</p>
+        <div className="mt-6 flex items-center justify-between border-t border-border pt-5">
+          <button onClick={handleCtaClick} className="text-sm font-semibold text-foreground">
+            {cta || (isPaid ? "مشاهده دوره" : translations.startFreeCourse)}
+          </button>
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background transition-transform duration-500 ease-smooth group-hover:-translate-x-1">
+            <ArrowLeft size={16} />
+          </span>
+        </div>
       </div>
     </article>
   );
