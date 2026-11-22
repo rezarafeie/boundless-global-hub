@@ -1,3 +1,6 @@
+## Kavehnegar login documentation
+- [x] Write and validate a reusable Persian Kavehnegar OTP login guide for Rafiei Hub services, covering provider setup, shared API contracts, secure verification, account linking, sessions, errors and acceptance tests
+
 ## Rafiei Hub API
 - [x] Confirm exact response shapes from Hub docs/hub-api/README.md; user supplied matching contract permitting edge-function transport
 - [x] Securely request HUB_SHARED_SECRET
