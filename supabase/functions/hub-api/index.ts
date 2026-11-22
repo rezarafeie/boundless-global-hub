@@ -88,7 +88,7 @@ export async function handleHub(req: Request) {
     if (text.length > 65536) throw new HubError(413, 'حجم درخواست بیش از حد مجاز است');
     let body: unknown;
     try { body = text ? JSON.parse(text) : {}; } catch { throw new HubError(400, 'بدنه درخواست معتبر نیست'); }
-    if (action.startsWith('auth.') || action === 'account.link') {
+    if (action.startsWith('auth.') || action === 'account.link' || action === 'account.resolve') {
       const data = await handleAuth(action, body, req, { db, onUser: async (id) => {
         user = await checked(db.from('chat_users').select('id,email,name,phone,hub_user_id').eq('id', id).single());
       } });

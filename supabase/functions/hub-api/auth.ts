@@ -17,7 +17,14 @@ export async function handleAuth(action: string, body: unknown, req: Request, de
     const methods = new Set((await check(db.from('hub_auth_readiness').select('method'))).map((r: any) => r.method));
     return { version: 1, password: methods.has('password'), email_otp: methods.has('email_otp'),
       sms_otp: methods.has('sms_otp') && Boolean(Deno.env.get('KAVENEGAR_API_KEY') && Deno.env.get('KAVENEGAR_VERIFY_TEMPLATE')),
-      session_exchange: methods.has('session_exchange'), account_link: methods.has('account_link') };
+      session_exchange: methods.has('session_exchange'), account_link: methods.has('account_link'), identity_sync: methods.has('identity_sync') };
+  }
+  if (action === 'account.resolve') {
+    const identity = parseHubUser(req.headers.get('X-Hub-User'));
+    const result = await check(db.rpc('hub_account_resolve', { p_email: identity.email }));
+    if (result.error) throw new HubError(409, 'حساب متداخل است یا به بررسی مالکیت نیاز دارد؛ ادغام خودکار انجام نمی‌شود');
+    if (result.source_user_id !== null) await onUser(Number(result.source_user_id));
+    return result;
   }
   const secret = Deno.env.get('HUB_AUTH_HMAC_SECRET');
   if (!secret) throw new HubError(503, 'سرویس ورود تنظیم نشده است');

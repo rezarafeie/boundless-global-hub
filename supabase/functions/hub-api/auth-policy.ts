@@ -12,6 +12,7 @@ export const authSchemas = {
   'auth.otp.verify': z.object({ request_id: z.string().uuid(), code: z.string().regex(/^\d{6}$/), audience }).strict(),
   'auth.exchange': z.object({ exchange_ticket: ticket, audience }).strict(),
   'auth.email.send': z.object({ exchange_ticket: ticket, email: z.string().trim().email().max(254), audience }).strict(),
+  'account.resolve': z.object({ email_verified: z.literal(true), create_if_missing: z.literal(false) }).strict(),
   'account.link': z.object({ source_user_id: z.string().regex(/^[1-9]\d{0,9}$/) }).strict(),
 };
 export function parseAuth(action: string, body: unknown): Record<string, any> {
