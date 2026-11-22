@@ -4,6 +4,7 @@ import { authorizeHub, HubError, parseHubUser, parseAction, effectiveCoursePrice
 import { buildStatus, completeMission } from '../_shared/gamification.ts';
 import { HubEsanj } from './esanj.ts';
 import { courseCover } from './course-images.ts';
+import { handleAuth } from './auth.ts';
 
 const headers = { ...corsHeaders, 'Access-Control-Allow-Headers': `${corsHeaders['Access-Control-Allow-Headers']}, x-hub-user, x-hub-source`, 'Cache-Control': 'no-store', 'Content-Type': 'application/json' };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
@@ -16,7 +17,7 @@ export async function handleHub(req: Request) {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
   const secret = Deno.env.get('HUB_SHARED_SECRET');
-  if (!url || !serviceKey || !anonKey) return json({ error: 'سرویس هاب تنظیم نشده است' }, 503);
+  if (!url || !serviceKey || !anonKey) return json({ data: { error: 'سرویس هاب تنظیم نشده است' } }, 503);
   const db = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   let user: User | null = null;
   let action = 'unknown';
@@ -87,6 +88,12 @@ export async function handleHub(req: Request) {
     if (text.length > 65536) throw new HubError(413, 'حجم درخواست بیش از حد مجاز است');
     let body: unknown;
     try { body = text ? JSON.parse(text) : {}; } catch { throw new HubError(400, 'بدنه درخواست معتبر نیست'); }
+    if (action.startsWith('auth.') || action === 'account.link') {
+      const data = await handleAuth(action, body, req, { db, onUser: async (id) => {
+        user = await checked(db.from('chat_users').select('id,email,name,phone,hub_user_id').eq('id', id).single());
+      } });
+      return json({ data });
+    }
     const parsed = parseAction(action, body);
     const p = parsed.payload;
     const publicAction = ['courses.list', 'course.get', 'tests.list', 'test.get'].includes(action);
@@ -121,8 +128,9 @@ export async function handleHub(req: Request) {
       data = { slug: row.slug, title: row.title, description: row.description || '', duration_min: null, questions };
     } else {
       if (!user) throw new HubError(400, 'اطلاعات کاربر هاب الزامی است');
+      const currentUser = user;
       if (parsed.action === 'me.enrollments') {
-        const rows = await all(() => db.from('enrollments').select('course_id,courses(slug,title)').eq('chat_user_id', user.id).eq('payment_status', 'completed').order('id'));
+        const rows = await all(() => db.from('enrollments').select('course_id,courses(slug,title)').eq('chat_user_id', currentUser.id).eq('payment_status', 'completed').order('id'));
         data = [...new Map(rows.filter(r => r.courses).map(r => [r.course_id, { ...r.courses, image_url: courseCover(r.courses.slug, r.courses.title) }])).values()];
       } else if (parsed.action === 'course.enroll') {
         const row = await course(p.slug);
@@ -144,7 +152,7 @@ export async function handleHub(req: Request) {
         }
       } else if (parsed.action === 'me.progress') {
         const row = await course(p.slug);
-        data = (await all(() => db.from('user_lesson_progress').select('lesson_id').eq('user_id', user.id).eq('course_id', row.id).eq('is_completed', true).order('id'))).map(r => r.lesson_id);
+        data = (await all(() => db.from('user_lesson_progress').select('lesson_id').eq('user_id', currentUser.id).eq('course_id', row.id).eq('is_completed', true).order('id'))).map(r => r.lesson_id);
       } else if (parsed.action === 'lesson.complete' || parsed.action === 'lesson.uncomplete') {
         const lesson = await checked(db.from('course_lessons').select('course_id').eq('id', p.lesson_id).maybeSingle());
         if (!lesson) throw new HubError(404, 'درس یافت نشد');
@@ -166,7 +174,7 @@ export async function handleHub(req: Request) {
         const uuid = crypto.randomUUID();
         let attempt: any;
         if (Number(row.price) > 0) {
-          const entitlement = await checked(db.from('test_enrollments').select('id').eq('test_id', row.id).eq('email', user.email)
+          const entitlement = await checked(db.from('test_enrollments').select('id').eq('test_id', row.id).eq('user_id', user.id)
             .eq('payment_status', 'completed').is('esanj_uuid', null).order('created_at').limit(1).maybeSingle());
           if (!entitlement) throw new HubError(402, 'برای این آزمون ابتدا پرداخت را انجام دهید');
           attempt = await checked(db.from('test_enrollments').update({ user_id: user.id, esanj_uuid: uuid, birth_year: p.birth_year,
@@ -189,7 +197,7 @@ export async function handleHub(req: Request) {
         await checked(db.from('test_enrollments').update({ result_data: { response: html, result_html: html }, enrollment_status: 'completed', test_completed_at: new Date().toISOString() }).eq('id', attempt.id).eq('user_id', user.id));
         data = { attempt_id: attempt.id, result_html: html };
       } else if (parsed.action === 'me.tests') {
-        data = (await all(() => db.from('test_enrollments').select('id,created_at,tests(slug,title)').eq('user_id', user.id).order('created_at', { ascending: false }).order('id')))
+        data = (await all(() => db.from('test_enrollments').select('id,created_at,tests(slug,title)').eq('user_id', currentUser.id).order('created_at', { ascending: false }).order('id')))
           .filter(r => r.tests).map(r => ({ attempt_id: r.id, slug: r.tests.slug, title: r.tests.title, created_at: r.created_at }));
       } else if (parsed.action === 'test.result') {
         const attempt = await checked(db.from('test_enrollments').select('*').eq('id', p.attempt_id).eq('user_id', user.id).maybeSingle());
@@ -211,7 +219,7 @@ export async function handleHub(req: Request) {
           message: `${p.subject}\n\n${p.message}`, message_type: 'text', unread_by_support: true }));
         data = { id: ticket.id };
       } else if (parsed.action === 'me.tickets') {
-        data = await all(() => db.from('support_conversations').select('id,subject,initial_message,status,created_at').eq('user_id', user.id).order('created_at', { ascending: false }).order('id'));
+        data = await all(() => db.from('support_conversations').select('id,subject,initial_message,status,created_at').eq('user_id', currentUser.id).order('created_at', { ascending: false }).order('id'));
         data = (data as any[]).map(r => ({ id: r.id, subject: r.subject || '', message: r.initial_message || '', status: r.status, created_at: r.created_at }));
       }
     }
@@ -219,7 +227,7 @@ export async function handleHub(req: Request) {
   } catch (error) {
     status = error instanceof HubError ? error.status : 500;
     outcome = error instanceof HubError ? error.message : 'خطای داخلی سرویس هاب';
-    return json({ error: outcome }, status);
+    return json({ data: { error: outcome } }, status);
   } finally {
     // Log outcomes, not credentials, answer contents, HTML or customer contact details.
     const metadata = { source: 'rafiei-hub', action, result: outcome, status };

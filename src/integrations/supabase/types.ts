@@ -10895,6 +10895,10 @@ export type Database = {
         }
         Returns: Json
       }
+      hub_auth_lookup: {
+        Args: { p_channel: string; p_identifier: string }
+        Returns: Json
+      }
       hub_auth_rate: {
         Args: {
           p_bucket: string

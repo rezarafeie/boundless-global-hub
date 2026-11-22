@@ -1,6 +1,7 @@
 # Project architecture rules
 
 - Hub API uses the contract-approved Supabase edge-function transport, constant-time shared-secret authentication, protected server-only identity mapping, access-scoped action adapters and existing academy lifecycle services; static hosting cannot implement production server routes.
+- Hub authentication uses private HMAC OTP/ticket records and atomic service-only consumption; linking requires recent exchange evidence and never creates or merges accounts, so existing ownership cannot be replaced by a header email.
 
 - Rafiei Pay callbacks and reconciliation use the stored payment ID, provider-verified order identity and exact Toman amount; the saved enrollment is reread before success and reused for lifecycle notifications, so callback routing or outages cannot confirm another order or mark pending payments failed.
 
