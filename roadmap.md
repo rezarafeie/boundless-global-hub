@@ -1,3 +1,10 @@
+## Rafiei Hub API
+- [x] Confirm exact response shapes from Hub docs/hub-api/README.md; user supplied matching contract permitting edge-function transport
+- [x] Securely request HUB_SHARED_SECRET
+- [ ] Implement authenticated user mapping, action adapters and activity logging against existing academy services
+- [ ] Deploy contract-approved hub-api edge-function transport; document optional academy-domain routing (static hosting cannot provide server routes)
+- [ ] Verify authorization, ownership and action flows with real service readback
+
 ## Rafiei Pay reconciliation
 - [x] Diagnose approved gateway payments that remain pending in enrollments: confirmed real verified provider payments stored as failed and no Rafiei Pay monitor
 - [x] Repair trusted verification, callback selection and recovery using the existing verification flow; pending/outage responses never mark enrollments failed, saved provider reference cannot be replaced by client input
