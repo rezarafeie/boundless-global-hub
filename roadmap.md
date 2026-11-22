@@ -1,7 +1,9 @@
 ## Hub shared authentication
-- [ ] Add server-only password/OTP authentication, atomic single-use exchange and proof-bound account linking at the existing Hub endpoint
-- [ ] Verify security limits, conflicts and existing-account history; advertise only live-tested capabilities
-- [ ] Verify real SMS/email delivery and ownership confirmation (requires a consenting recipient)
+- [x] Add server-only password/OTP authentication, atomic single-use exchange and proof-bound account linking at the unchanged Hub endpoint; no implicit account creation or merging
+- [x] Verify hosted HTTP password/exchange/link, concurrent OTP/ticket consumption, replay/expiry, five attempts, hourly sends/resend gap, independent abuse limits and scoped nonempty saved ticket history; advertise only tested methods
+- [ ] Complete real email OTP round trip (consenting email received delivery; entered code expired after 120 seconds and was correctly rejected; keep email_otp false)
+- [ ] Verify real SMS OTP delivery/receipt (requires a consenting Iranian mobile; keep sms_otp false)
+- [ ] Verify actual user's full historical records after their real Hub identity is linked (requires successful email proof and real Hub identity; QA history verified, real account never linked to invented Hub ID)
 
 ## Kavehnegar login documentation
 - [x] Write and validate a reusable Persian Kavehnegar OTP login guide for Rafiei Hub services, covering provider setup, shared API contracts, secure verification, account linking, sessions, errors and acceptance tests
