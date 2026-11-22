@@ -1,5 +1,5 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { handleEnrollmentReport, deliverEnrollmentReport } from './enrollment-report.ts';
+import { handleEnrollmentReport, deliverEnrollmentReport, ENROLLMENT_REPORT_BUTTON } from './enrollment-report.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 function client(access: unknown) {
@@ -27,6 +27,29 @@ Deno.test('unapproved account cannot query enrollment data', async () => {
     assertEquals(await handleEnrollmentReport(db, update('/enrollments day')), true);
     assertEquals(counts().rpcCalls, 0);
     assertEquals(messages.length, 1);
+  });
+});
+Deno.test('authorized account opens reports by button without issuing a command or querying data yet', async () => {
+  await mockedMessages(async () => {
+    const { db, counts } = client({ active: true, can_manage: false });
+    assertEquals(await handleEnrollmentReport(db, update(ENROLLMENT_REPORT_BUTTON)), true);
+    assertEquals(counts(), { rpcCalls: 0, writes: 1 });
+  });
+});
+Deno.test('unauthorized account cannot open reports through the button', async () => {
+  await mockedMessages(async () => {
+    const { db, counts } = client(null);
+    assertEquals(await handleEnrollmentReport(db, update(ENROLLMENT_REPORT_BUTTON)), true);
+    assertEquals(counts(), { rpcCalls: 0, writes: 0 });
+  });
+});
+Deno.test('report button setup preserves the regular start flow for managers and delegated readers', async () => {
+  await mockedMessages(async () => {
+    for (const can_manage of [true, false]) {
+      const { db, counts } = client({ active: true, can_manage });
+      assertEquals(await handleEnrollmentReport(db, update('/start')), false);
+      assertEquals(counts(), { rpcCalls: 0, writes: 0 });
+    }
   });
 });
 Deno.test('delegated reader receives a real report without gaining management permission', async () => {

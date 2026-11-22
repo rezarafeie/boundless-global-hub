@@ -1,4 +1,9 @@
 ## Telegram enrollment reports
+- [x] Verify report counts against dashboard enrollment records in fixed intervals: hour 1, week 350, day 36 (30 Boundless Taste + 6 Iran class); no mismatch reproduced
+- [x] User confirmed the count discrepancy is resolved
+- [x] Remove dashboard's 1000-row cap, prevent stale/partial counts, and verify 22 tests plus identical live monthly totals: dashboard loader 1223, exact count 1223, database per-course sum 1223, delivered Telegram report 1223
+- [x] Add a persistent report button independent of account linking; 19 tests passed, deployed webhook accepted button/period selection, and buttons delivered to three authorized accounts
+- [ ] Deliver the button to 1222139555 after that recipient starts the bot (Telegram currently returns chat not found; automatic button setup on start is implemented)
 - [x] Add per-course registration reports for one hour, day, week, 30 days and custom Tehran date ranges
 - [x] Grant report management to 100554898 and read-only access to 1222139555 plus existing admin and manager accounts linked to Telegram
 - [x] Verify 16 tests, access grants, unsigned request rejection and real delivery of all 15 courses with totals matching the database

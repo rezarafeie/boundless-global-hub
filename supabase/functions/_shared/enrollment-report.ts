@@ -5,6 +5,11 @@ import { reportRange, customReportRange, reportAllowed, numericChatId, type Repo
 
 type Access = { active: boolean; can_manage: boolean };
 const labels: Record<ReportPeriod, string> = { hour: 'یک ساعت اخیر', day: '۲۴ ساعت اخیر', week: '۷ روز اخیر', month: '۳۰ روز اخیر' };
+export const ENROLLMENT_REPORT_BUTTON = '📊 آمار ثبت‌نام دوره‌ها';
+export async function showEnrollmentReportButton(chatId: number, access: Access | null) {
+  if (!reportAllowed(access)) return;
+  await sendMessage(chatId, '📊 گزارش ثبت‌نام دوره‌ها', { replyKeyboard: [[ENROLLMENT_REPORT_BUTTON]] });
+}
 export async function enrollmentReportAccess(db: SupabaseClient, chatId: number): Promise<Access | null> {
   if (currentChannel() !== 'telegram') return null;
   const { data, error } = await db.from('telegram_enrollment_report_access').select('active,can_manage').eq('chat_id', chatId).maybeSingle();
@@ -66,14 +71,20 @@ export async function handleEnrollmentReport(db: SupabaseClient, update: any): P
   const chatId = Number(sender.id);
   const text = String(msg.text ?? '').trim();
   const commandMatch = text.match(/^\/(?:enrollments|enrollment_report|reports)(?:@\w+)?(?:\s+(hour|day|week|month))?$/);
-  const command = !!commandMatch || text === '/start enrollment_reports';
+  const button = text === ENROLLMENT_REPORT_BUTTON;
+  const start = /^\/start(?:@\w+)?$/.test(text);
+  const command = !!commandMatch || text === '/start enrollment_reports' || button;
   const callback = cq?.data?.startsWith('ereg:');
   const { data: session, error: sessionError } = await db.from('telegram_bot_sessions').select('state,expires_at').eq('chat_id', chatId).eq('channel', 'telegram').maybeSingle();
   if (sessionError) throw sessionError;
   const activeState = session?.state?.startsWith('enrollment_report_') && new Date(session.expires_at) > new Date() ? session.state : null;
-  if (!command && !callback && !activeState && text !== '/start') return false;
+  if (!command && !callback && !activeState && !start) return false;
   const access = await enrollmentReportAccess(db, chatId);
-  if (!command && !callback && !activeState && (text !== '/start' || !reportAllowed(access) || access?.can_manage)) return false;
+  if (start) {
+    await showEnrollmentReportButton(chatId, access);
+    // Keep the ordinary account/activation home flow; the report button does not require account linking.
+    return false;
+  }
   if (callback) await answerCallback(cq.id);
   if (!reportAllowed(access) || !access) {
     if (activeState) await state(db, chatId, null);
@@ -114,7 +125,8 @@ export async function handleEnrollmentReport(db: SupabaseClient, update: any): P
           : await db.from('telegram_enrollment_report_access').upsert({ chat_id: target, active: true, can_manage: false, granted_by: chatId });
         if (result.error) throw result.error;
         await state(db, chatId, null);
-        await sendMessage(chatId, revoke ? '✅ دسترسی گزارش این شناسه لغو شد.' : '✅ دسترسی مشاهده فعال شد؛ فرد پس از شروع ربات، /enrollments را بفرستد.');
+        if (!revoke) await showEnrollmentReportButton(target, { active: true, can_manage: false });
+        await sendMessage(chatId, revoke ? '✅ دسترسی گزارش این شناسه لغو شد.' : '✅ دسترسی مشاهده فعال شد؛ دکمه گزارش برای فرد ارسال شد.');
         await menu(chatId, access);
       }
     } else if (activeState === 'enrollment_report_custom' && !cq) {

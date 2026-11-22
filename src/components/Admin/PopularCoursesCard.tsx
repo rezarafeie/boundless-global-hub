@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { courseEnrollmentCounts } from '@/lib/courseEnrollmentCounts';
 
 type TimePeriod = 'hour' | 'day' | 'week' | 'month';
 
@@ -21,6 +22,8 @@ const PopularCoursesCard: React.FC<PopularCoursesCardProps> = ({ loading: parent
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('day');
   const [coursesData, setCoursesData] = useState<CourseEnrollmentData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const requestId = useRef(0);
 
   const getTimeFilter = (period: TimePeriod): string => {
     const now = new Date();
@@ -39,9 +42,12 @@ const PopularCoursesCard: React.FC<PopularCoursesCardProps> = ({ loading: parent
   };
 
   const fetchCoursesWithEnrollments = async () => {
+    const currentRequest = ++requestId.current;
     try {
       setLoading(true);
+      setError(false);
       const timeFilter = getTimeFilter(timePeriod);
+      const endTime = new Date().toISOString();
 
       // Fetch all active courses
       const { data: courses, error: coursesError } = await supabase
@@ -51,20 +57,18 @@ const PopularCoursesCard: React.FC<PopularCoursesCardProps> = ({ loading: parent
 
       if (coursesError) throw coursesError;
 
-      // Fetch enrollments for the time period
-      const { data: enrollments, error: enrollmentsError } = await supabase
-        .from('enrollments')
-        .select('course_id')
-        .gte('created_at', timeFilter);
-
-      if (enrollmentsError) throw enrollmentsError;
-
-      // Count enrollments per course
-      const enrollmentCounts: Record<string, number> = {};
-      enrollments?.forEach(enrollment => {
-        if (enrollment.course_id) {
-          enrollmentCounts[enrollment.course_id] = (enrollmentCounts[enrollment.course_id] || 0) + 1;
-        }
+      // Match Telegram's registration-record definition and [from, to) time interval.
+      const enrollmentCounts = await courseEnrollmentCounts(async (from, to) => {
+        const { data, error } = await supabase
+          .from('enrollments')
+          .select('course_id')
+          .gte('created_at', timeFilter)
+          .lt('created_at', endTime)
+          .order('created_at', { ascending: true })
+          .order('id', { ascending: true })
+          .range(from, to);
+        if (error) throw error;
+        return data ?? [];
       });
 
       // Map courses with enrollment counts and sort by count
@@ -76,11 +80,12 @@ const PopularCoursesCard: React.FC<PopularCoursesCardProps> = ({ loading: parent
         }))
         .sort((a, b) => b.enrollmentCount - a.enrollmentCount);
 
-      setCoursesData(coursesWithCounts);
+      if (currentRequest === requestId.current) setCoursesData(coursesWithCounts);
     } catch (error) {
       console.error('Error fetching courses with enrollments:', error);
+      if (currentRequest === requestId.current) setError(true);
     } finally {
-      setLoading(false);
+      if (currentRequest === requestId.current) setLoading(false);
     }
   };
 
@@ -95,7 +100,7 @@ const PopularCoursesCard: React.FC<PopularCoursesCardProps> = ({ loading: parent
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'enrollments'
         },
@@ -144,6 +149,8 @@ const PopularCoursesCard: React.FC<PopularCoursesCardProps> = ({ loading: parent
               <div key={i} className="h-16 bg-muted rounded-lg animate-pulse"></div>
             ))}
           </div>
+        ) : error ? (
+          <div className="text-center py-8 text-muted-foreground">دریافت آمار کامل انجام نشد</div>
         ) : coursesData.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             هنوز دوره‌ای وجود ندارد
