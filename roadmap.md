@@ -1,4 +1,5 @@
 ## Telegram enrollment reports
+- [x] Default to numeric list with list/chart switcher and chronological line chart; 6 tests pass, real monthly list/line totals both 1223, component verified at desktop and 430px mobile (full authenticated admin page unavailable)
 - [x] Add course enrollment bar chart using accurate counts; verify the component with real day/month data at desktop/mobile widths (full authenticated admin page unavailable)
 - [x] Simplify Telegram/admin reports to nonzero courses plus a small zero summary; 24 tests pass and deployed Telegram delivery confirms 36 total, 2 listed courses and 13 zero courses
 - [x] Verify report counts against dashboard enrollment records in fixed intervals: hour 1, week 350, day 36 (30 Boundless Taste + 6 Iran class); no mismatch reproduced
