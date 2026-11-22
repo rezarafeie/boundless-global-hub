@@ -19,7 +19,7 @@ const FounderStory: React.FC = () => (
     <div className="container mx-auto px-4">
       <div className="grid items-center gap-10 md:grid-cols-[5fr_6fr] md:gap-16">
         <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.8, ease }}>
-          <img src={founderImage} alt="رضا رفیعی" loading="lazy" className="aspect-[4/5] w-full rounded-[2rem] object-cover shadow-float" />
+          <img src={founderImage} alt="رضا رفیعی" loading="lazy" className="aspect-[4/5] w-full rounded-[2rem] object-cover object-[60%_center] shadow-float" />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.8, delay: 0.1, ease }}>
           <p className="text-sm font-medium text-muted-foreground">بنیان‌گذار آکادمی</p>
