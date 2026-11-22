@@ -1,0 +1,14 @@
+import { assertEquals, assertThrows } from 'https://deno.land/std@0.224.0/assert/mod.ts';
+import { reportRange, customReportRange, reportAllowed, numericChatId } from './enrollment-report-policy.ts';
+const now = new Date('2026-11-22T12:23:00Z');
+Deno.test('one hour report covers exactly the previous hour', () => assertEquals(reportRange('hour', now).from, '2026-11-22T11:23:00.000Z'));
+Deno.test('one day report covers exactly 24 hours', () => assertEquals(reportRange('day', now).from, '2026-11-21T12:23:00.000Z'));
+Deno.test('one week report covers exactly seven days', () => assertEquals(reportRange('week', now).from, '2026-11-15T12:23:00.000Z'));
+Deno.test('one month report covers 30 days', () => assertEquals(reportRange('month', now).from, '2026-10-23T12:23:00.000Z'));
+Deno.test('custom Gregorian dates include end date in Tehran', () => assertEquals(customReportRange('2026-11-22 تا 2026-11-22'), { from: '2026-11-21T20:30:00.000Z', to: '2026-11-22T20:30:00.000Z' }));
+Deno.test('custom Persian dates use Tehran time', () => assertEquals(customReportRange('۱۴۰۵/۰۹/۰۱ ۱۵:۳۰ تا ۱۴۰۵/۰۹/۰۱ ۱۶:۳۰').from, '2026-11-22T12:00:00.000Z'));
+Deno.test('reverse or invalid custom ranges are rejected', () => { assertThrows(() => customReportRange('2026-11-23 تا 2026-11-21')); assertThrows(() => customReportRange('2026-02-30 تا 2026-03-02')); });
+Deno.test('view-only recipient cannot grant access', () => assertEquals(reportAllowed({ active: true, can_manage: false }, true), false));
+Deno.test('revoked recipient cannot read reports', () => assertEquals(reportAllowed({ active: false, can_manage: true }), false));
+Deno.test('unknown Telegram account cannot read reports', () => assertEquals(reportAllowed(null), false));
+Deno.test('only numeric private Telegram IDs can be delegated', () => { assertEquals(numericChatId('@someone'), null); assertEquals(numericChatId('-100123456789'), null); assertEquals(numericChatId('123456789'), 123456789); });

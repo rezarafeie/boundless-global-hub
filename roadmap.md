@@ -1,3 +1,8 @@
+## Telegram enrollment reports
+- [ ] Add per-course registration reports for one hour, day, week, 30 days and custom Tehran date ranges
+- [ ] Grant report management to 100554898 and read-only access to 1222139555 plus admin, sales manager and support manager accounts
+- [ ] Verify report totals, authorization, date ranges and deployed bot handler
+
 ## Instagram direct enrollment
 - [x] Build authenticated NovinHub event receiver and durable processing with retries active only while pending
 - [x] Add course/form/keyword rules and delivery history to Social CRM settings

@@ -8344,6 +8344,33 @@ export type Database = {
           },
         ]
       }
+      telegram_enrollment_report_access: {
+        Row: {
+          active: boolean
+          can_manage: boolean
+          chat_id: number
+          created_at: string
+          granted_by: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          can_manage?: boolean
+          chat_id: number
+          created_at?: string
+          granted_by?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          can_manage?: boolean
+          chat_id?: number
+          created_at?: string
+          granted_by?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       telegram_form_answers: {
         Row: {
           created_at: string
@@ -10739,6 +10766,21 @@ export type Database = {
         Returns: undefined
       }
       social_cleanup_stale_data: { Args: never; Returns: undefined }
+      telegram_enrollment_report: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          completed: number
+          completed_amount: number
+          course_id: string
+          failed: number
+          free_completed: number
+          other: number
+          paid_completed: number
+          pending: number
+          title: string
+          total: number
+        }[]
+      }
       text_to_bytea: { Args: { data: string }; Returns: string }
       tg_append_session_media: {
         Args: { p_chat_id: number; p_media: Json }

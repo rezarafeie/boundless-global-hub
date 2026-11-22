@@ -1,0 +1,13 @@
+CREATE TABLE public.telegram_enrollment_report_access (chat_id bigint PRIMARY KEY, can_manage boolean NOT NULL DEFAULT false, active boolean NOT NULL DEFAULT true, granted_by bigint, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
+GRANT ALL ON public.telegram_enrollment_report_access TO service_role;
+ALTER TABLE public.telegram_enrollment_report_access ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Server manages enrollment report access" ON public.telegram_enrollment_report_access FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE FUNCTION public.touch_telegram_enrollment_report_access() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN NEW.updated_at=now(); RETURN NEW; END $$;
+CREATE TRIGGER touch_telegram_enrollment_report_access BEFORE UPDATE ON public.telegram_enrollment_report_access FOR EACH ROW EXECUTE FUNCTION public.touch_telegram_enrollment_report_access();
+INSERT INTO public.telegram_enrollment_report_access(chat_id,can_manage) SELECT DISTINCT telegram_chat_id,true FROM public.chat_users WHERE role='admin' AND telegram_chat_id>0 ON CONFLICT DO NOTHING;
+CREATE FUNCTION public.telegram_enrollment_report(p_from timestamptz,p_to timestamptz) RETURNS TABLE(course_id uuid,title text,total bigint,completed bigint,pending bigint,failed bigint,other bigint,free_completed bigint,paid_completed bigint,completed_amount numeric) LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public AS $$ BEGIN
+IF p_from IS NULL OR p_to IS NULL OR p_from >= p_to THEN RAISE EXCEPTION 'Invalid report date range'; END IF;
+RETURN QUERY SELECT c.id,c.title,count(e.id),count(e.id) FILTER(WHERE e.payment_status IN ('completed','success')),count(e.id) FILTER(WHERE e.payment_status='pending'),count(e.id) FILTER(WHERE e.payment_status IN ('failed','rejected','cancelled_payment')),count(e.id) FILTER(WHERE e.payment_status IS NULL OR e.payment_status NOT IN ('completed','success','pending','failed','rejected','cancelled_payment')),count(e.id) FILTER(WHERE e.payment_status IN ('completed','success') AND coalesce(e.payment_amount,0)=0),count(e.id) FILTER(WHERE e.payment_status IN ('completed','success') AND e.payment_amount>0),coalesce(sum(e.payment_amount) FILTER(WHERE e.payment_status IN ('completed','success')),0) FROM public.courses c LEFT JOIN public.enrollments e ON e.course_id=c.id AND e.created_at>=p_from AND e.created_at<p_to GROUP BY c.id,c.title ORDER BY count(e.id) DESC,c.title;
+END $$;
+REVOKE ALL ON FUNCTION public.telegram_enrollment_report(timestamptz,timestamptz) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.telegram_enrollment_report(timestamptz,timestamptz) TO service_role;
