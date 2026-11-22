@@ -146,7 +146,8 @@ serve(async (req) => {
         update.payment_method = rpGateway ? `rafieipay_${rpGateway}` : 'rafieipay';
       }
       if (Object.keys(update).length) {
-        await supabase.from(tableName).update(update).eq('id', enrollment.id);
+        const { error: saveError } = await supabase.from(tableName).update(update).eq('id', enrollment.id);
+        if (saveError) throw new Error(`ذخیره شناسه پرداخت انجام نشد: ${saveError.message}`);
       }
       return new Response(JSON.stringify({
         success: true,

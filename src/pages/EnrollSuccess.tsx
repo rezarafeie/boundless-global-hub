@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, CheckCircle, XCircle, ExternalLink, RefreshCw, MessageSquare, Send, Phone, Zap, Brain, User, CreditCard, Clock, Lock, BookOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { FunctionsHttpError } from '@supabase/supabase-js';
+import { paymentCallbackGateway } from '@/lib/paymentCallbackGateway';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { enrollmentAuthService, EnrollmentAuthData } from '@/lib/enrollmentAuthService';
@@ -674,7 +676,7 @@ const EnrollSuccess: React.FC = () => {
   // Zibal returns trackId, success, status, orderId as query params
   const zibalTrackId = searchParams.get('trackId');
   const gateway = searchParams.get('gateway');
-  const isZibal = gateway === 'zibal' || !!zibalTrackId;
+  const isZibal = gateway === 'zibal' || (gateway !== 'rafieipay' && !!zibalTrackId);
   const isRafieipay = gateway === 'rafieipay';
   const isSnapppay = gateway === 'snapppay';
   const snapppayPaymentId = searchParams.get('payment');
@@ -881,6 +883,18 @@ const EnrollSuccess: React.FC = () => {
   useEffect(() => {
     console.log('EnrollSuccess params:', { authority, enrollmentId, status, courseSlug, testSlug, email, phone, zibalTrackId, gateway });
     
+    const routePayment = async () => {
+    // Stored gateway wins over callback fields. Rafiei Pay may return a Zibal
+    // trackId, which must never route its payment into the direct Zibal verifier.
+    if (enrollmentId) {
+      const table = testSlug ? 'test_enrollments' : 'enrollments';
+      const { data: order } = await supabase.from(table).select('payment_method').eq('id', enrollmentId).maybeSingle();
+      if (paymentCallbackGateway(gateway, zibalTrackId, order?.payment_method) === 'rafieipay') {
+        await verifyRafieipayPayment();
+        return;
+      }
+    }
+
     // Zibal callback (has trackId or gateway=zibal)
     if (isZibal && zibalTrackId && enrollmentId) {
       verifyZibalPayment();
@@ -921,7 +935,9 @@ const EnrollSuccess: React.FC = () => {
         error: 'پارامترهای پرداخت نامعتبر هستند'
       });
     }
-  }, [authority, enrollmentId, status, zibalTrackId]);
+    };
+    void routePayment();
+  }, [authority, enrollmentId, status, zibalTrackId, gateway, rafieipayPaymentId, rafieipayTransactionId, rafieipayTrackId]);
 
   const verifyZibalPayment = async () => {
     try {
@@ -1013,7 +1029,13 @@ const EnrollSuccess: React.FC = () => {
           paymentId: rafieipayPaymentId,
         }
       });
-      if (response.error) throw response.error;
+      if (response.error) {
+        if (response.error instanceof FunctionsHttpError) {
+          const failure = await response.error.context.json().catch(() => null);
+          throw new Error(failure?.error || 'استعلام رفیعی‌پی انجام نشد');
+        }
+        throw response.error;
+      }
       const { data } = response;
       setResult(data);
       if (data.success) {
@@ -1030,10 +1052,11 @@ const EnrollSuccess: React.FC = () => {
       }
     } catch (error) {
       console.error('Rafiei Pay verification error:', error);
-      setResult({ success: false, error: 'خطا در تایید پرداخت' });
+      const message = error instanceof Error ? error.message : 'خطا در تایید پرداخت';
+      setResult({ success: false, error: message });
       toast({
         title: 'خطا',
-        description: 'خطا در تایید پرداخت. لطفا با پشتیبانی تماس بگیرید.',
+        description: message,
         variant: 'destructive',
       });
     } finally {

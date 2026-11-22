@@ -1,3 +1,10 @@
+## Rafiei Pay reconciliation
+- [x] Diagnose approved gateway payments that remain pending in enrollments: confirmed real verified provider payments stored as failed and no Rafiei Pay monitor
+- [x] Repair trusted verification, callback selection and recovery using the existing verification flow; pending/outage responses never mark enrollments failed, saved provider reference cannot be replaced by client input
+- [x] 8 payment tests and 3 callback tests pass; 171 provider references checked, 14 confirmed enrollments recovered; real callback UI shows success, uses Rafiei Pay rather than direct Zibal, and has no runtime errors
+- [ ] Reconcile 113 legacy pending/failed registrations lacking any stored provider payment ID (requires provider evidence/payment identifiers; none in request logs)
+- [ ] Confirm callback domain preference (current Rafiei Pay domain differs from earlier checkout preference; question sent)
+
 ## Bot menu cleanup
 - [x] Add default-off form visibility control and filter bot form menus; all 9 existing forms remain unselected
 - [x] Share public inline menus and move privileged actions to persistent keyboards

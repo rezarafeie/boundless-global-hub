@@ -1,5 +1,7 @@
 # Project architecture rules
 
+- Rafiei Pay callbacks and reconciliation use the stored payment ID, provider-verified order identity and exact Toman amount; the saved enrollment is reread before success and reused for lifecycle notifications, so callback routing or outages cannot confirm another order or mark pending payments failed.
+
 - Bot home menus use the common account actions for every role; a shared policy maps privileged reply-keyboard text to existing guarded callback handlers, and form listing requires explicit show_in_bot opt-in so web forms and direct links remain unaffected.
 
 - Lead deduplication is non-destructive: mark repeated enrollments for lead-list exclusion and retain enrollment dependencies, because payments, access and CRM history must survive cleanup.
