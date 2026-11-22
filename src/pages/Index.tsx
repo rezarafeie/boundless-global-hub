@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
-import QuickAccess from "@/components/QuickAccess";
+import { ServiceGroupSection } from "@/components/Services/ServicesShowcase";
 import FounderStory from "@/components/FounderStory";
 import PhotoQuote from "@/components/PhotoQuote";
 import { courseImage } from "@/lib/academyImagery";
@@ -377,13 +377,19 @@ const Index = () => {
         </div>
       </section>
 
-      <QuickAccess />
+      <ServiceGroupSection group="learning" />
 
       <CourseRow eyebrow="مسیر بدون مرز" title="زندگی و درآمدی که به جغرافیا محدود نیست" sub="از اولین قدم تا ساختن کسب‌وکار بین‌المللی؛ مسیری که هزاران نفر پیش از تو رفته‌اند." courses={boundlessCourses} color="green" />
 
+      <ServiceGroupSection group="ai" />
+
       <FounderStory />
 
+      <ServiceGroupSection group="business" />
+
       <CourseRow eyebrow="هوش مصنوعی" title="ابزاری که آینده را می‌سازد، امروز در دست توست" sub="آموزش عملی هوش مصنوعی برای زندگی هوشمندتر و کسب‌وکاری که سریع‌تر رشد می‌کند." courses={featuredCourses} color="blue" />
+
+      <ServiceGroupSection group="finance" />
 
       <section className="px-4 pb-4">
         <div className="container mx-auto space-y-4">

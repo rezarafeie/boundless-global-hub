@@ -1,3 +1,4 @@
+import RandomServices from '@/components/Services/RandomServices';
 
 import React from "react";
 import MainLayout from "@/components/Layout/MainLayout";
@@ -72,7 +73,8 @@ const About = () => {
           </div>
         </div>
       </div>
-    </MainLayout>
+    <div className="container mx-auto px-4 py-12"><RandomServices /></div>
+</MainLayout>
   );
 };
 

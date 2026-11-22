@@ -1,3 +1,4 @@
+import RandomServices from '@/components/Services/RandomServices';
 import EnrolledCourseCard, { CourseProgressInfo } from '@/components/Dashboard/EnrolledCourseCard';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -1350,7 +1351,8 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    </MainLayout>
+    <div className="container mx-auto px-4 py-12"><RandomServices /></div>
+</MainLayout>
   );
 };
 

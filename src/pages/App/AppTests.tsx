@@ -1,3 +1,4 @@
+import RandomServices from '@/components/Services/RandomServices';
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -246,7 +247,8 @@ const AppTests = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
+    <div className="px-4 pb-24 pt-6"><RandomServices columns="grid-cols-2 md:grid-cols-4" /></div>
+</AppLayout>
   );
 };
 

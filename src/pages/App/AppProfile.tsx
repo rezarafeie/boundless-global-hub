@@ -1,3 +1,4 @@
+import RandomServices from '@/components/Services/RandomServices';
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "@/components/Layout/AppLayout";
@@ -321,7 +322,8 @@ const AppProfile = () => {
           ))}
         </div>
       </div>
-    </AppLayout>
+    <div className="px-4 pb-24 pt-6"><RandomServices columns="grid-cols-2 md:grid-cols-4" /></div>
+</AppLayout>
   );
 };
 

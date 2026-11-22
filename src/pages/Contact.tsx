@@ -1,3 +1,4 @@
+import RandomServices from '@/components/Services/RandomServices';
 
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
@@ -313,7 +314,8 @@ const Contact = () => {
           </div>
         </div>
       </section>
-    </MainLayout>
+    <div className="container mx-auto px-4 py-12"><RandomServices /></div>
+</MainLayout>
   );
 };
 

@@ -1,3 +1,4 @@
+import RandomServices from '@/components/Services/RandomServices';
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { FeaturedCourse, HowItWorks, LifeGallery } from "@/components/Courses/ArchiveSections";
@@ -256,7 +257,8 @@ const CourseArchive = () => {
       <HowItWorks />
       <LifeGallery />
       <PhotoQuote quote="دانستن کافی نیست؛ چیزی که یاد می‌گیری، فقط وقتی مال توست که با آن زندگی‌ات را عوض کنی." />
-    </MainLayout>
+    <div className="container mx-auto px-4 py-12"><RandomServices /></div>
+</MainLayout>
   );
 };
 
