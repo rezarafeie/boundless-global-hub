@@ -8,6 +8,7 @@ import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User, Clock, U
 import { useNavigate } from "react-router-dom";
 import { useBlackFridayContext } from "@/contexts/BlackFridayContext";
 import BlackFridayBadge from "@/components/BlackFriday/BlackFridayBadge";
+import { courseImage } from "@/lib/academyImagery";
 
 interface CourseCardProps {
   title: string;
@@ -110,21 +111,20 @@ const CourseCard: React.FC<CourseCardProps> = ({
       onClick={handleCardClick}
       className="group relative flex h-full cursor-pointer flex-col rounded-3xl border border-border bg-card p-7 shadow-soft transition-all duration-500 ease-smooth hover:-translate-y-1 hover:shadow-float"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-foreground [&_svg]:text-foreground">
-          {getCourseIcon()}
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="relative -mx-7 -mt-7 mb-2 aspect-[16/10] overflow-hidden rounded-t-3xl bg-muted">
+        <img src={courseImage(slug, title)} alt={title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 ease-smooth group-hover:scale-105" />
+        <div className="absolute inset-0 bg-gradient-to-t from-photo-shade/50 to-transparent" />
+        <div className="absolute right-4 top-4 flex items-center gap-2">
           {blackFridayDiscount > 0 && (
             <BlackFridayBadge discount={blackFridayDiscount} className="text-xs scale-75" />
           )}
-          <span className="rounded-full border border-border px-3 py-1 text-[11px] font-medium text-muted-foreground">
+          <span className="rounded-full bg-photo-shade/50 px-3 py-1 text-[11px] font-medium text-photo-ink backdrop-blur-md">
             {isPaid ? "ویژه" : "رایگان"}
           </span>
         </div>
       </div>
 
-      <h3 className="mt-8 text-xl font-bold leading-snug tracking-tight text-foreground line-clamp-2">{title}</h3>
+      <h3 className="mt-5 text-xl font-bold leading-snug tracking-tight text-foreground line-clamp-2">{title}</h3>
       {englishTitle && <p className="mt-1 text-xs text-muted-foreground">{englishTitle}</p>}
       <p className="mt-3 flex-grow text-sm leading-7 text-muted-foreground line-clamp-3">{description}</p>
 

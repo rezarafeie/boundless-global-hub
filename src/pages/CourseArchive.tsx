@@ -3,6 +3,7 @@ import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
+import PhotoQuote from "@/components/PhotoQuote";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
@@ -243,6 +244,7 @@ const CourseArchive = () => {
           )}
         </div>
       </section>
+      <PhotoQuote quote="دانستن کافی نیست؛ چیزی که یاد می‌گیری، فقط وقتی مال توست که با آن زندگی‌ات را عوض کنی." />
     </MainLayout>
   );
 };

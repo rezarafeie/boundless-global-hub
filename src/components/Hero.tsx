@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import RandomHeadlineGenerator from './RandomHeadlineGenerator';
-import heroStage from '@/assets/photos/hero_stage.webp.asset.json';
+import { pickHeroScene } from '@/lib/academyImagery';
 
 export interface HeroProps {
   title?: string;
@@ -17,15 +17,17 @@ const ease = [0.22, 1, 0.36, 1] as const;
 
 const Hero: React.FC<HeroProps> = ({ title, subtitle, ctaText, ctaLink }) => {
   const { language } = useLanguage();
+  const scene = useMemo(pickHeroScene, []);
   return (
     <section className="relative isolate overflow-hidden bg-photo-shade text-photo-ink">
       <motion.img
-        src={heroStage.url}
-        alt={language === 'fa' ? 'سید عباس رفیعی روی صحنه' : 'Abbas Rafiei on stage'}
+        key={scene.image}
+        src={scene.image}
+        alt={language === 'fa' ? 'رضا رفیعی' : 'Reza Rafiei'}
         initial={{ scale: 1.08, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 1.4, ease }}
-        className="absolute inset-0 -z-10 h-full w-full object-cover object-[35%_15%] md:object-[center_20%]"
+        className={`absolute inset-0 -z-10 h-full w-full object-cover object-[30%_center] md:${scene.position}`}
       />
       <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-photo-shade via-photo-shade/60 to-transparent md:bg-gradient-to-l md:via-photo-shade/70 md:to-photo-shade/10" />
       <div aria-hidden className="absolute inset-x-0 bottom-0 -z-10 h-40 bg-gradient-to-t from-background to-transparent" />
@@ -34,15 +36,15 @@ const Hero: React.FC<HeroProps> = ({ title, subtitle, ctaText, ctaLink }) => {
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease }}
             className="inline-flex items-center gap-2 rounded-full border border-photo-ink/20 bg-photo-ink/10 px-4 py-1.5 text-xs font-medium backdrop-blur-md">
             <span className="h-1.5 w-1.5 rounded-full bg-success" />
-            {language === 'fa' ? 'با سید عباس رفیعی' : 'With Abbas Rafiei'}
+            {language === 'fa' ? `${scene.eyebrow} · رضا رفیعی` : 'Reza Rafiei'}
           </motion.div>
           <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.08, ease }}
-            className="mt-7 text-5xl font-extrabold leading-[1.25] tracking-tight md:text-7xl">
-            {title || (language === 'fa' ? 'آکادمی رفیعی' : 'Rafiei Academy')}
+            className="mt-7 text-4xl font-extrabold leading-[1.35] tracking-tight md:text-6xl">
+            {title || (language === 'fa' ? scene.line : 'Rafiei Academy')}
           </motion.h1>
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.16, ease }}
             className="mt-5 text-lg text-photo-ink/80 md:text-xl [&_*]:!text-photo-ink/80 [&_*]:!bg-none">
-            {subtitle ? <p>{subtitle}</p> : <RandomHeadlineGenerator />}
+            {subtitle ? <p>{subtitle}</p> : language === 'fa' ? <p>{scene.sub}</p> : <RandomHeadlineGenerator />}
           </motion.div>
           {ctaText && ctaLink && (
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.24, ease }}

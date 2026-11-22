@@ -198,7 +198,7 @@ const BoundlessDeposit = () => {
               <div className="flex items-center justify-between pt-1 border-t border-border/50">
                 <div>
                   <p className="text-[10px] text-muted-foreground mb-0.5">صاحب حساب</p>
-                  <p className="text-sm font-medium text-foreground">سید عباس رفیعی</p>
+                  <p className="text-sm font-medium text-foreground">رضا رفیعی</p>
                 </div>
                 <Button
                   size="sm"

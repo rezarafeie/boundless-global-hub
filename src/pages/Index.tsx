@@ -4,6 +4,8 @@ import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
 import QuickAccess from "@/components/QuickAccess";
 import FounderStory from "@/components/FounderStory";
+import PhotoQuote from "@/components/PhotoQuote";
+import { courseImage } from "@/lib/academyImagery";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
 import HubBanner from "@/components/HubBanner";
@@ -246,10 +248,11 @@ const Index = () => {
     return (
       <div className="group h-full">
         <div className="relative h-full">
-          <div className={`relative h-full min-h-[350px] bg-white dark:bg-card border ${config.border} rounded-2xl overflow-hidden transition-all duration-300 group-hover:shadow-xl ${config.shadow} group-hover:-translate-y-1 flex flex-col`}>
+          <div className={`relative h-full min-h-[350px] bg-card border ${config.border} rounded-2xl overflow-hidden transition-all duration-300 group-hover:shadow-xl ${config.shadow} group-hover:-translate-y-1 flex flex-col`}>
             
-            {/* Top accent */}
-            <div className={`h-1 bg-gradient-to-r ${config.accent}`}></div>
+            <div className="aspect-[16/9] overflow-hidden bg-muted">
+              <img src={courseImage(course.slug, course.title)} alt={course.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            </div>
             
             {/* Card content */}
             <div className="p-6 md:p-8 flex flex-col flex-1">
@@ -711,6 +714,7 @@ const Index = () => {
           </div>
         </div>
       </section>
+      <PhotoQuote />
     </MainLayout>
   );
 };
