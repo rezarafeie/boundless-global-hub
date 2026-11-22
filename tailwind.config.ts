@@ -20,6 +20,7 @@ export default {
 		},
 		extend: {
 			colors: {
+				photo: { ink: 'hsl(var(--photo-ink))', shade: 'hsl(var(--photo-shade))' },
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',

@@ -50,6 +50,8 @@
 
 @layer base {
   :root {
+    --photo-ink: 0 0% 100%;
+    --photo-shade: 0 0% 4%;
     --background: 0 0% 99%;
     --foreground: 0 0% 7%;
     --card: 0 0% 100%;

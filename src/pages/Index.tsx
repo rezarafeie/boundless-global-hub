@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
 import QuickAccess from "@/components/QuickAccess";
+import FounderStory from "@/components/FounderStory";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
 import HubBanner from "@/components/HubBanner";
@@ -382,6 +383,7 @@ const Index = () => {
       
       <Hero ctaText="مشاهده دوره‌ها" ctaLink="/courses" />
       <QuickAccess />
+      <FounderStory />
       <IRClassBanner />
       <IranCourseBanner />
       <HubBanner />
