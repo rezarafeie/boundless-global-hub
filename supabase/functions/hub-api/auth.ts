@@ -52,6 +52,7 @@ export async function handleAuth(action: string, body: unknown, req: Request, de
     const requestId = crypto.randomUUID(), code = randomCode();
     await check(db.from('hub_auth_requests').insert({ id: requestId, user_id: user?.id || null, channel,
       destination_hash: destinationHash, code_hash: await hash(`otp:${requestId}:${code}`), verified_email: channel === 'email' ? destination : null,
+      verified_phone: channel === 'sms' ? destination.slice(1) : null,
       expires_at: new Date(Date.now() + AUTH_LIMITS.expiresIn * 1000).toISOString() }));
     // Delivery has the same behavior for present, absent and conflicting accounts.
     try { await (dependencies.deliver || deliverCode)(channel, destination, code, requestId); }

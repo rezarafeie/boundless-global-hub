@@ -15,9 +15,10 @@ import type { TemplateEntry } from './registry.ts'
 interface Props {
   code?: string
   recipientName?: string
+  expiresMinutes?: number
 }
 
-const OTPEmail = ({ code = '0000', recipientName }: Props) => (
+const OTPEmail = ({ code = '0000', recipientName, expiresMinutes = 5 }: Props) => (
   <Html lang="fa" dir="rtl">
     <Head />
     <Preview>{`کد تایید آکادمی رفیعی: ${code}`}</Preview>
@@ -28,7 +29,7 @@ const OTPEmail = ({ code = '0000', recipientName }: Props) => (
           {recipientName ? `${recipientName} عزیز،` : 'سلام،'}
         </Text>
         <Text style={text}>
-          برای تکمیل ورود، از کد تایید زیر استفاده کنید. این کد تا ۵ دقیقه معتبر است.
+          برای تکمیل ورود، از کد تایید زیر استفاده کنید. این کد تا {expiresMinutes} دقیقه معتبر است.
         </Text>
         <Section style={codeBox}>
           <Text style={codeText}>{code}</Text>

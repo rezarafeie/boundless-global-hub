@@ -4845,6 +4845,7 @@ export type Database = {
           id: string
           user_id: number | null
           verified_email: string | null
+          verified_phone: string | null
         }
         Insert: {
           attempts?: number
@@ -4858,6 +4859,7 @@ export type Database = {
           id: string
           user_id?: number | null
           verified_email?: string | null
+          verified_phone?: string | null
         }
         Update: {
           attempts?: number
@@ -4871,6 +4873,7 @@ export type Database = {
           id?: string
           user_id?: number | null
           verified_email?: string | null
+          verified_phone?: string | null
         }
         Relationships: [
           {

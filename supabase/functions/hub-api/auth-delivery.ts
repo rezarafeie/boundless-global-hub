@@ -19,9 +19,9 @@ export async function deliverCode(channel: 'email' | 'sms', destination: string,
       if (!response.ok || result.return?.status !== 200) throw new HubError(502, 'ارسال کد انجام نشد');
     } else {
       const template = TEMPLATES['otp-verification'];
-      const data = { code };
+      const data = { code, expiresMinutes: 2 };
       const html = await renderAsync(React.createElement(template.component, data));
-      const result = await sendEmail(destination, typeof template.subject === 'function' ? template.subject(data) : template.subject, html);
+      const result = await sendEmail(destination, 'کد ورود رفیعی هاب', html);
       if (!result.ok) throw new HubError(502, 'ارسال کد ایمیل از سرویس فعلی انجام نشد');
     }
   } catch (error) {
