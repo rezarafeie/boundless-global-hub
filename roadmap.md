@@ -3,7 +3,7 @@
 - [x] Repair trusted verification, callback selection and recovery using the existing verification flow; pending/outage responses never mark enrollments failed, saved provider reference cannot be replaced by client input
 - [x] 8 payment tests and 3 callback tests pass; 171 provider references checked, 14 confirmed enrollments recovered; real callback UI shows success, uses Rafiei Pay rather than direct Zibal, and has no runtime errors
 - [ ] Reconcile 113 legacy pending/failed registrations lacking any stored provider payment ID (requires provider evidence/payment identifiers; none in request logs)
-- [ ] Confirm callback domain preference (current Rafiei Pay domain differs from earlier checkout preference; question sent)
+- [x] Confirm Rafiei Pay callback domain: user chose academy.rafiei.co; current callbacks stay unchanged
 
 ## Bot menu cleanup
 - [x] Add default-off form visibility control and filter bot form menus; all 9 existing forms remain unselected
