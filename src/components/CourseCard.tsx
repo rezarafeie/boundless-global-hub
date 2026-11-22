@@ -106,96 +106,44 @@ const CourseCard: React.FC<CourseCardProps> = ({
   };
 
   return (
-    <Card 
-      className="group h-full flex flex-col bg-white dark:bg-card border border-border dark:border-border hover:border-border dark:hover:border-border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer overflow-hidden"
+    <article
       onClick={handleCardClick}
+      className="group relative flex h-full cursor-pointer flex-col rounded-3xl border border-border bg-card p-7 shadow-soft transition-all duration-500 ease-smooth hover:-translate-y-1 hover:shadow-float"
     >
-      
-      {/* Clean Header */}
-      <div className="relative p-6 pb-4 bg-muted dark:bg-card/50">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white dark:bg-muted-foreground rounded-lg flex items-center justify-center shadow-sm">
-              {getCourseIcon()}
-            </div>
-            <Badge
-              variant="outline"
-              className="text-xs font-medium border-border dark:border-border text-muted-foreground dark:text-muted-foreground"
-            >
-              {isPaid ? translations.paidCoursesTitle : translations.freeCoursesTitle}
-            </Badge>
-            {/* Black Friday Badge */}
-            {blackFridayDiscount > 0 && (
-              <BlackFridayBadge discount={blackFridayDiscount} className="text-xs scale-75" />
-            )}
-          </div>
+      <div className="flex items-center justify-between">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-foreground [&_svg]:text-foreground">
+          {getCourseIcon()}
         </div>
-        
-        <div>
-          <h3 className="text-lg font-bold text-foreground dark:text-white mb-1 line-clamp-2">{title}</h3>
-          {englishTitle && (
-            <p className="text-sm text-muted-foreground dark:text-muted-foreground">{englishTitle}</p>
+        <div className="flex items-center gap-2">
+          {blackFridayDiscount > 0 && (
+            <BlackFridayBadge discount={blackFridayDiscount} className="text-xs scale-75" />
           )}
+          <span className="rounded-full border border-border px-3 py-1 text-[11px] font-medium text-muted-foreground">
+            {isPaid ? "ویژه" : "رایگان"}
+          </span>
         </div>
       </div>
-      
-      <CardContent className="p-6 pt-4 flex-grow flex flex-col">
-        {/* Fixed height description container - consistent across all cards */}
-        <div className="h-12 mb-4">
-          <p className="text-sm text-muted-foreground dark:text-muted-foreground line-clamp-2 leading-relaxed">{description}</p>
-        </div>
-        
-        {/* Fixed height benefits section - consistent layout */}
-        <div className="space-y-3 mb-6 flex-grow min-h-[80px]">
-          <div className="flex items-start gap-2 text-sm">
-            <CheckCircle size={14} className="text-green-500 mt-0.5 flex-shrink-0" />
-            <span className="text-foreground dark:text-muted-foreground line-clamp-2 leading-relaxed">{benefits}</span>
-          </div>
-          <div className="flex items-start gap-2 text-sm">
-            <ArrowLeft size={14} className="text-foreground mt-0.5 flex-shrink-0 rtl:rotate-180" />
-            <span className="text-foreground dark:text-muted-foreground line-clamp-2 leading-relaxed">{outcome}</span>
-          </div>
-        </div>
 
-        {/* Course Features - minimal design */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <div className="flex flex-col items-center p-2 bg-muted dark:bg-card rounded">
-            <Clock size={14} className="text-muted-foreground mb-1" />
-            <span className="text-xs text-muted-foreground dark:text-muted-foreground">دسترسی آزاد</span>
-          </div>
-          <div className="flex flex-col items-center p-2 bg-muted dark:bg-card rounded">
-            <Users size={14} className="text-muted-foreground mb-1" />
-            <span className="text-xs text-muted-foreground dark:text-muted-foreground">انجمن</span>
-          </div>
-          <div className="flex flex-col items-center p-2 bg-muted dark:bg-card rounded">
-            <CheckCircle size={14} className="text-muted-foreground mb-1" />
-            <span className="text-xs text-muted-foreground dark:text-muted-foreground">گواهی</span>
-          </div>
-        </div>
-        
-        {instructor && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-muted-foreground mb-4">
-            <User size={12} />
-            <span>{instructor}</span>
-            {level && (
-              <Badge variant="outline" className="text-xs border-border dark:border-border">
-                {level}
-              </Badge>
-            )}
-          </div>
-        )}
-      </CardContent>
-      
-      <CardFooter className="p-6 pt-0">
-        <Button 
+      <h3 className="mt-8 text-xl font-bold leading-snug tracking-tight text-foreground line-clamp-2">{title}</h3>
+      {englishTitle && <p className="mt-1 text-xs text-muted-foreground">{englishTitle}</p>}
+      <p className="mt-3 flex-grow text-sm leading-7 text-muted-foreground line-clamp-3">{description}</p>
+
+      {instructor && (
+        <p className="mt-4 text-xs text-muted-foreground">{instructor}{level ? ` · ${level}` : ""}</p>
+      )}
+
+      <div className="mt-8 flex items-center justify-between border-t border-border pt-5">
+        <button
           onClick={handleCtaClick}
-          className="w-full bg-card hover:bg-card dark:bg-muted dark:text-foreground dark:hover:bg-muted text-white rounded-lg transition-all duration-300"
+          className="text-sm font-semibold text-foreground"
         >
-          <Sparkles size={16} className="ml-2" />
           {cta || (isPaid ? "مشاهده دوره" : translations.startFreeCourse)}
-        </Button>
-      </CardFooter>
-    </Card>
+        </button>
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform duration-500 ease-smooth group-hover:-translate-x-1">
+          <ArrowLeft size={16} />
+        </span>
+      </div>
+    </article>
   );
 };
 

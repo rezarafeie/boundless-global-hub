@@ -3,8 +3,6 @@ import MainLayout from "@/components/Layout/MainLayout";
 import Hero from "@/components/Hero";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
-import IRClassBanner from "@/components/IRClassBanner";
-import IranCourseBanner from "@/components/IranCourseBanner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
@@ -169,34 +167,24 @@ const CourseArchive = () => {
       <Hero
         title={translations.trainingCenter}
         subtitle={translations.trainingCenterDesc}
-        ctaText={translations.callToAction}
-        ctaLink="#courses"
-        backgroundType="glow"
       />
-      
-      <IRClassBanner />
-      <IranCourseBanner />
-      
-      <section id="courses" className="py-16">
+
+      <section id="courses" className="pb-24">
         <div className="container">
-          <SectionTitle
-            title={translations.coursesTitle}
-            subtitle={translations.coursesSubtitle}
-          />
           
           {/* Mobile-Optimized Filter Tabs */}
           <div className="mb-8">
             {/* Desktop Filters */}
             <div className="hidden md:flex justify-center">
-              <div className="flex gap-2 p-1 bg-muted rounded-full">
+              <div className="flex gap-1 p-1 bg-muted rounded-full">
                 {filters.map((filter) => (
                   <button
                     key={filter.id}
                     onClick={() => setActiveFilter(filter.id)}
                     className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                       activeFilter === filter.id
-                        ? 'bg-black text-white shadow-md'
-                        : 'text-muted-foreground hover:text-black hover:bg-white'
+                        ? 'bg-background text-foreground shadow-soft'
+                        : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     {filter.label}
@@ -208,15 +196,15 @@ const CourseArchive = () => {
             {/* Mobile Horizontal Scrollable Filters */}
             <div className="md:hidden">
               <ScrollArea className="w-full whitespace-nowrap">
-                <div className={`flex gap-3 p-4 ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}>
+                <div className={`flex gap-3 p-4 flex-row`}>
                   {filters.map((filter) => (
                     <button
                       key={filter.id}
                       onClick={() => setActiveFilter(filter.id)}
                       className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border ${
                         activeFilter === filter.id
-                          ? 'bg-black text-white border-black shadow-lg'
-                          : 'text-muted-foreground border-border bg-white hover:border-border hover:shadow-md'
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'text-muted-foreground border-border bg-card'
                       }`}
                     >
                       {filter.label}
@@ -230,7 +218,7 @@ const CourseArchive = () => {
           
           {/* Course Grid */}
           <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
