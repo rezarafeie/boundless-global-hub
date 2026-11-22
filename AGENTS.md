@@ -6,3 +6,4 @@
 - Call center operations reuse the existing gateway and processing functions with server-validated roles and ownership; provider routing stays capture-only until its contract and staged rollout are verified.
 - Call-center scheduled HTTP work requires a server-only credential, never a public API key or client body flag, because it can import private recordings and incur AI costs.
 - Call transcripts keep the raw speech-to-text in raw_transcript; the saved transcript and speaker segments come from a length-guarded audio-aware AI correction, because corrections must never rewrite what was said.
+- Telegram enrollment reports use a server-only numeric-chat ACL, private verified webhook updates and a service-only aggregate RPC; delegated readers cannot manage access or read student identities, and report counts use enrollment creation time without the API row cap.

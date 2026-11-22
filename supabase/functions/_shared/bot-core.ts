@@ -30,6 +30,7 @@ import {
 import { ensureAccessWindow as gamEnsureAccessWindow } from './gamification.ts';
 import { sendOrQueue as actSendOrQueue, sendExtraActivationMessages as actSendExtras } from './activation-messages.ts';
 import { reviewApplication as chalReview, coachEmails as chalCoachEmails } from './challenge.ts';
+import { handleEnrollmentReport, enrollmentReportAccess } from './enrollment-report.ts';
 
 // Only the challenge's coach (by email) may approve/reject from the bot.
 async function chalCoachCheck(chat_id: number, participantId: string) {
@@ -282,8 +283,11 @@ function twoColumnKeyboard(rows: InlineKeyboard): InlineKeyboard {
 
 async function mainMenu(user: BotUser | null): Promise<InlineKeyboard> {
   const role = user?.role ?? null;
+  const reportAccess = user?.telegram_chat_id ? await enrollmentReportAccess(supabase, user.telegram_chat_id) : null;
+  const reportRows: InlineKeyboard = reportAccess?.active ? [[{ text: '📊 آمار ثبت‌نام دوره‌ها', callback_data: 'ereg:menu' }]] : [];
   if (role === 'admin') {
     return twoColumnKeyboard([
+      ...reportRows,
       [{ text: '📋 لیدهای من', callback_data: 'menu:my_leads' }],
       [{ text: '👥 همه لیدها', callback_data: 'menu:all_leads' }],
       [{ text: '🎯 تخصیص دسته‌جمعی', callback_data: 'bulk:start' }],
@@ -295,6 +299,7 @@ async function mainMenu(user: BotUser | null): Promise<InlineKeyboard> {
   }
   if (role === 'sales_manager') {
     return twoColumnKeyboard([
+      ...reportRows,
       [{ text: '📋 لیدهای من', callback_data: 'menu:my_leads' }],
       [{ text: '👥 همه لیدها', callback_data: 'menu:all_leads' }],
       [{ text: '🎯 تخصیص دسته‌جمعی', callback_data: 'bulk:start' }],
@@ -304,6 +309,7 @@ async function mainMenu(user: BotUser | null): Promise<InlineKeyboard> {
   }
   if (role === 'sales_agent') {
     return twoColumnKeyboard([
+      ...reportRows,
       [{ text: '📋 لیدهای من', callback_data: 'menu:my_leads' }],
       [{ text: '📊 عملکرد امروز', callback_data: 'menu:reports' }],
       [{ text: '👤 پروفایل', callback_data: 'student:profile' }],
@@ -311,12 +317,13 @@ async function mainMenu(user: BotUser | null): Promise<InlineKeyboard> {
   }
   if (role === 'social_admin') {
     return twoColumnKeyboard([
+      ...reportRows,
       [{ text: '📱 مدیریت شبکه‌های اجتماعی', callback_data: 'social:menu' }],
       [{ text: '👤 پروفایل', callback_data: 'student:profile' }],
     ]);
   }
   // Default: student — hide my_courses / my_tests when empty
-  const rows: InlineKeyboard = [];
+  const rows: InlineKeyboard = [...reportRows];
   let courseCount = 0, testCount = 0;
   if (user?.id) {
     const { data: u } = await supabase.from('chat_users').select('phone').eq('id', user.id).maybeSingle();
@@ -3204,7 +3211,8 @@ async function handleFormMessage(chat_id: number, user_id: number | null, msg: a
 // ============ Update routing ============
 
 
-async function handleUpdate(update: any) {
+async function handleUpdate(update: any, reportAuthenticated = false) {
+  if (reportAuthenticated && await handleEnrollmentReport(supabase, update)) return;
   if (update.business_connection?.id) {
     if (update.business_connection.is_enabled !== false) {
       await saveBusinessConnectionId(update.business_connection.id);
@@ -4838,7 +4846,10 @@ export function serveBotWebhook(channel: Channel, opts: { secret?: string } = {}
     try {
       const update = await req.json();
       runWithChannel(channel, () => {
-        handleUpdate(update).catch(e => console.error(`[${channel}] handleUpdate error:`, e));
+        const work = handleUpdate(update, !!expected).catch(e => console.error(`[${channel}] handleUpdate error:`, e));
+        // Keep reporting and the existing bot work alive after acknowledging the webhook.
+        const runtime = (globalThis as typeof globalThis & { EdgeRuntime?: { waitUntil(promise: Promise<unknown>): void } }).EdgeRuntime;
+        runtime?.waitUntil(work);
       });
       return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     } catch (e) {
