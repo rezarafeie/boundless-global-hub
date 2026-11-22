@@ -87,3 +87,4 @@
 - [x] Student pages /challenges and /challenges/:slug with existing assignment card inline
 - [ ] Build the first 30-day Boundless Sales Challenge JSON (waiting on content)
 - [x] Sync challenge onboarding fields and labels with the selected form and match the public form experience
+- [ ] Redesign academy (home/courses, enrollment/payment, student panel) — black/white premium glass
