@@ -1,0 +1,1 @@
+UPDATE public.social_enrollment_events SET status='completed', reply_sent_at='2026-11-22T14:07:53Z',last_error=NULL,locked_at=NULL WHERE id='5d8da6f3-e15a-4526-88d8-121f5bd5ef37' AND enrollment_id='a0326dfe-6d7b-4715-83dd-63adfcd58a3f' AND status IN ('retry','failed') AND reply_sent_at IS NULL;

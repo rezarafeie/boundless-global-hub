@@ -24,10 +24,11 @@
 - [x] Verify 16 tests, access grants, unsigned request rejection and real delivery of all 15 courses with totals matching the database
 
 ## Instagram direct enrollment
-- [x] Make email optional for trusted free-course direct enrollment, keep website validation unchanged, store missing email as null and skip recipient email delivery; 14 targeted tests pass
+- [x] Make email optional for trusted free-course direct enrollment, keep website validation unchanged, store missing email as null and skip recipient email delivery; 17 targeted tests pass
 - [x] Connect form 10424 on Instagram account 210093 to the existing free Boundless Taste enrollment flow, preserving form 9808
-- [ ] Repair real NovinHub form response enrichment: rez.raf completion arrived without page, form or conversation identifiers and with name/phone only; verify provider identity before replaying
-- [ ] Verify form 10424 creates an enrollment and delivers its activation link to rez.raf (real completion received; email absent from submitted answers)
+- [x] Repair sparse form response enrichment: real response 4368140 verified under page 210093/form 10424 and conversation 6382167437 owner rez.raf
+- [x] Real form created completed enrollment a0326dfe-6d7b-4715-83dd-63adfcd58a3f with null email; initial delivery failed, existing activation manually sent with documented JSON and read back as message 7393482235; event marked completed to stop duplicates
+- [x] Repair shared reply transport to documented JSON and use the same activation's short bot deep link for long prefilled URLs; 17 tests pass (a second fresh automatic form completion has not been exercised)
 - [x] Build authenticated NovinHub event receiver and durable processing with retries active only while pending
 - [x] Add course/form/keyword rules and delivery history to Social CRM settings
 - [x] Reuse course enrollment, access, email and bot activation flows for free courses; paid courses remain payment-gated

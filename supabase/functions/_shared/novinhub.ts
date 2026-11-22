@@ -174,7 +174,8 @@ export const novinhub = {
 
   /** Reply to a conversation. `content` is the body text. */
   reply: (conversationId: string | number, content: string) =>
-    nhForm(`/conversation/${conversationId}/reply`, { content }),
+    nhFetch(`/conversation/${conversationId}/reply`, { method: 'POST',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) }),
 
   /** Fetch live posts from a social account (Instagram supported). */
   fetchAccountPosts: (accountId: string | number, params: Record<string, string | number> = {}) => {
