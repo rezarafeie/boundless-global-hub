@@ -246,8 +246,9 @@ export async function processEnrollmentQueue(limit = 10) {
       ]);
       if (emailUser && normalizePhone(emailUser.phone || '') !== person.phone) throw new Error('ایمیل و شماره موبایل با حساب موجود مطابقت ندارند؛ بررسی مدیر لازم است');
       if (person.email && phoneUser?.email && phoneUser.email.toLowerCase() !== person.email) throw new Error('ایمیل فرم با حساب شماره موبایل مطابقت ندارد؛ بررسی مدیر لازم است');
-      if (emailUser && phoneUser && emailUser.id !== phoneUser.id) throw new Error('تعارض حساب ایمیل و موبایل؛ بررسی مدیر لازم است');
-      const existingUser = phoneUser || emailUser;
+      // An email account whose normalized phone equals the form phone already matches both identifiers;
+      // a separate legacy phone-format duplicate must not block that verified person.
+      const existingUser = emailUser || phoneUser;
       let enrollment: any;
       if (job.enrollment_id) {
         const { data, error } = await client.from('enrollments').select('*').eq('id', job.enrollment_id).single();
