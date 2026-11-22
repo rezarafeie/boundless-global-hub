@@ -186,7 +186,7 @@ export async function handleHub(req: Request) {
         await checked(db.from('test_enrollments').update({ esanj_employee_id: employeeId }).eq('id', attempt.id).eq('user_id', user.id));
         await esanj.submit(row.test_id, uuid, employeeId, age, p.sex, answers);
         const html = await esanj.result(uuid);
-        await checked(db.from('test_enrollments').update({ result_data: { result_html: html }, enrollment_status: 'completed', test_completed_at: new Date().toISOString() }).eq('id', attempt.id).eq('user_id', user.id));
+        await checked(db.from('test_enrollments').update({ result_data: { response: html, result_html: html }, enrollment_status: 'completed', test_completed_at: new Date().toISOString() }).eq('id', attempt.id).eq('user_id', user.id));
         data = { attempt_id: attempt.id, result_html: html };
       } else if (parsed.action === 'me.tests') {
         data = (await all(() => db.from('test_enrollments').select('id,created_at,tests(slug,title)').eq('user_id', user.id).order('created_at', { ascending: false }).order('id')))
@@ -194,11 +194,11 @@ export async function handleHub(req: Request) {
       } else if (parsed.action === 'test.result') {
         const attempt = await checked(db.from('test_enrollments').select('*').eq('id', p.attempt_id).eq('user_id', user.id).maybeSingle());
         if (!attempt || attempt.payment_status !== 'completed') throw new HubError(404, 'نتیجه آزمون یافت نشد');
-        if (attempt.result_data?.result_html) data = { result_html: resultHtml(attempt.result_data.result_html) };
+        if (attempt.result_data?.result_html || attempt.result_data?.response) data = { result_html: resultHtml(attempt.result_data) };
         else {
           if (!attempt.esanj_uuid) throw new HubError(409, 'آزمون هنوز انجام نشده است');
           const html = await esanj.result(attempt.esanj_uuid);
-          await checked(db.from('test_enrollments').update({ result_data: { result_html: html }, enrollment_status: 'completed', test_completed_at: new Date().toISOString() }).eq('id', attempt.id).eq('user_id', user.id));
+          await checked(db.from('test_enrollments').update({ result_data: { response: html, result_html: html }, enrollment_status: 'completed', test_completed_at: new Date().toISOString() }).eq('id', attempt.id).eq('user_id', user.id));
           data = { result_html: html };
         }
       } else if (parsed.action === 'support.create') {

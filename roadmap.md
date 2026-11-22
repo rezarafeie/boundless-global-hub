@@ -1,9 +1,10 @@
 ## Rafiei Hub API
 - [x] Confirm exact response shapes from Hub docs/hub-api/README.md; user supplied matching contract permitting edge-function transport
 - [x] Securely request HUB_SHARED_SECRET
-- [ ] Implement authenticated user mapping, action adapters and activity logging against existing academy services
-- [ ] Deploy contract-approved hub-api edge-function transport; document optional academy-domain routing (static hosting cannot provide server routes)
-- [ ] Verify authorization, ownership and action flows with real service readback
+- [x] Implement authenticated user mapping, all 14 action adapters and existing activity/analytics logging
+- [x] Deploy contract-approved hub-api edge-function transport; document optional academy-domain routing (static hosting cannot provide server routes)
+- [x] Verify all 40 saved tests: shared-secret rejection, identity conflict rejection, free enrollment, complete/uncomplete progress, ticket delivery, payment-link creation and real Esanj scoring with saved result readback; current preview build is clean
+- [ ] Enable Esanj tests whose provider JSON omits readable question/option text (requires provider content access; -2 currently returns blank titles/null labels)
 
 ## Rafiei Pay reconciliation
 - [x] Diagnose approved gateway payments that remain pending in enrollments: confirmed real verified provider payments stored as failed and no Rafiei Pay monitor
