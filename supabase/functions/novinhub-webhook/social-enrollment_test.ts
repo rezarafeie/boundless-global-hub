@@ -59,13 +59,18 @@ Deno.test('name and phone form never fabricates an email', () => {
   assertEquals(fieldsFrom({ messages: [{ text: 'کاربر آزمایش' }, { text: '۰۹۱۲۱۲۳۴۵۶۷' }] }, {}).email, '');
 });
 Deno.test('long prefilled activation uses the same existing bot activation token', () => {
-  const activation = { support_prefilled_link: 'https://telegram.me/rafieiacademy?text=' + 'a'.repeat(1540),
-    activation_token: 'test-token', bot_deep_link: 'https://telegram.me/rafiei_bot?start=sact_test-token' };
+  const activation = { support_prefilled_link: 'https://t.me/rafieiacademy?text=' + 'a'.repeat(1540),
+    activation_token: 'test-token', bot_deep_link: 'https://t.me/rafiei_bot?start=sact_test-token' };
   const link = directActivationLink(activation);
   assertEquals(link, activation.bot_deep_link);
   assertEquals(renderReply('{name} عزیز\n{telegram_link}', { name: 'آزمایش', telegram_link: link }).length < 1000, true);
 });
 Deno.test('short support prefill links are preserved', () => {
-  assertEquals(directActivationLink({ support_prefilled_link: 'https://telegram.me/rafieiacademy?text=hello' }),
-    'https://telegram.me/rafieiacademy?text=hello');
+  assertEquals(directActivationLink({ support_prefilled_link: 'https://t.me/rafieiacademy?text=hello' }),
+    'https://t.me/rafieiacademy?text=hello');
+});
+Deno.test('legacy telegram.me deep links are still accepted', () => {
+  const activation = { support_prefilled_link: 'https://t.me/rafieiacademy?text=' + 'a'.repeat(1540),
+    activation_token: 'test-token', bot_deep_link: 'https://telegram.me/rafiei_bot?start=sact_test-token' };
+  assertEquals(directActivationLink(activation), activation.bot_deep_link);
 });

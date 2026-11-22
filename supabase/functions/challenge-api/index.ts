@@ -23,7 +23,7 @@ async function messengerStatus(ch: any, uid: number) {
   const botLinked = !!(u?.telegram_chat_id || u?.bale_chat_id);
   const supportActivated = act?.status === "activated";
   const bot = String((st as any)?.telegram_bot_username || "rafiei_bot").replace(/^@/, "");
-  const link = `https://telegram.me/${bot}?start=chact_${act!.token}`;
+  const link = `https://t.me/${bot}?start=chact_${act!.token}`;
   const required = ch.require_messenger_activation !== false;
   return { required, botLinked, supportActivated, ready: !required || (botLinked && supportActivated), link };
 }

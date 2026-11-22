@@ -2629,7 +2629,7 @@ function webinarSupportLink(w: any, user: BotUser | null, chat_id: number): stri
   let raw = applyWebinarVars(tpl, w, { name: user?.name || '', phone: user?.phone || '', token });
   if (!raw.includes(token)) raw += `\n\n🔑 کد فعال‌سازی وبینار: ${token}`;
   const username = String(w?.telegram_support_username || 'rafieiacademy').replace(/^@/, '');
-  return `https://telegram.me/${username}?text=${encodeURIComponent(raw)}`;
+  return `https://t.me/${username}?text=${encodeURIComponent(raw)}`;
 }
 
 
@@ -3878,7 +3878,7 @@ async function handleUpdate(update: any, reportAuthenticated = false, replyDispa
     const prefill = `سلام، می‌خواهم پشتیبانی چالش «${title}» را فعال کنم.\nکد فعال‌سازی: CH-${token}`;
     const supportUrl = isBaleChannel()
       ? `https://ble.ir/rafieiacademy?text=${encodeURIComponent(prefill)}`
-      : `https://telegram.me/rafieiacademy?text=${encodeURIComponent(prefill)}`;
+      : `https://t.me/rafieiacademy?text=${encodeURIComponent(prefill)}`;
     if (act.status === 'activated') {
       await tgCall('sendMessage', { chat_id, text: `✅ ${escapeHtml(name)} عزیز، پشتیبانی چالش «${escapeHtml(title)}» قبلاً فعال شده است.`, parse_mode: 'HTML',
         reply_markup: { inline_keyboard: [[{ text: '🎯 ادامه ثبت‌نام در چالش', url: `https://academy.rafiei.co/challenges/${(ch as any)?.slug}` }]] } });
@@ -3950,7 +3950,7 @@ async function handleUpdate(update: any, reportAuthenticated = false, replyDispa
     } catch (e) { console.warn('auto-login on sact_ failed', e); }
 
     const baleCustom = ((course as any)?.bale_activation_link || '').trim();
-    let supportUrl = act.support_prefilled_link || 'https://telegram.me/rafieiacademy';
+    let supportUrl = act.support_prefilled_link || 'https://t.me/rafieiacademy';
     if (isBaleChannel()) {
       const baseBale = (/ble\.ir/i.test(baleCustom) ? baleCustom : 'https://ble.ir/rafieiacademy').split('?')[0];
       let prefill = '';
