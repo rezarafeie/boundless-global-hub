@@ -24,11 +24,13 @@
 - [x] Verify 16 tests, access grants, unsigned request rejection and real delivery of all 15 courses with totals matching the database
 
 ## Instagram direct enrollment
+- [x] Connect form 10424 on Instagram account 210093 to the existing free Boundless Taste enrollment flow, preserving form 9808
+- [ ] Verify form 10424 creates an enrollment and delivers its activation link to rez.raf (account identified; waiting for a real completed form event on page 210093)
 - [x] Build authenticated NovinHub event receiver and durable processing with retries active only while pending
 - [x] Add course/form/keyword rules and delivery history to Social CRM settings
 - [x] Reuse course enrollment, access, email and bot activation flows for free courses; paid courses remain payment-gated
 - [x] Verify six rule tests, authenticated event acceptance, duplicate handling, queue drain and editor rendering with sample data
-- [ ] Connect webhook in NovinHub and verify real form-to-enrollment-to-direct delivery (requires provider registration, actual form ID/payload and an authenticated admin; secret saved)
+- [x] Verify live NovinHub webhook reception; message events reach the existing queue
 
 ## Call center completion
 - [x] Verify real incoming webhook delivery: 12 processed provider events across all five event types

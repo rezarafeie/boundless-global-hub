@@ -6,6 +6,12 @@ Deno.test('form completion registers only the configured form', () => {
   assertEquals(triggerMatches(rule, { type: 'autoform_completed', payload: { form_id: 123 } }), true);
   assertEquals(triggerMatches(rule, { type: 'autoform_completed', payload: { form_id: 124 } }), false);
 });
+Deno.test('Reza Rafiei form 10424 matches independently of the academy form 9808', () => {
+  const rule = { enabled: true, event_type: 'autoform_completed', trigger_value: '10424' };
+  assertEquals(triggerMatches(rule, { type: 'autoform_completed', payload: { auto_form_id: 10424 } }), true);
+  assertEquals(triggerMatches(rule, { type: 'autoform_completed', payload: { auto_form_id: 9808 } }), false);
+  assertEquals(triggerMatches(rule, { type: 'message_created', payload: { text: '10424' } }), false);
+});
 Deno.test('keyword trigger ignores outgoing and automatic bot messages', () => {
   const rule = { enabled: true, event_type: 'message_created', trigger_value: 'شروع' };
   assertEquals(triggerMatches(rule, { type: 'message_created', payload: { text: 'شروع' } }), true);
