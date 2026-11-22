@@ -11,7 +11,8 @@ interface OTPRequest {
   email?: string;
 }
 
-const KAVENEGAR_KEY = '2F4B6676516B71793064726B626D644153507A55504C4D61776B6A31613858706A6E473952616F766477343D';
+const KAVENEGAR_KEY = Deno.env.get('KAVENEGAR_API_KEY');
+const KAVENEGAR_TEMPLATE = Deno.env.get('KAVENEGAR_VERIFY_TEMPLATE');
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -33,7 +34,6 @@ Deno.serve(async (req) => {
 
     if (isEmail) {
       identifier = body.email!.trim().toLowerCase();
-      console.log('Sending email OTP to:', identifier, 'Code:', otpCode);
 
       // Send via Lovable Cloud transactional email
       const { error: sendError } = await supabase.functions.invoke(
@@ -65,13 +65,13 @@ Deno.serve(async (req) => {
       }
       identifier = formattedPhone;
 
-      console.log('Sending OTP to:', formattedPhone, 'Code:', otpCode);
-
-      const kavenegarUrl = `https://api.kavenegar.com/v1/${KAVENEGAR_KEY}/verify/lookup.json?receptor=${formattedPhone}&token=${otpCode}&template=academylogin`;
-      const kavenegarResponse = await fetch(kavenegarUrl);
+      if (!KAVENEGAR_KEY || !KAVENEGAR_TEMPLATE) throw new Error('SMS is not configured');
+      const kavenegarResponse = await fetch(`https://api.kavenegar.com/v1/${KAVENEGAR_KEY}/verify/lookup.json`, {
+        method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ receptor: formattedPhone, token: otpCode, template: KAVENEGAR_TEMPLATE }),
+      }).catch(() => { throw new Error('SMS delivery failed'); });
       const kavenegarResult = await kavenegarResponse.json();
-      console.log('Kavenegar response:', kavenegarResult);
-      if (!kavenegarResponse.ok) {
+      if (!kavenegarResponse.ok || kavenegarResult.return?.status !== 200) {
         throw new Error('Failed to send OTP via Kavenegar');
       }
     }
@@ -101,9 +101,9 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
-    console.error('Error sending OTP:', error);
+    console.error('OTP delivery failed');
     return new Response(
-      JSON.stringify({ success: false, error: (error as Error).message }),
+      JSON.stringify({ success: false, error: 'ارسال کد انجام نشد' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }

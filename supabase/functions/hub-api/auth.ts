@@ -1,7 +1,7 @@
 import bcrypt from 'npm:bcryptjs@3.0.2';
 import { HubError, parseHubUser } from '../_shared/hub-policy.ts';
 import { AUTH_LIMITS, parseAuth, normalizeIdentifier, maskDestination, randomCode, randomTicket, hmac } from './auth-policy.ts';
-import { deliverCode } from './auth-delivery.ts';
+import type { deliverCode } from './auth-delivery.ts';
 
 type Dependencies = { db: any; onUser: (id: number) => Promise<void>; deliver?: typeof deliverCode };
 const dummyHash = '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
@@ -55,7 +55,10 @@ export async function handleAuth(action: string, body: unknown, req: Request, de
       verified_phone: channel === 'sms' ? destination.slice(1) : null,
       expires_at: new Date(Date.now() + AUTH_LIMITS.expiresIn * 1000).toISOString() }));
     // Delivery has the same behavior for present, absent and conflicting accounts.
-    try { await (dependencies.deliver || deliverCode)(channel, destination, code, requestId); }
+    try {
+      const deliver = dependencies.deliver || (await import('./auth-delivery.ts')).deliverCode;
+      await deliver(channel, destination, code, requestId);
+    }
     catch (error) {
       await check(db.from('hub_auth_requests').update({ consumed_at: new Date().toISOString() }).eq('id', requestId));
       throw error;
