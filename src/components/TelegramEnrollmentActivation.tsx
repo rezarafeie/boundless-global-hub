@@ -164,19 +164,19 @@ export function TelegramEnrollmentActivation({
     if (status === 'activated') {
       if (badgeWhenLinked) {
         return (
-          <Badge variant="outline" className={`gap-1 border-green-500/40 text-green-600 ${className ?? ''}`}>
+          <Badge variant="outline" className={`gap-1 rounded-full border-success/30 bg-success/10 px-3 py-1 text-success ${className ?? ''}`}>
             <CheckCircle2 className="h-3 w-3" />
             پشتیبانی فعال است
           </Badge>
         );
       }
       return (
-        <div className={`rounded-lg border border-green-500/40 bg-green-500/5 p-4 ${className ?? ''}`} dir="rtl">
-          <div className="flex flex-row-reverse items-center gap-2 mb-1">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-            <h4 className="font-semibold">پشتیبانی فعال است</h4>
+        <div className={`flex items-center gap-3 rounded-3xl border border-border bg-card p-4 ${className ?? ''}`} dir="rtl">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-success/10 text-success"><CheckCircle2 className="h-5 w-5" /></span>
+          <div>
+            <h4 className="font-bold text-foreground">پشتیبانی فعال است</h4>
+            <p className="text-sm text-muted-foreground">پشتیبانی دوره برای شما فعال شده است.</p>
           </div>
-          <p className="text-sm text-muted-foreground">پشتیبانی دوره برای شما فعال شده است.</p>
         </div>
       );
     }
@@ -203,15 +203,18 @@ export function TelegramEnrollmentActivation({
     const Icon = isPending ? Clock : isOpenedBot ? MessageCircleQuestion : Bot;
 
     return (
-      <div className={`rounded-lg border p-4 space-y-3 ${className ?? ''}`} dir="rtl">
-        <div className="flex flex-row-reverse items-center gap-2">
-          <Icon className="h-5 w-5 text-primary" />
-          <h4 className="font-semibold">{title}</h4>
+      <div className={`flex w-full flex-col gap-4 rounded-3xl border border-border bg-card p-4 sm:flex-row sm:items-center md:p-5 ${className ?? ''}`} dir="rtl">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-foreground text-background">
+            <Icon className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <h4 className="font-bold text-foreground">{title}</h4>
+            <p className="mt-0.5 text-sm leading-6 text-muted-foreground">{text}</p>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">{text}</p>
-        <Button onClick={openBot} size="sm" className="w-full sm:w-auto">
-          <Bot className="ml-2 h-4 w-4" />
-          {btnText}
+        <Button onClick={openBot} className="h-11 w-full shrink-0 rounded-full px-6 sm:w-auto">
+          {btnText.replace('🚀 ', '')}
         </Button>
       </div>
     );
@@ -224,7 +227,7 @@ export function TelegramEnrollmentActivation({
 
   if (linked && badgeWhenLinked) {
     return (
-      <Badge variant="outline" className={`gap-1 border-green-500/40 text-green-600 ${className ?? ''}`}>
+      <Badge variant="outline" className={`gap-1 rounded-full border-success/30 bg-success/10 px-3 py-1 text-success ${className ?? ''}`}>
         <CheckCircle2 className="h-3 w-3" />
         کوچ تلگرام فعال است
       </Badge>
@@ -232,10 +235,10 @@ export function TelegramEnrollmentActivation({
   }
 
   return (
-    <Button asChild variant={linked ? 'outline' : 'default'} className={className} size="sm">
+    <Button asChild variant={linked ? 'outline' : 'default'} className={`h-11 rounded-full px-6 ${className ?? ''}`}>
       <a href={url} target="_blank" rel="noopener noreferrer">
         <Bot className="ml-2 h-4 w-4" />
-        {linked ? 'باز کردن کوچ شخصی در تلگرام' : '🚀 فعال‌سازی کوچ شخصی تلگرام'}
+        {linked ? 'باز کردن کوچ شخصی در تلگرام' : 'فعال‌سازی کوچ شخصی تلگرام'}
       </a>
     </Button>
   );

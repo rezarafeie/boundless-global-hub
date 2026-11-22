@@ -388,8 +388,8 @@ const AppLessonView = () => {
           courseTitle={lesson.courseTitle}
         />
         {/* Course Context */}
-        <div className="px-4 pt-2 flex items-center justify-between gap-2 flex-wrap">
-          <Badge variant="outline" className="text-xs">
+        <div className="px-4 pt-2 space-y-3">
+          <Badge variant="outline" className="rounded-full px-3 py-1 text-xs">
             {lesson.courseTitle}
           </Badge>
           <TelegramEnrollmentActivation courseId={lesson.course_id} badgeWhenLinked />
@@ -398,13 +398,13 @@ const AppLessonView = () => {
         {/* VPN warning for video lessons */}
         {lesson.vpnWarningEnabled && isIranianIP === false && (lesson.video_url || (lesson.content && lesson.content.includes('<iframe'))) && (
           <div className="px-4">
-            <Alert className="border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800">
-              <WifiOff className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              <AlertTitle className="text-amber-800 dark:text-amber-300">برای پخش ویدیو، VPN خود را خاموش کنید</AlertTitle>
-              <AlertDescription className="text-amber-700 dark:text-amber-400">
-                در صورت روشن بودن VPN ممکن است ویدیو بارگذاری نشود یا کیفیت پخش کاهش پیدا کند.
-              </AlertDescription>
-            </Alert>
+            <div dir="rtl" className="flex items-center gap-3 rounded-2xl border border-border bg-muted/50 px-4 py-3">
+              <WifiOff className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <p className="text-sm text-foreground">
+                <span className="font-semibold">برای پخش بهتر، VPN را خاموش کنید.</span>{' '}
+                <span className="text-muted-foreground">با VPN روشن ممکن است ویدیو بار نشود.</span>
+              </p>
+            </div>
           </div>
         )}
 

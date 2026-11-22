@@ -1,3 +1,4 @@
+import EnrolledCourseCard, { CourseProgressInfo } from '@/components/Dashboard/EnrolledCourseCard';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,6 +48,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { IPDetectionService } from '@/lib/ipDetectionService';
 import { cn } from '@/lib/utils';
 
+const isPaid = (s: string) => s === 'success' || s === 'completed';
+
 interface EnrolledCourse {
   id: string;
   title: string;
@@ -57,6 +60,7 @@ interface EnrolledCourse {
   enrollment_date: string;
   payment_status: string;
   payment_amount: number;
+  slug?: string;
 }
 
 interface CourseLicense {
@@ -104,6 +108,7 @@ const Dashboard = () => {
   const [activeView, setActiveView] = useState<DashboardView>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
+  const [courseProgress, setCourseProgress] = useState<Record<string, CourseProgressInfo>>({});
   const [courseLicenses, setCourseLicenses] = useState<CourseLicense[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<PaymentTransaction[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
@@ -252,6 +257,7 @@ const Dashboard = () => {
         description: course?.description,
         price: course?.price || 0,
         redirect_url: course?.redirect_url,
+        slug: course?.slug,
         enrollment_id: enrollment.id,
         enrollment_date: enrollment.created_at,
         payment_status: enrollment.payment_status,
@@ -260,6 +266,7 @@ const Dashboard = () => {
     }).filter((course: any) => course.id);
 
     setEnrolledCourses(courses);
+    loadProgress(courses);
     
     // Update stats
     setStats(prev => ({
@@ -267,6 +274,33 @@ const Dashboard = () => {
       totalCourses: courses.length,
       totalAmountPaid: courses.reduce((sum, course) => sum + (course.payment_amount || 0), 0)
     }));
+  };
+
+  const loadProgress = async (courses: EnrolledCourse[]) => {
+    if (!user?.id) return;
+    const paidIds = [...new Set(courses.filter(c => isPaid(c.payment_status)).map(c => c.id))];
+    if (paidIds.length === 0) return;
+    const { data: secs } = await supabase.from('course_sections').select('course_id, course_lessons(id)').in('course_id', paidIds);
+    const lessonCourse = new Map<string, string>();
+    (secs || []).forEach((s: any) => (s.course_lessons || []).forEach((l: any) => lessonCourse.set(l.id, s.course_id)));
+    const lessonIds = [...lessonCourse.keys()];
+    const { data: prog } = await supabase.from('user_lesson_progress').select('lesson_id, course_id, is_completed').eq('user_id', parseInt(user.id)).in('course_id', paidIds);
+    const assignments: any[] = [];
+    for (let i = 0; i < lessonIds.length; i += 200) {
+      const { data } = await supabase.from('assignments').select('id, lesson_id').eq('status', 'published').in('lesson_id', lessonIds.slice(i, i + 200));
+      assignments.push(...(data || []));
+    }
+    const submitted = new Set<string>();
+    for (let i = 0; i < assignments.length; i += 200) {
+      const { data } = await supabase.from('assignment_submissions').select('assignment_id, status').eq('student_id', parseInt(user.id)).in('assignment_id', assignments.slice(i, i + 200).map(a => a.id));
+      (data || []).forEach((r: any) => { if (r.status !== 'draft') submitted.add(r.assignment_id); });
+    }
+    const map: Record<string, CourseProgressInfo> = {};
+    paidIds.forEach(id => { map[id] = { totalLessons: 0, completedLessons: 0, totalAssignments: 0, submittedAssignments: 0 }; });
+    lessonCourse.forEach(cid => { map[cid].totalLessons++; });
+    (prog || []).forEach((p: any) => { if (p.is_completed && map[p.course_id] && lessonCourse.has(p.lesson_id)) map[p.course_id].completedLessons++; });
+    assignments.forEach(a => { const cid = lessonCourse.get(a.lesson_id); if (cid) { map[cid].totalAssignments++; if (submitted.has(a.id)) map[cid].submittedAssignments++; } });
+    setCourseProgress(map);
   };
 
   const fetchCourseLicenses = async () => {
@@ -804,22 +838,11 @@ const Dashboard = () => {
                     </Card>
                   ) : (
                     <div className="grid grid-cols-1 gap-4">
-                      {enrolledCourses.slice(0, 2).map((course) => (
-                        <Card key={course.id}>
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h4 className="font-medium">{course.title}</h4>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {new Date(course.enrollment_date).toLocaleDateString('fa-IR')}
-                                </p>
-                              </div>
-                              {getStatusBadge(course.payment_status)}
-                            </div>
-                          </CardContent>
-                        </Card>
+                      {[...enrolledCourses].sort((x, y) => Number(isPaid(y.payment_status)) - Number(isPaid(x.payment_status))).slice(0, 3).map((course) => (
+                        <EnrolledCourseCard key={course.enrollment_id} compact title={course.title} slug={course.slug} enrollmentId={course.enrollment_id}
+                          paid={isPaid(course.payment_status)} statusLabel={getStatusBadge(course.payment_status)} progress={courseProgress[course.id]} />
                       ))}
-                      {enrolledCourses.length > 2 && (
+                      {enrolledCourses.length > 3 && (
                         <Button variant="ghost" size="sm" onClick={() => setActiveView('courses')}>
                           مشاهده همه ({enrolledCourses.length})
                         </Button>
@@ -848,44 +871,10 @@ const Dashboard = () => {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {enrolledCourses.map((course) => (
-                      <Card key={course.id} className="overflow-hidden">
-                        <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div className="space-y-1">
-                              <CardTitle className="text-lg">{course.title}</CardTitle>
-                              <CardDescription>
-                                {course.description?.substring(0, 100)}...
-                              </CardDescription>
-                            </div>
-                            {getStatusBadge(course.payment_status)}
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="flex items-center justify-between text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-4 h-4" />
-                              {new Date(course.enrollment_date).toLocaleDateString('fa-IR')}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="w-4 h-4" />
-                              {course.payment_amount?.toLocaleString('fa-IR')} تومان
-                            </div>
-                          </div>
-                          
-                          <Separator />
-                          
-                          <Button 
-                            className="w-full" 
-                            onClick={() => handleCourseAccess(course)}
-                            disabled={course.payment_status !== 'success' && course.payment_status !== 'completed'}
-                          >
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            مشاهده جزئیات
-                          </Button>
-                        </CardContent>
-                      </Card>
+                      <EnrolledCourseCard key={course.enrollment_id} title={course.title} slug={course.slug} enrollmentId={course.enrollment_id}
+                        paid={isPaid(course.payment_status)} statusLabel={getStatusBadge(course.payment_status)} progress={courseProgress[course.id]} />
                     ))}
                   </div>
                 )}
