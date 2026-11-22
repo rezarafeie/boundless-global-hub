@@ -26,7 +26,7 @@ The resulting `/hub-api/api/public/hub/{action}` path is also accepted. No Hub c
 - `X-Hub-Source: rafiei-hub` — enforced when provided; the server always logs this source.
 - `Content-Type: application/json`
 
-Responses are `{"data": ...}` or `{"error":"Persian message"}`. Invalid input: 400; access denied: 403; identity conflict: 409; missing test payment: 402; provider temporarily unavailable: 502. Successful health returns `{"data":{"ok":true}}`.
+Responses always have one top-level `data` field. Success: `{"data": ...}`; errors: `{"data":{"error":"Persian message"}}` with an appropriate non-200 HTTP status. Invalid input: 400; access denied: 403; identity conflict: 409; missing test payment: 402; provider temporarily unavailable: 502. Successful health returns `{"data":{"ok":true}}`.
 
 ## Actions
 
@@ -48,7 +48,7 @@ Responses are `{"data": ...}` or `{"error":"Persian message"}`. Invalid input: 4
 
 ## Academy behavior
 
-- Server-only `hub_resolve_user` serializes identity linking and rejects conflicting links. It searches `chat_users` and `academy_users` by normalized email, preserving existing account records. New chat accounts use `signup_source='rafiei-hub'`. Hub identity cannot be changed through ordinary client writes.
+- Server-only `hub_resolve_user` requires the existing verified Hub link and current proven email. It never creates accounts, matches a new header to an old account, or merges accounts. Older email-only Hub mappings must complete verified authentication and explicit linking before private actions work. Overlapping chat/academy accounts require manual ownership review; this API will not create another chat account for an academy-only record.
 - The Hub contract contains no phone field. Missing phone is stored as null, never invented. Website enrollment still requires a phone; only an authenticated, mapped Hub free-course enrollment can omit it.
 - Free enrollment delegates to `create-enrollment`; paid enrollment delegates to `rafieipay-request` at the server's real effective price. No payment is marked completed before existing provider verification. Already-completed registrations are reused.
 - Content is only returned to the mapped user with a completed registration and valid course access window. No lesson preview flag exists in the academy schema; lessons are not guessed to be previews. Locked lessons return empty body and null video/file URLs.
