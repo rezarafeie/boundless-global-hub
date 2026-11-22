@@ -37,26 +37,33 @@ export async function deliverEnrollmentReport(db: SupabaseClient, chatId: number
   const { data, error } = await db.rpc('telegram_enrollment_report', { p_from: range.from, p_to: range.to });
   if (error) throw error;
   const rows = data ?? [];
-  const sum = (key: string) => rows.reduce((s: number, r: Record<string, unknown>) => s + Number(r[key] ?? 0), 0);
-  const header = `📊 <b>گزارش ثبت‌نام — ${escapeHtml(label)}</b>\nاز ${date(range.from)}\nتا ${date(range.to)} (پایان بازه خارج از شمارش)\n🕒 ساعت تهران\n\nکل ثبت‌نام‌ها: <b>${n(sum('total'))}</b>\nتکمیل‌شده: ${n(sum('completed'))} | در انتظار: ${n(sum('pending'))}\nناموفق/رد/لغو: ${n(sum('failed'))} | سایر: ${n(sum('other'))}\nتکمیل رایگان: ${n(sum('free_completed'))} | تکمیل با مبلغ: ${n(sum('paid_completed'))}\nمبلغ ثبت‌نام‌های تکمیل‌شده: <b>${n(sum('completed_amount'))} تومان</b>\n\nمبنای بازه: زمان ایجاد ثبت‌نام؛ هر رکورد یک ثبت‌نام است، نه یک فرد یکتا. مبلغ فوق گزارش تراکنش‌های دریافتی در این بازه نیست.`;
-  const first = await sendMessage(chatId, header);
-  if (!first?.ok) throw new Error('ارسال گزارش به تلگرام انجام نشد؛ دوباره تلاش کنید');
-  let chunk = '';
-  for (const r of rows) {
-    const block = `\n🎓 <b>${escapeHtml(String(r.title))}</b>\nکل: ${n(r.total)} | تکمیل: ${n(r.completed)} | انتظار: ${n(r.pending)}\nناموفق/رد/لغو: ${n(r.failed)} | سایر: ${n(r.other)}\nتکمیل رایگان: ${n(r.free_completed)} | تکمیل با مبلغ: ${n(r.paid_completed)}\nمبلغ تکمیل‌شده: ${n(r.completed_amount)} تومان\n`;
+  const summary = summarizeEnrollmentReport(rows);
+  const chunks: string[] = [];
+  let chunk = `📊 <b>ثبت‌نام — ${escapeHtml(label)}</b>\n${date(range.from)} ← ${date(range.to)}\n🕒 ساعت تهران\n\nجمع ثبت‌نام‌ها: <b>${n(summary.total)}</b>\n`;
+  for (const r of summary.nonzero) {
+    const block = `\n🎓 ${escapeHtml(String(r.title))}: <b>${n(r.total)}</b>\n`;
     if (chunk.length + block.length > 3400) {
-      const sent = await sendMessage(chatId, chunk);
-      if (!sent?.ok) throw new Error('ارسال بخشی از گزارش ناموفق بود');
+      chunks.push(chunk);
       chunk = '';
     }
     chunk += block;
   }
-  if (chunk) {
-    const sent = await sendMessage(chatId, chunk);
-    if (!sent?.ok) throw new Error('ارسال بخشی از گزارش ناموفق بود');
+  const footer = summary.zeroCount > 0 ? `\n<i>${summary.nonzero.length ? 'سایر ' : ''}${n(summary.zeroCount)} دوره: صفر ثبت‌نام</i>` : '';
+  if (chunk.length + footer.length > 3400) { chunks.push(chunk); chunk = ''; }
+  chunks.push(chunk + footer);
+  for (const [index, text] of chunks.entries()) {
+    const sent = await sendMessage(chatId, text, index === chunks.length - 1 ? { keyboard: keyboard(access) } : {});
+    if (!sent?.ok) throw new Error('ارسال گزارش به تلگرام انجام نشد؛ دوباره تلاش کنید');
   }
-  console.info('Enrollment report delivered', { courses: rows.length, total: sum('total'), from: range.from, to: range.to });
-  await menu(chatId, access);
+  console.info('Enrollment report delivered', { courses: rows.length, listedCourses: summary.nonzero.length, zeroCourses: summary.zeroCount, total: summary.total, from: range.from, to: range.to });
+}
+
+export function summarizeEnrollmentReport<T extends { total?: unknown; title?: unknown }>(rows: T[]) {
+  return {
+    total: rows.reduce((sum, row) => sum + Number(row.total ?? 0), 0),
+    nonzero: rows.filter(row => Number(row.total ?? 0) > 0),
+    zeroCount: rows.filter(row => Number(row.total ?? 0) === 0).length,
+  };
 }
 
 export async function handleEnrollmentReport(db: SupabaseClient, update: any): Promise<boolean> {

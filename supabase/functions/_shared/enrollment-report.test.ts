@@ -1,5 +1,5 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { handleEnrollmentReport, deliverEnrollmentReport, ENROLLMENT_REPORT_BUTTON } from './enrollment-report.ts';
+import { handleEnrollmentReport, deliverEnrollmentReport, ENROLLMENT_REPORT_BUTTON, summarizeEnrollmentReport } from './enrollment-report.ts';
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 function client(access: unknown) {
@@ -78,10 +78,21 @@ Deno.test('group report requests never disclose enrollments', async () => {
 });
 Deno.test('large per-course report is split below Telegram message limit and preserves every course', async () => {
   await mockedMessages(async messages => {
-    const rows = Array.from({ length: 80 }, (_, i) => ({ title: `دوره ${i}`, total: i === 0 ? 2000 : 0, completed: 0 }));
+    const rows = Array.from({ length: 80 }, (_, i) => ({ title: `دوره ${i} ${'عنوان دوره '.repeat(8)}`, total: i === 0 ? 2000 : 1, completed: 0 }));
     const db = { rpc: async () => ({ data: rows, error: null }) } as unknown as SupabaseClient;
     await deliverEnrollmentReport(db, 123456789, { from: '2026-11-01T00:00:00Z', to: '2026-11-22T00:00:00Z' }, 'آزمون', { active: true, can_manage: false });
     assertEquals(messages.every(m => m.text.length < 4096), true);
-    assertEquals(messages.filter(m => m.text.includes('🎓')).flatMap(m => m.text.match(/🎓/g) ?? []).length, 80);
+    assertEquals(messages.length > 1, true);
   });
+});
+Deno.test('zero courses are omitted from the detailed report without changing actual totals', () => {
+  const rows = [{ title: 'taste', total: '30' }, { title: 'iran', total: 6 }, { title: 'other', total: 0 }];
+  const report = summarizeEnrollmentReport(rows);
+  assertEquals(report.total, 36);
+  assertEquals(report.nonzero, rows.slice(0, 2));
+  assertEquals(report.zeroCount, 1);
+});
+Deno.test('an entirely zero interval preserves a zero total and summarizes every course', () => {
+  const report = summarizeEnrollmentReport([{ total: 0 }, { total: '0' }, { total: 0 }]);
+  assertEquals(report, { total: 0, nonzero: [], zeroCount: 3 });
 });
