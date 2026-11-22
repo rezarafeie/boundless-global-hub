@@ -54,7 +54,7 @@ export const LanguageProvider = ({ children }: LanguageProviderProps) => {
     localStorage.setItem("language", language);
     
     // Update font family based on language
-    document.body.style.fontFamily = language === "fa" ? "Vazir, sans-serif" : "Inter, sans-serif";
+    document.body.style.fontFamily = language === "fa" ? "Doran, Vazirmatn, sans-serif" : "Doran, system-ui, sans-serif";
   }, [language]);
 
   const toggleLanguage = () => {
