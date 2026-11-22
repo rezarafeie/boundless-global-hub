@@ -1,5 +1,5 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { fieldsFrom, normalizePhone, triggerMatches, renderReply, eligibleFreeCourse } from '../_shared/social-enrollment.ts';
+import { fieldsFrom, normalizePhone, triggerMatches, renderReply, eligibleFreeCourse, sameFormResponse, ownsConversation } from '../_shared/social-enrollment.ts';
 
 Deno.test('form completion registers only the configured form', () => {
   const rule = { enabled: true, event_type: 'autoform_completed', trigger_value: '123' };
@@ -40,4 +40,21 @@ Deno.test('NovinHub form messages auto-detect name, phone and email', () => {
   const p = { auto_form_id: 9808, messages: [{ text: 'رضا' }, { text: 'رفیعی' }, { text: '۰۹۱۲۰۷۸۴۴۵۷' }, { text: 'ReRafeie@gmail.com' }] };
   assertEquals(fieldsFrom(p, {}), { name: 'رضا رفیعی', phone: '09120784457', email: 'rerafeie@gmail.com' });
   assertEquals(triggerMatches({ enabled: true, event_type: 'autoform_completed', trigger_value: '9808' }, { type: 'autoform_completed', payload: p }), true);
+});
+Deno.test('sparse form webhook requires exact provider response and person identity', () => {
+  const event = { type: 'autoform_completed', payload: { id: 4368140, social_user_id: 77 } };
+  assertEquals(sameFormResponse(event, { id: 4368140, social_user_id: 77, status: 'completed' }), true);
+  assertEquals(sameFormResponse(event, { id: 4368141, social_user_id: 77, status: 'completed' }), false);
+  assertEquals(sameFormResponse(event, { id: 4368140, social_user_id: 78, status: 'completed' }), false);
+  assertEquals(sameFormResponse(event, { id: 4368140, social_user_id: 77, status: 'pending' }), false);
+});
+Deno.test('form recipient must belong to both the configured page and conversation', () => {
+  const conversation = { account_id: 210093, participants: [{ social_user_id: 77 }] };
+  assertEquals(ownsConversation(conversation, '210093', '77'), true);
+  assertEquals(ownsConversation(conversation, '231633', '77'), false);
+  assertEquals(ownsConversation(conversation, '210093', '78'), false);
+  assertEquals(ownsConversation({ account_id: 210093 }, '210093', '77'), false);
+});
+Deno.test('name and phone form never fabricates an email', () => {
+  assertEquals(fieldsFrom({ messages: [{ text: 'کاربر آزمایش' }, { text: '۰۹۱۲۱۲۳۴۵۶۷' }] }, {}).email, '');
 });

@@ -25,7 +25,8 @@
 
 ## Instagram direct enrollment
 - [x] Connect form 10424 on Instagram account 210093 to the existing free Boundless Taste enrollment flow, preserving form 9808
-- [ ] Verify form 10424 creates an enrollment and delivers its activation link to rez.raf (account identified; waiting for a real completed form event on page 210093)
+- [ ] Repair real NovinHub form response enrichment: rez.raf completion arrived without page, form or conversation identifiers and with name/phone only; verify provider identity before replaying
+- [ ] Verify form 10424 creates an enrollment and delivers its activation link to rez.raf (real completion received; email absent from submitted answers)
 - [x] Build authenticated NovinHub event receiver and durable processing with retries active only while pending
 - [x] Add course/form/keyword rules and delivery history to Social CRM settings
 - [x] Reuse course enrollment, access, email and bot activation flows for free courses; paid courses remain payment-gated

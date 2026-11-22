@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { novinhub } from './novinhub.ts';
+import { novinhub, nhFetch } from './novinhub.ts';
 
 export const db = () => {
   const url = Deno.env.get('SUPABASE_URL');
@@ -68,6 +68,76 @@ export function renderReply(template: string, values: Record<string, string>): s
 
 export const eligibleFreeCourse = (price: unknown) => price !== null && price !== undefined && Number(price) === 0;
 
+// Form webhooks omit account/form/conversation IDs. Resolve them from the
+// documented form-response endpoint, never from the only configured rule.
+export function sameFormResponse(event: any, response: any): boolean {
+  const p = event.payload;
+  const person = String(p.social_user_id ?? p.socialUser?.id ?? '');
+  return event.type === 'autoform_completed' && p.id != null && person !== '' &&
+    String(response.id) === String(p.id) &&
+    String(response.social_user_id ?? response.socialUser?.id ?? '') === person &&
+    response.status === 'completed';
+}
+
+export function ownsConversation(conversation: any, accountId: string, socialId: string): boolean {
+  return socialId !== '' && String(conversation.account_id ?? conversation.account?.id ?? '') === accountId &&
+    Array.isArray(conversation.participants) && conversation.participants.some((p: any) =>
+      String(p.social_user_id ?? p.socialUser?.id ?? '') === socialId);
+}
+
+async function resolveFormContext(client: ReturnType<typeof db>, event: any, receivedAt: string) {
+  const p = event.payload;
+  if (event.type !== 'autoform_completed' ||
+    ((p.account_id ?? p.account?.id) && (p.auto_form_id ?? p.autoform_id ?? p.automation_form_id ?? p.automationForm?.id ?? p.auto_form?.id ?? p.form_id ?? p.form?.id) &&
+      (p.conversation_id ?? p.conversation?.id))) return event;
+  const { data: rules, error } = await client.from('social_enrollment_rules')
+    .select('*,social_accounts!inner(novinhub_account_id,provider,is_active)').eq('enabled', true).eq('event_type', 'autoform_completed');
+  if (error) throw error;
+  const matches: { accountId: string; formId: string; response: any }[] = [];
+  for (const rule of rules || []) {
+    const account = rule.social_accounts;
+    if (!account?.is_active || account.provider !== 'instagram') continue;
+    const accountId = String(account.novinhub_account_id), formId = String(rule.trigger_value).trim();
+    if (!/^\d+$/.test(accountId) || !/^\d+$/.test(formId)) continue;
+    if ((p.account_id ?? p.account?.id) != null && String(p.account_id ?? p.account?.id) !== accountId) continue;
+    const path = `/automation/${accountId}/form/${formId}/response`;
+    let next: string | null = `${path}?with=socialUser,messages(socialUser)`;
+    let found = false;
+    for (let page = 0; next && page < 20; page++) {
+      const body = await nhFetch(next, { signal: AbortSignal.timeout(15000) });
+      const rows = Array.isArray(body) ? body : body.data;
+      if (!Array.isArray(rows)) throw new Error('پاسخ فرم نوین‌هاب معتبر نیست');
+      const response = rows.find((r: any) => sameFormResponse(event, r));
+      if (response) { matches.push({ accountId, formId, response }); found = true; break; }
+      const before = body.paging?.before;
+      if (!before) { next = null; break; }
+      const url = new URL(before, 'https://api.novinhub.com/token/v2');
+      if (url.origin !== 'https://api.novinhub.com' || url.pathname !== `/token/v2${path}`) throw new Error('صفحه‌بندی فرم نامعتبر است');
+      next = `${path}${url.search}`;
+    }
+    if (next && !found) throw new Error('جستجوی پاسخ فرم کامل نشد؛ تلاش مجدد لازم است');
+  }
+  if (matches.length !== 1) throw new Error('شناسه فرم تکمیل‌شده در نوین‌هاب به‌صورت یکتا تأیید نشد');
+  const match = matches[0];
+  const socialId = String(p.social_user_id ?? p.socialUser?.id ?? '');
+  const time = Date.parse(receivedAt);
+  const { data: messages, error: messageError } = await client.from('social_enrollment_events')
+    .select('payload').eq('event_type', 'message_created')
+    .eq('payload->payload->>account_id', match.accountId)
+    .eq('payload->payload->>social_user_id', socialId)
+    .gte('created_at', new Date(time - 15 * 60000).toISOString())
+    .lte('created_at', new Date(time + 15 * 60000).toISOString())
+    .order('created_at', { ascending: false }).order('id', { ascending: false }).limit(101);
+  if (messageError) throw messageError;
+  if ((messages?.length ?? 0) > 100) throw new Error('تعداد پیام‌های مرتبط بیش از حد است؛ بررسی مدیر لازم است');
+  const conversationIds = [...new Set((messages || []).map(m => String(m.payload?.payload?.conversation_id ?? '')).filter(id => /^\d+$/.test(id)))];
+  if (conversationIds.length !== 1) throw new Error('گفتگوی فرم هنوز به‌صورت یکتا مشخص نیست؛ تلاش مجدد لازم است');
+  const conversationId = conversationIds[0];
+  const remote = await novinhub.getConversation(conversationId);
+  if (!ownsConversation(remote?.data ?? remote, match.accountId, socialId)) throw new Error('هویت دریافت‌کننده فرم با گفتگو مطابقت ندارد');
+  return { ...event, payload: { ...p, messages: match.response.messages, account_id: match.accountId, auto_form_id: match.formId, conversation_id: conversationId } };
+}
+
 export async function requireSocialAdmin(req: Request, client: ReturnType<typeof db>) {
   const token = req.headers.get('x-session-token');
   let userId: number | null = null;
@@ -121,7 +191,7 @@ export async function processEnrollmentQueue(limit = 10) {
       if (error) throw error;
     };
     try {
-      const event = job.payload;
+      const event = await resolveFormContext(client, job.payload, job.created_at);
       const p = event.payload;
       const accountId = String(p.account_id ?? p.account?.id ?? p.messages?.[0]?.account_id ?? '');
       const { data: account } = await client.from('social_accounts').select('*').eq('novinhub_account_id', accountId)
@@ -142,6 +212,9 @@ export async function processEnrollmentQueue(limit = 10) {
       const remote = await novinhub.getConversation(conversationId);
       const conv = remote?.data ?? remote;
       if (String(conv.account_id ?? conv.account?.id ?? '') !== accountId) throw new Error('صفحه گفتگو با قانون مطابقت ندارد');
+      if (event.type === 'autoform_completed' && !ownsConversation(conv, accountId, String(p.social_user_id ?? p.socialUser?.id ?? ''))) {
+        throw new Error('هویت دریافت‌کننده فرم با گفتگو مطابقت ندارد');
+      }
       const person = fieldsFrom(p, rule.field_mapping);
       const { data: course, error: courseErr } = await client.from('courses').select('id,title,slug,price').eq('id', rule.course_id).single();
       if (courseErr) throw courseErr;
