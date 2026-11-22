@@ -1,3 +1,8 @@
+## Bot menu cleanup
+- [ ] Add default-off form visibility control and filter bot form menus
+- [ ] Share public inline menus and move privileged actions to persistent keyboards
+- [ ] Test and deploy both messenger webhooks
+
 ## Telegram enrollment reports
 - [x] Default to numeric list with list/chart switcher and chronological line chart; 6 tests pass, real monthly list/line totals both 1223, component verified at desktop and 430px mobile (full authenticated admin page unavailable)
 - [x] Add course enrollment bar chart using accurate counts; verify the component with real day/month data at desktop/mobile widths (full authenticated admin page unavailable)
