@@ -1,0 +1,1 @@
+ALTER TABLE public.telegram_forms ADD COLUMN show_in_bot boolean NOT NULL DEFAULT false; COMMENT ON COLUMN public.telegram_forms.show_in_bot IS 'Explicit opt-in for listing an active form in messenger bot menus; website and direct form links are unchanged.';

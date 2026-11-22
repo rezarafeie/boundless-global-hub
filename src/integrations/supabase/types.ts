@@ -8537,6 +8537,7 @@ export type Database = {
           is_active: boolean
           redirect_url: string | null
           require_login: boolean
+          show_in_bot: boolean
           slug: string | null
           title: string
           updated_at: string
@@ -8556,6 +8557,7 @@ export type Database = {
           is_active?: boolean
           redirect_url?: string | null
           require_login?: boolean
+          show_in_bot?: boolean
           slug?: string | null
           title: string
           updated_at?: string
@@ -8575,6 +8577,7 @@ export type Database = {
           is_active?: boolean
           redirect_url?: string | null
           require_login?: boolean
+          show_in_bot?: boolean
           slug?: string | null
           title?: string
           updated_at?: string

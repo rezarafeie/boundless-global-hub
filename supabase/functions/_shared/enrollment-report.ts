@@ -66,7 +66,7 @@ export function summarizeEnrollmentReport<T extends { total?: unknown; title?: u
   };
 }
 
-export async function handleEnrollmentReport(db: SupabaseClient, update: any): Promise<boolean> {
+export async function handleEnrollmentReport(db: SupabaseClient, update: any, onAccessGranted = showEnrollmentReportButton): Promise<boolean> {
   if (currentChannel() !== 'telegram') return false;
   const cq = update.callback_query;
   const msg = cq?.message ?? update.message;
@@ -88,8 +88,8 @@ export async function handleEnrollmentReport(db: SupabaseClient, update: any): P
   if (!command && !callback && !activeState && !start) return false;
   const access = await enrollmentReportAccess(db, chatId);
   if (start) {
-    await showEnrollmentReportButton(chatId, access);
-    // Keep the ordinary account/activation home flow; the report button does not require account linking.
+    // The shared home flow installs the complete privileged keyboard, including reports
+    // for delegated readers without a linked website account. Never replace it with one button.
     return false;
   }
   if (callback) await answerCallback(cq.id);
@@ -132,7 +132,7 @@ export async function handleEnrollmentReport(db: SupabaseClient, update: any): P
           : await db.from('telegram_enrollment_report_access').upsert({ chat_id: target, active: true, can_manage: false, granted_by: chatId });
         if (result.error) throw result.error;
         await state(db, chatId, null);
-        if (!revoke) await showEnrollmentReportButton(target, { active: true, can_manage: false });
+        if (!revoke) await onAccessGranted(target, { active: true, can_manage: false });
         await sendMessage(chatId, revoke ? '✅ دسترسی گزارش این شناسه لغو شد.' : '✅ دسترسی مشاهده فعال شد؛ دکمه گزارش برای فرد ارسال شد.');
         await menu(chatId, access);
       }

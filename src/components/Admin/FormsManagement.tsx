@@ -25,6 +25,7 @@ interface FormRow {
   title: string;
   description: string | null;
   is_active: boolean;
+  show_in_bot: boolean;
   ai_prompt: string | null;
   ai_enabled: boolean;
   require_login: boolean;
@@ -110,7 +111,7 @@ const FormsManagement: React.FC = () => {
 
   const openNew = () => setEditor({
     form: {
-      title: '', slug: '', description: '', is_active: true,
+      title: '', slug: '', description: '', is_active: true, show_in_bot: false,
       ai_prompt: '', ai_enabled: false, require_login: false,
       webhook_url: '', confirmation_type: 'message',
       confirmation_message: '', redirect_url: '',
@@ -133,6 +134,7 @@ const FormsManagement: React.FC = () => {
     const payload: any = {
       title: f.title, slug: finalSlug, description: f.description ?? null,
       is_active: !!f.is_active,
+      show_in_bot: f.show_in_bot === true,
       ai_prompt: f.ai_prompt ?? null, ai_enabled: !!f.ai_enabled,
       require_login: !!f.require_login,
       webhook_url: f.webhook_url?.trim() || null,
@@ -431,6 +433,10 @@ const FormEditor: React.FC<{
                 <div className="flex items-center justify-between">
                   <Label>فعال</Label>
                   <Switch checked={!!editor.form.is_active} onCheckedChange={v => updateForm({ is_active: v })} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="form-show-in-bot">نمایش در منوی ربات تلگرام / بله</Label>
+                  <Switch id="form-show-in-bot" checked={editor.form.show_in_bot === true} onCheckedChange={v => updateForm({ show_in_bot: v })} />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label>ورود الزامی</Label>

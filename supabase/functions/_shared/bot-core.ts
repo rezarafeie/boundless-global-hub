@@ -31,6 +31,7 @@ import { ensureAccessWindow as gamEnsureAccessWindow } from './gamification.ts';
 import { sendOrQueue as actSendOrQueue, sendExtraActivationMessages as actSendExtras } from './activation-messages.ts';
 import { reviewApplication as chalReview, coachEmails as chalCoachEmails } from './challenge.ts';
 import { handleEnrollmentReport, enrollmentReportAccess } from './enrollment-report.ts';
+import { privilegedReplyKeyboard, replyAction, allowsPrivilegedAction, isPrivilegedEntry, botVisibleForms } from './bot-menu-policy.ts';
 
 // Only the challenge's coach (by email) may approve/reject from the bot.
 async function chalCoachCheck(chat_id: number, participantId: string) {
@@ -282,48 +283,8 @@ function twoColumnKeyboard(rows: InlineKeyboard): InlineKeyboard {
 }
 
 async function mainMenu(user: BotUser | null): Promise<InlineKeyboard> {
-  const role = user?.role ?? null;
-  const reportAccess = user?.telegram_chat_id ? await enrollmentReportAccess(supabase, user.telegram_chat_id) : null;
-  const reportRows: InlineKeyboard = reportAccess?.active ? [[{ text: '📊 آمار ثبت‌نام دوره‌ها', callback_data: 'ereg:menu' }]] : [];
-  if (role === 'admin') {
-    return twoColumnKeyboard([
-      ...reportRows,
-      [{ text: '📋 لیدهای من', callback_data: 'menu:my_leads' }],
-      [{ text: '👥 همه لیدها', callback_data: 'menu:all_leads' }],
-      [{ text: '🎯 تخصیص دسته‌جمعی', callback_data: 'bulk:start' }],
-      [{ text: '📊 گزارش‌ها', callback_data: 'menu:reports' }],
-      [{ text: '📱 مدیریت شبکه‌های اجتماعی', callback_data: 'social:menu' }],
-      [{ text: '⚙️ مدیریت سیستم', callback_data: 'admin:menu' }],
-      [{ text: '👤 پروفایل', callback_data: 'student:profile' }],
-    ]);
-  }
-  if (role === 'sales_manager') {
-    return twoColumnKeyboard([
-      ...reportRows,
-      [{ text: '📋 لیدهای من', callback_data: 'menu:my_leads' }],
-      [{ text: '👥 همه لیدها', callback_data: 'menu:all_leads' }],
-      [{ text: '🎯 تخصیص دسته‌جمعی', callback_data: 'bulk:start' }],
-      [{ text: '📊 عملکرد تیم', callback_data: 'menu:reports' }],
-      [{ text: '👤 پروفایل', callback_data: 'student:profile' }],
-    ]);
-  }
-  if (role === 'sales_agent') {
-    return twoColumnKeyboard([
-      ...reportRows,
-      [{ text: '📋 لیدهای من', callback_data: 'menu:my_leads' }],
-      [{ text: '📊 عملکرد امروز', callback_data: 'menu:reports' }],
-      [{ text: '👤 پروفایل', callback_data: 'student:profile' }],
-    ]);
-  }
-  if (role === 'social_admin') {
-    return twoColumnKeyboard([
-      ...reportRows,
-      [{ text: '📱 مدیریت شبکه‌های اجتماعی', callback_data: 'social:menu' }],
-      [{ text: '👤 پروفایل', callback_data: 'student:profile' }],
-    ]);
-  }
-  // Default: student — hide my_courses / my_tests when empty
-  const rows: InlineKeyboard = [...reportRows];
+  // Common account menu is identical for every role; privileged entries live below the composer.
+  const rows: InlineKeyboard = [];
   let courseCount = 0, testCount = 0;
   if (user?.id) {
     const { data: u } = await supabase.from('chat_users').select('phone').eq('id', user.id).maybeSingle();
@@ -1881,9 +1842,9 @@ const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY') ?? '';
 
 async function getActiveForms() {
   const { data } = await supabase.from('telegram_forms')
-    .select('id, title, description, require_login')
-    .eq('is_active', true).order('created_at', { ascending: false }).limit(20);
-  return data ?? [];
+    .select('id, title, description, require_login, is_active, show_in_bot')
+    .eq('is_active', true).eq('show_in_bot', true).order('created_at', { ascending: false }).limit(20);
+  return botVisibleForms(data ?? []);
 }
 
 async function formsKeyboardRows(): Promise<InlineKeyboard> {
@@ -2280,7 +2241,7 @@ async function endSalesChat(chat_id: number, _message_id: number | null) {
   await clearSession(chat_id);
   await sendMessage(chat_id, '✅ گفت‌وگو پایان یافت. ممنون از وقتی که گذاشتید 🙏', { removeKeyboard: true });
   const u = await resolveUser(chat_id);
-  const homeKbd = await buildStartKeyboard(u);
+  const homeKbd = await buildStartKeyboard(u, chat_id);
   await sendMessage(chat_id, await renderWelcome(chat_id, u), { keyboard: homeKbd });
 }
 
@@ -2875,7 +2836,17 @@ async function salesAdvisorRows(): Promise<InlineKeyboard> {
   return [[{ text: '🛒 مشاور دوره‌های آکادمی', callback_data: 'sales:start' }]];
 }
 
-async function buildStartKeyboard(user: BotUser | null): Promise<InlineKeyboard> {
+async function syncPrivilegedKeyboard(chatId: number, user: BotUser | null) {
+  const access = await enrollmentReportAccess(supabase, chatId);
+  const rows = privilegedReplyKeyboard(user?.role, access?.active === true);
+  const sent = await sendMessage(chatId, rows.length ? '🔐 دسترسی‌های ویژه' : '🏠 منوی اصلی',
+    rows.length ? { replyKeyboard: rows } : { removeKeyboard: true });
+  if (!sent?.ok) throw new Error('به‌روزرسانی منوی ربات انجام نشد');
+  console.info('Bot privileged keyboard updated', { channel: currentChannel(), rows: rows.length });
+}
+
+async function buildStartKeyboard(user: BotUser | null, chatId = user?.telegram_chat_id): Promise<InlineKeyboard> {
+  if (chatId) await syncPrivilegedKeyboard(chatId, user);
   const authed = !!user;
   const [salesRows, formRows, webinarRows, aiRows, base] = await Promise.all([
     salesAdvisorRows(),
@@ -3211,8 +3182,38 @@ async function handleFormMessage(chat_id: number, user_id: number | null, msg: a
 // ============ Update routing ============
 
 
-async function handleUpdate(update: any, reportAuthenticated = false) {
-  if (reportAuthenticated && await handleEnrollmentReport(supabase, update)) return;
+async function handleUpdate(update: any, reportAuthenticated = false, replyDispatch = false) {
+  if (reportAuthenticated && await handleEnrollmentReport(supabase, update,
+    async target => syncPrivilegedKeyboard(target, await resolveUser(target)))) return;
+  const incoming = update.message;
+  if (!update.callback_query && incoming?.text?.trim() === KBD_HOME) {
+    if (incoming.chat?.type !== 'private' || incoming.from?.id !== incoming.chat.id) return;
+    const chatId = Number(incoming.chat.id);
+    await clearSession(chatId);
+    const user = await resolveUser(chatId);
+    await sendMessage(chatId, await renderWelcome(chatId, user), { keyboard: await buildStartKeyboard(user, chatId) });
+    return;
+  }
+  const entry = !update.callback_query && incoming?.text ? replyAction(String(incoming.text).trim()) : undefined;
+  if (entry && entry.callback_data !== 'ereg:menu') {
+    if (incoming.chat?.type !== 'private' || incoming.from?.id !== incoming.chat.id) return;
+    const chatId = Number(incoming.chat.id);
+    const user = await resolveUser(chatId);
+    if (!allowsPrivilegedAction(user?.role, entry.callback_data)) {
+      await sendMessage(chatId, '⛔ دسترسی ندارید.');
+      return;
+    }
+    await clearSession(chatId);
+    // Reply buttons send text, not callbacks. Reuse the existing guarded callback flow
+    // on a bot-authored message, never try to edit the user's message.
+    const sent = await sendMessage(chatId, '⏳ در حال دریافت…');
+    if (!sent?.ok || !sent.result?.message_id) return;
+    await handleUpdate({ callback_query: {
+      id: 'reply-keyboard', from: incoming.from, data: entry.callback_data,
+      message: { chat: incoming.chat, message_id: sent.result.message_id },
+    } }, reportAuthenticated, true);
+    return;
+  }
   if (update.business_connection?.id) {
     if (update.business_connection.is_enabled !== false) {
       await saveBusinessConnectionId(update.business_connection.id);
@@ -3225,7 +3226,7 @@ async function handleUpdate(update: any, reportAuthenticated = false) {
     const chat_id = cq.message.chat.id;
     const message_id = cq.message.message_id;
     const data: string = cq.data;
-    await answerCallback(cq.id);
+    if (!replyDispatch) await answerCallback(cq.id);
 
     if (data.startsWith('chal_ok:') || data.startsWith('chal_no:')) {
       const pid = data.slice(8);
@@ -3417,6 +3418,11 @@ async function handleUpdate(update: any, reportAuthenticated = false) {
     }
 
 
+    if (isPrivilegedEntry(data) && !allowsPrivilegedAction(user.role, data)) {
+      await sendMessage(chat_id, '⛔ دسترسی ندارید.');
+      return;
+    }
+
     const [action, ...rest] = data.split(':');
 
     try {
@@ -3424,7 +3430,7 @@ async function handleUpdate(update: any, reportAuthenticated = false) {
         const sub = rest[0];
         if (sub === 'home') {
           await clearSession(chat_id);
-          const homeKbd = await buildStartKeyboard(user);
+  const homeKbd = await buildStartKeyboard(user, chat_id);
           await editMessage(chat_id, message_id, await renderWelcome(chat_id, user), homeKbd);
         } else if (sub === 'my_leads') {
           await renderLeadsList(chat_id, message_id, user, 'my', 0);
@@ -4284,7 +4290,7 @@ async function handleUpdate(update: any, reportAuthenticated = false) {
           { keyboard: [[{ text: '🔐 ورود با شماره موبایل', callback_data: 'login:start' }]] });
         return;
       }
-      const kbd = await buildStartKeyboard(null);
+      const kbd = await buildStartKeyboard(null, chat_id);
       await sendMessage(chat_id, await renderWelcome(chat_id, null), { keyboard: kbd });
       return;
     }
@@ -4297,7 +4303,7 @@ async function handleUpdate(update: any, reportAuthenticated = false) {
     if (session?.state === 'awaiting_form_field') { await handleFormMessage(chat_id, null, msg, session); return; }
     if (session?.state === 'ai_chat') { await handleAiChat(chat_id, null, msg, session); return; }
     if (session?.state === 'sales_chat') { await handleSalesChat(chat_id, msg, session); return; }
-    const kbd = await buildStartKeyboard(null);
+    const kbd = await buildStartKeyboard(null, chat_id);
     await sendMessage(chat_id, 'برای ورود /start را بزنید.', { keyboard: kbd });
     return;
   }
@@ -4315,7 +4321,8 @@ async function handleUpdate(update: any, reportAuthenticated = false) {
   }
 
   if (text === '/cancel') {
-    await sendMessage(chat_id, '✅ لغو شد.', { keyboard: await mainMenu(user) });
+    await clearSession(chat_id);
+    await sendMessage(chat_id, '✅ لغو شد.', { keyboard: await buildStartKeyboard(user, chat_id) });
     return;
   }
   if (text === '/help') {

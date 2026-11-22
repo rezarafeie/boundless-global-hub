@@ -1,7 +1,7 @@
 ## Bot menu cleanup
-- [ ] Add default-off form visibility control and filter bot form menus
-- [ ] Share public inline menus and move privileged actions to persistent keyboards
-- [ ] Test and deploy both messenger webhooks
+- [x] Add default-off form visibility control and filter bot form menus; all 9 existing forms remain unselected
+- [x] Share public inline menus and move privileged actions to persistent keyboards
+- [x] 31 tests pass; both webhooks deployed; real Telegram start updates the 5-row privileged keyboard and admin button webhook accepts the request (Bale live UI and authenticated form editor not visually verified)
 
 ## Telegram enrollment reports
 - [x] Default to numeric list with list/chart switcher and chronological line chart; 6 tests pass, real monthly list/line totals both 1223, component verified at desktop and 430px mobile (full authenticated admin page unavailable)
