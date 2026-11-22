@@ -2,6 +2,7 @@
 // Runs identically on Telegram and on Bale; the active messenger comes from
 // the channel context set by each webhook function.
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { getEnrollmentReportRequest, enrollmentReportWebhookSecret, handleEnrollmentReportRequest } from './telegram-enrollment-report.ts';
 import {
   currentChannel,
   runWithChannel,
@@ -1012,6 +1013,9 @@ async function renderReports(chat_id: number, message_id: number | null, user: B
   }
 
   const keyboard: InlineKeyboard = [];
+  if (!isBaleChannel() && user.role === 'admin') {
+    keyboard.push([{ text: '📊 گزارش ثبت‌نام دوره‌ها', callback_data: 'enrollment-report:menu' }]);
+  }
   const canSales = ['admin', 'sales_manager', 'sales_agent'].includes(user.role ?? '');
   const canSupport = ['admin', 'sales_manager'].includes(user.role ?? '') || await userIsSupport(user.id);
   if (canSales) keyboard.push([{ text: '📝 ثبت گزارش فروش', callback_data: 'report:start:sales' }]);
@@ -4837,6 +4841,23 @@ export function serveBotWebhook(channel: Channel, opts: { secret?: string } = {}
 
     try {
       const update = await req.json();
+      const enrollmentReport = channel === 'telegram' ? getEnrollmentReportRequest(update) : null;
+      if (enrollmentReport) {
+        const secret = await enrollmentReportWebhookSecret(expected, Deno.env.get('TELEGRAM_BOT_TOKEN'));
+        if (req.method !== 'POST' || !secret || req.headers.get('x-telegram-bot-api-secret-token') !== secret) {
+          return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+        }
+        const reportWork = runWithChannel(channel, () => handleEnrollmentReportRequest(
+          enrollmentReport,
+          supabase,
+          async (chatId) => (await resolveUser(chatId))?.role === 'admin',
+        )).catch((error) => console.error('Telegram enrollment report update failed:', error));
+        const runtime = (globalThis as typeof globalThis & { EdgeRuntime?: { waitUntil: (work: Promise<void>) => void } }).EdgeRuntime;
+        if (runtime) runtime.waitUntil(reportWork);
+        else await reportWork;
+        return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
       runWithChannel(channel, () => {
         handleUpdate(update).catch(e => console.error(`[${channel}] handleUpdate error:`, e));
       });
