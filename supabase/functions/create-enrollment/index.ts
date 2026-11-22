@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { ensureAccessWindow } from '../_shared/gamification.ts'
 import { allowsMissingSocialEmail } from '../_shared/social-email-policy.ts'
+import { authorizeHub, effectiveCoursePrice } from '../_shared/hub-policy.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -38,7 +39,7 @@ Deno.serve(async (req) => {
       course_id,
       full_name,
       email: suppliedEmail,
-      phone,
+      phone: suppliedPhone,
       payment_amount,
       payment_method,
       manual_payment_status,
@@ -50,6 +51,17 @@ Deno.serve(async (req) => {
     } = body;
 
     const email = typeof suppliedEmail === 'string' ? suppliedEmail.trim().toLowerCase() || null : null;
+    const phone = typeof suppliedPhone === 'string' ? suppliedPhone.trim() || null : null;
+    let trustedHubEnrollment = false;
+    if (req.headers.has('x-hub-internal-auth')) {
+      await authorizeHub(req.headers.get('x-hub-internal-auth'), Deno.env.get('HUB_SHARED_SECRET'));
+      const [{ data: hubUser }, { data: hubCourse }] = await Promise.all([
+        supabase.from('chat_users').select('email,hub_user_id').eq('id', chat_user_id).maybeSingle(),
+        supabase.from('courses').select('*').eq('id', course_id).eq('is_active', true).maybeSingle(),
+      ]);
+      trustedHubEnrollment = Boolean(hubUser?.hub_user_id && hubUser.email?.toLowerCase() === email && hubCourse && effectiveCoursePrice(hubCourse) === 0 && payment_amount === 0);
+      if (!trustedHubEnrollment) throw new Error('Invalid Hub enrollment');
+    }
     let optionalSocialEmail = false;
     if (!email) {
       const { data: course } = await supabase.from('courses').select('price').eq('id', course_id).maybeSingle();
@@ -58,7 +70,7 @@ Deno.serve(async (req) => {
     }
 
     // Validate required fields
-    if (!course_id || !full_name || (!email && !optionalSocialEmail) || !phone || (payment_amount === null || payment_amount === undefined)) {
+    if (!course_id || !full_name || (!email && !optionalSocialEmail) || (!phone && !trustedHubEnrollment) || (payment_amount === null || payment_amount === undefined)) {
       console.error('❌ Validation failed. Missing fields:', {
         course_id: !!course_id,
         full_name: !!full_name,
@@ -338,7 +350,7 @@ Deno.serve(async (req) => {
         course_id,
         full_name: actualUser?.full_name || actualUser?.name || full_name.trim(),
         email: actualUser?.email || email,
-        phone: actualUser?.phone || phone.trim(),
+        phone: actualUser?.phone || phone,
         payment_amount: Number(payment_amount),
         payment_status: finalPaymentStatus,
         payment_method: payment_method || 'manual',

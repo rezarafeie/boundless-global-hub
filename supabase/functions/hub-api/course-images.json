@@ -1,0 +1,156 @@
+{
+  "taste": {
+    "version": 1,
+    "asset_id": "79301ecb-4e8a-4630-bb66-d93277cb7bef",
+    "project_id": "f1b84616-3d17-49e3-9831-9bf37bdf8198",
+    "url": "/__l5e/assets-v1/79301ecb-4e8a-4630-bb66-d93277cb7bef/reza_k_taste.webp",
+    "r2_key": "a/v1/f1b84616-3d17-49e3-9831-9bf37bdf8198/79301ecb-4e8a-4630-bb66-d93277cb7bef/reza_k_taste.webp",
+    "original_filename": "reza_k_taste.webp",
+    "size": 38348,
+    "content_type": "image/webp",
+    "created_at": "2026-11-22T18:59:51Z"
+  },
+  "instagram": {
+    "version": 1,
+    "asset_id": "1955d4af-2ae5-494c-b861-42205e8b40a2",
+    "project_id": "f1b84616-3d17-49e3-9831-9bf37bdf8198",
+    "url": "/__l5e/assets-v1/1955d4af-2ae5-494c-b861-42205e8b40a2/reza_k_instagram.webp",
+    "r2_key": "a/v1/f1b84616-3d17-49e3-9831-9bf37bdf8198/1955d4af-2ae5-494c-b861-42205e8b40a2/reza_k_instagram.webp",
+    "original_filename": "reza_k_instagram.webp",
+    "size": 10520,
+    "content_type": "image/webp",
+    "created_at": "2026-11-22T18:59:29Z"
+  },
+  "meta": {
+    "version": 1,
+    "asset_id": "8dd8f03e-1936-42cb-b9b3-fb2739c0fc0e",
+    "project_id": "f1b84616-3d17-49e3-9831-9bf37bdf8198",
+    "url": "/__l5e/assets-v1/8dd8f03e-1936-42cb-b9b3-fb2739c0fc0e/reza_k_meta.webp",
+    "r2_key": "a/v1/f1b84616-3d17-49e3-9831-9bf37bdf8198/8dd8f03e-1936-42cb-b9b3-fb2739c0fc0e/reza_k_meta.webp",
+    "original_filename": "reza_k_meta.webp",
+    "size": 17234,
+    "content_type": "image/webp",
+    "created_at": "2026-11-22T18:59:35Z"
+  },
+  "wealth": {
+    "version": 1,
+    "asset_id": "5bd12291-7ef9-4857-a1c6-9d094245ea5e",
+    "project_id": "f1b84616-3d17-49e3-9831-9bf37bdf8198",
+    "url": "/__l5e/assets-v1/5bd12291-7ef9-4857-a1c6-9d094245ea5e/reza_k_wealth.webp",
+    "r2_key": "a/v1/f1b84616-3d17-49e3-9831-9bf37bdf8198/5bd12291-7ef9-4857-a1c6-9d094245ea5e/reza_k_wealth.webp",
+    "original_filename": "reza_k_wealth.webp",
+    "size": 12350,
+    "content_type": "image/webp",
+    "created_at": "2026-11-22T18:59:56Z"
+  },
+  "passive": {
+    "version": 1,
+    "asset_id": "6d579e7b-dc05-4c24-a412-00f593bfe3a1",
+    "project_id": "f1b84616-3d17-49e3-9831-9bf37bdf8198",
+    "url": "/__l5e/assets-v1/6d579e7b-dc05-4c24-a412-00f593bfe3a1/reza_k_passive.webp",
+    "r2_key": "a/v1/f1b84616-3d17-49e3-9831-9bf37bdf8198/6d579e7b-dc05-4c24-a412-00f593bfe3a1/reza_k_passive.webp",
+    "original_filename": "reza_k_passive.webp",
+    "size": 10068,
+    "content_type": "image/webp",
+    "created_at": "2026-11-22T18:59:42Z"
+  },
+  "pack": {
+    "version": 1,
+    "asset_id": "7ecb1f75-4f4e-4f68-93ff-8fe8414b3fca",
+    "project_id": "f1b84616-3d17-49e3-9831-9bf37bdf8198",
+    "url": "/__l5e/assets-v1/7ecb1f75-4f4e-4f68-93ff-8fe8414b3fca/reza_k_pack.webp",
+    "r2_key": "a/v1/f1b84616-3d17-49e3-9831-9bf37bdf8198/7ecb1f75-4f4e-4f68-93ff-8fe8414b3fca/reza_k_pack.webp",
+    "original_filename": "reza_k_pack.webp",
+    "size": 14224,
+    "content_type": "image/webp",
+    "created_at": "2026-11-22T18:59:39Z"
+  },
+  "life": {
+    "version": 1,
+    "asset_id": "b57cc765-80da-4056-bd90-7ee8ecaaca42",
+    "project_id": "f1b84616-3d17-49e3-9831-9bf37bdf8198",
+    "url": "/__l5e/assets-v1/b57cc765-80da-4056-bd90-7ee8ecaaca42/reza_k_life.webp",
+    "r2_key": "a/v1/f1b84616-3d17-49e3-9831-9bf37bdf8198/b57cc765-80da-4056-bd90-7ee8ecaaca42/reza_k_life.webp",
+    "original_filename": "reza_k_life.webp",
+    "size": 9276,
+    "content_type": "image/webp",
+    "created_at": "2026-11-22T18:59:32Z"
+  },
+  "ai2": {
+    "version": 1,
+    "asset_id": "c5d5a799-0637-4e87-b2ee-b2cd28176143",
+    "project_id": "f1b84616-3d17-49e3-9831-9bf37bdf8198",
+    "url": "/__l5e/assets-v1/c5d5a799-0637-4e87-b2ee-b2cd28176143/reza_k_ai2.webp",
+    "r2_key": "a/v1/f1b84616-3d17-49e3-9831-9bf37bdf8198/c5d5a799-0637-4e87-b2ee-b2cd28176143/reza_k_ai2.webp",
+    "original_filename": "reza_k_ai2.webp",
+    "size": 15100,
+    "content_type": "image/webp",
+    "created_at": "2026-11-22T18:59:10Z"
+  },
+  "america": {
+    "version": 1,
+    "asset_id": "9690bbf1-b7f6-4872-a962-84111ef5017e",
+    "project_id": "f1b84616-3d17-49e3-9831-9bf37bdf8198",
+    "url": "/__l5e/assets-v1/9690bbf1-b7f6-4872-a962-84111ef5017e/reza_k_america.webp",
+    "r2_key": "a/v1/f1b84616-3d17-49e3-9831-9bf37bdf8198/9690bbf1-b7f6-4872-a962-84111ef5017e/reza_k_america.webp",
+    "original_filename": "reza_k_america.webp",
+    "size": 8698,
+    "content_type": "image/webp",
+    "created_at": "2026-11-22T18:59:13Z"
+  },
+  "crisis": {
+    "version": 1,
+    "asset_id": "665cd179-e59f-47cd-9fc2-274062aafd66",
+    "project_id": "f1b84616-3d17-49e3-9831-9bf37bdf8198",
+    "url": "/__l5e/assets-v1/665cd179-e59f-47cd-9fc2-274062aafd66/reza_k_crisis.webp",
+    "r2_key": "a/v1/f1b84616-3d17-49e3-9831-9bf37bdf8198/665cd179-e59f-47cd-9fc2-274062aafd66/reza_k_crisis.webp",
+    "original_filename": "reza_k_crisis.webp",
+    "size": 21260,
+    "content_type": "image/webp",
+    "created_at": "2026-11-22T18:59:22Z"
+  },
+  "rescue": {
+    "version": 1,
+    "asset_id": "d681595e-45ae-4729-bdb8-d440ed83ebfe",
+    "project_id": "f1b84616-3d17-49e3-9831-9bf37bdf8198",
+    "url": "/__l5e/assets-v1/d681595e-45ae-4729-bdb8-d440ed83ebfe/reza_k_rescue.webp",
+    "r2_key": "a/v1/f1b84616-3d17-49e3-9831-9bf37bdf8198/d681595e-45ae-4729-bdb8-d440ed83ebfe/reza_k_rescue.webp",
+    "original_filename": "reza_k_rescue.webp",
+    "size": 11240,
+    "content_type": "image/webp",
+    "created_at": "2026-11-22T18:59:46Z"
+  },
+  "change": {
+    "version": 1,
+    "asset_id": "299adf70-ce2b-4bac-b9f3-7a06c49f0f93",
+    "project_id": "f1b84616-3d17-49e3-9831-9bf37bdf8198",
+    "url": "/__l5e/assets-v1/299adf70-ce2b-4bac-b9f3-7a06c49f0f93/reza_k_change.webp",
+    "r2_key": "a/v1/f1b84616-3d17-49e3-9831-9bf37bdf8198/299adf70-ce2b-4bac-b9f3-7a06c49f0f93/reza_k_change.webp",
+    "original_filename": "reza_k_change.webp",
+    "size": 13218,
+    "content_type": "image/webp",
+    "created_at": "2026-11-22T18:59:18Z"
+  },
+  "boundless2": {
+    "version": 1,
+    "asset_id": "9056e452-1e95-4cba-aa1e-1b7071df9354",
+    "project_id": "f1b84616-3d17-49e3-9831-9bf37bdf8198",
+    "url": "/__l5e/assets-v1/9056e452-1e95-4cba-aa1e-1b7071df9354/reza_k_boundless2.webp",
+    "r2_key": "a/v1/f1b84616-3d17-49e3-9831-9bf37bdf8198/9056e452-1e95-4cba-aa1e-1b7071df9354/reza_k_boundless2.webp",
+    "original_filename": "reza_k_boundless2.webp",
+    "size": 15050,
+    "content_type": "image/webp",
+    "created_at": "2026-11-22T19:01:44Z"
+  },
+  "default": {
+    "version": 1,
+    "asset_id": "1a67de7b-e574-4633-9f17-a4606a6690c9",
+    "project_id": "f1b84616-3d17-49e3-9831-9bf37bdf8198",
+    "url": "/__l5e/assets-v1/1a67de7b-e574-4633-9f17-a4606a6690c9/reza_k_default.webp",
+    "r2_key": "a/v1/f1b84616-3d17-49e3-9831-9bf37bdf8198/1a67de7b-e574-4633-9f17-a4606a6690c9/reza_k_default.webp",
+    "original_filename": "reza_k_default.webp",
+    "size": 16194,
+    "content_type": "image/webp",
+    "created_at": "2026-11-22T18:59:26Z"
+  }
+}

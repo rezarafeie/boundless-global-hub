@@ -172,6 +172,7 @@ export type Database = {
           created_at: string
           email: string
           first_name: string
+          hub_user_id: string | null
           id: string
           last_name: string
           phone: string
@@ -182,6 +183,7 @@ export type Database = {
           created_at?: string
           email: string
           first_name: string
+          hub_user_id?: string | null
           id?: string
           last_name: string
           phone: string
@@ -192,6 +194,7 @@ export type Database = {
           created_at?: string
           email?: string
           first_name?: string
+          hub_user_id?: string | null
           id?: string
           last_name?: string
           phone?: string
@@ -2660,6 +2663,7 @@ export type Database = {
           first_name: string | null
           full_name: string | null
           gender: Database["public"]["Enums"]["gender_type"] | null
+          hub_user_id: string | null
           id: number
           is_approved: boolean | null
           is_messenger_admin: boolean | null
@@ -2671,7 +2675,7 @@ export type Database = {
           notification_enabled: boolean | null
           notification_token: string | null
           password_hash: string | null
-          phone: string
+          phone: string | null
           province: Database["public"]["Enums"]["iran_province_type"] | null
           role: string | null
           sex: string | null
@@ -2704,6 +2708,7 @@ export type Database = {
           first_name?: string | null
           full_name?: string | null
           gender?: Database["public"]["Enums"]["gender_type"] | null
+          hub_user_id?: string | null
           id?: number
           is_approved?: boolean | null
           is_messenger_admin?: boolean | null
@@ -2715,7 +2720,7 @@ export type Database = {
           notification_enabled?: boolean | null
           notification_token?: string | null
           password_hash?: string | null
-          phone: string
+          phone?: string | null
           province?: Database["public"]["Enums"]["iran_province_type"] | null
           role?: string | null
           sex?: string | null
@@ -2748,6 +2753,7 @@ export type Database = {
           first_name?: string | null
           full_name?: string | null
           gender?: Database["public"]["Enums"]["gender_type"] | null
+          hub_user_id?: string | null
           id?: number
           is_approved?: boolean | null
           is_messenger_admin?: boolean | null
@@ -2759,7 +2765,7 @@ export type Database = {
           notification_enabled?: boolean | null
           notification_token?: string | null
           password_hash?: string | null
-          phone?: string
+          phone?: string | null
           province?: Database["public"]["Enums"]["iran_province_type"] | null
           role?: string | null
           sex?: string | null
@@ -4621,7 +4627,7 @@ export type Database = {
           payment_amount: number
           payment_method: string | null
           payment_status: string
-          phone: string
+          phone: string | null
           receipt_url: string | null
           spotplayer_license_id: string | null
           spotplayer_license_key: string | null
@@ -4660,7 +4666,7 @@ export type Database = {
           payment_amount: number
           payment_method?: string | null
           payment_status?: string
-          phone: string
+          phone?: string | null
           receipt_url?: string | null
           spotplayer_license_id?: string | null
           spotplayer_license_key?: string | null
@@ -4699,7 +4705,7 @@ export type Database = {
           payment_amount?: number
           payment_method?: string | null
           payment_status?: string
-          phone?: string
+          phone?: string | null
           receipt_url?: string | null
           spotplayer_license_id?: string | null
           spotplayer_license_key?: string | null
@@ -7998,10 +8004,12 @@ export type Database = {
           assigned_agent_name: string | null
           created_at: string | null
           id: number
+          initial_message: string | null
           internal_notes: string | null
           last_message_at: string | null
           priority: string | null
           status: string | null
+          subject: string | null
           support_room_id: number | null
           tag_list: Database["public"]["Enums"]["support_tag"][] | null
           tags: string[] | null
@@ -8014,10 +8022,12 @@ export type Database = {
           assigned_agent_name?: string | null
           created_at?: string | null
           id?: number
+          initial_message?: string | null
           internal_notes?: string | null
           last_message_at?: string | null
           priority?: string | null
           status?: string | null
+          subject?: string | null
           support_room_id?: number | null
           tag_list?: Database["public"]["Enums"]["support_tag"][] | null
           tags?: string[] | null
@@ -8030,10 +8040,12 @@ export type Database = {
           assigned_agent_name?: string | null
           created_at?: string | null
           id?: number
+          initial_message?: string | null
           internal_notes?: string | null
           last_message_at?: string | null
           priority?: string | null
           status?: string | null
+          subject?: string | null
           support_room_id?: number | null
           tag_list?: Database["public"]["Enums"]["support_tag"][] | null
           tags?: string[] | null
@@ -8709,7 +8721,7 @@ export type Database = {
           payment_amount: number | null
           payment_method: string | null
           payment_status: string
-          phone: string
+          phone: string | null
           receipt_url: string | null
           result_data: Json | null
           sex: string | null
@@ -8733,7 +8745,7 @@ export type Database = {
           payment_amount?: number | null
           payment_method?: string | null
           payment_status?: string
-          phone: string
+          phone?: string | null
           receipt_url?: string | null
           result_data?: Json | null
           sex?: string | null
@@ -8757,7 +8769,7 @@ export type Database = {
           payment_amount?: number | null
           payment_method?: string | null
           payment_status?: string
-          phone?: string
+          phone?: string | null
           receipt_url?: string | null
           result_data?: Json | null
           sex?: string | null
@@ -10706,6 +10718,10 @@ export type Database = {
       http_set_curlopt: {
         Args: { curlopt: string; value: string }
         Returns: boolean
+      }
+      hub_resolve_user: {
+        Args: { p_email: string; p_hub_user_id: string; p_name: string }
+        Returns: Json
       }
       increment_lead_call_clicks: {
         Args: { lead_id: string }

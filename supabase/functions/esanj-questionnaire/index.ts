@@ -23,10 +23,7 @@ serve(async (req) => {
     console.log('=== DETAILED API CALL INFO FOR ESANJ DEVELOPERS ===')
     console.log('API URL:', apiUrl)
     console.log('Method: GET')
-    console.log('Headers:', {
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${esanjToken.substring(0, 10)}...` // Masked for security
-    })
+    console.log('Provider authorization configured')
     console.log('Test ID:', testId)
     console.log('Current timestamp:', new Date().toISOString())
 

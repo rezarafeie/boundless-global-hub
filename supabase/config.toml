@@ -92,6 +92,9 @@ verify_jwt = false
 [functions.create-enrollment]
 verify_jwt = false
 
+[functions.hub-api]
+verify_jwt = false
+
 [functions.lead-request-ai]
 verify_jwt = false
 
