@@ -1,7 +1,7 @@
 ## Hub shared authentication
 - [x] Add server-only password/OTP authentication, atomic single-use exchange and proof-bound account linking at the unchanged Hub endpoint; no implicit account creation or merging
 - [x] Verify hosted HTTP password/exchange/link, concurrent OTP/ticket consumption, replay/expiry, five attempts, hourly sends/resend gap, independent abuse limits and scoped nonempty saved ticket history; advertise only tested methods
-- [ ] Complete real email OTP round trip (consenting email received delivery; entered code expired after 120 seconds and was correctly rejected; keep email_otp false)
+- [x] Complete real email OTP round trip: Gmail sent, user provided fresh code securely, existing account exchanged successfully, OTP/ticket replays both rejected; email_otp true and temporary test code secret deleted
 - [ ] Verify real SMS OTP delivery/receipt (requires a consenting Iranian mobile; keep sms_otp false)
 - [ ] Verify actual user's full historical records after their real Hub identity is linked (requires successful email proof and real Hub identity; QA history verified, real account never linked to invented Hub ID)
 
