@@ -8,6 +8,7 @@ Deno.serve(async req => {
   try {
     return new Response(JSON.stringify(await processEnrollmentQueue()), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch {
+    console.error('Social enrollment queue processing failed');
     return new Response(JSON.stringify({ error: 'Queue processing unavailable' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });

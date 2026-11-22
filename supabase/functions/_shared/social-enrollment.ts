@@ -170,7 +170,8 @@ async function invoke(name: string, body: unknown) {
   const key = Deno.env.get('SUPABASE_ANON_KEY');
   if (!url || !key) throw new Error('Supabase invocation unavailable');
   const res = await fetch(`${url}/functions/v1/${name}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', apikey: key, Authorization: `Bearer ${key}` },
+    method: 'POST', headers: { 'Content-Type': 'application/json', apikey: key, Authorization: `Bearer ${key}`,
+      ...(name === 'create-enrollment' ? { 'x-social-enrollment-secret': Deno.env.get('NOVINHUB_ENROLLMENT_WEBHOOK_SECRET') || '' } : {}) },
     body: JSON.stringify(body), signal: AbortSignal.timeout(120000),
   });
   const data = await res.json();
@@ -219,17 +220,17 @@ export async function processEnrollmentQueue(limit = 10) {
       const { data: course, error: courseErr } = await client.from('courses').select('id,title,slug,price').eq('id', rule.course_id).single();
       if (courseErr) throw courseErr;
       if (!eligibleFreeCourse(course.price)) throw new Error('ثبت‌نام مستقیم فقط برای دوره رایگان مجاز است؛ دوره پولی به پرداخت نیاز دارد');
-      if (!person.name || !/^09\d{9}$/.test(person.phone) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(person.email)) {
+      if (!person.name || !/^09\d{9}$/.test(person.phone) || (person.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(person.email))) {
         if (!job.reply_sent_at) await novinhub.reply(conversationId, rule.missing_fields_message);
         await save({ status: 'needs_info', reply_sent_at: new Date().toISOString(), last_error: 'نام، موبایل یا ایمیل معتبر موجود نیست' });
         continue;
       }
       const [{ data: emailUser }, { data: phoneUser }] = await Promise.all([
-        client.from('chat_users').select('id,phone,email').eq('email', person.email).maybeSingle(),
+        person.email ? client.from('chat_users').select('id,phone,email').eq('email', person.email).maybeSingle() : Promise.resolve({ data: null }),
         client.from('chat_users').select('id,phone,email').eq('phone', person.phone).maybeSingle(),
       ]);
       if (emailUser && normalizePhone(emailUser.phone || '') !== person.phone) throw new Error('ایمیل و شماره موبایل با حساب موجود مطابقت ندارند؛ بررسی مدیر لازم است');
-      if (phoneUser?.email && phoneUser.email.toLowerCase() !== person.email) throw new Error('ایمیل فرم با حساب شماره موبایل مطابقت ندارد؛ بررسی مدیر لازم است');
+      if (person.email && phoneUser?.email && phoneUser.email.toLowerCase() !== person.email) throw new Error('ایمیل فرم با حساب شماره موبایل مطابقت ندارد؛ بررسی مدیر لازم است');
       if (emailUser && phoneUser && emailUser.id !== phoneUser.id) throw new Error('تعارض حساب ایمیل و موبایل؛ بررسی مدیر لازم است');
       const existingUser = phoneUser || emailUser;
       let enrollment: any;
@@ -245,7 +246,7 @@ export async function processEnrollmentQueue(limit = 10) {
       }
       if (!enrollment) {
         const result = await invoke('create-enrollment', {
-          course_id: course.id, full_name: person.name, phone: person.phone, email: person.email,
+          course_id: course.id, full_name: person.name, phone: person.phone, email: person.email || null,
           payment_amount: 0, payment_method: 'free', country_code: '+98', chat_user_id: existingUser?.id,
         });
         enrollment = result.enrollment;

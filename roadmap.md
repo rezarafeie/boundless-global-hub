@@ -24,7 +24,7 @@
 - [x] Verify 16 tests, access grants, unsigned request rejection and real delivery of all 15 courses with totals matching the database
 
 ## Instagram direct enrollment
-- [ ] Make email optional for trusted free-course direct enrollment, keep website validation unchanged, store missing email as null and skip recipient email delivery
+- [x] Make email optional for trusted free-course direct enrollment, keep website validation unchanged, store missing email as null and skip recipient email delivery; 14 targeted tests pass
 - [x] Connect form 10424 on Instagram account 210093 to the existing free Boundless Taste enrollment flow, preserving form 9808
 - [ ] Repair real NovinHub form response enrichment: rez.raf completion arrived without page, form or conversation identifiers and with name/phone only; verify provider identity before replaying
 - [ ] Verify form 10424 creates an enrollment and delivers its activation link to rez.raf (real completion received; email absent from submitted answers)

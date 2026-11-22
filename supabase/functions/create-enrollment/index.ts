@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { ensureAccessWindow } from '../_shared/gamification.ts'
+import { allowsMissingSocialEmail } from '../_shared/social-email-policy.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,7 +37,7 @@ Deno.serve(async (req) => {
     const {
       course_id,
       full_name,
-      email,
+      email: suppliedEmail,
       phone,
       payment_amount,
       payment_method,
@@ -48,8 +49,16 @@ Deno.serve(async (req) => {
       force_create // Skip duplicate check and always create new enrollment
     } = body;
 
+    const email = typeof suppliedEmail === 'string' ? suppliedEmail.trim().toLowerCase() || null : null;
+    let optionalSocialEmail = false;
+    if (!email) {
+      const { data: course } = await supabase.from('courses').select('price').eq('id', course_id).maybeSingle();
+      optionalSocialEmail = allowsMissingSocialEmail(req.headers.get('x-social-enrollment-secret'),
+        Deno.env.get('NOVINHUB_ENROLLMENT_WEBHOOK_SECRET'), course?.price, payment_amount);
+    }
+
     // Validate required fields
-    if (!course_id || !full_name || !email || !phone || (payment_amount === null || payment_amount === undefined)) {
+    if (!course_id || !full_name || (!email && !optionalSocialEmail) || !phone || (payment_amount === null || payment_amount === undefined)) {
       console.error('❌ Validation failed. Missing fields:', {
         course_id: !!course_id,
         full_name: !!full_name,
@@ -69,11 +78,11 @@ Deno.serve(async (req) => {
       console.log('🔍 Looking for existing chat_user by email...');
       
       // First check by email
-      const { data: existingUser } = await supabase
+      const { data: existingUser } = email ? await supabase
         .from('chat_users')
         .select('id')
-        .eq('email', email.trim().toLowerCase())
-        .maybeSingle();
+        .eq('email', email)
+        .maybeSingle() : { data: null };
 
       if (existingUser) {
         resolvedChatUserId = existingUser.id;
@@ -100,7 +109,7 @@ Deno.serve(async (req) => {
             .insert({
               name: full_name.trim(),
               phone: phone.trim(),
-              email: email.trim().toLowerCase(),
+              email,
               first_name: full_name.trim().split(' ')[0],
               last_name: full_name.trim().split(' ').slice(1).join(' ') || '',
               full_name: full_name.trim(),
@@ -118,11 +127,10 @@ Deno.serve(async (req) => {
             // Handle duplicate email/phone errors by finding the existing user
             if (createUserError.code === '23505') {
               console.log('🔄 Duplicate detected, finding existing user...');
-              const { data: foundUser } = await supabase
-                .from('chat_users')
-                .select('id')
-                .or(`phone.eq.${phone.trim()},email.eq.${email.trim().toLowerCase()}`)
-                .single();
+              const lookup = supabase.from('chat_users').select('id');
+              const { data: foundUser } = await (email
+                ? lookup.or(`phone.eq.${phone.trim()},email.eq.${email}`)
+                : lookup.eq('phone', phone.trim())).single();
               
               if (foundUser) {
                 resolvedChatUserId = foundUser.id;
@@ -149,12 +157,12 @@ Deno.serve(async (req) => {
 
     // Check if enrollment already exists by email and phone (skip if force_create is true)
     if (!force_create) {
-      const { data: existingEnrollmentByEmail } = await supabase
+      const { data: existingEnrollmentByEmail } = email ? await supabase
         .from('enrollments')
         .select('id, payment_status, chat_user_id')
         .eq('course_id', course_id)
-        .eq('email', email.trim().toLowerCase())
-        .maybeSingle();
+        .eq('email', email)
+        .maybeSingle() : { data: null };
 
       if (existingEnrollmentByEmail) {
         console.log('📋 Found existing enrollment by email:', existingEnrollmentByEmail.id);
@@ -329,7 +337,7 @@ Deno.serve(async (req) => {
       enrollmentData = {
         course_id,
         full_name: actualUser?.full_name || actualUser?.name || full_name.trim(),
-        email: actualUser?.email || email.trim().toLowerCase(),
+        email: actualUser?.email || email,
         phone: actualUser?.phone || phone.trim(),
         payment_amount: Number(payment_amount),
         payment_status: finalPaymentStatus,
@@ -343,7 +351,7 @@ Deno.serve(async (req) => {
       enrollmentData = {
         course_id,
         full_name: full_name.trim(),
-        email: email.trim().toLowerCase(),
+        email,
         phone: phone.trim(),
         payment_amount: Number(payment_amount),
         payment_status: finalPaymentStatus,
@@ -395,7 +403,7 @@ Deno.serve(async (req) => {
     }
 
     // Send enrollment email for completed payments (free courses or completed payments)
-    if (createdEnrollment.payment_status === 'completed') {
+    if (createdEnrollment.payment_status === 'completed' && createdEnrollment.email) {
       try {
         console.log('📧 Sending enrollment email for completed payment...');
         

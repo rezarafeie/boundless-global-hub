@@ -25,7 +25,9 @@ Deno.serve(async req => {
     const eventKey = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
     const { error } = await db().from('social_enrollment_events').insert({ event_key: eventKey, event_type: event.type, payload: event });
     if (error && error.code !== '23505') return json({ error: 'Event queue unavailable' }, 503);
-    EdgeRuntime.waitUntil(processEnrollmentQueue().catch(() => {}));
+    EdgeRuntime.waitUntil(processEnrollmentQueue().then(result => {
+      console.info('Social enrollment queue processed', result);
+    }).catch(() => { console.error('Social enrollment queue processing failed'); }));
     return json({ accepted: true, duplicate: error?.code === '23505' });
   } catch { return json({ error: 'Invalid event or unavailable queue' }, 400); }
 });

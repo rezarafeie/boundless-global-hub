@@ -4606,7 +4606,7 @@ export type Database = {
           course_id: string
           created_at: string
           duplicate_lead_of: string | null
-          email: string
+          email: string | null
           followup_hour_tehran: number | null
           followup_last_at: string | null
           followup_state: string
@@ -4645,7 +4645,7 @@ export type Database = {
           course_id: string
           created_at?: string
           duplicate_lead_of?: string | null
-          email: string
+          email?: string | null
           followup_hour_tehran?: number | null
           followup_last_at?: string | null
           followup_state?: string
@@ -4684,7 +4684,7 @@ export type Database = {
           course_id?: string
           created_at?: string
           duplicate_lead_of?: string | null
-          email?: string
+          email?: string | null
           followup_hour_tehran?: number | null
           followup_last_at?: string | null
           followup_state?: string
