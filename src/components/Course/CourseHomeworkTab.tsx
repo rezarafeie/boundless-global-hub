@@ -28,8 +28,8 @@ interface Props {
 const statusColor: Record<string, string> = {
   not_started: "bg-muted text-muted-foreground",
   draft: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-  submitted: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-  reviewed: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
+  submitted: "bg-muted text-foreground dark:bg-card/40 dark:text-muted-foreground",
+  reviewed: "bg-muted text-foreground dark:bg-card/40 dark:text-muted-foreground",
   needs_revision: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
   completed: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
 };

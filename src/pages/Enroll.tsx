@@ -585,9 +585,9 @@ const Enroll: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-muted to-muted flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-purple-600" />
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-foreground" />
           <p className="text-muted-foreground">در حال بارگذاری...</p>
         </div>
       </div>
@@ -596,7 +596,7 @@ const Enroll: React.FC = () => {
 
   if (!course && !test) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-muted to-muted flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
@@ -651,8 +651,8 @@ const Enroll: React.FC = () => {
               <CardContent className="space-y-6">
                 {/* Price Section */}
                 <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-blue-500/10 rounded-xl blur-xl"></div>
-                  <div className="relative p-4 md:p-6 bg-gradient-to-r from-primary/5 to-blue-500/5 rounded-xl border border-primary/20">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-foreground/10 rounded-xl blur-xl"></div>
+                  <div className="relative p-4 md:p-6 bg-gradient-to-r from-primary/5 to-foreground/5 rounded-xl border border-primary/20">
                      <div className="space-y-3">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                           <span className="text-base md:text-lg font-medium">{test ? 'قیمت آزمون:' : 'قیمت دوره:'}</span>
@@ -686,7 +686,7 @@ const Enroll: React.FC = () => {
                                </span>
                              ) : (
                                <>
-                                  <span className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                                  <span className="text-3xl font-bold bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent">
                                      {test 
                                        ? (discountedPrice !== null ? formatPrice(discountedPrice) : formatPrice(test.price))
                                       : isOnPrelaunch && prelaunchPrice !== null
@@ -745,10 +745,10 @@ const Enroll: React.FC = () => {
                         <div className="border-t border-border/30 pt-3">
                           <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2">
-                              <DollarSign className="h-4 w-4 text-blue-600" />
+                              <DollarSign className="h-4 w-4 text-foreground" />
                               <span className="text-muted-foreground">قیمت اصلی (دلار):</span>
                             </div>
-                             <span className="font-medium text-blue-600">
+                             <span className="font-medium text-foreground">
                                {TetherlandService.formatUSDAmount(course?.usd_price || 0)}
                              </span>
                           </div>
@@ -874,7 +874,7 @@ const Enroll: React.FC = () => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* User Login Status */}
                   {!isAuthenticated && (
-                    <Card className="bg-gradient-to-r from-primary/5 to-blue-50/50 dark:from-primary/10 dark:to-blue-950/20 border-primary/20 hover:border-primary/30 transition-all duration-300 hover:shadow-lg">
+                    <Card className="bg-gradient-to-r from-primary/5 to-muted/50 dark:from-primary/10 dark:to-foreground/20 border-primary/20 hover:border-primary/30 transition-all duration-300 hover:shadow-lg">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -889,7 +889,7 @@ const Enroll: React.FC = () => {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            className="border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground"
+                            className="border-primary/30 text-primary hover:bg-primary/90 hover:text-primary-foreground"
                             onClick={() => {
                               const currentUrl = window.location.pathname + window.location.search;
                               window.location.href = `/auth?redirect=${encodeURIComponent(currentUrl)}`;
@@ -1095,7 +1095,7 @@ const Enroll: React.FC = () => {
                      {(paymentMethod !== 'manual') && (test || course) && !isFree && (
                      <Button
                        type="submit"
-                       className="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white h-14 text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+                       className="w-full bg-gradient-to-r from-primary to-foreground hover:from-primary/90 hover:to-foreground/90 text-white h-14 text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
                        disabled={submitting}
                      >
                        {submitting ? (

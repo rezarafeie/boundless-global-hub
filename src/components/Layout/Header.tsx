@@ -72,7 +72,7 @@ const Header = () => {
     : "/lovable-uploads/d03b7d97-8f42-4806-a04a-add408342460.png"; // black logo for light mode
 
   return (
-    <header className="fixed top-0 z-[10000] w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:border-border/20">
+    <header className="fixed top-0 z-[10000] w-full border-b border-border/60 bg-background/70 backdrop-blur-xl backdrop-saturate-150">
       <div className="container flex h-16 items-center justify-between py-4">
         <div className="flex items-center gap-3">
           <Link 

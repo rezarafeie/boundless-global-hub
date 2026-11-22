@@ -480,7 +480,7 @@ const EnrollmentDetails: React.FC = () => {
                       <CardHeader className="pb-3 sm:pb-6">
                         <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2 text-base sm:text-lg">
                           <div className="flex items-center gap-2">
-                            <Key className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
+                            <Key className="h-4 w-4 sm:h-5 sm:w-5 text-foreground flex-shrink-0" />
                             <span className="break-words">
                               {enrollment?.courses?.telegram_only_access 
                                 ? 'فعال سازی پشتیبانی و دسترسی به محتوای دوره'
@@ -507,7 +507,7 @@ const EnrollmentDetails: React.FC = () => {
                           className={`w-full h-11 sm:h-14 text-sm sm:text-base font-bold px-3 sm:px-6 ${
                             smartActivated && !enrollment?.courses?.telegram_only_access
                               ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700' 
-                              : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105'
+                              : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg transform hover:-translate-y-0.5'
                           }`}
                           onClick={handleSmartActivation}
                           disabled={smartActivated && !enrollment?.courses?.telegram_only_access}
@@ -553,7 +553,7 @@ const EnrollmentDetails: React.FC = () => {
                              }
                            }}
                            disabled={loadingSSO}
-                           className="w-full h-11 sm:h-14 text-sm sm:text-base font-bold px-3 sm:px-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg transform hover:scale-105"
+                           className="w-full h-11 sm:h-14 text-sm sm:text-base font-bold px-3 sm:px-6 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg transform hover:-translate-y-0.5"
                          >
                            {loadingSSO ? (
                              <Loader2 className="h-3 w-3 sm:h-5 sm:w-5 ml-1 sm:ml-2 animate-spin flex-shrink-0" />
@@ -578,14 +578,14 @@ const EnrollmentDetails: React.FC = () => {
                    
                    {/* Telegram Only Access Message */}
                    {isSuccessfulPayment && enrollment.courses.telegram_only_access && (
-                     <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 sm:p-6 border border-blue-200 dark:border-blue-800 text-center mb-4 sm:mb-6">
-                       <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-2 text-base sm:text-lg">
+                     <div className="bg-muted dark:bg-card/20 rounded-lg p-4 sm:p-6 border border-border dark:border-border text-center mb-4 sm:mb-6">
+                       <h3 className="font-semibold text-foreground dark:text-muted-foreground mb-2 text-base sm:text-lg">
                          💬 ارتباط با پشتیبانی
                        </h3>
-                       <p className="text-blue-700 dark:text-blue-300 mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed">
+                       <p className="text-foreground dark:text-muted-foreground mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed">
                         <strong>دسترسی به محتوای این دوره فقط از طریق فعال‌سازی تلگرام امکان‌پذیر است.</strong>
                       </p>
-                      <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 leading-relaxed">
+                      <p className="text-xs sm:text-sm text-foreground dark:text-muted-foreground leading-relaxed">
                         لطفاً از طریق دکمه‌های فعال‌سازی هوشمند یا فعال‌سازی عادی تلگرام اقدام کنید.
                       </p>
                     </div>
@@ -613,7 +613,7 @@ const EnrollmentDetails: React.FC = () => {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
-                      <Shield className="h-5 w-5 text-blue-600" />
+                      <Shield className="h-5 w-5 text-foreground" />
                       دسترسی SSO
                     </CardTitle>
                   </CardHeader>
@@ -637,7 +637,7 @@ const EnrollmentDetails: React.FC = () => {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
-                      <PlayCircle className="h-5 w-5 text-purple-600" />
+                      <PlayCircle className="h-5 w-5 text-foreground" />
                       پلیر رفیعی
                     </CardTitle>
                   </CardHeader>
@@ -690,7 +690,7 @@ const EnrollmentDetails: React.FC = () => {
                         window.open(finalUrl, '_blank');
                       }}
                     >
-                      <Send className="h-5 w-5 text-blue-500" />
+                      <Send className="h-5 w-5 text-foreground" />
                       <span className="text-sm">کانال تلگرام</span>
                     </Button>
                   )}
@@ -712,7 +712,7 @@ const EnrollmentDetails: React.FC = () => {
                       className="h-auto p-4 flex flex-col items-center gap-2"
                       onClick={() => window.open(enrollment.courses.support_link!, '_blank')}
                     >
-                      <HeadphonesIcon className="h-5 w-5 text-purple-500" />
+                      <HeadphonesIcon className="h-5 w-5 text-foreground" />
                       <span className="text-sm">پشتیبانی دوره</span>
                     </Button>
                   )}
@@ -736,7 +736,7 @@ const EnrollmentDetails: React.FC = () => {
                   className="h-auto p-4 flex flex-col items-center gap-2"
                   onClick={() => window.open('https://t.me/rafieiacademy', '_blank')}
                 >
-                  <Send className="h-5 w-5 text-blue-500" />
+                  <Send className="h-5 w-5 text-foreground" />
                   <span className="text-sm">تلگرام</span>
                 </Button>
                 
@@ -754,7 +754,7 @@ const EnrollmentDetails: React.FC = () => {
                   className="h-auto p-4 flex flex-col items-center gap-2"
                   onClick={() => window.location.href = 'tel:+989123456789'}
                 >
-                  <Phone className="h-5 w-5 text-purple-500" />
+                  <Phone className="h-5 w-5 text-foreground" />
                   <span className="text-sm">تماس تلفنی</span>
                 </Button>
               </div>

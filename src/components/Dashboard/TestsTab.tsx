@@ -162,9 +162,9 @@ const TestsTab: React.FC = () => {
     } else if (enrollment.test_started_at) {
       return <Clock className="h-5 w-5 text-orange-600" />
     } else if (enrollment.enrollment_status === 'ready') {
-      return <PlayCircle className="h-5 w-5 text-blue-600" />
+      return <PlayCircle className="h-5 w-5 text-foreground" />
     }
-    return <Clock className="h-5 w-5 text-gray-400" />
+    return <Clock className="h-5 w-5 text-muted-foreground" />
   }
 
   const getStatusText = (enrollment: UserTestEnrollment) => {
@@ -186,11 +186,11 @@ const TestsTab: React.FC = () => {
     } else if (enrollment.test_started_at) {
       return 'bg-orange-100 text-orange-800'
     } else if (enrollment.enrollment_status === 'ready') {
-      return 'bg-blue-100 text-blue-800'
+      return 'bg-muted text-foreground'
     } else if (enrollment.payment_status === 'pending') {
       return 'bg-yellow-100 text-yellow-800'
     }
-    return 'bg-gray-100 text-gray-800'
+    return 'bg-muted text-foreground'
   }
 
   const handleTestAction = (enrollment: UserTestEnrollment) => {
@@ -269,8 +269,8 @@ const TestsTab: React.FC = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-100">
-                <FileText className="h-5 w-5 text-blue-600" />
+              <div className="p-2 rounded-lg bg-muted">
+                <FileText className="h-5 w-5 text-foreground" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">

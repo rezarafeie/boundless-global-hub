@@ -740,7 +740,7 @@ const CourseAccess: React.FC = () => {
             href={embedCode} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800"
+            className="inline-flex items-center gap-2 text-foreground hover:text-foreground"
           >
             <ExternalLink className="h-4 w-4" />
             مشاهده ویدیو
@@ -854,7 +854,7 @@ const CourseAccess: React.FC = () => {
         variant="ghost"
         onClick={() => handleLessonSelect(lesson)}
         className={`h-auto w-full justify-start gap-3 rounded-lg px-3 py-3 text-right font-normal ${
-          isSelected ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'hover:bg-accent'
+          isSelected ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : 'hover:bg-accent'
         }`}
       >
         <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs ${

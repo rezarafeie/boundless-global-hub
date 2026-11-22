@@ -168,25 +168,25 @@ const CourseActionLinks: React.FC<CourseActionLinksProps> = ({
   const getColorClasses = (color: string) => {
     const colorMap = {
       blue: {
-        bg: 'from-blue-600 to-blue-700',
-        hoverBg: 'hover:from-blue-700 hover:to-blue-800',
-        text: 'text-blue-700 dark:text-blue-300',
-        badgeBg: 'bg-blue-100 dark:bg-blue-900',
-        border: 'border-blue-200 dark:border-blue-800'
+        bg: 'from-foreground to-foreground',
+        hoverBg: 'hover:from-foreground hover:to-foreground',
+        text: 'text-foreground dark:text-muted-foreground',
+        badgeBg: 'bg-muted dark:bg-card',
+        border: 'border-border dark:border-border'
       },
       cyan: {
-        bg: 'from-cyan-600 to-cyan-700',
-        hoverBg: 'hover:from-cyan-700 hover:to-cyan-800',
-        text: 'text-cyan-700 dark:text-cyan-300',
-        badgeBg: 'bg-cyan-100 dark:bg-cyan-900',
-        border: 'border-cyan-200 dark:border-cyan-800'
+        bg: 'from-foreground to-foreground',
+        hoverBg: 'hover:from-foreground hover:to-foreground',
+        text: 'text-foreground dark:text-muted-foreground',
+        badgeBg: 'bg-muted dark:bg-card',
+        border: 'border-border dark:border-border'
       },
       pink: {
-        bg: 'from-pink-600 to-pink-700',
-        hoverBg: 'hover:from-pink-700 hover:to-pink-800',
-        text: 'text-pink-700 dark:text-pink-300',
-        badgeBg: 'bg-pink-100 dark:bg-pink-900',
-        border: 'border-pink-200 dark:border-pink-800'
+        bg: 'from-foreground to-foreground',
+        hoverBg: 'hover:from-foreground hover:to-foreground',
+        text: 'text-foreground dark:text-muted-foreground',
+        badgeBg: 'bg-muted dark:bg-card',
+        border: 'border-border dark:border-border'
       }
     };
     return colorMap[color as keyof typeof colorMap] || colorMap.blue;

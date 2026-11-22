@@ -14,45 +14,45 @@ const QuickAccess = () => {
       title: "مرکز آموزش",
       icon: <BookOpen size={28} />,
       link: "/courses",
-      color: "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400"
+      color: "bg-muted dark:bg-card/30 text-foreground dark:text-muted-foreground"
     },
     {
       title: "مرکز سنجش",
       icon: <Award size={28} />,
       link: "/assessment",
-      color: "bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400"
+      color: "bg-muted dark:bg-card/30 text-foreground dark:text-muted-foreground"
     },
     {
       title: "مجله",
       icon: <BookCheck size={28} />,
       link: "https://mag.rafiei.co",
-      color: "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400",
+      color: "bg-muted dark:bg-card/30 text-foreground dark:text-muted-foreground",
       external: true
     },
     {
       title: "پشتیبانی",
       icon: <Headphones size={28} />,
       link: "/support",
-      color: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"
+      color: "bg-muted dark:bg-card/30 text-foreground dark:text-muted-foreground"
     },
     {
       title: "دستیار هوشمند",
       icon: <MessageSquare size={28} />,
       link: "https://ai.rafiei.co/",
       external: true,
-      color: "bg-pink-50 dark:bg-pink-950/30 text-pink-700 dark:text-pink-400"
+      color: "bg-muted dark:bg-card/30 text-foreground dark:text-muted-foreground"
     },
     {
       title: "هاب بدون مرز",
       icon: <Network size={28} />,
       link: "/hub",
-      color: "bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-400"
+      color: "bg-muted dark:bg-card/30 text-foreground dark:text-muted-foreground"
     },
     {
       title: "پیام‌رسان",
       icon: <MessageCircle size={28} />,
       link: "/hub/messenger",
-      color: "bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400"
+      color: "bg-muted dark:bg-card/30 text-foreground dark:text-muted-foreground"
     }
   ];
 

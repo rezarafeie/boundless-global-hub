@@ -1694,8 +1694,8 @@ const EnrollSuccess: React.FC = () => {
 
                 {/* Course Details */}
                 {result.course && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                    <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-3">دوره ثبت‌نام شده</h3>
+                  <div className="bg-muted dark:bg-card/20 rounded-lg p-4 border border-border dark:border-border">
+                    <h3 className="font-semibold text-foreground dark:text-muted-foreground mb-3">دوره ثبت‌نام شده</h3>
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <h4 className="font-medium">{result.course.title}</h4>
@@ -1703,7 +1703,7 @@ const EnrollSuccess: React.FC = () => {
                           {result.course.description}
                         </p>
                       </div>
-                      <Badge className="shrink-0 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
+                      <Badge className="shrink-0 bg-muted dark:bg-card/50 text-foreground dark:text-muted-foreground border-border dark:border-border">
                         فعال
                       </Badge>
                     </div>
@@ -1806,13 +1806,13 @@ const EnrollSuccess: React.FC = () => {
                   </Button>
                   <Button
                     onClick={() => window.history.back()}
-                    className="flex-1 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-primary-foreground"
+                    className="flex-1 bg-gradient-to-r from-primary to-foreground hover:from-primary/90 hover:to-foreground/90 text-primary-foreground"
                   >
                     بازگشت
                   </Button>
                 </div>
 
-                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                <div className="mt-4 p-3 bg-muted dark:bg-card/20 rounded-lg text-sm text-foreground dark:text-muted-foreground border border-border dark:border-border">
                   <p className="font-medium mb-1">نیاز به کمک؟</p>
                   <p>
                     در صورت برداشت وجه، لطفا با کد رهگیری با پشتیبانی تماس بگیرید.

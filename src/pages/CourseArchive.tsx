@@ -188,7 +188,7 @@ const CourseArchive = () => {
           <div className="mb-8">
             {/* Desktop Filters */}
             <div className="hidden md:flex justify-center">
-              <div className="flex gap-2 p-1 bg-gray-100 rounded-full">
+              <div className="flex gap-2 p-1 bg-muted rounded-full">
                 {filters.map((filter) => (
                   <button
                     key={filter.id}
@@ -196,7 +196,7 @@ const CourseArchive = () => {
                     className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                       activeFilter === filter.id
                         ? 'bg-black text-white shadow-md'
-                        : 'text-gray-600 hover:text-black hover:bg-white'
+                        : 'text-muted-foreground hover:text-black hover:bg-white'
                     }`}
                   >
                     {filter.label}
@@ -216,7 +216,7 @@ const CourseArchive = () => {
                       className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border ${
                         activeFilter === filter.id
                           ? 'bg-black text-white border-black shadow-lg'
-                          : 'text-gray-600 border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
+                          : 'text-muted-foreground border-border bg-white hover:border-border hover:shadow-md'
                       }`}
                     >
                       {filter.label}
@@ -250,7 +250,7 @@ const CourseArchive = () => {
 
           {filteredCourses.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">هیچ دوره‌ای در این دسته‌بندی یافت نشد.</p>
+              <p className="text-muted-foreground text-lg">هیچ دوره‌ای در این دسته‌بندی یافت نشد.</p>
             </div>
           )}
         </div>

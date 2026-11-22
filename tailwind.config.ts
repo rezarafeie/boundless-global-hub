@@ -70,7 +70,7 @@ export default {
 				}
 			},
 			fontFamily: {
-				sans: ['Inter', 'system-ui', 'sans-serif'],
+				sans: ['Vazirmatn', 'Vazir', 'system-ui', 'sans-serif'],
 				vazir: ['Vazir', 'sans-serif']
 			},
 			borderRadius: {

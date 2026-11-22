@@ -290,10 +290,10 @@ const RandomHeadlineGenerator = () => {
 
   return (
     <div className="text-center">
-      <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white mb-2">
+      <h2 className="text-2xl md:text-3xl font-bold text-foreground dark:text-white mb-2">
         {currentHeadline.title}
       </h2>
-      <p className="text-lg text-slate-600 dark:text-slate-300">
+      <p className="text-lg text-muted-foreground dark:text-muted-foreground">
         {currentHeadline.subtitle}
       </p>
     </div>

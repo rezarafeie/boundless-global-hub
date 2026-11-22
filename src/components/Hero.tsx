@@ -33,78 +33,53 @@ const Hero: React.FC<HeroProps> = ({
   }
 
   return (
-    <section className="relative min-h-[70vh] pb-20 bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-slate-900 dark:via-blue-950/30 dark:to-purple-950/20 flex items-center justify-center overflow-hidden">
-      {/* Background Glows */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-32 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-32 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-pink-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-blue-300/10 to-purple-400/10 rounded-full blur-3xl animate-pulse delay-2000"></div>
-      </div>
-      
-      {/* Subtle fade to next section */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent pointer-events-none"></div>
+    <section className="relative overflow-hidden bg-background">
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(60%_60%_at_50%_0%,hsl(var(--foreground)/0.06),transparent_70%)]" />
+      <div className="relative z-10 container mx-auto px-4 pt-20 pb-16 md:pt-28 md:pb-24">
+        <div className="mx-auto max-w-3xl text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="glass shadow-soft inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium text-muted-foreground"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-success" />
+            {language === 'fa' ? 'آموزش آنلاین نسل جدید' : 'Next-gen online learning'}
+          </motion.div>
 
-      {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 py-12 md:py-16">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center space-y-6">
-            {/* Badge */}
+          <motion.h1
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-8 text-4xl font-bold leading-[1.25] tracking-tight text-foreground md:text-6xl"
+          >
+            {title || (language === 'fa' ? 'آکادمی رفیعی' : 'Rafiei Academy')}
+          </motion.h1>
+
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.16, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-5 text-lg text-muted-foreground md:text-xl"
+          >
+            {subtitle ? <p>{subtitle}</p> : <RandomHeadlineGenerator />}
+          </motion.div>
+
+          {ctaText && ctaLink && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-sm border border-blue-200/20 dark:border-blue-800/20 rounded-full px-6 py-3"
+              transition={{ duration: 0.6, delay: 0.24, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-10"
             >
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                {language === 'fa' ? '🚀 آموزش آنلاین نسل جدید' : '🚀 Next-Gen Online Learning'}
-              </span>
+              <a
+                href={ctaLink}
+                className="inline-flex h-12 items-center rounded-full bg-primary px-8 text-sm font-semibold text-primary-foreground shadow-float transition-all duration-300 ease-smooth hover:opacity-90 active:scale-[0.98]"
+              >
+                {ctaText}
+              </a>
             </motion.div>
-
-            {/* Main Heading */}
-            <div className="space-y-4">
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight"
-              >
-                <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  {title || (language === 'fa' ? 'آکادمی رفیعی' : 'Rafiei Academy')}
-                </span>
-              </motion.h1>
-              
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-              >
-                {subtitle ? (
-                  <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-300">
-                    {subtitle}
-                  </p>
-                ) : (
-                  <RandomHeadlineGenerator />
-                )}
-              </motion.div>
-            </div>
-
-            {/* CTA Button */}
-            {ctaText && ctaLink && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.7 }}
-              >
-                <a
-                  href={ctaLink}
-                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
-                >
-                  {ctaText}
-                </a>
-              </motion.div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </section>

@@ -212,16 +212,16 @@ const Index = () => {
 
     const colorConfig = {
       blue: {
-        border: 'border-blue-200/50 dark:border-blue-800/50',
-        accent: 'from-blue-500 to-blue-600',
-        iconBg: 'from-blue-500 to-blue-600',
-        iconShadow: 'shadow-blue-500/25',
-        textGradient: 'from-blue-600 to-blue-700',
-        hover: 'group-hover:text-blue-600',
-        buttonBg: 'from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800',
-        buttonShadow: 'shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/25',
-        ghostHover: 'text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/50',
-        shadow: 'group-hover:shadow-blue-500/15',
+        border: 'border-border/50 dark:border-border/50',
+        accent: 'from-foreground to-foreground',
+        iconBg: 'from-foreground to-foreground',
+        iconShadow: 'shadow-foreground/10',
+        textGradient: 'from-foreground to-foreground',
+        hover: 'group-hover:text-foreground',
+        buttonBg: 'from-foreground to-foreground hover:from-foreground hover:to-foreground',
+        buttonShadow: 'shadow-foreground/10 hover:shadow-xl hover:shadow-foreground/10',
+        ghostHover: 'text-foreground hover:text-foreground hover:bg-muted dark:hover:bg-card/50',
+        shadow: 'group-hover:shadow-foreground/10',
         icon: Zap
       },
       green: {
@@ -245,7 +245,7 @@ const Index = () => {
     return (
       <div className="group h-full">
         <div className="relative h-full">
-          <div className={`relative h-full min-h-[350px] bg-white dark:bg-gray-900 border ${config.border} rounded-2xl overflow-hidden transition-all duration-300 group-hover:shadow-xl ${config.shadow} group-hover:-translate-y-1 flex flex-col`}>
+          <div className={`relative h-full min-h-[350px] bg-white dark:bg-card border ${config.border} rounded-2xl overflow-hidden transition-all duration-300 group-hover:shadow-xl ${config.shadow} group-hover:-translate-y-1 flex flex-col`}>
             
             {/* Top accent */}
             <div className={`h-1 bg-gradient-to-r ${config.accent}`}></div>
@@ -387,22 +387,22 @@ const Index = () => {
       <HubBanner />
 
       {/* Academy Students Statistics Section */}
-      <section className="py-16 md:py-20 bg-gradient-to-br from-primary/5 via-background to-blue-50/30 dark:from-primary/10 dark:via-background dark:to-blue-950/20 relative overflow-hidden">
+      <section className="py-16 md:py-20 bg-gradient-to-br from-primary/5 via-background to-muted/30 dark:from-primary/10 dark:via-background dark:to-foreground/20 relative overflow-hidden">
         {/* Glowing background effects */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-primary/5 to-blue-400/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-primary/5 to-foreground/5 rounded-full blur-3xl"></div>
         </div>
         
         <div className="container px-4 relative">
           <div className="text-center mb-12 md:mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-blue-500/10 backdrop-blur-sm rounded-full mb-6 border border-primary/20 dark:border-primary/30">
-              <div className="w-2 h-2 bg-gradient-to-r from-primary to-blue-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">آمار آکادمی</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-foreground/10 backdrop-blur-sm rounded-full mb-6 border border-primary/20 dark:border-primary/30">
+              <div className="w-2 h-2 bg-gradient-to-r from-primary to-foreground rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent">آمار آکادمی</span>
             </div>
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 text-foreground">
-              <span className="bg-gradient-to-r from-primary via-blue-600 to-primary bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary via-foreground to-primary bg-clip-text text-transparent">
                 جامعه آکادمی رفیعی
               </span>
             </h2>
@@ -414,12 +414,12 @@ const Index = () => {
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto">
             {/* Students Count */}
             <div className="group relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-              <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-primary/20 dark:border-primary/30 rounded-2xl p-4 md:p-8 text-center hover:border-primary/40 dark:hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 group-hover:scale-105">
-                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-primary to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-primary/30">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-foreground/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
+              <div className="relative bg-white/90 dark:bg-card/90 backdrop-blur-sm border border-primary/20 dark:border-primary/30 rounded-2xl p-4 md:p-8 text-center hover:border-primary/40 dark:hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 group-hover:-translate-y-0.5">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-primary to-foreground rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-primary/30">
                   <Users className="w-6 h-6 md:w-8 md:h-8 text-white" />
                 </div>
-                <div className="text-xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent mb-2 transition-all duration-500">
+                <div className="text-xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent mb-2 transition-all duration-500">
                   {formatNumber(displayStudentsCount)}
                 </div>
                 <div className="text-sm md:text-base text-muted-foreground font-medium">دانشجو آکادمی</div>
@@ -433,7 +433,7 @@ const Index = () => {
             {/* Enrollments Count */}
             <div className="group relative">
               <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-              <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-green-200/50 dark:border-green-800/30 rounded-2xl p-4 md:p-8 text-center hover:border-green-300/50 dark:hover:border-green-700/50 hover:shadow-2xl hover:shadow-green-500/10 transition-all duration-500 group-hover:scale-105">
+              <div className="relative bg-white/90 dark:bg-card/90 backdrop-blur-sm border border-green-200/50 dark:border-green-800/30 rounded-2xl p-4 md:p-8 text-center hover:border-green-300/50 dark:hover:border-green-700/50 hover:shadow-2xl hover:shadow-green-500/10 transition-all duration-500 group-hover:-translate-y-0.5">
                 <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-green-500/30">
                   <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-white" />
                 </div>
@@ -450,12 +450,12 @@ const Index = () => {
 
             {/* Courses Count - Hidden on mobile */}
             <div className="hidden md:block group relative col-span-2 lg:col-span-1">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-              <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-purple-200/50 dark:border-purple-800/30 rounded-2xl p-4 md:p-8 text-center hover:border-purple-300/50 dark:hover:border-purple-700/50 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-500 group-hover:scale-105">
-                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-purple-500/30">
+              <div className="absolute inset-0 bg-gradient-to-r from-foreground/20 to-foreground/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
+              <div className="relative bg-white/90 dark:bg-card/90 backdrop-blur-sm border border-border/50 dark:border-border/30 rounded-2xl p-4 md:p-8 text-center hover:border-border/50 dark:hover:border-border/50 hover:shadow-2xl hover:shadow-foreground/10 transition-all duration-500 group-hover:-translate-y-0.5">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-foreground to-foreground rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-foreground/10">
                   <Award className="w-6 h-6 md:w-8 md:h-8 text-white" />
                 </div>
-                <div className="text-xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                <div className="text-xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground bg-clip-text text-transparent mb-2">
                   {formatNumber(totalCoursesCount)}
                 </div>
                 <div className="text-sm md:text-base text-muted-foreground font-medium">دوره تخصصی</div>
@@ -468,22 +468,22 @@ const Index = () => {
 
       {/* AI Courses Section */}
       {featuredCourses.length > 0 && (
-        <section className="py-16 md:py-24 bg-gradient-to-br from-blue-50/50 via-background to-blue-100/30 dark:from-blue-950/20 dark:via-background dark:to-blue-900/20 relative overflow-hidden">
+        <section className="py-16 md:py-24 bg-gradient-to-br from-muted/50 via-background to-muted/30 dark:from-foreground/20 dark:via-background dark:to-foreground/20 relative overflow-hidden">
           {/* Glowing background effects */}
           <div className="absolute inset-0">
-            <div className="absolute top-1/4 -left-32 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl"></div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-blue-400/5 to-blue-600/5 rounded-full blur-3xl"></div>
+            <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-foreground/5 to-foreground/5 rounded-full blur-3xl"></div>
           </div>
           
           <div className="container px-4 relative">
             <div className="text-center mb-12 md:mb-20">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-blue-600/10 backdrop-blur-sm rounded-full mb-6 border border-blue-200/20 dark:border-blue-800/20">
-                <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">هوش مصنوعی</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-foreground/10 to-foreground/10 backdrop-blur-sm rounded-full mb-6 border border-border/20 dark:border-border/20">
+                <div className="w-2 h-2 bg-gradient-to-r from-foreground to-foreground rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium bg-gradient-to-r from-foreground to-foreground bg-clip-text text-transparent">هوش مصنوعی</span>
               </div>
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 text-foreground">
-                <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-foreground via-foreground to-foreground bg-clip-text text-transparent">
                   دوره‌های هوش مصنوعی
                 </span>
               </h2>
@@ -575,7 +575,7 @@ const Index = () => {
       )}
 
       {/* Courses CTA Section */}
-      <section className="py-16 md:py-20 bg-gradient-to-br from-slate-50/50 via-background to-gray-50/30 dark:from-slate-950/20 dark:via-background dark:to-gray-950/20 relative overflow-hidden border-y border-border/20">
+      <section className="py-16 md:py-20 bg-gradient-to-br from-muted/50 via-background to-muted/30 dark:from-foreground/20 dark:via-background dark:to-foreground/20 relative overflow-hidden border-y border-border/20">
         {/* Glowing background effects */}
         <div className="absolute inset-0">
           <div className="absolute top-1/2 -left-32 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
@@ -585,12 +585,12 @@ const Index = () => {
         <div className="container px-4 relative">
           <div className="max-w-4xl mx-auto text-center">
             <div className="mb-10">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-blue-500/10 backdrop-blur-sm rounded-full mb-6 border border-primary/20">
-                <div className="w-2 h-2 bg-gradient-to-r from-primary to-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">مجموعه کامل</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/10 to-foreground/10 backdrop-blur-sm rounded-full mb-6 border border-primary/20">
+                <div className="w-2 h-2 bg-gradient-to-r from-primary to-foreground rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent">مجموعه کامل</span>
               </div>
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 text-foreground">
-                <span className="bg-gradient-to-r from-primary via-blue-600 to-primary bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-primary via-foreground to-primary bg-clip-text text-transparent">
                   همه دوره‌های آموزشی
                 </span>
               </h2>
@@ -603,13 +603,13 @@ const Index = () => {
               <Button 
                 asChild 
                 size="lg" 
-                className="w-full sm:w-auto h-14 px-10 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 text-white font-medium shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 group"
+                className="w-full sm:w-auto h-14 px-10 bg-gradient-to-r from-primary to-foreground hover:from-primary/90 hover:to-foreground/90 text-white font-medium shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 group"
               >
                 <Link to="/courses" className="flex items-center gap-2">
                   <span>📚 مشاهده همه دوره‌ها</span>
                 </Link>
               </Button>
-              <div className="flex items-center gap-3 text-sm text-muted-foreground bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm px-4 py-2 rounded-full border border-border/30">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground bg-white/50 dark:bg-card/50 backdrop-blur-sm px-4 py-2 rounded-full border border-border/30">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span>{totalCoursesCount > 0 ? `${totalCoursesCount} دوره تخصصی فعال` : '۳۰+ دوره تخصصی فعال'}</span>
               </div>
@@ -619,23 +619,23 @@ const Index = () => {
       </section>
 
       {/* Magazine CTA Section */}
-      <section className="py-16 md:py-20 bg-gradient-to-br from-purple-50/50 via-background to-pink-50/30 dark:from-purple-950/20 dark:via-background dark:to-pink-950/20 relative overflow-hidden">
+      <section className="py-16 md:py-20 bg-gradient-to-br from-muted/50 via-background to-muted/30 dark:from-foreground/20 dark:via-background dark:to-foreground/20 relative overflow-hidden">
         {/* Glowing background effects */}
         <div className="absolute inset-0">
-          <div className="absolute top-1/2 -left-32 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl"></div>
-          <div className="absolute top-1/2 -right-32 w-64 h-64 bg-pink-500/5 rounded-full blur-3xl"></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-purple-400/5 to-pink-400/5 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 -left-32 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 -right-32 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-foreground/5 to-foreground/5 rounded-full blur-3xl"></div>
         </div>
         
         <div className="container px-4 relative">
           <div className="max-w-4xl mx-auto text-center">
             <div className="mb-10">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-sm rounded-full mb-6 border border-purple-200/20 dark:border-purple-800/20">
-                <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">مطالب ویژه</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-foreground/10 to-foreground/10 backdrop-blur-sm rounded-full mb-6 border border-border/20 dark:border-border/20">
+                <div className="w-2 h-2 bg-gradient-to-r from-foreground to-foreground rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium bg-gradient-to-r from-foreground to-foreground bg-clip-text text-transparent">مطالب ویژه</span>
               </div>
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 text-foreground">
-                <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-foreground via-foreground to-foreground bg-clip-text text-transparent">
                   مجله آکادمی رفیعی
                 </span>
               </h2>
@@ -648,14 +648,14 @@ const Index = () => {
               <Button 
                 asChild 
                 size="lg" 
-                className="w-full sm:w-auto h-14 px-10 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium shadow-xl shadow-purple-500/25 hover:shadow-2xl hover:shadow-purple-500/30 transition-all duration-300 group"
+                className="w-full sm:w-auto h-14 px-10 bg-gradient-to-r from-foreground to-foreground hover:from-foreground hover:to-foreground text-white font-medium shadow-xl shadow-foreground/10 hover:shadow-2xl hover:shadow-foreground/10 transition-all duration-300 group"
               >
                 <Link to="/magazine" className="flex items-center gap-2">
                   <span>📖 مطالعه مجله</span>
                 </Link>
               </Button>
-              <div className="flex items-center gap-3 text-sm text-muted-foreground bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm px-4 py-2 rounded-full border border-purple-200/30 dark:border-purple-800/30">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground bg-white/50 dark:bg-card/50 backdrop-blur-sm px-4 py-2 rounded-full border border-border/30 dark:border-border/30">
+                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
                 <span>مطالب هفتگی جدید</span>
               </div>
             </div>

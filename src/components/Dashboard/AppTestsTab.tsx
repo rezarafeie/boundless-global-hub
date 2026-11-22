@@ -164,9 +164,9 @@ const AppTestsTab: React.FC = () => {
     } else if (enrollment.test_started_at) {
       return <Clock className="h-4 w-4 text-orange-600" />
     } else if (enrollment.enrollment_status === 'ready') {
-      return <PlayCircle className="h-4 w-4 text-blue-600" />
+      return <PlayCircle className="h-4 w-4 text-foreground" />
     }
-    return <Clock className="h-4 w-4 text-gray-400" />
+    return <Clock className="h-4 w-4 text-muted-foreground" />
   }
 
   const getStatusText = (enrollment: UserTestEnrollment) => {
@@ -188,11 +188,11 @@ const AppTestsTab: React.FC = () => {
     } else if (enrollment.test_started_at) {
       return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
     } else if (enrollment.enrollment_status === 'ready') {
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+      return 'bg-muted text-foreground dark:bg-card/20 dark:text-muted-foreground'
     } else if (enrollment.payment_status === 'pending') {
       return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
     }
-    return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+    return 'bg-muted text-foreground dark:bg-card/20 dark:text-muted-foreground'
   }
 
   const handleTestAction = (enrollment: UserTestEnrollment) => {
@@ -272,7 +272,7 @@ const AppTestsTab: React.FC = () => {
           <CardContent className="p-3">
             <div className="text-center">
               <div className="flex items-center justify-center mb-1">
-                <FileText className="h-4 w-4 text-blue-600" />
+                <FileText className="h-4 w-4 text-foreground" />
               </div>
               <p className="text-lg font-bold text-foreground">
                 {enrollments.length}

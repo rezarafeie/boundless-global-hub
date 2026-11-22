@@ -30,7 +30,7 @@ const EnrollHeader: React.FC<EnrollHeaderProps> = ({
                 </Link>
               </Button>
             )}
-            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent">
               {title}
             </h1>
           </div>

@@ -124,7 +124,7 @@ const UserConsultations: React.FC<UserConsultationsProps> = ({ showActiveOnly = 
       case 'cancelled':
         return <Badge variant="destructive">لغو شده</Badge>;
       case 'completed':
-        return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30">انجام شده</Badge>;
+        return <Badge className="bg-primary/10 text-foreground border-border/30">انجام شده</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
