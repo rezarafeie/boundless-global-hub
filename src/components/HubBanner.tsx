@@ -20,7 +20,7 @@ const HubBanner = () => {
               <div className="flex flex-col lg:flex-row items-center gap-8">
                 <div className="flex-1 text-center lg:text-right">
                   <div className="flex items-center justify-center lg:justify-start gap-3 mb-4">
-                    <div className="p-3 rounded-full bg-gradient-to-br from-foreground to-foreground text-white">
+                    <div className="p-3 rounded-full bg-gradient-to-br from-foreground to-foreground text-background">
                       <Network className="w-6 h-6" />
                     </div>
                     <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground via-foreground to-foreground bg-clip-text text-transparent">

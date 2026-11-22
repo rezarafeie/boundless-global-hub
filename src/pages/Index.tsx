@@ -73,8 +73,8 @@ const Index = () => {
     return (
       <div className="bg-muted/30 rounded-lg p-3 mb-4 border border-border/20">
         <div className="flex items-center gap-2 mb-2">
-          <Clock className="h-3 w-3 text-orange-600" />
-          <span className="text-xs font-medium text-orange-700">{label}</span>
+          <Clock className="h-3 w-3 text-foreground" />
+          <span className="text-xs font-medium text-foreground">{label}</span>
         </div>
         <div className="grid grid-cols-4 gap-1 text-center">
           <div className="bg-background/80 rounded p-1">
@@ -225,16 +225,16 @@ const Index = () => {
         icon: Zap
       },
       green: {
-        border: 'border-green-200/50 dark:border-green-800/50',
-        accent: 'from-green-500 to-emerald-500',
-        iconBg: 'from-green-500 to-emerald-600',
-        iconShadow: 'shadow-green-500/25',
-        textGradient: 'from-green-600 to-emerald-600',
-        hover: 'group-hover:text-green-600',
-        buttonBg: 'from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700',
-        buttonShadow: 'shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/25',
-        ghostHover: 'text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/50',
-        shadow: 'group-hover:shadow-green-500/15',
+        border: 'border-border/50 dark:border-border/50',
+        accent: 'from-foreground to-foreground',
+        iconBg: 'from-foreground to-foreground',
+        iconShadow: 'shadow-foreground/10',
+        textGradient: 'from-foreground to-foreground',
+        hover: 'group-hover:text-foreground',
+        buttonBg: 'from-foreground to-foreground hover:from-foreground hover:to-foreground',
+        buttonShadow: 'shadow-foreground/10 hover:shadow-xl hover:shadow-foreground/10',
+        ghostHover: 'text-foreground hover:text-foreground hover:bg-muted dark:hover:bg-card/50',
+        shadow: 'group-hover:shadow-foreground/10',
         icon: Star
       }
     };
@@ -257,7 +257,7 @@ const Index = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
                     <div className={`w-12 h-12 bg-gradient-to-br ${config.iconBg} rounded-xl flex items-center justify-center shadow-lg ${config.iconShadow}`}>
-                      <IconComponent className="w-6 h-6 text-white" />
+                      <IconComponent className="w-6 h-6 text-background" />
                     </div>
                     <div className="flex-1">
                       <h3 className={`text-lg md:text-xl font-bold text-foreground mb-2 ${config.hover} transition-colors`}>
@@ -267,13 +267,13 @@ const Index = () => {
                       {/* Compact badges */}
                       <div className="flex flex-wrap gap-2">
                         {course.price === 0 && (
-                          <Badge className="bg-green-100 text-green-700 text-xs">رایگان</Badge>
+                          <Badge className="bg-muted text-foreground text-xs">رایگان</Badge>
                         )}
                         {isOnPrelaunch && (
-                          <Badge className="bg-orange-100 text-orange-700 text-xs animate-pulse">پیش‌فروش</Badge>
+                          <Badge className="bg-muted text-foreground text-xs animate-pulse">پیش‌فروش</Badge>
                         )}
                         {!isOnPrelaunch && isOnSale && (
-                          <Badge className="bg-red-100 text-red-700 text-xs animate-pulse">تخفیف ویژه</Badge>
+                          <Badge className="bg-muted text-foreground text-xs animate-pulse">تخفیف ویژه</Badge>
                         )}
                       </div>
                     </div>
@@ -314,7 +314,7 @@ const Index = () => {
                   fallbackHref={`/enroll?course=${course.slug}`}
                 >
                   <Button
-                    className={`w-full h-12 bg-gradient-to-r ${config.buttonBg} text-white font-medium shadow-lg ${config.buttonShadow} transition-all duration-300 flex items-center justify-center gap-2`}
+                    className={`w-full h-12 bg-gradient-to-r ${config.buttonBg} text-background font-medium shadow-lg ${config.buttonShadow} transition-all duration-300 flex items-center justify-center gap-2`}
                   >
                     <span>{course.price === 0 ? 'شروع دوره رایگان' : 'ثبت‌نام در دوره'}</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -380,14 +380,14 @@ const Index = () => {
         <BlackFridayBanner endDate={blackFridaySettings.end_date} />
       )}
       
-      <Hero />
+      <Hero ctaText="مشاهده دوره‌ها" ctaLink="/courses" />
       <QuickAccess />
       <IRClassBanner />
       <IranCourseBanner />
       <HubBanner />
 
       {/* Academy Students Statistics Section */}
-      <section className="py-16 md:py-20 bg-gradient-to-br from-primary/5 via-background to-muted/30 dark:from-primary/10 dark:via-background dark:to-foreground/20 relative overflow-hidden">
+      <section className="py-16 md:py-20 relative overflow-hidden">
         {/* Glowing background effects */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
@@ -417,14 +417,14 @@ const Index = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-foreground/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
               <div className="relative bg-white/90 dark:bg-card/90 backdrop-blur-sm border border-primary/20 dark:border-primary/30 rounded-2xl p-4 md:p-8 text-center hover:border-primary/40 dark:hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 group-hover:-translate-y-0.5">
                 <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-primary to-foreground rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-primary/30">
-                  <Users className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                  <Users className="w-6 h-6 md:w-8 md:h-8 text-background" />
                 </div>
                 <div className="text-xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent mb-2 transition-all duration-500">
                   {formatNumber(displayStudentsCount)}
                 </div>
                 <div className="text-sm md:text-base text-muted-foreground font-medium">دانشجو آکادمی</div>
                 <div className="text-xs md:text-sm text-muted-foreground/80 mt-2 flex items-center justify-center gap-1">
-                  <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
+                  <div className="w-1 h-1 bg-primary rounded-full animate-pulse"></div>
                   سراسر جهان
                 </div>
               </div>
@@ -432,17 +432,17 @@ const Index = () => {
 
             {/* Enrollments Count */}
             <div className="group relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
-              <div className="relative bg-white/90 dark:bg-card/90 backdrop-blur-sm border border-green-200/50 dark:border-green-800/30 rounded-2xl p-4 md:p-8 text-center hover:border-green-300/50 dark:hover:border-green-700/50 hover:shadow-2xl hover:shadow-green-500/10 transition-all duration-500 group-hover:-translate-y-0.5">
-                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-green-500/30">
-                  <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-white" />
+              <div className="absolute inset-0 bg-gradient-to-r from-foreground/20 to-foreground/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
+              <div className="relative bg-white/90 dark:bg-card/90 backdrop-blur-sm border border-border/50 dark:border-border/30 rounded-2xl p-4 md:p-8 text-center hover:border-border/50 dark:hover:border-border/50 hover:shadow-2xl hover:shadow-foreground/10 transition-all duration-500 group-hover:-translate-y-0.5">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-foreground to-foreground rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-foreground/10">
+                  <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-background" />
                 </div>
-                <div className="text-xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2 transition-all duration-500">
+                <div className="text-xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground bg-clip-text text-transparent mb-2 transition-all duration-500">
                   {formatNumber(displayEnrollmentsCount)}
                 </div>
                 <div className="text-sm md:text-base text-muted-foreground font-medium">ثبت‌نام موفق</div>
                 <div className="text-xs md:text-sm text-muted-foreground/80 mt-2 flex items-center justify-center gap-1">
-                  <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
+                  <div className="w-1 h-1 bg-primary rounded-full animate-pulse"></div>
                   در تمام دوره‌ها
                 </div>
               </div>
@@ -453,7 +453,7 @@ const Index = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-foreground/20 to-foreground/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
               <div className="relative bg-white/90 dark:bg-card/90 backdrop-blur-sm border border-border/50 dark:border-border/30 rounded-2xl p-4 md:p-8 text-center hover:border-border/50 dark:hover:border-border/50 hover:shadow-2xl hover:shadow-foreground/10 transition-all duration-500 group-hover:-translate-y-0.5">
                 <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-foreground to-foreground rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-foreground/10">
-                  <Award className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                  <Award className="w-6 h-6 md:w-8 md:h-8 text-background" />
                 </div>
                 <div className="text-xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground bg-clip-text text-transparent mb-2">
                   {formatNumber(totalCoursesCount)}
@@ -468,7 +468,7 @@ const Index = () => {
 
       {/* AI Courses Section */}
       {featuredCourses.length > 0 && (
-        <section className="py-16 md:py-24 bg-gradient-to-br from-muted/50 via-background to-muted/30 dark:from-foreground/20 dark:via-background dark:to-foreground/20 relative overflow-hidden">
+        <section className="py-16 md:py-24 relative overflow-hidden">
           {/* Glowing background effects */}
           <div className="absolute inset-0">
             <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
@@ -522,22 +522,22 @@ const Index = () => {
 
       {/* Boundless Courses Section */}
       {boundlessCourses.length > 0 && (
-        <section className="py-16 md:py-24 bg-gradient-to-br from-green-50/50 via-background to-emerald-50/30 dark:from-green-950/20 dark:via-background dark:to-emerald-950/20 relative overflow-hidden">
+        <section className="py-16 md:py-24 relative overflow-hidden">
           {/* Glowing background effects */}
           <div className="absolute inset-0">
-            <div className="absolute top-1/4 -left-32 w-64 h-64 bg-green-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-green-400/5 to-emerald-400/5 rounded-full blur-3xl"></div>
+            <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-foreground/5 to-foreground/5 rounded-full blur-3xl"></div>
           </div>
           
           <div className="container px-4 relative">
             <div className="text-center mb-12 md:mb-20">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-sm rounded-full mb-6 border border-green-200/20 dark:border-green-800/20">
-                <div className="w-2 h-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">بدون مرز</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-foreground/10 to-foreground/10 backdrop-blur-sm rounded-full mb-6 border border-border/20 dark:border-border/20">
+                <div className="w-2 h-2 bg-gradient-to-r from-foreground to-foreground rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium bg-gradient-to-r from-foreground to-foreground bg-clip-text text-transparent">بدون مرز</span>
               </div>
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 text-foreground">
-                <span className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-foreground via-foreground to-foreground bg-clip-text text-transparent">
                   دوره‌های بدون مرز
                 </span>
               </h2>
@@ -575,7 +575,7 @@ const Index = () => {
       )}
 
       {/* Courses CTA Section */}
-      <section className="py-16 md:py-20 bg-gradient-to-br from-muted/50 via-background to-muted/30 dark:from-foreground/20 dark:via-background dark:to-foreground/20 relative overflow-hidden border-y border-border/20">
+      <section className="py-16 md:py-20 relative overflow-hidden border-y border-border/20">
         {/* Glowing background effects */}
         <div className="absolute inset-0">
           <div className="absolute top-1/2 -left-32 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
@@ -603,14 +603,14 @@ const Index = () => {
               <Button 
                 asChild 
                 size="lg" 
-                className="w-full sm:w-auto h-14 px-10 bg-gradient-to-r from-primary to-foreground hover:from-primary/90 hover:to-foreground/90 text-white font-medium shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 group"
+                className="w-full sm:w-auto h-14 px-10 bg-gradient-to-r from-primary to-foreground hover:from-primary/90 hover:to-foreground/90 text-background font-medium shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 group"
               >
                 <Link to="/courses" className="flex items-center gap-2">
                   <span>📚 مشاهده همه دوره‌ها</span>
                 </Link>
               </Button>
               <div className="flex items-center gap-3 text-sm text-muted-foreground bg-white/50 dark:bg-card/50 backdrop-blur-sm px-4 py-2 rounded-full border border-border/30">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
                 <span>{totalCoursesCount > 0 ? `${totalCoursesCount} دوره تخصصی فعال` : '۳۰+ دوره تخصصی فعال'}</span>
               </div>
             </div>
@@ -619,7 +619,7 @@ const Index = () => {
       </section>
 
       {/* Magazine CTA Section */}
-      <section className="py-16 md:py-20 bg-gradient-to-br from-muted/50 via-background to-muted/30 dark:from-foreground/20 dark:via-background dark:to-foreground/20 relative overflow-hidden">
+      <section className="py-16 md:py-20 relative overflow-hidden">
         {/* Glowing background effects */}
         <div className="absolute inset-0">
           <div className="absolute top-1/2 -left-32 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
@@ -648,7 +648,7 @@ const Index = () => {
               <Button 
                 asChild 
                 size="lg" 
-                className="w-full sm:w-auto h-14 px-10 bg-gradient-to-r from-foreground to-foreground hover:from-foreground hover:to-foreground text-white font-medium shadow-xl shadow-foreground/10 hover:shadow-2xl hover:shadow-foreground/10 transition-all duration-300 group"
+                className="w-full sm:w-auto h-14 px-10 bg-gradient-to-r from-foreground to-foreground hover:from-foreground hover:to-foreground text-background font-medium shadow-xl shadow-foreground/10 hover:shadow-2xl hover:shadow-foreground/10 transition-all duration-300 group"
               >
                 <Link to="/magazine" className="flex items-center gap-2">
                   <span>📖 مطالعه مجله</span>
@@ -665,7 +665,7 @@ const Index = () => {
 
       
       {/* Assessment Center Promo */}
-      <section className="py-16 bg-primary/5">
+      <section className="py-16">
         <div className="container">
           <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="w-full md:w-1/2">
