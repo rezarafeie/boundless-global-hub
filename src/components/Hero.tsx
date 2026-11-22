@@ -52,7 +52,7 @@ const Hero: React.FC<HeroProps> = ({ title, subtitle, ctaText, ctaLink }) => {
               <a href={ctaLink} className="inline-flex h-12 items-center rounded-full bg-photo-ink px-8 text-sm font-semibold text-photo-shade transition-all duration-300 hover:opacity-90 active:scale-[0.98]">
                 {ctaText}
               </a>
-              <a href="#founder" className="inline-flex h-12 items-center rounded-full border border-photo-ink/25 bg-photo-ink/10 px-7 text-sm font-semibold backdrop-blur-md transition-colors hover:bg-photo-ink/20">
+              <a href="/reza-rafiei" className="inline-flex h-12 items-center rounded-full border border-photo-ink/25 bg-photo-ink/10 px-7 text-sm font-semibold backdrop-blur-md transition-colors hover:bg-photo-ink/20">
                 {language === 'fa' ? 'درباره من' : 'About me'}
               </a>
             </motion.div>

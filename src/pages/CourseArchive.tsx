@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
-import Hero from "@/components/Hero";
+import { FeaturedCourse, HowItWorks, LifeGallery } from "@/components/Courses/ArchiveSections";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
 import PhotoQuote from "@/components/PhotoQuote";
@@ -174,7 +174,12 @@ const CourseArchive = () => {
         </div>
       </section>
 
-      <section id="courses" className="pb-24 pt-10">
+      <FeaturedCourse />
+
+      <section id="courses" className="pb-8 pt-20">
+        <div className="container mb-8">
+          <h2 className="text-3xl font-extrabold text-foreground md:text-4xl">همه دوره‌ها</h2>
+        </div>
         <div className="container">
           
           {/* Mobile-Optimized Filter Tabs */}
@@ -248,6 +253,8 @@ const CourseArchive = () => {
           )}
         </div>
       </section>
+      <HowItWorks />
+      <LifeGallery />
       <PhotoQuote quote="دانستن کافی نیست؛ چیزی که یاد می‌گیری، فقط وقتی مال توست که با آن زندگی‌ات را عوض کنی." />
     </MainLayout>
   );
