@@ -8,7 +8,6 @@ import PhotoQuote from "@/components/PhotoQuote";
 import { courseImage } from "@/lib/academyImagery";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
-import HubBanner from "@/components/HubBanner";
 import IRClassBanner from "@/components/IRClassBanner";
 import IranCourseBanner from "@/components/IranCourseBanner";
 import { Button } from "@/components/ui/button";
@@ -393,7 +392,6 @@ const Index = () => {
 
       <section className="px-4 pb-4">
         <div className="container mx-auto space-y-4">
-          <HubBanner />
           <IRClassBanner />
           <IranCourseBanner />
         </div>
