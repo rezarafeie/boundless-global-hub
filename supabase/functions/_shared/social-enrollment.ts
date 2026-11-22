@@ -66,6 +66,21 @@ export function renderReply(template: string, values: Record<string, string>): s
   return template.replace(/\{(name|course_title|telegram_link|bale_link|enrollment_link)\}/g, (_, k) => values[k] || '');
 }
 
+export function directActivationLink(activation: any): string {
+  const support = String(activation.support_prefilled_link ?? '');
+  if (!support) throw new Error('لینک پشتیبانی تلگرام ساخته نشد');
+  // Percent-encoded prefilled messages can exceed Instagram's text limit.
+  // The existing bot deep link leads to the same saved support activation.
+  if (support.length <= 800) return support;
+  const deepLink = String(activation.bot_deep_link ?? '');
+  const url = new URL(deepLink);
+  if (url.protocol !== 'https:' || !['telegram.me', 't.me'].includes(url.hostname) ||
+    !activation.activation_token || url.searchParams.get('start') !== `sact_${activation.activation_token}`) {
+    throw new Error('لینک کوتاه فعال‌سازی معتبر نیست');
+  }
+  return deepLink;
+}
+
 export const eligibleFreeCourse = (price: unknown) => price !== null && price !== undefined && Number(price) === 0;
 
 // Form webhooks omit account/form/conversation IDs. Resolve them from the
@@ -261,7 +276,7 @@ export async function processEnrollmentQueue(limit = 10) {
       const activation = await invoke('support-activation-create', { user_id: enrollment.chat_user_id, course_id: course.id, enrollment_id: enrollment.id });
       const token = activation.activation?.activation_token;
       if (!token) throw new Error('کد فعال‌سازی ساخته نشد');
-      const telegramLink = activation.activation.support_prefilled_link;
+      const telegramLink = directActivationLink(activation.activation);
       if (!telegramLink) throw new Error('لینک پشتیبانی تلگرام ساخته نشد');
       // Use the configured support link returned by the website activation flow.
       const reply = renderReply(rule.reply_template, {

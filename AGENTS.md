@@ -8,6 +8,7 @@
 - Lead views share `uniqueCourseLeads` for person/course identity matching after access-scoped loading, because duplicate enrollment records must not inflate lead lists or expose other agents' data.
 - Instagram enrollment automation uses server-only rule and event tables, verified admin sessions, and an authenticated durable webhook queue; enrollment and activation delegate to existing functions so access and notifications follow the website lifecycle.
 - Sparse NovinHub form completions resolve page/form identity through the documented form-response API using exact response and person IDs, then verify the correlated conversation owner before sending; missing email is never fabricated.
+- Long Instagram activation messages use the existing short bot deep link for the same activation token instead of the percent-encoded support prefill URL, preserving the support flow while fitting direct-message limits.
 - Optional-email enrollment stays in create-enrollment, requires a server-only social credential and a server-verified free course, and skips missing-email lookups and recipient email delivery; ordinary website validation remains unchanged.
 - Call center operations reuse the existing gateway and processing functions with server-validated roles and ownership; provider routing stays capture-only until its contract and staged rollout are verified.
 - Call-center scheduled HTTP work requires a server-only credential, never a public API key or client body flag, because it can import private recordings and incur AI costs.

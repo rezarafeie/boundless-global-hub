@@ -1,5 +1,5 @@
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { fieldsFrom, normalizePhone, triggerMatches, renderReply, eligibleFreeCourse, sameFormResponse, ownsConversation } from '../_shared/social-enrollment.ts';
+import { fieldsFrom, normalizePhone, triggerMatches, renderReply, eligibleFreeCourse, sameFormResponse, ownsConversation, directActivationLink } from '../_shared/social-enrollment.ts';
 
 Deno.test('form completion registers only the configured form', () => {
   const rule = { enabled: true, event_type: 'autoform_completed', trigger_value: '123' };
@@ -57,4 +57,15 @@ Deno.test('form recipient must belong to both the configured page and conversati
 });
 Deno.test('name and phone form never fabricates an email', () => {
   assertEquals(fieldsFrom({ messages: [{ text: 'کاربر آزمایش' }, { text: '۰۹۱۲۱۲۳۴۵۶۷' }] }, {}).email, '');
+});
+Deno.test('long prefilled activation uses the same existing bot activation token', () => {
+  const activation = { support_prefilled_link: 'https://telegram.me/rafieiacademy?text=' + 'a'.repeat(1540),
+    activation_token: 'test-token', bot_deep_link: 'https://telegram.me/rafiei_bot?start=sact_test-token' };
+  const link = directActivationLink(activation);
+  assertEquals(link, activation.bot_deep_link);
+  assertEquals(renderReply('{name} عزیز\n{telegram_link}', { name: 'آزمایش', telegram_link: link }).length < 1000, true);
+});
+Deno.test('short support prefill links are preserved', () => {
+  assertEquals(directActivationLink({ support_prefilled_link: 'https://telegram.me/rafieiacademy?text=hello' }),
+    'https://telegram.me/rafieiacademy?text=hello');
 });
