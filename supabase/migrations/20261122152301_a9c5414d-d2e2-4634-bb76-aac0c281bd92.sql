@@ -1,0 +1,1 @@
+update public.social_enrollment_events set status='retry', attempts=0, last_error=null where id='db034756-9e6f-439d-84f3-8b04f2e0ad8d';
