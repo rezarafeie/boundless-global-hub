@@ -4793,6 +4793,174 @@ export type Database = {
           },
         ]
       }
+      hub_auth_limits: {
+        Row: {
+          bucket: string
+          created_at: string
+          hits: string[]
+          updated_at: string
+        }
+        Insert: {
+          bucket: string
+          created_at?: string
+          hits?: string[]
+          updated_at?: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          hits?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hub_auth_readiness: {
+        Row: {
+          created_at: string
+          method: string
+          verified_at: string
+        }
+        Insert: {
+          created_at?: string
+          method: string
+          verified_at: string
+        }
+        Update: {
+          created_at?: string
+          method?: string
+          verified_at?: string
+        }
+        Relationships: []
+      }
+      hub_auth_requests: {
+        Row: {
+          attempts: number
+          channel: string
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          delivered: boolean
+          destination_hash: string
+          expires_at: string
+          id: string
+          user_id: number | null
+          verified_email: string | null
+        }
+        Insert: {
+          attempts?: number
+          channel: string
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          delivered?: boolean
+          destination_hash: string
+          expires_at: string
+          id: string
+          user_id?: number | null
+          verified_email?: string | null
+        }
+        Update: {
+          attempts?: number
+          channel?: string
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          delivered?: boolean
+          destination_hash?: string
+          expires_at?: string
+          id?: string
+          user_id?: number | null
+          verified_email?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hub_auth_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hub_exchange_tickets: {
+        Row: {
+          audience: string
+          authenticated_at: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          ticket_hash: string
+          user_id: number
+        }
+        Insert: {
+          audience: string
+          authenticated_at?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          ticket_hash: string
+          user_id: number
+        }
+        Update: {
+          audience?: string
+          authenticated_at?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          ticket_hash?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hub_exchange_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hub_identity_proofs: {
+        Row: {
+          created_at: string
+          email: string | null
+          email_verified_at: string | null
+          link_authorized_until: string | null
+          phone: string | null
+          phone_verified_at: string | null
+          updated_at: string
+          user_id: number
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          email_verified_at?: string | null
+          link_authorized_until?: string | null
+          phone?: string | null
+          phone_verified_at?: string | null
+          updated_at?: string
+          user_id: number
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          email_verified_at?: string | null
+          link_authorized_until?: string | null
+          phone?: string | null
+          phone_verified_at?: string | null
+          updated_at?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hub_identity_proofs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_logs: {
         Row: {
           course_id: string
@@ -10718,6 +10886,31 @@ export type Database = {
       http_set_curlopt: {
         Args: { curlopt: string; value: string }
         Returns: boolean
+      }
+      hub_auth_exchange: {
+        Args: {
+          p_audience: string
+          p_email_continuation?: boolean
+          p_hash: string
+        }
+        Returns: Json
+      }
+      hub_auth_rate: {
+        Args: {
+          p_bucket: string
+          p_gap?: number
+          p_max: number
+          p_window: number
+        }
+        Returns: boolean
+      }
+      hub_auth_verify: {
+        Args: { p_code_hash: string; p_id: string; p_ticket_hash: string }
+        Returns: Json
+      }
+      hub_link_account: {
+        Args: { p_email: string; p_hub_user_id: string; p_user_id: number }
+        Returns: Json
       }
       hub_resolve_user: {
         Args: { p_email: string; p_hub_user_id: string; p_name: string }
