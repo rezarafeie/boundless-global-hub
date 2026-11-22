@@ -1,3 +1,8 @@
+## Hub shared authentication
+- [ ] Add server-only password/OTP authentication, atomic single-use exchange and proof-bound account linking at the existing Hub endpoint
+- [ ] Verify security limits, conflicts and existing-account history; advertise only live-tested capabilities
+- [ ] Verify real SMS/email delivery and ownership confirmation (requires a consenting recipient)
+
 ## Kavehnegar login documentation
 - [x] Write and validate a reusable Persian Kavehnegar OTP login guide for Rafiei Hub services, covering provider setup, shared API contracts, secure verification, account linking, sessions, errors and acceptance tests
 
