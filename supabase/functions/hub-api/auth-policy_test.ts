@@ -32,3 +32,9 @@ Deno.test('Hub auth verification rejects non-six-digit codes and link rejects ar
   assertThrows(() => parseAuth('auth.otp.verify', { request_id: crypto.randomUUID(), code: '1234', audience: 'rafiei-hub' }));
   assertThrows(() => parseAuth('account.link', { source_user_id: '-1' }));
 });
+Deno.test('Hub account.resolve requires verified email and forbids account creation', () => {
+  assertEquals(parseAuth('account.resolve', { email_verified: true, create_if_missing: false }), { email_verified: true, create_if_missing: false });
+  assertThrows(() => parseAuth('account.resolve', { email_verified: false, create_if_missing: false }));
+  assertThrows(() => parseAuth('account.resolve', { email_verified: true, create_if_missing: true }));
+  assertThrows(() => parseAuth('account.resolve', { email_verified: true, create_if_missing: false, name: 'Name only' }));
+});

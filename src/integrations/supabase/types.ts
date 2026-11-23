@@ -10890,6 +10890,7 @@ export type Database = {
         Args: { curlopt: string; value: string }
         Returns: boolean
       }
+      hub_account_resolve: { Args: { p_email: string }; Returns: Json }
       hub_auth_exchange: {
         Args: {
           p_audience: string
