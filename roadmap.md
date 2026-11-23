@@ -1,5 +1,5 @@
 ## Hub shared authentication
-- [ ] Implement and verify read-only account.resolve, identity_sync capability, and idempotent verified account.link
+- [x] Implement and verify read-only account.resolve, identity_sync capability, and idempotent verified account.link
 - [x] Add server-only password/OTP authentication, atomic single-use exchange and proof-bound account linking at the unchanged Hub endpoint; no implicit account creation or merging
 - [x] Verify hosted HTTP password/exchange/link, concurrent OTP/ticket consumption, replay/expiry, five attempts, hourly sends/resend gap, independent abuse limits and scoped nonempty saved ticket history; advertise only tested methods
 - [x] Complete real email OTP round trip: Gmail sent, user provided fresh code securely, existing account exchanged successfully, OTP/ticket replays both rejected; email_otp true and temporary test code secret deleted

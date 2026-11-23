@@ -71,12 +71,13 @@ Run `deno test supabase/functions/hub-api/hub-policy_test.ts` for contract valid
 
 | عملیات | ورودی | `data` |
 |---|---|---|
-| `auth.capabilities` | `{}` | `{version:1,password,email_otp,sms_otp,session_exchange,account_link}` |
+| `auth.capabilities` | `{}` | `{version:1,password,email_otp,sms_otp,session_exchange,account_link,identity_sync}` |
 | `auth.password` | `{identifier,password,audience:'rafiei-hub'}` | `{exchange_ticket}` |
 | `auth.otp.send` | `{identifier,channel:'email'\|'sms',purpose:'login'}` | `{request_id,expires_in:120,retry_after:60,destination,code_length:6}` |
 | `auth.otp.verify` | `{request_id,code,audience:'rafiei-hub'}` | `{exchange_ticket}` |
 | `auth.exchange` | `{exchange_ticket,audience:'rafiei-hub'}` | مشخصات دقیق حساب زیر |
 | `account.link` | `{source_user_id}` + هدر `X-Hub-User` | `{ok:true}` |
+| `account.resolve` | `{email_verified:true,create_if_missing:false}` + هدر `X-Hub-User` | `{source_user_id,email,email_verified:true,name}` یا `{source_user_id:null}` |
 | `auth.email.send` | `{exchange_ticket,email,audience:'rafiei-hub'}` | قرارداد ارسال OTP؛ ادامهٔ تأیید ایمیل برای حساب شماره‌ای/ایمیل تأییدنشده |
 
 خروجی دقیق تبادل:
@@ -99,6 +100,8 @@ Run `deno test supabase/functions/hub-api/hub-policy_test.ts` for contract valid
 
 ### امنیت و تاریخچه قدیمی
 
+- **Unified Rafiei account:** `account.resolve` فقط ایمیل تأییدشدهٔ هدر هاب را، بدون حساسیت به حروف و فاصله، با حساب موجود تطبیق می‌دهد؛ هرگز با نام تطبیق نمی‌دهد، حساب نمی‌سازد و پیوند نمی‌دهد. حساب ناموجود `{source_user_id:null}` و ایمیل متداخل (چند حساب یا رکورد قدیمی جداگانه) ۴۰۹ می‌گیرد. تکرار `account.link` با همان شناسه هاب بدون تمدید اثبات یا جابه‌جایی تاریخچه موفق است؛ شناسه متفاوت ۴۰۹ است.
+
 - کد شش‌رقمی با مولد امن و HMAC وابسته به شناسه درخواست ذخیره می‌شود؛ کد خام در جدول یا لاگ نیست. انقضا ۱۲۰ ثانیه، فاصله ارسال ۶۰ ثانیه، پنج تلاش و پنج ارسال برای هر مقصد در ساعت است. محدودیت مستقل سراسری ۳۰۰ درخواست احراز هویت در دقیقه، رمز ده درخواست برای هر شناسه در دقیقه و تأیید ۳۰ درخواست برای هر درخواست در دقیقه است؛ سربرگ IP جعلی محدودیت سراسری را دور نمی‌زند.
 - بررسی/مصرف کد و تیکت با قفل ردیف در تراکنش انجام می‌شود؛ دو درخواست هم‌زمان فقط یک موفقیت دارند. تیکت فقط به صورت HMAC، با audience ثابت، ذخیره می‌شود.
 - پیامک از کاوه‌نگار با `KAVENEGAR_API_KEY` و `KAVENEGAR_VERIFY_TEMPLATE` در اسرار همین اپ ارسال می‌شود. الگوی موجود `academylogin` است؛ بدون آزمایش تحویل، آماده معرفی نشده است. ارسال ایمیل از سرویس Gmail موجود آکادمی و قالب OTP موجود استفاده می‌کند؛ سرویس ایمیل جدید یا نشست مشترک ساخته نشده است.
@@ -110,6 +113,7 @@ Run `deno test supabase/functions/hub-api/hub-policy_test.ts` for contract valid
 ### نتیجه آزمون و آمادگی فعلی
 
 - `password`, `session_exchange`, `account_link`: آزمایش HTTP واقعی روی حساب QA مجزا، رمز درست/غلط، تبادل هم‌زمان/مصرف‌شده/منقضی، پیوند متداخل ۴۰۹، نام ثابت و خواندن تاریخچه ذخیره‌شده غیرخالی موفق بود. حساب و داده‌های QA پس از آزمون حذف شدند؛ حساب واقعی هیچ کاربری تکثیر یا ادغام نشد.
+- `identity_sync`: API منتشرشده برای ایمیل موجود (با حروف متفاوت و نام نامرتبط) چهار فیلد مقرر و برای ایمیل ناموجود `null` برگرداند؛ `create_if_missing:true` رد شد. آزمون تراکنشی برگشت‌خورده، پیوند تکراری موفق و پیوند مجدد با شناسه دیگر را ۴۰۹/conflict تأیید کرد و حسابی باقی نگذاشت.
 - کد هم‌زمان، مصرف دوباره، انقضا، سقف پنج تلاش، تغییر شماره، سقف پنج ارسال و فاصله ۶۰ ثانیه با API/توابع واقعی دیتابیس آزمایش شدند.
 - ارسال ایمیل از Gmail موجود، دریافت کد تازه توسط کاربر، تأیید OTP و تبادل هویت حساب واقعی موفق شدند؛ مصرف دوبارهٔ کد و تیکت هر دو ۴۰۱ شدند. کد قبلیِ بیش از ۱۲۰ ثانیه نیز درست رد شده بود. `email_otp:true` است؛ `sms_otp:false` می‌ماند تا ارسال و دریافت واقعی با مقصد مجاز آزمایش شود. مقدار موقت کد آزمایش پس از پایان از اسرار حذف شد.
 - حساب واقعی همان حساب قبلی و دارای ثبت‌نام، پیشرفت، آزمون و پشتیبانی غیرخالی بود. هنوز شناسه واقعی هاب آن حساب ارائه نشده است؛ برای کاربر واقعی پیوند ساختگی ایجاد نشد. دریافت کامل تاریخچه از API هاب پس از `account.link` با شناسه واقعی هاب باید آزمایش شود؛ شمارش دیتابیس به‌تنهایی معادل این آزمایش نیست.
