@@ -842,7 +842,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                       )}
                     </div>
                   )}
-                  <DropdownMenu modal={false}>
+                  <DropdownMenu modal={false} dir="rtl">
                     <DropdownMenuTrigger asChild>
                       <div
                         dir="rtl"
@@ -863,11 +863,11 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                         {message.message && <span className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]" dir="auto">{message.message}</span>}
                         <span className="float-left mr-2 mt-1.5 text-[11px] leading-none select-none opacity-60">
                           {new Date(message.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tehran' })}
-                          {isOwn && <span className="mr-1">{status === 'sending' ? '◷' : status === 'failed' ? '!' : message.is_read ? '✓✓' : '✓'}</span>}
+                          {isOwn && <span className="mr-1">{status === 'sending' ? '◷' : status === 'failed' ? '!' : (message as any).is_read ? '✓✓' : '✓'}</span>}
                         </span>
                       </div>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align={isOwn ? 'start' : 'end'} className="w-52 rounded-xl" dir="rtl">
+                    <DropdownMenuContent align={isOwn ? 'start' : 'end'} className="w-52 rounded-xl text-right">
                       <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground">
                         <Clock className="w-3.5 h-3.5" />
                         {new Date(message.created_at).toLocaleString('fa-IR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Tehran' })}

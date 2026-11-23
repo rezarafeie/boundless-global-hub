@@ -109,3 +109,7 @@
 - [ ] Build the first 30-day Boundless Sales Challenge JSON (waiting on content)
 - [x] Sync challenge onboarding fields and labels with the selected form and match the public form experience
 - [x] Redesign academy (home/courses, enrollment/payment, student panel) — black/white premium glass
+
+- [x] Messenger redesign (Telegram-like) + RTL/dark/tap-menu/input fixes
+- [x] Messenger <-> Telegram two-way sync (private, support, group mentions/replies)
+- [ ] Live Telegram reply round-trip test (needs a real linked account)
