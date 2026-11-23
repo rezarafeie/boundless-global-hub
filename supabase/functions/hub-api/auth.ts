@@ -101,7 +101,8 @@ export async function handleAuth(action: string, body: unknown, req: Request, de
   if (action === 'account.link') {
     const identity = parseHubUser(req.headers.get('X-Hub-User'));
     const result = await check(db.rpc('hub_link_account', { p_user_id: Number(p.source_user_id), p_hub_user_id: identity.hub_user_id, p_email: identity.email }));
-    if (result.error === 'proof_required') throw new HubError(403, 'ابتدا ورود و تبادل حساب را کامل کنید');
+    // The shared-secret-verified X-Hub-User email is the proof; source_user_id must equal account.resolve's result.
+    if (result.error === 'account_mismatch') throw new HubError(403, 'این حساب با ایمیل تأییدشده هاب مطابقت ندارد');
     if (result.error) throw new HubError(409, 'شماره، ایمیل یا پیوند حساب متداخل است؛ ادغام خودکار انجام نمی‌شود');
     await onUser(result.user_id);
     return { ok: true };

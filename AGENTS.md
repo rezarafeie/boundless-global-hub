@@ -1,7 +1,7 @@
 # Project architecture rules
 
 - Hub API uses the contract-approved Supabase edge-function transport, constant-time shared-secret authentication, protected server-only identity mapping, access-scoped action adapters and existing academy lifecycle services; static hosting cannot implement production server routes.
-- Hub authentication uses private HMAC OTP/ticket records and atomic service-only consumption; new linking requires recent exchange evidence, while an identical proven link is idempotent. Read-only identity sync uses only the trusted verified email and rejects ambiguous identities; neither flow creates or merges accounts, so existing ownership cannot be replaced by a header email or name.
+- Hub authentication uses private HMAC OTP/ticket records and atomic service-only consumption; account.link accepts the shared-secret-verified X-Hub-User email as proof only when source_user_id equals the unique account.resolve match for that email, and identical repeats are idempotent; neither flow creates or merges accounts or matches by name, and an existing different binding is never replaced.
 - Hub linking ignores phone-only duplicate rows only when they have no email, Hub binding or verified identity proof; email, bound-owner and proven-phone conflicts remain blocking, and duplicate history is never transferred.
 
 - Rafiei Pay callbacks and reconciliation use the stored payment ID, provider-verified order identity and exact Toman amount; the saved enrollment is reread before success and reused for lifecycle notifications, so callback routing or outages cannot confirm another order or mark pending payments failed.

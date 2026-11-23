@@ -5,7 +5,6 @@ BEGIN
  BEGIN
   INSERT INTO public.chat_users(name,email,phone,signup_source) VALUES('Hub link regression owner','hub-link-owner@example.invalid','09999999101','hub-link-regression') RETURNING id INTO owner_id;
   INSERT INTO public.chat_users(name,email,phone,signup_source) VALUES('Hub phone-only regression',NULL,'+989999999101','hub-link-regression') RETURNING id INTO duplicate_id;
-  INSERT INTO public.hub_identity_proofs(user_id,email,email_verified_at,link_authorized_until) VALUES(owner_id,'hub-link-owner@example.invalid',now(),now()+interval '5 minutes');
   result := public.hub_link_account(owner_id,'hub-link-regression-owner','hub-link-owner@example.invalid');
   IF result->>'ok' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'Unconfirmed phone-only duplicate must not block linking: %',result; END IF;
   IF (SELECT hub_user_id FROM public.chat_users WHERE id=duplicate_id) IS NOT NULL THEN RAISE EXCEPTION 'Duplicate ownership changed'; END IF;
@@ -25,11 +24,13 @@ BEGIN
   result := public.hub_link_account(owner_id,'hub-link-regression-owner','hub-link-owner@example.invalid');
   IF result->>'error' IS DISTINCT FROM 'conflict' THEN RAISE EXCEPTION 'Duplicate email must conflict'; END IF;
   UPDATE public.chat_users SET email=NULL WHERE id=duplicate_id;
-  UPDATE public.chat_users SET hub_user_id=NULL WHERE id=owner_id;
-  result := public.hub_link_account(owner_id,'hub-link-regression-owner','hub-link-owner@example.invalid');
-  IF result->>'error' IS DISTINCT FROM 'proof_required' THEN RAISE EXCEPTION 'New linking must still require recent exchange'; END IF;
+  IF public.hub_resolve_user('hub-link-regression-owner','hub-link-owner@example.invalid','anything')->>'id' IS DISTINCT FROM owner_id::text THEN RAISE EXCEPTION 'Linked mapping must resolve by hub id and email'; END IF;
+  result := public.hub_link_account(duplicate_id,'hub-link-regression-owner','hub-link-owner@example.invalid');
+  IF result->>'error' IS DISTINCT FROM 'account_mismatch' THEN RAISE EXCEPTION 'Source account must match the verified email owner'; END IF;
+  result := public.hub_link_account(owner_id,'hub-link-regression-owner','other@example.invalid');
+  IF result->>'error' IS DISTINCT FROM 'account_mismatch' THEN RAISE EXCEPTION 'A different verified email must not link'; END IF;
   RAISE EXCEPTION USING ERRCODE='ZX001',MESSAGE='rollback successful test fixtures';
  EXCEPTION WHEN SQLSTATE 'ZX001' THEN
-  RAISE NOTICE 'PASS: phone-only duplicate, idempotency, live owner, bound phone, proven phone, duplicate email, recent exchange';
+  RAISE NOTICE 'PASS: phone-only duplicate, idempotency, live owner, bound phone, proven phone, duplicate email, header-email proof, mismatch';
  END;
 END; $$;
