@@ -232,7 +232,7 @@ const ChatSection: React.FC = () => {
         {/* Messages Area */}
         <div 
           ref={chatBoxRef}
-          className="h-[500px] overflow-y-auto bg-slate-800 p-4"
+          className="h-[500px] overflow-y-auto chat-wallpaper p-4"
         >
           {messagesLoading ? (
             <div className="flex items-center justify-center h-full">

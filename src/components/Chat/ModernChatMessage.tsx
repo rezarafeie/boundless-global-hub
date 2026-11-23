@@ -152,8 +152,8 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
           <div
             className={`rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 hover:shadow-md relative ${
               isOwnMessage
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md'
-                : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                ? 'bubble-own rounded-br-md'
+                : 'bubble-other rounded-bl-md'
             } ${!isOwnMessage ? 'cursor-pointer' : ''}`}
             onClick={(e) => {
               e.stopPropagation();
@@ -212,16 +212,16 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
             {(message as any).reply_to_message_id && (
               <div className={`mb-2 p-2 rounded-md border-l-2 ${
                 isOwnMessage 
-                  ? 'bg-blue-600/20 border-blue-300' 
-                  : 'bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600'
+                  ? 'bg-background/15 border-current/30' 
+                  : 'bg-muted border-border'
               }`}>
                 <div className={`text-xs font-medium ${
-                  isOwnMessage ? 'text-blue-100' : 'text-slate-600 dark:text-slate-400'
+                  isOwnMessage ? 'opacity-75' : 'text-muted-foreground'
                 }`}>
                   پاسخ به {(message as any).replied_to?.sender_name || 'کاربر'}
                 </div>
                 <div className={`text-xs mt-1 ${
-                  isOwnMessage ? 'text-blue-100' : 'text-slate-700 dark:text-slate-300'
+                  'opacity-80'
                 }`}>
                   {(message as any).replied_to?.message || 'پیام'}
                 </div>
@@ -230,14 +230,14 @@ const ModernChatMessage: React.FC<ModernChatMessageProps> = ({
             
             {/* Message content */}
             <p className={`text-sm leading-relaxed ${
-              isOwnMessage ? 'text-white' : 'text-slate-800 dark:text-slate-200'
+              ''
             }`}>
               {message.message}
             </p>
             
             {/* Timestamp and Reply Button */}
             <div className={`flex items-center justify-between mt-1.5 text-xs ${
-              isOwnMessage ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'
+              'opacity-60'
             }`}>
               <div className="flex items-center">
                 {!isOwnMessage && (

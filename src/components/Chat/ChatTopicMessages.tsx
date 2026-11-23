@@ -105,7 +105,7 @@ const ChatTopicMessages: React.FC<ChatTopicMessagesProps> = ({
       )}
 
       {/* Regular Messages */}
-      <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-800 p-4 pb-24">
+      <div className="flex-1 overflow-y-auto chat-wallpaper p-4 pb-24">
         {regularMessages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
