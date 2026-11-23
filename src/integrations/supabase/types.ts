@@ -4964,6 +4964,47 @@ export type Database = {
           },
         ]
       }
+      hub_messenger_sends: {
+        Row: {
+          conversation_id: number
+          conversation_kind: string
+          created_at: string
+          idempotency_key: string
+          message_id: number
+          source: string
+          text_hash: string
+          user_id: number
+        }
+        Insert: {
+          conversation_id: number
+          conversation_kind: string
+          created_at?: string
+          idempotency_key: string
+          message_id: number
+          source?: string
+          text_hash: string
+          user_id: number
+        }
+        Update: {
+          conversation_id?: number
+          conversation_kind?: string
+          created_at?: string
+          idempotency_key?: string
+          message_id?: number
+          source?: string
+          text_hash?: string
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hub_messenger_sends_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_logs: {
         Row: {
           course_id: string
@@ -10918,6 +10959,36 @@ export type Database = {
       }
       hub_link_account: {
         Args: { p_email: string; p_hub_user_id: string; p_user_id: number }
+        Returns: Json
+      }
+      hub_msg_can_access: {
+        Args: { p_id: number; p_kind: string; p_user: number }
+        Returns: boolean
+      }
+      hub_msg_conversations: {
+        Args: { p_user: number }
+        Returns: {
+          avatar_url: string
+          id: number
+          kind: string
+          last_activity_at: string
+          peer_id: number
+          status: string
+          title: string
+        }[]
+      }
+      hub_msg_private_start: {
+        Args: { p_target: number; p_user: number }
+        Returns: number
+      }
+      hub_msg_send: {
+        Args: {
+          p_id: number
+          p_key: string
+          p_kind: string
+          p_text: string
+          p_user: number
+        }
         Returns: Json
       }
       hub_resolve_user: {

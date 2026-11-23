@@ -5,8 +5,9 @@ import { buildStatus, completeMission } from '../_shared/gamification.ts';
 import { HubEsanj } from './esanj.ts';
 import { courseCover } from './course-images.ts';
 import { handleAuth } from './auth.ts';
+import { handleMessenger, isMessengerAction, parseMessenger } from './messenger.ts';
 
-const headers = { ...corsHeaders, 'Access-Control-Allow-Headers': `${corsHeaders['Access-Control-Allow-Headers']}, x-hub-user, x-hub-source`, 'Cache-Control': 'no-store', 'Content-Type': 'application/json' };
+const headers = { ...corsHeaders, 'Access-Control-Allow-Headers': `${corsHeaders['Access-Control-Allow-Headers']}, x-hub-user, x-hub-source, idempotency-key`, 'Cache-Control': 'no-store', 'Content-Type': 'application/json' };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
 
 type User = { id: number; email: string; name: string; phone: string | null; hub_user_id: string };
@@ -93,6 +94,14 @@ export async function handleHub(req: Request) {
         user = await checked(db.from('chat_users').select('id,email,name,phone,hub_user_id').eq('id', id).single());
       } });
       return json({ data });
+    }
+    if (isMessengerAction(action)) {
+      const payload = parseMessenger(action, body);
+      const identity = parseHubUser(req.headers.get('X-Hub-User'));
+      const resolved = await db.rpc('hub_resolve_user', { p_hub_user_id: identity.hub_user_id, p_email: identity.email, p_name: identity.name });
+      if (resolved.error || !resolved.data) throw new HubError(409, 'اتصال حساب هاب به پیام‌رسان انجام نشد؛ ابتدا حساب را پیوند دهید');
+      user = resolved.data as User;
+      return json({ data: await handleMessenger(action, payload, req, { db, user: user!, url }) });
     }
     const parsed = parseAction(action, body);
     const p = parsed.payload;
@@ -227,7 +236,8 @@ export async function handleHub(req: Request) {
   } catch (error) {
     status = error instanceof HubError ? error.status : 500;
     outcome = error instanceof HubError ? error.message : 'خطای داخلی سرویس هاب';
-    return json({ data: { error: outcome } }, status);
+    // Top-level error is the messenger contract; data.error keeps the existing academy contract working.
+    return json({ error: outcome, data: { error: outcome } }, status);
   } finally {
     // Log outcomes, not credentials, answer contents, HTML or customer contact details.
     const metadata = { source: 'rafiei-hub', action, result: outcome, status };

@@ -31,7 +31,15 @@ const identitySchema = z.object({
 export function parseHubUser(header: string | null) {
   try {
     if (!header || header.length > 4096) throw new Error();
-    return identitySchema.parse(JSON.parse(decodeURIComponent(header)));
+    const trimmed = header.trim();
+    let raw: string;
+    if (trimmed.startsWith('{') || trimmed.startsWith('%')) raw = decodeURIComponent(trimmed);
+    else {
+      if (!/^[A-Za-z0-9_-]+={0,2}$/.test(trimmed)) throw new Error();
+      const bin = atob(trimmed.replace(/=+$/, '').replace(/-/g, '+').replace(/_/g, '/'));
+      raw = new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+    }
+    return identitySchema.parse(JSON.parse(raw));
   } catch { throw new HubError(400, 'اطلاعات کاربر هاب معتبر نیست'); }
 }
 
