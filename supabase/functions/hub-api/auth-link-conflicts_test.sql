@@ -21,7 +21,7 @@ BEGIN
   result := public.hub_link_account(owner_id,'hub-link-regression-owner','hub-link-owner@example.invalid');
   IF result->>'error' IS DISTINCT FROM 'conflict' THEN RAISE EXCEPTION 'Proven phone owner must conflict'; END IF;
   UPDATE public.hub_identity_proofs SET phone_verified_at=NULL WHERE user_id=duplicate_id;
-  UPDATE public.chat_users SET email='hub-link-owner@example.invalid' WHERE id=duplicate_id;
+  UPDATE public.chat_users SET email=' HUB-LINK-OWNER@example.invalid ' WHERE id=duplicate_id;
   result := public.hub_link_account(owner_id,'hub-link-regression-owner','hub-link-owner@example.invalid');
   IF result->>'error' IS DISTINCT FROM 'conflict' THEN RAISE EXCEPTION 'Duplicate email must conflict'; END IF;
   UPDATE public.chat_users SET email=NULL WHERE id=duplicate_id;
