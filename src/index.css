@@ -240,17 +240,18 @@ img {
 
 @layer utilities {
   .chat-wallpaper {
-    background-color: hsl(var(--muted));
-    background-image: radial-gradient(hsl(var(--foreground) / 0.05) 1px, transparent 1px);
-    background-size: 18px 18px;
+    background-color: hsl(var(--chat-wallpaper));
+    background-image: radial-gradient(120% 80% at 100% 0%, hsl(var(--chat-wallpaper-glow) / 0.55), transparent 60%),
+      radial-gradient(90% 70% at 0% 100%, hsl(var(--chat-wallpaper-glow) / 0.35), transparent 60%);
   }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { scrollbar-width: none; }
 }
 
-:root { --bubble-own: 0 0% 9%; --bubble-own-foreground: 0 0% 100%; --bubble-other: 0 0% 100%; --bubble-other-foreground: 0 0% 9%; }
-.dark { --bubble-own: 0 0% 24%; --bubble-own-foreground: 0 0% 97%; --bubble-other: 0 0% 13%; --bubble-other-foreground: 0 0% 94%; }
+:root { --chat-wallpaper: 40 20% 94%; --chat-wallpaper-glow: 40 30% 99%; --bubble-own: 0 0% 12%; --bubble-own-foreground: 0 0% 100%; --bubble-other: 0 0% 100%; --bubble-other-foreground: 0 0% 9%; --bubble-shadow: 0 0% 0% / 0.08; }
+.dark { --chat-wallpaper: 220 8% 6%; --chat-wallpaper-glow: 220 10% 14%; --bubble-own: 0 0% 92%; --bubble-own-foreground: 0 0% 7%; --bubble-other: 220 6% 18%; --bubble-other-foreground: 0 0% 96%; --bubble-shadow: 0 0% 0% / 0.45; }
 @layer components {
   .bubble-own { background-color: hsl(var(--bubble-own)); color: hsl(var(--bubble-own-foreground)); }
-  .bubble-other { background-color: hsl(var(--bubble-other)); color: hsl(var(--bubble-other-foreground)); border: 1px solid hsl(var(--border) / 0.6); }
+  .bubble-other { background-color: hsl(var(--bubble-other)); color: hsl(var(--bubble-other-foreground)); box-shadow: 0 1px 2px hsl(var(--bubble-shadow)); }
+  .bubble-own { box-shadow: 0 1px 2px hsl(var(--bubble-shadow)); }
 }
