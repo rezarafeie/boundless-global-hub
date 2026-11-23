@@ -237,3 +237,13 @@ img {
   }
   .ease-smooth { transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
 }
+
+@layer utilities {
+  .chat-wallpaper {
+    background-color: hsl(var(--muted));
+    background-image: radial-gradient(hsl(var(--foreground) / 0.05) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+}

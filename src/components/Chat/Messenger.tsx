@@ -33,9 +33,9 @@ const Messenger: React.FC<MessengerProps> = ({ sessionToken, currentUser, onUser
   };
 
   return (
-    <div className="flex h-full w-full">
+    <div className="flex h-full w-full overflow-hidden" dir="rtl">
       {/* Left sidebar - hide on mobile when chat is selected */}
-      <div className={`${isMobile && (selectedRoom || selectedUser) ? 'hidden' : ''} w-full md:w-80 border-r border-border bg-background flex flex-col`}>
+      <div className={`${isMobile && (selectedRoom || selectedUser) ? 'hidden' : ''} w-full md:w-[360px] md:border-l border-border bg-background flex flex-col`}>
         <MessengerInbox
           sessionToken={sessionToken}
           onRoomSelect={handleRoomSelect}
@@ -50,7 +50,7 @@ const Messenger: React.FC<MessengerProps> = ({ sessionToken, currentUser, onUser
       </div>
       
       {/* Right chat view - show on mobile when chat is selected */}
-      <div className={`${isMobile && !(selectedRoom || selectedUser) ? 'hidden' : ''} flex-1 bg-muted min-h-0`}>
+      <div className={`${isMobile && !(selectedRoom || selectedUser) ? 'hidden' : ''} flex-1 min-h-0 min-w-0`}>
         <MessengerChatView
           selectedRoom={selectedRoom}
           selectedUser={selectedUser}

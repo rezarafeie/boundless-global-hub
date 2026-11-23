@@ -233,492 +233,139 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
     onUserSelect(supportUser);
   };
 
+  const fmtTime = (iso?: string) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const now = new Date();
+    const sameDay = d.toLocaleDateString('fa-IR', { timeZone: 'Asia/Tehran' }) === now.toLocaleDateString('fa-IR', { timeZone: 'Asia/Tehran' });
+    return sameDay
+      ? d.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tehran' })
+      : d.toLocaleDateString('fa-IR', { month: 'short', day: 'numeric', timeZone: 'Asia/Tehran' });
+  };
+
+  const openSupport = (supportConv?: any) => {
+    if (supportConv) return handleSupportConversationSelect(supportConv);
+    handleSupportConversationSelect({ conversation_id: undefined });
+  };
+
+  type Row = { key: string; title: string; preview: string; time?: string; unread?: number; avatar?: string; icon?: React.ReactNode; active?: boolean; onClick: () => void };
+  const supportRows: Row[] = filteredSupportConversations.map((c) => ({
+    key: `support-${c.id}`, title: c.name || 'پشتیبانی', preview: c.last_message || 'گفتگوی پشتیبانی', time: c.last_message_time,
+    unread: c.unread_count, icon: <Headphones className="w-5 h-5" />, onClick: () => openSupport(c),
+  }));
+  const groupRows: Row[] = filteredRooms.map((room) => ({
+    key: `room-${room.id}`, title: room.name || 'گروه', preview: room.description || 'گروه', avatar: room.avatar_url,
+    icon: <Users className="w-5 h-5" />, active: selectedRoom?.id === room.id, onClick: () => onRoomSelect(room),
+  }));
+  const privateRows: Row[] = filteredConversations.map((c) => ({
+    key: `pv-${c.id}`, title: c.other_user?.name || c.other_user?.username || 'کاربر', preview: c.last_message?.message || (c.last_message?.media_url ? 'فایل' : 'گفتگوی جدید'),
+    time: c.last_message?.created_at, unread: c.unread_count, avatar: c.other_user?.avatar_url,
+    active: selectedUser?.id === c.other_user?.id,
+    onClick: () => {
+      onUserSelect(c.other_user);
+      if (c.unread_count > 0) { privateMessageService.markMessagesAsRead(c.id, currentUser.id); setTimeout(() => updateConversationsList(), 100); }
+    },
+  }));
+  const sortByTime = (rows: Row[]) => [...rows].sort((a, b) => (b.time ? Date.parse(b.time) : 0) - (a.time ? Date.parse(a.time) : 0));
+  const rows: Row[] = activeTab === 'groups' ? groupRows
+    : activeTab === 'personal' ? sortByTime(privateRows)
+    : activeTab === 'support' ? (supportRows.length ? supportRows : [{ key: 'support-new', title: 'پشتیبانی', preview: 'راهنمایی و پشتیبانی', icon: <Headphones className="w-5 h-5" />, onClick: () => openSupport() }])
+    : [...sortByTime([...supportRows, ...privateRows]), ...groupRows];
+
+  const tabs = [
+    { id: 'all', label: 'همه' },
+    { id: 'personal', label: 'شخصی' },
+    { id: 'groups', label: 'گروه‌ها' },
+    { id: 'support', label: 'پشتیبانی' },
+  ];
+
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-slate-800">
-      {/* Header */}
-      <div className="p-3 sm:p-4 border-b border-slate-200 dark:border-slate-700">
-        <div className="flex items-center justify-between mb-4">
+    <div className="h-full flex flex-col bg-background" dir="rtl">
+      <div className="px-4 pt-3 pb-2 border-b border-border/60 bg-background/80 backdrop-blur-xl sticky top-0 z-10">
+        <div className="flex items-center justify-between h-11">
+          <Button size="icon" variant="ghost" onClick={() => navigate('/profile')} className="h-9 w-9 rounded-full" aria-label="پروفایل">
+            <User className="w-5 h-5" />
+          </Button>
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isOffline ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`} 
-                 title={isOffline ? 'آفلاین' : 'متصل'}></div>
-            <MessageCircle className={`w-5 h-5 sm:w-6 sm:h-6 ${isOffline ? 'text-red-500' : 'text-blue-500'}`} />
+            <h1 className="text-lg font-bold tracking-tight">پیام‌ها</h1>
+            <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-destructive' : 'bg-primary/70'}`} title={isOffline ? 'آفلاین' : 'متصل'} />
           </div>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => navigate('/profile')}
-              className="h-8 w-8 p-0"
-            >
-              <User className="w-5 h-5" />
-            </Button>
-            
-            <Button
-              size="sm"
-              onClick={handleStartChat}
-              className="h-8 w-8 p-0"
-            >
-              <Plus className="w-5 h-5" />
-            </Button>
-          </div>
+          <Button size="icon" variant="ghost" onClick={handleStartChat} className="h-9 w-9 rounded-full" aria-label="گفتگوی جدید">
+            <Plus className="w-5 h-5" />
+          </Button>
         </div>
-        
-        <div className="relative">
-          <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+        <div className="relative mt-2">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             ref={searchInputRef}
-            placeholder={isOffline ? "جستجو آفلاین..." : "جستجو در گفتگوها..."}
+            placeholder={isOffline ? 'جستجو آفلاین...' : 'جستجو'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-10 text-sm"
+            className="pr-9 h-9 text-sm rounded-full bg-muted border-0 focus-visible:ring-1"
             dir="rtl"
-            disabled={isOffline && (!conversations.length && !rooms.length && !filteredSupportConversations.length)}
           />
         </div>
-        
-        {/* Chat Tabs */}
-        <div className="mt-4">
-          <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
-            <TabsList className="grid w-full grid-cols-4 bg-transparent rounded-none h-auto p-0" style={{ border: 'none' }}>
-              <TabsTrigger 
-                value="all" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent bg-transparent shadow-none"
-              >
-                همه
-              </TabsTrigger>
-              <TabsTrigger 
-                value="personal"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent bg-transparent shadow-none"
-              >
-                شخصی
-              </TabsTrigger>
-              <TabsTrigger 
-                value="groups"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent bg-transparent shadow-none"
-              >
-                گروه‌ها
-              </TabsTrigger>
-              <TabsTrigger 
-                value="support"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent bg-transparent shadow-none"
-              >
-                پشتیبانی
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+        <div className="flex gap-1 mt-3 overflow-x-auto no-scrollbar">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`px-3.5 h-8 rounded-full text-sm whitespace-nowrap transition-colors ${activeTab === t.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Chat List */}
       <ScrollArea className="flex-1">
-        <div className="p-2" dir="rtl">
+        <div className="py-1">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-sm text-muted-foreground">در حال بارگذاری...</div>
+            [...Array(6)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
+                <div className="flex-1 space-y-2"><div className="h-3 w-1/2 bg-muted rounded animate-pulse" /><div className="h-3 w-3/4 bg-muted rounded animate-pulse" /></div>
+              </div>
+            ))
+          ) : rows.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+              {isOffline ? <WifiOff className="w-10 h-10 text-muted-foreground mb-3" /> : <MessageCircle className="w-10 h-10 text-muted-foreground mb-3" />}
+              <p className="text-sm text-muted-foreground">{searchTerm ? 'نتیجه‌ای یافت نشد' : 'هنوز گفتگویی ندارید'}</p>
+              {!isOffline && <Button variant="outline" size="sm" onClick={handleStartChat} className="mt-4 rounded-full">شروع گفتگو</Button>}
             </div>
           ) : (
-            <>
-              {/* All Chats - Show everything */}
-              {activeTab === 'all' && (
-                <>
-                  {/* Support Conversations */}
-                  {filteredSupportConversations.length > 0 && (
-                    <div className="mb-4 space-y-1">
-                      {filteredSupportConversations.map((supportConv) => (
-                        <div
-                          key={`support-${supportConv.id}`}
-                          onClick={() => handleSupportConversationSelect(supportConv)}
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-muted h-[64px]"
-                        >
-                          <Avatar className="w-10 h-10 shrink-0">
-                            <AvatarFallback 
-                              style={{ backgroundColor: '#3B82F6' }}
-                              className="text-white font-medium"
-                            >
-                              <Headphones className="w-5 h-5" />
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0 overflow-hidden">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="text-sm font-medium truncate text-right text-foreground flex-1 min-w-0">{supportConv.name || 'پشتیبانی'}</p>
-                              <div className="flex items-center gap-2 shrink-0">
-                                {supportConv.unread_count > 0 && (
-                                  <div className="bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
-                                    {supportConv.unread_count > 99 ? "99+" : supportConv.unread_count}
-                                  </div>
-                                )}
-                                {supportConv.last_message_time && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {new Date(supportConv.last_message_time).toLocaleTimeString("fa-IR", {
-                                      hour: "2-digit",
-                                      minute: "2-digit"
-                                    })}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <p className="text-xs text-muted-foreground text-right truncate">
-                              {supportConv.last_message || "گفتگوی پشتیبانی"}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Group Rooms */}
-                  {filteredRooms.length > 0 && (
-                    <div className="mb-4 space-y-1">
-                      {filteredRooms.map((room) => (
-                        <div
-                          key={room.id}
-                          onClick={() => onRoomSelect(room)}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors h-[64px] ${
-                            selectedRoom?.id === room.id
-                              ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
-                              : 'hover:bg-muted'
-                          }`}
-                        >
-                          <Avatar className="w-10 h-10 shrink-0">
-                            <AvatarImage src={room.avatar_url} alt={room.name} />
-                            <AvatarFallback 
-                              style={{ backgroundColor: getAvatarColor(room.name || 'G') }}
-                              className="text-white font-medium"
-                            >
-                              {(room.name || 'G').charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0 overflow-hidden">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="text-sm font-medium truncate text-right text-foreground flex-1 min-w-0">{room.name || 'گروه'}</p>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <span className="text-xs text-muted-foreground">
-                                  گروه
-                                </span>
-                              </div>
-                            </div>
-                            {room.description && (
-                              <p className="text-xs text-muted-foreground truncate text-right">
-                                {room.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Private Conversations */}
-                  {filteredConversations.length > 0 && (
-                    <div className="mb-4 space-y-1">
-                      {filteredConversations.map((conversation) => (
-                        <div
-                          key={conversation.id}
-                          onClick={() => {
-                            onUserSelect(conversation.other_user);
-                            // Mark conversation as read when opened
-                            if (conversation.unread_count && conversation.unread_count > 0) {
-                              privateMessageService.markMessagesAsRead(conversation.id, currentUser.id);
-                              // Update conversations to remove unread count
-                              setTimeout(() => updateConversationsList(), 100);
-                            }
-                          }}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors relative h-[64px] ${
-                            selectedUser?.id === conversation.other_user?.id
-                              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-                              : 'hover:bg-muted'
-                          }`}
-                        >
-                          <Avatar className="w-10 h-10 shrink-0">
-                            <AvatarImage 
-                              src={conversation.other_user?.avatar_url} 
-                              alt={conversation.other_user?.name}
-                            />
-                            <AvatarFallback 
-                              style={{ backgroundColor: getAvatarColor(conversation.other_user?.name || 'U') }}
-                              className="text-white font-medium"
-                            >
-                              {conversation.other_user?.name?.charAt(0) || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0 overflow-hidden">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="text-sm font-medium truncate text-right text-foreground flex-1 min-w-0">
-                                {conversation.other_user?.name || conversation.other_user?.username || "کاربر نامشخص"}
-                              </p>
-                              <div className="flex items-center gap-2 shrink-0">
-                                {conversation.unread_count > 0 && (
-                                  <div className="bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
-                                    {conversation.unread_count > 99 ? "99+" : conversation.unread_count}
-                                  </div>
-                                )}
-                                {conversation.last_message && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {new Date(conversation.last_message.created_at).toLocaleTimeString("fa-IR", {
-                                      hour: "2-digit",
-                                      minute: "2-digit"
-                                    })}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <p className="text-xs text-muted-foreground text-right truncate">
-                              {conversation.last_message?.message || "آخرین پیام..."}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                </>
-              )}
-
-              {/* Group Rooms Tab */}
-              {activeTab === 'groups' && filteredRooms.length > 0 && (
-                <div className="mb-4 space-y-1">
-                  {filteredRooms.map((room) => (
-                    <div
-                      key={room.id}
-                      onClick={() => onRoomSelect(room)}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors h-[64px] ${
-                        selectedRoom?.id === room.id
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
-                          : 'hover:bg-muted'
-                      }`}
-                    >
-                      <Avatar className="w-10 h-10 shrink-0">
-                        <AvatarImage src={room.avatar_url} alt={room.name} />
-                        <AvatarFallback 
-                          style={{ backgroundColor: getAvatarColor(room.name || 'G') }}
-                          className="text-white font-medium"
-                        >
-                          {(room.name || 'G').charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0 overflow-hidden">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-medium truncate text-right text-foreground flex-1 min-w-0">{room.name || 'گروه'}</p>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-xs text-muted-foreground">
-                              گروه
-                            </span>
-                          </div>
-                        </div>
-                        {room.description && (
-                          <p className="text-xs text-muted-foreground truncate text-right">
-                            {room.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Private Conversations Tab */}
-              {activeTab === 'personal' && filteredConversations.length > 0 && (
-                <div className="mb-4 space-y-1">
-                  {filteredConversations.map((conversation) => (
-                    <div
-                      key={conversation.id}
-                      onClick={() => {
-                        onUserSelect(conversation.other_user);
-                        if (conversation.unread_count && conversation.unread_count > 0) {
-                          privateMessageService.markMessagesAsRead(conversation.id, currentUser.id);
-                          setTimeout(() => updateConversationsList(), 100);
-                        }
-                      }}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors relative h-[64px] ${
-                        selectedUser?.id === conversation.other_user?.id
-                          ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-                          : 'hover:bg-muted'
-                      }`}
-                    >
-                      <Avatar className="w-10 h-10 shrink-0">
-                        <AvatarImage 
-                          src={conversation.other_user?.avatar_url} 
-                          alt={conversation.other_user?.name}
-                        />
-                        <AvatarFallback 
-                          style={{ backgroundColor: getAvatarColor(conversation.other_user?.name || 'U') }}
-                          className="text-white font-medium"
-                        >
-                          {conversation.other_user?.name?.charAt(0) || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0 overflow-hidden">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-medium truncate text-right text-foreground flex-1 min-w-0">
-                            {conversation.other_user?.name || conversation.other_user?.username || "کاربر نامشخص"}
-                          </p>
-                          <div className="flex items-center gap-2 shrink-0">
-                            {conversation.unread_count > 0 && (
-                              <div className="bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
-                                {conversation.unread_count > 99 ? "99+" : conversation.unread_count}
-                              </div>
-                            )}
-                            {conversation.last_message && (
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(conversation.last_message.created_at).toLocaleTimeString("fa-IR", {
-                                  hour: "2-digit",
-                                  minute: "2-digit"
-                                })}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground text-right truncate">
-                          {conversation.last_message?.message || "آخرین پیام..."}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Support Conversations Tab */}
-              {activeTab === 'support' && (
-                <div className="mb-4 space-y-1">
-                  {filteredSupportConversations.length > 0 ? (
-                    filteredSupportConversations.map((supportConv) => (
-                      <div
-                        key={`support-${supportConv.id}`}
-                        onClick={() => handleSupportConversationSelect(supportConv)}
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-muted h-[64px]"
-                      >
-                        <Avatar className="w-10 h-10 shrink-0">
-                          <AvatarFallback 
-                            style={{ backgroundColor: '#3B82F6' }}
-                            className="text-white font-medium"
-                          >
-                            <Headphones className="w-5 h-5" />
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0 overflow-hidden">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-medium truncate text-right text-foreground flex-1 min-w-0">{supportConv.name || 'پشتیبانی'}</p>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {supportConv.unread_count > 0 && (
-                                <div className="bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">
-                                  {supportConv.unread_count > 99 ? "99+" : supportConv.unread_count}
-                                </div>
-                              )}
-                              {supportConv.last_message_time && (
-                                <span className="text-xs text-muted-foreground">
-                                  {new Date(supportConv.last_message_time).toLocaleTimeString("fa-IR", {
-                                    hour: "2-digit",
-                                    minute: "2-digit"
-                                  })}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <p className="text-xs text-muted-foreground text-right truncate">
-                            {supportConv.last_message || "گفتگوی پشتیبانی"}
-                          </p>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div
-                      onClick={() => {
-                        const supportUser = {
-                          id: 1,
-                          name: 'پشتیبانی',
-                          username: 'support',
-                          phone: '',
-                          is_approved: true,
-                          is_support_agent: true,
-                          is_messenger_admin: false,
-                          bedoun_marz: false,
-                          bedoun_marz_approved: false,
-                          bedoun_marz_request: false,
-                          created_at: new Date().toISOString(),
-                          updated_at: new Date().toISOString(),
-                          last_seen: new Date().toISOString(),
-                          role: 'support',
-                          email: null,
-                          user_id: null,
-                          first_name: null,
-                          last_name: null,
-                          full_name: null,
-                          country_code: null,
-                          signup_source: null,
-                          bio: null,
-                          notification_enabled: true,
-                          notification_token: null,
-                          password_hash: null,
-                          avatar_url: null
-                        };
-                        onUserSelect(supportUser);
-                      }}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-muted h-[64px]"
-                    >
-                      <Avatar className="w-10 h-10 shrink-0">
-                        <AvatarFallback 
-                          style={{ backgroundColor: '#3B82F6' }}
-                          className="text-white font-medium"
-                        >
-                          <Headphones className="w-5 h-5" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0 text-right overflow-hidden">
-                        <p className="text-sm font-medium text-foreground truncate">پشتیبانی</p>
-                        <p className="text-xs text-muted-foreground text-right truncate">
-                          راهنمایی و پشتیبانی
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-
-              {/* No Results */}
-              {!loading && (
-                (activeTab === 'all' && filteredRooms.length === 0 && filteredConversations.length === 0 && filteredSupportConversations.length === 0) ||
-                (activeTab === 'groups' && filteredRooms.length === 0) ||
-                (activeTab === 'personal' && filteredConversations.length === 0) ||
-                (activeTab === 'support' && filteredSupportConversations.length === 0)
-              ) && (
-                <div className="flex items-center justify-center py-8 px-4">
-                  <div className="text-center">
-                    {isOffline ? (
-                      <WifiOff className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                    ) : (
-                      <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                    )}
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {isOffline 
-                        ? (searchTerm ? 'در حالت آفلاین یافت نشد' : 'در حالت آفلاین')
-                        : (searchTerm ? 'نتیجه‌ای یافت نشد' : 'گفتگویی موجود نیست')
-                      }
-                    </p>
-                    {isOffline && (
-                      <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">
-                        چت‌ها پس از اتصال مجدد به‌روزرسانی می‌شوند
-                      </p>
-                    )}
-                    {!isOffline && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleStartChat}
-                        className="mt-3"
-                      >
-                        شروع گفتگوی جدید
-                      </Button>
+            rows.map((r) => (
+              <button
+                key={r.key}
+                onClick={r.onClick}
+                className={`w-full flex items-center gap-3 px-3 py-2 mx-0 text-right transition-colors ${r.active ? 'bg-accent' : 'hover:bg-muted/70 active:bg-muted'}`}
+              >
+                <Avatar className="w-12 h-12 shrink-0">
+                  {r.avatar && <AvatarImage src={r.avatar} alt={r.title} />}
+                  <AvatarFallback className="bg-muted text-foreground font-semibold">
+                    {r.icon && !r.avatar ? r.icon : r.title.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0 border-b border-border/50 pb-2 pt-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[15px] font-semibold truncate">{r.title}</p>
+                    <span className={`text-xs shrink-0 ${r.unread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>{fmtTime(r.time)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 mt-0.5">
+                    <p className="text-sm text-muted-foreground truncate">{r.preview}</p>
+                    {r.unread > 0 && (
+                      <span className="shrink-0 bg-primary text-primary-foreground text-[11px] font-semibold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center">
+                        {r.unread > 99 ? '99+' : r.unread}
+                      </span>
                     )}
                   </div>
                 </div>
-              )}
-            </>
+              </button>
+            ))
           )}
         </div>
       </ScrollArea>
 
-      {/* Start Chat Modal */}
       <StartChatModal
         isOpen={showStartChatModal}
         onClose={() => setShowStartChatModal(false)}

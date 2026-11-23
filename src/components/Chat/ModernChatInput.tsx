@@ -165,19 +165,19 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
   const isMessageValid = message.trim().length > 0;
 
   return (
-    <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 p-3 safe-area-padding-bottom">
+    <div className="bg-background/85 backdrop-blur-xl border-t border-border/60 px-2 py-2" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}>
       {/* Reply Preview */}
       {replyingTo && (
-        <div className="max-w-6xl mx-auto mb-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-500 animate-fade-in"
+        <div className="max-w-6xl mx-auto mb-2 px-3 py-2 bg-muted rounded-xl border-r-4 border-primary animate-fade-in"
              style={{
                animation: 'slideDown 0.3s ease-out'
              }}>
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <div className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">
+              <div className="text-xs text-foreground font-semibold mb-0.5">
                 پاسخ به {replyingTo.sender_name}
               </div>
-              <div className="text-sm text-slate-600 dark:text-slate-300 truncate">
+              <div className="text-sm text-muted-foreground truncate">
                 {replyingTo.message}
               </div>
             </div>
@@ -185,7 +185,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => setReplyingTo(null)}
-              className="h-6 w-6 p-0 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              className="h-6 w-6 p-0 text-muted-foreground"
             >
               <X className="w-4 h-4" />
             </Button>
@@ -213,7 +213,7 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="پیام..."
-            className="resize-none border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl px-3 py-2 pr-10 min-h-[40px] max-h-32 text-right focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-150 text-sm"
+            className="resize-none border-0 bg-muted rounded-3xl px-4 py-2.5 pl-10 min-h-[42px] max-h-32 text-right focus-visible:ring-1 text-[15px]"
             disabled={disabled}
             rows={1}
             dir="rtl"
@@ -228,13 +228,11 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
           type="submit"
           disabled={!isMessageValid || disabled}
           size="sm"
-          className={`rounded-xl h-10 w-10 p-0 transition-all duration-150 flex-shrink-0 transform active:scale-95 ${
-            isMessageValid && !disabled
-              ? 'bg-blue-500 hover:bg-blue-600 text-white hover:scale-105'
-              : 'bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400'
+          className={`rounded-full h-[42px] w-[42px] p-0 transition-all duration-150 flex-shrink-0 active:scale-95 ${
+            isMessageValid && !disabled ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
           }`}
         >
-          <Send className="w-4 h-4" />
+          <Send className="w-[18px] h-[18px] -scale-x-100" />
         </Button>
       </form>
     </div>

@@ -737,292 +737,139 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     }
   };
 
-  const getAvatarColor = (name: string) => {
-    const colors = ['#F59E0B', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#F97316'];
-    const index = name.charCodeAt(0) % colors.length;
-    return colors[index];
-  };
-
   const chatTitle = selectedRoom ? selectedRoom.name : selectedUser?.name || '';
   const chatDescription = selectedRoom ? selectedRoom.description : '';
+  const dayKey = (iso: string) => new Date(iso).toLocaleDateString('fa-IR', { timeZone: 'Asia/Tehran' });
+  const dayLabel = (iso: string) => {
+    const today = dayKey(new Date().toISOString());
+    const yesterday = dayKey(new Date(Date.now() - 86400000).toISOString());
+    const k = dayKey(iso);
+    if (k === today) return 'امروز';
+    if (k === yesterday) return 'دیروز';
+    return new Date(iso).toLocaleDateString('fa-IR', { day: 'numeric', month: 'long', timeZone: 'Asia/Tehran' });
+  };
+  const mediaInfo = (message: any) => {
+    try { return message.media_content ? JSON.parse(message.media_content) : {}; } catch { return {}; }
+  };
 
   if (!selectedRoom && !selectedUser) {
     return (
-      <div className="flex items-center justify-center h-full bg-slate-50 dark:bg-slate-900">
-        <div className="text-center">
-          <Users className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-500 dark:text-slate-400 mb-2">
-            یک گفتگو انتخاب کنید
-          </p>
-          <p className="text-sm text-slate-400">
-            از لیست سمت چپ یک گفتگو یا گروه انتخاب کنید
-          </p>
-        </div>
+      <div className="flex items-center justify-center h-full chat-wallpaper">
+        <span className="px-4 py-1.5 rounded-full glass text-sm text-muted-foreground">یک گفتگو را انتخاب کنید</span>
       </div>
     );
   }
+
+  const header = (subtitle: React.ReactNode, onBackClick: () => void, showAvatar = true) => (
+    <div className="flex items-center gap-2 px-2 h-14 border-b border-border/60 bg-background/80 backdrop-blur-xl flex-shrink-0 z-10" dir="rtl">
+      <Button variant="ghost" size="icon" onClick={onBackClick} className="h-9 w-9 rounded-full shrink-0" aria-label="بازگشت">
+        <ArrowLeft className="w-5 h-5 rotate-180" />
+      </Button>
+      {showAvatar && (
+        <Avatar className="w-10 h-10 cursor-pointer" onClick={() => { if (selectedUser) { setProfileUser(selectedUser); setShowUserProfile(true); } }}>
+          <AvatarImage src={selectedUser?.avatar_url || selectedRoom?.avatar_url} alt={chatTitle} />
+          <AvatarFallback className="bg-muted text-foreground font-semibold">{chatTitle.charAt(0)}</AvatarFallback>
+        </Avatar>
+      )}
+      <div className="flex-1 min-w-0 cursor-pointer" onClick={selectedUser ? () => { setProfileUser(selectedUser); setShowUserProfile(true); } : undefined}>
+        <h3 className="font-semibold text-[15px] truncate">
+          {selectedTopic && (selectedTopic as any).icon && <span className="ml-1">{(selectedTopic as any).icon}</span>}
+          {selectedTopic ? `${chatTitle} · ${selectedTopic.title}` : chatTitle}
+        </h3>
+        <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+      </div>
+    </div>
+  );
 
   if (selectedRoom?.is_super_group && !selectedTopic) {
     return (
-      <div className="h-full flex flex-col bg-white dark:bg-slate-800">
-        <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
-          <Button variant="ghost" size="sm" onClick={onBackToRooms} className="flex-shrink-0">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          
-          <Avatar className="w-10 h-10">
-            <AvatarImage src={selectedRoom.avatar_url} alt={selectedRoom.name} />
-            <AvatarFallback 
-              style={{ backgroundColor: getAvatarColor(selectedRoom.name) }}
-              className="text-white font-medium"
-            >
-              {selectedRoom.name.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1">
-            <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-              <Crown className="w-5 h-5 text-yellow-600" />
-              {selectedRoom.name}
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              موضوعی را برای شروع گفتگو انتخاب کنید
-            </p>
-          </div>
-        </div>
-
-        <div className="flex-1 p-6">
-          <SuperGroupTopicSelection 
-            roomId={selectedRoom.id}
-            onTopicSelect={setSelectedTopic}
-          />
-        </div>
+      <div className="h-full flex flex-col bg-background">
+        {header('یک موضوع را انتخاب کنید', onBackToRooms)}
+        <div className="flex-1 p-4 overflow-y-auto"><SuperGroupTopicSelection roomId={selectedRoom.id} onTopicSelect={setSelectedTopic} /></div>
       </div>
     );
   }
 
+  const subtitle = !isConnected ? 'در حال اتصال...' : selectedRoom ? (selectedTopic?.description || chatDescription || 'گروه') : selectedUser?.id === 1 ? 'پشتیبانی آکادمی' : 'آنلاین در پیام‌رسان';
+
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-slate-800">
-      {/* Header with connection status */}
-      <div className="flex items-center gap-3 p-2 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
-        <Button variant="ghost" size="sm" onClick={selectedTopic ? () => setSelectedTopic(null) : (onBack || onBackToRooms)} className="flex-shrink-0">
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
-        
-        {!(selectedRoom?.is_super_group && selectedTopic) && (
-          <Avatar 
-            className="w-8 h-8 cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => {
-              if (selectedUser) {
-                setProfileUser(selectedUser);
-                setShowUserProfile(true);
-              }
-            }}
-          >
-            <AvatarImage src={selectedUser?.avatar_url || selectedRoom?.avatar_url} alt={chatTitle} />
-            <AvatarFallback 
-              style={{ backgroundColor: getAvatarColor(chatTitle) }}
-              className="text-white font-medium"
-            >
-              {chatTitle.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-        )}
-          
-        <div 
-          className={`flex-1 ${isMobile && onBack ? 'cursor-pointer' : selectedUser ? 'cursor-pointer' : ''}`}
-          onClick={isMobile && onBack ? onBack : selectedUser ? () => {
-            setProfileUser(selectedUser);
-            setShowUserProfile(true);
-          } : undefined}
-        >
-          <div className="flex items-center gap-2">
-            <h3 className="font-medium text-slate-900 dark:text-white flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              {selectedTopic && (selectedTopic as any).icon && <span className="text-lg">{(selectedTopic as any).icon}</span>}
-              {selectedTopic ? `${chatTitle} - ${selectedTopic.title}` : 
-               selectedUser && selectedUser.id !== 1 ? selectedUser.name : chatTitle}
-            </h3>
-            
-            {/* Connection status indicator */}
-            <div className="flex items-center gap-1">
-              {isConnected ? (
-                <Wifi className="w-3 h-3 text-green-500" />
-              ) : (
-                <WifiOff className="w-3 h-3 text-red-500" />
-              )}
-            </div>
-          </div>
-          {selectedRoom && chatDescription && (
-            <p className="text-sm text-slate-500 dark:text-slate-400">{chatDescription}</p>
-          )}
-          {selectedTopic?.description && (
-            <p className="text-xs text-slate-400">{selectedTopic.description}</p>
-          )}
-        </div>
-      </div>
+    <div className="h-full flex flex-col bg-background">
+      {header(subtitle, selectedTopic ? () => setSelectedTopic(null) : (onBack || onBackToRooms))}
 
       {messageLoadError && (
-        <div className="bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800 p-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-red-700 dark:text-red-300">
-              خطا در بارگذاری پیام‌ها: {messageLoadError}
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleManualRefresh}
-              disabled={loading}
-            >
-              تلاش مجدد
-            </Button>
-          </div>
+        <div className="bg-destructive/10 border-b border-destructive/20 px-3 py-2 flex items-center justify-between" dir="rtl">
+          <p className="text-sm text-destructive">پیام‌ها بارگذاری نشد</p>
+          <Button variant="outline" size="sm" onClick={handleManualRefresh} disabled={loading}>تلاش مجدد</Button>
         </div>
       )}
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" id="messages-container">
+      <div className="flex-1 overflow-y-auto px-3 py-3 min-h-0 chat-wallpaper" id="messages-container">
         {loading ? (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <MessageSkeleton key={i} />
-            ))}
-          </div>
+          <div className="space-y-4">{[...Array(5)].map((_, i) => <MessageSkeleton key={i} />)}</div>
         ) : messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <Users className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-              <p className="text-slate-500 dark:text-slate-400 mb-2">
-                هنوز پیامی در این {selectedTopic ? 'موضوع' : 'گفتگو'} نیست
-              </p>
-              <p className="text-sm text-slate-400">
-                اولین نفری باشید که پیام می‌فرستد!
-              </p>
-            </div>
+            <span className="px-4 py-2 rounded-2xl glass text-sm text-muted-foreground text-center">هنوز پیامی نیست؛ اولین پیام را بفرستید</span>
           </div>
         ) : (
-          messages.map((message) => {
-            const isOwnMessage = message.sender_id === currentUser.id;
-            const messageStatus = message.status || 'sent';
-            
+          messages.map((message, idx) => {
+            const isOwn = message.sender_id === currentUser.id;
+            const status = message.status || 'sent';
+            const prev = messages[idx - 1];
+            const next = messages[idx + 1];
+            const newDay = !prev || dayKey(prev.created_at) !== dayKey(message.created_at);
+            const firstOfRun = newDay || !prev || prev.sender_id !== message.sender_id;
+            const lastOfRun = !next || next.sender_id !== message.sender_id || dayKey(next.created_at) !== dayKey(message.created_at);
+            const showName = !isOwn && firstOfRun && !!selectedRoom;
+            const info = mediaInfo(message);
             return (
-              <div 
-                key={message.tempId || message.id} 
-                id={`message-${message.id}`} 
-                className={`flex mb-3 ${isOwnMessage ? 'justify-end' : 'justify-start'} ${
-                  message.isOptimistic ? 'animate-fade-in' : ''
-                }`}
-              >
-                <div className={`max-w-[75%] sm:max-w-[65%] flex items-start gap-2 group ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
-                  {!isOwnMessage && (
-                    <Avatar className="w-8 h-8 flex-shrink-0">
-                      <AvatarImage src={message.sender_id ? userAvatars[message.sender_id] : undefined} alt={message.sender?.name || 'User'} />
-                      <AvatarFallback 
-                        className="text-white font-bold text-xs"
-                        style={{ backgroundColor: getAvatarColor(message.sender?.name || 'User') }}
-                      >
-                        {(message.sender?.name || 'U').charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                  
-                  <div className="flex flex-col">
-                    <div
-                      className={`rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 hover:shadow-md relative ${
-                        isOwnMessage
-                          ? `${message.isOptimistic ? 
-                              messageStatus === 'sending' ? 'bg-blue-400 opacity-80' : 
-                              messageStatus === 'failed' ? 'bg-red-400 opacity-70' :
-                              'bg-blue-500 opacity-90' 
-                              : 'bg-gradient-to-r from-blue-500 to-blue-600'} text-white rounded-br-md`
-                          : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-md border border-slate-200 dark:border-slate-700'
-                      }`}
-                    >
-                      {!isOwnMessage && (
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-xs text-slate-700 dark:text-slate-300">
-                            {message.sender?.name || 'نامشخص'}
-                          </span>
-                        </div>
+              <React.Fragment key={message.tempId || message.id}>
+                {newDay && (
+                  <div className="flex justify-center my-3 sticky top-1 z-[1]">
+                    <span className="px-3 py-1 rounded-full glass text-xs text-muted-foreground">{dayLabel(message.created_at)}</span>
+                  </div>
+                )}
+                <div id={`message-${message.id}`} className={`flex items-end gap-1.5 ${lastOfRun ? 'mb-2' : 'mb-0.5'} ${isOwn ? 'justify-start' : 'justify-end'} ${message.isOptimistic ? 'animate-fade-in' : ''}`} dir="ltr">
+                  {!isOwn && selectedRoom && (
+                    <div className="w-8 shrink-0 order-2">
+                      {lastOfRun && (
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={message.sender_id ? userAvatars[message.sender_id] : undefined} alt={message.sender?.name || ''} />
+                          <AvatarFallback className="bg-muted text-foreground text-xs font-semibold">{(message.sender?.name || 'U').charAt(0)}</AvatarFallback>
+                        </Avatar>
                       )}
-                      
-                      {message.media_url && (
-                        <div className="mb-2">
-                          <MediaMessage
-                            url={message.media_url}
-                            type={(() => {
-                              try {
-                                return message.media_content ? JSON.parse(message.media_content).type : 'application/octet-stream';
-                              } catch {
-                                return 'application/octet-stream';
-                              }
-                            })()}
-                            size={(() => {
-                              try {
-                                return message.media_content ? JSON.parse(message.media_content).size : undefined;
-                              } catch {
-                                return undefined;
-                              }
-                            })()}
-                            name={(() => {
-                              try {
-                                return message.media_content ? JSON.parse(message.media_content).name : message.media_url.split('/').pop();
-                              } catch {
-                                return message.media_url.split('/').pop();
-                              }
-                            })()}
-                            className="max-w-[280px]"
-                          />
-                        </div>
-                      )}
-                      
-                      {message.message && (
-                        <p className={`text-sm leading-relaxed ${
-                          isOwnMessage ? 'text-white' : 'text-slate-800 dark:text-slate-200'
-                        }`}>
-                          {message.message}
-                        </p>
-                      )}
-                      
-                      <div className={`flex items-center justify-end mt-1.5 text-xs ${
-                        isOwnMessage ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'
-                      }`}>
-                        <span>
-                          {new Date(message.created_at).toLocaleTimeString('fa-IR', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </span>
-                        {message.isOptimistic && messageStatus === 'sending' && (
-                          <span className="ml-1 text-xs opacity-70 animate-pulse">
-                            ...
-                          </span>
-                        )}
-                      </div>
                     </div>
+                  )}
+                  <div
+                    dir="rtl"
+                    className={`relative max-w-[78%] sm:max-w-[60%] px-3 pt-1.5 pb-1 shadow-sm text-[15px] leading-relaxed ${
+                      isOwn
+                        ? `bg-primary text-primary-foreground rounded-2xl ${lastOfRun ? 'rounded-bl-md' : ''} ${status === 'failed' ? 'opacity-60' : ''}`
+                        : `bg-card text-card-foreground border border-border/60 rounded-2xl ${lastOfRun ? 'rounded-br-md' : ''}`
+                    }`}
+                  >
+                    {showName && <p className="text-xs font-semibold mb-0.5 opacity-80">{message.sender?.name || 'کاربر'}</p>}
+                    {message.media_url && (
+                      <div className="mb-1 -mx-1">
+                        <MediaMessage url={message.media_url} type={info.type || message.message_type || 'application/octet-stream'} size={info.size} name={info.name || message.media_url.split('/').pop()} className="max-w-[280px]" />
+                      </div>
+                    )}
+                    {message.message && <span className="whitespace-pre-wrap break-words">{message.message}</span>}
+                    <span className={`float-left mr-2 mt-1.5 text-[11px] leading-none select-none ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                      {new Date(message.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tehran' })}
+                      {isOwn && <span className="mr-1">{status === 'sending' ? '◷' : status === 'failed' ? '!' : message.is_read ? '✓✓' : '✓'}</span>}
+                    </span>
                   </div>
                 </div>
-              </div>
+              </React.Fragment>
             );
           })
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      <ModernChatInput
-        onSendMessage={sendMessage}
-        disabled={sending}
-        currentUserId={currentUser.id}
-      />
+      <ModernChatInput onSendMessage={sendMessage} disabled={sending} currentUserId={currentUser.id} />
 
-      <UserProfile
-        isOpen={showUserProfile}
-        onClose={() => setShowUserProfile(false)}
-        user={profileUser}
-        currentUserId={currentUser.id}
-        onStartChat={() => {
-          // Already in chat
-        }}
-      />
+      <UserProfile isOpen={showUserProfile} onClose={() => setShowUserProfile(false)} user={profileUser} currentUserId={currentUser.id} onStartChat={() => {}} />
     </div>
   );
 };
