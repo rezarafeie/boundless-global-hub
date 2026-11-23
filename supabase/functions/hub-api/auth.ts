@@ -17,7 +17,10 @@ export async function handleAuth(action: string, body: unknown, req: Request, de
     const methods = new Set((await check(db.from('hub_auth_readiness').select('method'))).map((r: any) => r.method));
     return { version: 1, password: methods.has('password'), email_otp: methods.has('email_otp'),
       sms_otp: methods.has('sms_otp') && Boolean(Deno.env.get('KAVENEGAR_API_KEY') && Deno.env.get('KAVENEGAR_VERIFY_TEMPLATE')),
-      session_exchange: methods.has('session_exchange'), account_link: methods.has('account_link'), identity_sync: methods.has('identity_sync') };
+      session_exchange: methods.has('session_exchange'), account_link: methods.has('account_link'), identity_sync: methods.has('identity_sync'),
+      messenger: { conversations: methods.has('messenger_read'), messages_polling: methods.has('messenger_read'), send_text: methods.has('messenger_send'),
+        private_start: methods.has('messenger_private_start'), member_search: methods.has('messenger_member_search'), attachment_url: methods.has('messenger_attachments'),
+        reactions_read: methods.has('messenger_read'), reactions_write: false, upload: false, realtime: false, calls: false, block: false } };
   }
   if (action === 'account.resolve') {
     const identity = parseHubUser(req.headers.get('X-Hub-User'));

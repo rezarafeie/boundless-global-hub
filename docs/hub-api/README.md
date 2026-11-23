@@ -120,3 +120,27 @@ Run `deno test supabase/functions/hub-api/hub-policy_test.ts` for contract valid
 - `auth-policy_test.ts` آزمون‌های بدون ارسال، `auth-http_test.ts` آزمون HTTP با fixture خصوصی، `auth-live_test.ts` آزمون اختیاری با دسترسی سرویس و `auth-rate_test.sql` آزمون تراکنشی نرخ را نگه می‌دارند. اجرای آزمون HTTP نیاز به آماده‌سازی صریح fixture در محیط آزمایشی دارد؛ فایل‌های موقت حاوی رمز/کد نباید چاپ یا وارد گیت شوند.
 
 آزمون‌های قدیمی `hub-live_test.ts` مربوط به قرارداد قبل از الزام پیوند هستند و دیگر نباید با فرض ساخت خودکار حساب اجرا شوند؛ از fixture دارای پیوند تأییدشده استفاده کنید و خرید/مصرف آزمون واقعی را بدون رضایت اجرا نکنید.
+## Messenger actions
+
+Same base URL (`https://ihhetvwuhqohbfgkqoxw.supabase.co/functions/v1/hub-api/<action>`), same `Authorization: Bearer HUB_SHARED_SECRET` and linked `X-Hub-User` (percent-encoded UTF-8 JSON or UTF-8 base64url). Errors return `{"error":"...","data":{"error":"..."}}`. Requester identity comes only from `X-Hub-User`; payloads never carry it. Hub sign-in grants no messenger role.
+
+IDs are opaque stable strings: conversations `group:<n>`, `private:<n>`, `support:<n>`; messages `<type>:<n>`. Lists return `{items,next_cursor}`; `limit` 1–100 (default 30).
+
+| Action | Body | Data |
+|---|---|---|
+| conversations.list | `{limit?,cursor?}` | `{items:[Conversation],next_cursor}` ordered by `last_activity_at` desc, then id |
+| conversation.get | `{id}` | `Conversation` |
+| messages.list | `{conversation_id,limit?,cursor?}` history, or `{conversation_id,limit?,since}` polling | history: `{items (oldest→newest),next_cursor (older page),poll_cursor}`; polling: `{items (ascending),next_cursor,has_more}` |
+| message.send | `{conversation_id,text}` + `Idempotency-Key` header (8–128 `[A-Za-z0-9_.:-]`) | `{message:Message,duplicate}` |
+| private.start | `{source_user_id}` | `Conversation` (existing one if present) |
+| members.search | `{username}` exact username | `{items:[{source_user_id,name,username,avatar_url}],next_cursor:null}` |
+| attachment.url | `{message_id}` | `{url,expires_in:300,kind,mime_type}` |
+
+Conversation: `{id,type:"group"|"private"|"support",title,avatar_url,peer:{source_user_id,name,avatar_url}|null,status,last_activity_at,capabilities:{send_text,upload:false,react:false}}`.
+Message: `{id,conversation_id,sender:{source_user_id,name,avatar_url,is_me,is_support},text,type:"text"|"image"|"audio"|"video"|"file",attachments:[{message_id,kind,mime_type}],reply_to_id,forwarded,topic_id,reactions:[{reaction,count,reacted_by_me}],created_at}`.
+
+Access (re-checked on every read, send and file request; unknown or forbidden IDs both return 404): private = one of its two members; group = active room, approved account, and Boundless approval for Boundless-only rooms; support = only the owner's conversations. `private.start` and `members.search` require an approved requester and approved target.
+
+Polling (not realtime): open with history `messages.list`, store `poll_cursor`, then call `messages.list {since}` every few seconds and replace the stored cursor with the returned `next_cursor`; repeat immediately while `has_more`. Only messages older than 2 seconds are returned to polling so late commits are never skipped; deduplicate by `id`. Messages you send are returned by `message.send`.
+
+Limits: text 1–4000 chars; 20 sends per user per minute (429); repeating an Idempotency-Key returns the same message without a new message or notification, and reusing it for different content returns 409. Not available: uploads, reaction add/remove, live calls, blocking (the messenger has no block system), private realtime.
