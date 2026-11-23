@@ -32,7 +32,8 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
     name: currentUser.name || '',
     username: currentUser.username || '',
     bio: currentUser.bio || '',
-    notification_enabled: currentUser.notification_enabled ?? true
+    notification_enabled: currentUser.notification_enabled ?? true,
+    messenger_telegram_sync: (currentUser as any).messenger_telegram_sync ?? true
   });
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -49,7 +50,8 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
         name: currentUser.name || '',
         username: currentUser.username || '',
         bio: currentUser.bio || '',
-        notification_enabled: currentUser.notification_enabled ?? true
+        notification_enabled: currentUser.notification_enabled ?? true,
+        messenger_telegram_sync: (currentUser as any).messenger_telegram_sync ?? true
       });
       setPasswordData({
         currentPassword: '',
@@ -81,7 +83,8 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
           name: formData.name.trim(),
           username: formData.username.trim() || null,
           bio: formData.bio.trim() || null,
-          notification_enabled: formData.notification_enabled
+          notification_enabled: formData.notification_enabled,
+          messenger_telegram_sync: formData.messenger_telegram_sync
         }
       );
 
@@ -291,6 +294,19 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({
                 }
               />
             </div>
+          </div>
+
+          <div className="p-4 bg-muted rounded-lg flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm">ارسال پیام‌ها به تلگرام</p>
+              <p className="text-xs text-muted-foreground">
+                پیام‌های جدید مسنجر در ربات تلگرام هم برای شما بیاید و از همان‌جا بتوانید پاسخ دهید
+              </p>
+            </div>
+            <Switch
+              checked={formData.messenger_telegram_sync}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, messenger_telegram_sync: checked }))}
+            />
           </div>
 
           {/* Change Password Section */}
