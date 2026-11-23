@@ -193,47 +193,35 @@ const ModernChatInput: React.FC<ModernChatInputProps> = ({
         </div>
       )}
       
-      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto flex items-end gap-2">
-        {/* File Attachment and Voice Recorder */}
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <FileAttachmentButton 
-            onFileSelect={handleFileSelect}
-            disabled={disabled || isSending || !currentUserId}
-          />
-          <VoiceRecorderButton 
-            onVoiceRecorded={handleVoiceRecorded}
-            disabled={disabled || isSending || !currentUserId}
-          />
-        </div>
-
-        <div className="flex-1 relative">
+      <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex items-end gap-1.5" dir="rtl">
+        <div className="flex-1 min-w-0 flex items-end bg-muted rounded-3xl pr-1 pl-1">
+          <div className="shrink-0 self-end pb-1">
+            <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+          </div>
           <Textarea
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="پیام..."
-            className="resize-none border-0 bg-muted rounded-3xl px-4 py-2.5 pl-10 min-h-[42px] max-h-32 text-right focus-visible:ring-1 text-[15px]"
+            placeholder="پیام"
+            className="flex-1 min-w-0 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-1 py-2.5 min-h-[42px] max-h-32 text-right text-[15px]"
             disabled={disabled}
             rows={1}
-            dir="rtl"
-            style={{ direction: 'rtl', textAlign: 'right' }}
+            dir="auto"
           />
-          <div className="absolute left-2 bottom-2">
-            <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+          <div className="shrink-0 self-end pb-1">
+            <FileAttachmentButton onFileSelect={handleFileSelect} disabled={disabled || isSending || !currentUserId} />
           </div>
         </div>
-        
-        <Button
-          type="submit"
-          disabled={!isMessageValid || disabled}
-          size="sm"
-          className={`rounded-full h-[42px] w-[42px] p-0 transition-all duration-150 flex-shrink-0 active:scale-95 ${
-            isMessageValid && !disabled ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-          }`}
-        >
-          <Send className="w-[18px] h-[18px] -scale-x-100" />
-        </Button>
+        {isMessageValid ? (
+          <Button type="submit" disabled={disabled} className="rounded-full h-[42px] w-[42px] p-0 shrink-0 bg-primary text-primary-foreground active:scale-95" aria-label="ارسال">
+            <Send className="w-[18px] h-[18px] -scale-x-100" />
+          </Button>
+        ) : (
+          <div className="shrink-0 h-[42px] w-[42px] flex items-center justify-center">
+            <VoiceRecorderButton onVoiceRecorded={handleVoiceRecorded} disabled={disabled || isSending || !currentUserId} />
+          </div>
+        )}
       </form>
     </div>
   );

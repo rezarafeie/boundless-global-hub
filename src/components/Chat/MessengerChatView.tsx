@@ -18,6 +18,8 @@ import MediaMessage from './MediaMessage';
 import UserProfile from './UserProfile';
 import type { ChatTopic } from '@/types/supabase';
 import { webhookService } from '@/lib/webhookService';
+import { useReply } from '@/contexts/ReplyContext';
+import { Copy, Reply as ReplyIcon, Clock } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -737,6 +739,7 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
     }
   };
 
+  const { setReplyingTo } = useReply();
   const chatTitle = selectedRoom ? selectedRoom.name : selectedUser?.name || '';
   const chatDescription = selectedRoom ? selectedRoom.description : '';
   const dayKey = (iso: string) => new Date(iso).toLocaleDateString('fa-IR', { timeZone: 'Asia/Tehran' });
@@ -839,26 +842,46 @@ const MessengerChatView: React.FC<MessengerChatViewProps> = ({
                       )}
                     </div>
                   )}
-                  <div
-                    dir="rtl"
-                    className={`relative max-w-[78%] sm:max-w-[60%] px-3 pt-1.5 pb-1 shadow-sm text-[15px] leading-relaxed ${
-                      isOwn
-                        ? `bg-primary text-primary-foreground rounded-2xl ${lastOfRun ? 'rounded-bl-md' : ''} ${status === 'failed' ? 'opacity-60' : ''}`
-                        : `bg-card text-card-foreground border border-border/60 rounded-2xl ${lastOfRun ? 'rounded-br-md' : ''}`
-                    }`}
-                  >
-                    {showName && <p className="text-xs font-semibold mb-0.5 opacity-80">{message.sender?.name || 'کاربر'}</p>}
-                    {message.media_url && (
-                      <div className="mb-1 -mx-1">
-                        <MediaMessage url={message.media_url} type={info.type || message.message_type || 'application/octet-stream'} size={info.size} name={info.name || message.media_url.split('/').pop()} className="max-w-[280px]" />
+                  <DropdownMenu modal={false}>
+                    <DropdownMenuTrigger asChild>
+                      <div
+                        dir="rtl"
+                        role="button"
+                        tabIndex={0}
+                        className={`relative max-w-[78%] sm:max-w-[60%] min-w-0 px-3 pt-1.5 pb-1 shadow-sm text-[15px] leading-relaxed cursor-pointer select-text outline-none ${
+                          isOwn
+                            ? `bubble-own rounded-2xl ${lastOfRun ? 'rounded-bl-md' : ''} ${status === 'failed' ? 'opacity-60' : ''}`
+                            : `bubble-other rounded-2xl ${lastOfRun ? 'rounded-br-md' : ''}`
+                        }`}
+                      >
+                        {showName && <p className="text-xs font-semibold mb-0.5 opacity-80 truncate">{message.sender?.name || 'کاربر'}</p>}
+                        {message.media_url && (
+                          <div className="mb-1 -mx-1" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+                            <MediaMessage url={message.media_url} type={info.type || message.message_type || 'application/octet-stream'} size={info.size} name={info.name || message.media_url.split('/').pop()} className="max-w-[260px]" />
+                          </div>
+                        )}
+                        {message.message && <span className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]" dir="auto">{message.message}</span>}
+                        <span className="float-left mr-2 mt-1.5 text-[11px] leading-none select-none opacity-60">
+                          {new Date(message.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tehran' })}
+                          {isOwn && <span className="mr-1">{status === 'sending' ? '◷' : status === 'failed' ? '!' : message.is_read ? '✓✓' : '✓'}</span>}
+                        </span>
                       </div>
-                    )}
-                    {message.message && <span className="whitespace-pre-wrap break-words">{message.message}</span>}
-                    <span className={`float-left mr-2 mt-1.5 text-[11px] leading-none select-none ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                      {new Date(message.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tehran' })}
-                      {isOwn && <span className="mr-1">{status === 'sending' ? '◷' : status === 'failed' ? '!' : message.is_read ? '✓✓' : '✓'}</span>}
-                    </span>
-                  </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align={isOwn ? 'start' : 'end'} className="w-52 rounded-xl" dir="rtl">
+                      <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground">
+                        <Clock className="w-3.5 h-3.5" />
+                        {new Date(message.created_at).toLocaleString('fa-IR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Tehran' })}
+                      </div>
+                      <DropdownMenuItem className="gap-2" onSelect={() => setReplyingTo({ id: message.id, message: message.message || 'فایل', sender_name: isOwn ? 'خودتان' : (message.sender?.name || 'کاربر') })}>
+                        <ReplyIcon className="w-4 h-4" /> پاسخ
+                      </DropdownMenuItem>
+                      {message.message && (
+                        <DropdownMenuItem className="gap-2" onSelect={() => { navigator.clipboard?.writeText(message.message); toast({ title: 'کپی شد' }); }}>
+                          <Copy className="w-4 h-4" /> کپی متن
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </React.Fragment>
             );

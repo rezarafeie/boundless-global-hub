@@ -318,8 +318,8 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="py-1">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="py-1 w-full">
           {loading ? (
             [...Array(6)].map((_, i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-2.5">
@@ -338,7 +338,8 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
               <button
                 key={r.key}
                 onClick={r.onClick}
-                className={`w-full flex items-center gap-3 px-3 py-2 mx-0 text-right transition-colors ${r.active ? 'bg-accent' : 'hover:bg-muted/70 active:bg-muted'}`}
+                dir="rtl"
+                className={`w-full max-w-full overflow-hidden flex items-center gap-3 px-3 py-2 text-right transition-colors ${r.active ? 'bg-accent' : 'hover:bg-muted/70 active:bg-muted'}`}
               >
                 <Avatar className="w-12 h-12 shrink-0">
                   {r.avatar && <AvatarImage src={r.avatar} alt={r.title} />}
@@ -346,13 +347,13 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
                     {r.icon && !r.avatar ? r.icon : r.title.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0 border-b border-border/50 pb-2 pt-1">
+                <div className="flex-1 min-w-0 overflow-hidden border-b border-border/50 pb-2 pt-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-[15px] font-semibold truncate">{r.title}</p>
+                    <p className="text-[15px] font-semibold truncate min-w-0 flex-1 text-right" dir="auto">{r.title}</p>
                     <span className={`text-xs shrink-0 ${r.unread ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>{fmtTime(r.time)}</span>
                   </div>
                   <div className="flex items-center justify-between gap-2 mt-0.5">
-                    <p className="text-sm text-muted-foreground truncate">{r.preview}</p>
+                    <p className="text-sm text-muted-foreground truncate min-w-0 flex-1 text-right" dir="auto">{r.preview}</p>
                     {r.unread > 0 && (
                       <span className="shrink-0 bg-primary text-primary-foreground text-[11px] font-semibold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center">
                         {r.unread > 99 ? '99+' : r.unread}
@@ -364,7 +365,7 @@ const MessengerInbox: React.FC<MessengerInboxProps> = ({
             ))
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       <StartChatModal
         isOpen={showStartChatModal}

@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Search, MessageCircle, User, Headphones, MessageSquare } from 'lucide-react';
 import { privateMessageService } from '@/lib/privateMessageService';
@@ -185,116 +185,53 @@ const StartChatModal: React.FC<StartChatModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <MessageCircle className="w-5 h-5" />
-            شروع گفتگوی جدید
-          </DialogTitle>
+      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden rounded-2xl" dir="rtl">
+        <DialogHeader className="px-4 pt-4 pb-3 border-b border-border/60 text-right sm:text-right">
+          <DialogTitle className="text-base font-bold text-right">گفتگوی جدید</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4">
-          {/* Pinned Support Users */}
-          {supportUsers.length > 0 && (
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-muted-foreground px-1">
-                پشتیبانی سریع
-              </div>
-              {supportUsers.map((supportUser) => (
-                <div
-                  key={supportUser.id}
-                  onClick={() => handleSupportUserSelect(supportUser)}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors border border-blue-200 dark:border-blue-800"
-                >
-                  <div className="relative">
-                    <Avatar className="w-10 h-10 border-2 border-blue-300 dark:border-blue-700">
-                      <AvatarFallback className="bg-blue-500 text-white font-medium">
-                        {supportUser.type === 'academy_support' ? '🎓' : '🌐'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-1">
-                      {supportUser.icon}
-                    </div>
-                  </div>
+        <div className="p-3 space-y-3">
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder={getSearchPlaceholder()} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+              className="pr-9 h-10 rounded-full bg-muted border-0 text-right" dir="rtl" autoFocus />
+          </div>
+          {!searchTerm && supportUsers.length > 0 && (
+            <div>
+              <p className="text-xs text-muted-foreground px-2 mb-1">پشتیبانی</p>
+              {supportUsers.map((s) => (
+                <button key={s.id} onClick={() => handleSupportUserSelect(s)} dir="rtl"
+                  className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-muted text-right">
+                  <Avatar className="w-11 h-11 shrink-0"><AvatarFallback className="bg-muted text-foreground">{s.icon}</AvatarFallback></Avatar>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <div className="font-medium text-sm text-blue-700 dark:text-blue-300">
-                        {supportUser.name}
-                      </div>
-                      <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                        پشتیبانی
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-blue-600 dark:text-blue-400">
-                      {supportUser.description}
-                    </div>
+                    <p className="text-sm font-semibold truncate">{s.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{s.description}</p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
-
-          {/* Search Input */}
-          <div className="relative">
-            <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={getSearchPlaceholder()}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10"
-              dir="rtl"
-            />
-          </div>
-
-          <ScrollArea className="h-64">
+          <div className="max-h-72 overflow-y-auto">
             {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-sm text-muted-foreground">در حال جستجو...</div>
-              </div>
+              <p className="text-sm text-muted-foreground text-center py-8">در حال جستجو...</p>
             ) : searchTerm.length > 0 && !isValidSearch() ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-sm text-muted-foreground text-center">
-                  لطفاً شماره موبایل کامل (09xxxxxxxxx)، @نام‌کاربری یا نام کاربری وارد کنید
-                </div>
-              </div>
-            ) : isValidSearch() && searchResults.length === 0 && !loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-sm text-muted-foreground">کاربری یافت نشد</div>
-              </div>
+              <p className="text-sm text-muted-foreground text-center py-8 px-4">شماره کامل (09xxxxxxxxx) یا نام کاربری را وارد کنید</p>
+            ) : isValidSearch() && searchResults.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">کاربری یافت نشد</p>
             ) : (
-              <div className="space-y-2">
-                {searchResults.map((user) => (
-                  <div
-                    key={user.id}
-                    onClick={() => handleUserSelect(user)}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors"
-                  >
-                    <Avatar className="w-10 h-10">
-                      <AvatarFallback 
-                        style={{ backgroundColor: getAvatarColor(user.name) }}
-                        className="text-white font-medium"
-                      >
-                        {user.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm">{user.name}</div>
-                      {user.username && (
-                        <div className="text-xs text-muted-foreground">@{user.username}</div>
-                      )}
-                      <div className="text-xs text-muted-foreground">{user.phone}</div>
-                    </div>
-                    <User className="w-4 h-4 text-muted-foreground" />
+              searchResults.map((user) => (
+                <button key={user.id} onClick={() => handleUserSelect(user)} dir="rtl"
+                  className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-muted text-right">
+                  <Avatar className="w-11 h-11 shrink-0">
+                    {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
+                    <AvatarFallback className="bg-muted text-foreground font-semibold">{user.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">{user.name}</p>
+                    {user.username && <p className="text-xs text-muted-foreground truncate" dir="ltr" style={{ textAlign: 'right' }}>@{user.username}</p>}
                   </div>
-                ))}
-              </div>
+                </button>
+              ))
             )}
-          </ScrollArea>
-
-          <div className="flex gap-2 pt-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
-              لغو
-            </Button>
           </div>
         </div>
       </DialogContent>

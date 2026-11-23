@@ -247,3 +247,10 @@ img {
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { scrollbar-width: none; }
 }
+
+:root { --bubble-own: 0 0% 9%; --bubble-own-foreground: 0 0% 100%; --bubble-other: 0 0% 100%; --bubble-other-foreground: 0 0% 9%; }
+.dark { --bubble-own: 0 0% 24%; --bubble-own-foreground: 0 0% 97%; --bubble-other: 0 0% 13%; --bubble-other-foreground: 0 0% 94%; }
+@layer components {
+  .bubble-own { background-color: hsl(var(--bubble-own)); color: hsl(var(--bubble-own-foreground)); }
+  .bubble-other { background-color: hsl(var(--bubble-other)); color: hsl(var(--bubble-other-foreground)); border: 1px solid hsl(var(--border) / 0.6); }
+}
