@@ -1,4 +1,5 @@
 ## Hub shared authentication
+- [ ] Repair verified Hub linking blocked by an unconfirmed phone-only duplicate; preserve both accounts' histories and verify live account.link and me.enrollments for source user 3
 - [x] Implement and verify read-only account.resolve, identity_sync capability, and idempotent verified account.link
 - [x] Add server-only password/OTP authentication, atomic single-use exchange and proof-bound account linking at the unchanged Hub endpoint; no implicit account creation or merging
 - [x] Verify hosted HTTP password/exchange/link, concurrent OTP/ticket consumption, replay/expiry, five attempts, hourly sends/resend gap, independent abuse limits and scoped nonempty saved ticket history; advertise only tested methods
