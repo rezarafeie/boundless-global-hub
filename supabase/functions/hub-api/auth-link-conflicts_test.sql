@@ -4,7 +4,7 @@ DECLARE owner_id integer; duplicate_id integer; result jsonb;
 BEGIN
  BEGIN
   INSERT INTO public.chat_users(name,email,phone,signup_source) VALUES('Hub link regression owner','hub-link-owner@example.invalid','09999999101','hub-link-regression') RETURNING id INTO owner_id;
-  INSERT INTO public.chat_users(name,email,phone,signup_source) VALUES('Hub phone-only regression',NULL,'09999999101','hub-link-regression') RETURNING id INTO duplicate_id;
+  INSERT INTO public.chat_users(name,email,phone,signup_source) VALUES('Hub phone-only regression',NULL,'+989999999101','hub-link-regression') RETURNING id INTO duplicate_id;
   INSERT INTO public.hub_identity_proofs(user_id,email,email_verified_at,link_authorized_until) VALUES(owner_id,'hub-link-owner@example.invalid',now(),now()+interval '5 minutes');
   result := public.hub_link_account(owner_id,'hub-link-regression-owner','hub-link-owner@example.invalid');
   IF result->>'ok' IS DISTINCT FROM 'true' THEN RAISE EXCEPTION 'Unconfirmed phone-only duplicate must not block linking: %',result; END IF;
