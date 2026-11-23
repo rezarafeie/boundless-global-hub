@@ -2671,6 +2671,7 @@ export type Database = {
           job: string | null
           last_name: string | null
           last_seen: string | null
+          messenger_telegram_sync: boolean
           name: string
           notification_enabled: boolean | null
           notification_token: string | null
@@ -2716,6 +2717,7 @@ export type Database = {
           job?: string | null
           last_name?: string | null
           last_seen?: string | null
+          messenger_telegram_sync?: boolean
           name: string
           notification_enabled?: boolean | null
           notification_token?: string | null
@@ -2761,6 +2763,7 @@ export type Database = {
           job?: string | null
           last_name?: string | null
           last_seen?: string | null
+          messenger_telegram_sync?: boolean
           name?: string
           notification_enabled?: boolean | null
           notification_token?: string | null
@@ -5835,6 +5838,53 @@ export type Database = {
           {
             foreignKeyName: "messenger_messages_sender_id_fkey"
             columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "chat_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messenger_telegram_links: {
+        Row: {
+          chat_user_id: number
+          conversation_id: number
+          created_at: string
+          direction: string
+          id: number
+          kind: string
+          message_id: number
+          status: string
+          telegram_chat_id: number
+          telegram_message_id: number | null
+        }
+        Insert: {
+          chat_user_id: number
+          conversation_id: number
+          created_at?: string
+          direction: string
+          id?: number
+          kind: string
+          message_id: number
+          status?: string
+          telegram_chat_id: number
+          telegram_message_id?: number | null
+        }
+        Update: {
+          chat_user_id?: number
+          conversation_id?: number
+          created_at?: string
+          direction?: string
+          id?: number
+          kind?: string
+          message_id?: number
+          status?: string
+          telegram_chat_id?: number
+          telegram_message_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messenger_telegram_links_chat_user_id_fkey"
+            columns: ["chat_user_id"]
             isOneToOne: false
             referencedRelation: "chat_users"
             referencedColumns: ["id"]

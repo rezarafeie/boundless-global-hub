@@ -31,6 +31,7 @@ import { ensureAccessWindow as gamEnsureAccessWindow } from './gamification.ts';
 import { sendOrQueue as actSendOrQueue, sendExtraActivationMessages as actSendExtras } from './activation-messages.ts';
 import { reviewApplication as chalReview, coachEmails as chalCoachEmails } from './challenge.ts';
 import { handleEnrollmentReport, enrollmentReportAccess } from './enrollment-report.ts';
+import { handleMessengerReply } from './messenger-telegram.ts';
 import { privilegedReplyKeyboard, replyAction, allowsPrivilegedAction, isPrivilegedEntry, botVisibleForms } from './bot-menu-policy.ts';
 
 // Only the challenge's coach (by email) may approve/reject from the bot.
@@ -3186,6 +3187,8 @@ async function handleUpdate(update: any, reportAuthenticated = false, replyDispa
   if (reportAuthenticated && await handleEnrollmentReport(supabase, update,
     async target => syncPrivilegedKeyboard(target, await resolveUser(target)))) return;
   const incoming = update.message;
+  // Telegram replies to relayed messenger messages go back to the same messenger chat.
+  if (incoming?.reply_to_message && currentChannel() === 'telegram' && await handleMessengerReply(supabase, incoming)) return;
   if (!update.callback_query && incoming?.text?.trim() === KBD_HOME) {
     if (incoming.chat?.type !== 'private' || incoming.from?.id !== incoming.chat.id) return;
     const chatId = Number(incoming.chat.id);
