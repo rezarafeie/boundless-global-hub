@@ -179,10 +179,30 @@ const SupportActivations: React.FC = () => {
     toast({ title: `${label} کپی شد` });
   };
 
+  // Short base-62 activation code (12 chars) so the activation link stays short enough to share.
+  const newActivationToken = () => {
+    const ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const bytes = new Uint8Array(12);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (b) => ALPHABET[b % ALPHABET.length]).join('');
+  };
+
   const regenerateToken = async (r: Row) => {
-    const newToken = crypto.randomUUID().replace(/-/g, '');
     const { data: settings } = await supabase.from('admin_settings').select('telegram_bot_username' as any).eq('id', 1).maybeSingle();
     const bot = ((settings as any)?.telegram_bot_username || 'rafiei_bot').replace(/^@/, '');
+
+    let newToken = '';
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const candidate = newActivationToken();
+      const { data: clash } = await supabase
+        .from('support_activations' as any)
+        .select('id')
+        .eq('activation_token', candidate)
+        .maybeSingle();
+      if (!clash) { newToken = candidate; break; }
+    }
+    if (!newToken) return toast({ title: 'خطا', description: 'ساخت کد فعال‌سازی ممکن نشد. دوباره تلاش کنید.', variant: 'destructive' });
+
     const bot_deep_link = `https://t.me/${bot}?start=sact_${newToken}`;
     const { error } = await supabase.from('support_activations' as any).update({
       activation_token: newToken,

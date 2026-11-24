@@ -10738,6 +10738,7 @@ export type Database = {
           ref_id: string
         }[]
       }
+      gen_activation_token: { Args: { p_length?: number }; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
       generate_lesson_numbers: { Args: never; Returns: undefined }
       generate_unique_user_id: { Args: never; Returns: string }
