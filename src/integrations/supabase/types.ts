@@ -206,6 +206,8 @@ export type Database = {
       admin_settings: {
         Row: {
           bale_bot_username: string | null
+          digipay_enabled: boolean
+          digipay_max_amount_toman: number
           id: number
           manual_approval_enabled: boolean
           manual_payment_enabled: boolean
@@ -242,6 +244,8 @@ export type Database = {
         }
         Insert: {
           bale_bot_username?: string | null
+          digipay_enabled?: boolean
+          digipay_max_amount_toman?: number
           id?: number
           manual_approval_enabled?: boolean
           manual_payment_enabled?: boolean
@@ -278,6 +282,8 @@ export type Database = {
         }
         Update: {
           bale_bot_username?: string | null
+          digipay_enabled?: boolean
+          digipay_max_amount_toman?: number
           id?: number
           manual_approval_enabled?: boolean
           manual_payment_enabled?: boolean
@@ -3606,6 +3612,7 @@ export type Database = {
           create_test_license: boolean | null
           created_at: string
           description: string | null
+          digipay_enabled: boolean
           enable_course_access: boolean | null
           gifts_link: string | null
           id: string
@@ -3688,6 +3695,7 @@ export type Database = {
           create_test_license?: boolean | null
           created_at?: string
           description?: string | null
+          digipay_enabled?: boolean
           enable_course_access?: boolean | null
           gifts_link?: string | null
           id?: string
@@ -3770,6 +3778,7 @@ export type Database = {
           create_test_license?: boolean | null
           created_at?: string
           description?: string | null
+          digipay_enabled?: boolean
           enable_course_access?: boolean | null
           gifts_link?: string | null
           id?: string

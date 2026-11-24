@@ -42,6 +42,7 @@ interface Course {
   is_spotplayer_enabled: boolean;
   spotplayer_course_id: string | null;
   snapppay_enabled?: boolean;
+  digipay_enabled?: boolean;
 }
 
 interface Test {
@@ -73,6 +74,7 @@ const Enroll: React.FC = () => {
   const resolvePaymentTarget = (method: PaymentMethod): { fnName: string; gateway?: string } => {
     if (method === 'zibal') return { fnName: 'zibal-request' };
     if (method === 'snapppay') return { fnName: 'snapppay-request' };
+    if (method === 'digipay') return { fnName: 'digipay-request' };
     if (method === 'rafieipay') return { fnName: 'rafieipay-request' };
     if (method === 'rafieipay_zibal') return { fnName: 'rafieipay-request', gateway: 'zibal' };
     if (method === 'rafieipay_zarinpal') return { fnName: 'rafieipay-request', gateway: 'zarinpal' };
@@ -1106,7 +1108,7 @@ const Enroll: React.FC = () => {
                         ) : (
                            <>
                                 <CreditCard className="h-6 w-6 ml-2" />
-                                {(paymentMethod === 'snapppay' || paymentMethod === 'rafieipay_snapppay') ? 'پرداخت اقساطی ' : 'پرداخت آنلاین '} {(() => {
+                                {(paymentMethod === 'snapppay' || paymentMethod === 'digipay' || paymentMethod === 'rafieipay_snapppay') ? 'پرداخت اقساطی ' : 'پرداخت آنلاین '} {(() => {
                                  // For tests
                                  if (test) {
                                    return discountedPrice !== null ? formatPrice(discountedPrice) : formatPrice(test.price);

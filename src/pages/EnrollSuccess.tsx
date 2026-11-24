@@ -679,6 +679,7 @@ const EnrollSuccess: React.FC = () => {
   const isZibal = gateway === 'zibal' || (gateway !== 'rafieipay' && !!zibalTrackId);
   const isRafieipay = gateway === 'rafieipay';
   const isSnapppay = gateway === 'snapppay';
+  const isDigipay = gateway === 'digipay';
   const snapppayPaymentId = searchParams.get('payment');
   const rafieipayTrackId = searchParams.get('track_id');
   const rafieipayTransactionId = searchParams.get('transaction_id');
@@ -913,6 +914,12 @@ const EnrollSuccess: React.FC = () => {
       return;
     }
 
+    // DigiPay 6-installment callback (gateway=digipay)
+    if (isDigipay && snapppayPaymentId) {
+      verifyDigipayPayment();
+      return;
+    }
+
 
     if (authority && enrollmentId) {
       // Check if this is a free course
@@ -973,6 +980,32 @@ const EnrollSuccess: React.FC = () => {
         description: 'خطا در تایید پرداخت. لطفا با پشتیبانی تماس بگیرید.',
         variant: 'destructive',
       });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const verifyDigipayPayment = async () => {
+    try {
+      setVerifying(true);
+      const response = await supabase.functions.invoke('digipay-callback', {
+        body: {
+          paymentId: snapppayPaymentId,
+          result: searchParams.get('result') || '',
+          trackingCode: searchParams.get('trackingCode') || '',
+          type: searchParams.get('type') || '0',
+          amount: searchParams.get('amount') || '',
+        },
+      });
+      const data = response.data ?? (await (response.error as any)?.context?.json?.().catch(() => null));
+      if (!data) throw response.error;
+      setResult(data);
+      toast(data.success
+        ? { title: 'پرداخت اقساطی موفق', description: `ثبت‌نام شما با موفقیت انجام شد. کد رهگیری: ${data.refId}` }
+        : { title: 'خطا در تایید پرداخت', description: data.error || 'پرداخت تایید نشد', variant: 'destructive' });
+    } catch (error) {
+      console.error('DigiPay verification error:', error);
+      setResult({ success: false, error: 'خطا در تایید پرداخت دیجی‌پی' });
     } finally {
       setVerifying(false);
     }

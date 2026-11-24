@@ -19,6 +19,7 @@ interface Course {
   use_dollar_price?: boolean;
   usd_price?: number | null;
   snapppay_enabled?: boolean;
+  digipay_enabled?: boolean;
 }
 
 interface Test {
@@ -43,6 +44,7 @@ export type PaymentMethod =
   | 'rafieipay_zarinpal'
   | 'rafieipay_snapppay'
   | 'snapppay'
+  | 'digipay'
   | 'manual';
 
 interface ManualPaymentSectionProps {
@@ -84,6 +86,8 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
   const [rpSnapppayEnabled, setRpSnapppayEnabled] = useState(false);
   const [snapppayEnabled, setSnapppayEnabled] = useState(false);
   const [snapppayMaxToman, setSnapppayMaxToman] = useState(50000000);
+  const [digipayEnabled, setDigipayEnabled] = useState(false);
+  const [digipayMaxToman, setDigipayMaxToman] = useState(100000000);
   const [manualEnabled, setManualEnabled] = useState(true);
   const [methodsLoaded, setMethodsLoaded] = useState(false);
 
@@ -92,7 +96,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
     (async () => {
       const { data } = await supabase
         .from('admin_settings')
-        .select('zarinpal_enabled, zibal_enabled, manual_payment_enabled, rafieipay_enabled, rafieipay_zibal_enabled, rafieipay_zarinpal_enabled, rafieipay_snapppay_enabled, snapppay_enabled, snapppay_max_amount_toman' as any)
+        .select('zarinpal_enabled, zibal_enabled, manual_payment_enabled, rafieipay_enabled, rafieipay_zibal_enabled, rafieipay_zarinpal_enabled, rafieipay_snapppay_enabled, snapppay_enabled, snapppay_max_amount_toman, digipay_enabled, digipay_max_amount_toman' as any)
         .eq('id', 1)
         .single();
       if (cancelled) return;
@@ -108,6 +112,9 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
       const maxToman = Number((data as any)?.snapppay_max_amount_toman || 50000000);
       const sp = (data as any)?.snapppay_enabled === true;
       setSnapppayMaxToman(maxToman);
+      const dp = (data as any)?.digipay_enabled === true;
+      setDigipayEnabled(dp);
+      setDigipayMaxToman(Number((data as any)?.digipay_max_amount_toman || 100000000));
       setZarinpalEnabled(z);
       setZibalEnabled(zb);
       setRafieipayEnabled(rp);
@@ -126,6 +133,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         rafieipay_zarinpal: rpZp,
         rafieipay_snapppay: rpSp,
         snapppay: sp,
+        digipay: dp,
         manual: m,
       };
       if (!enabled[selectedMethod]) {
@@ -136,6 +144,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         else if (rpZp) onPaymentMethodChange('rafieipay_zarinpal');
         else if (rpSp) onPaymentMethodChange('rafieipay_snapppay');
         else if (sp) onPaymentMethodChange('snapppay');
+        else if (dp) onPaymentMethodChange('digipay');
         else if (m) onPaymentMethodChange('manual');
       }
     })();
@@ -171,6 +180,14 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
     effectiveAmount > 0 &&
     effectiveAmount <= snapppayMaxToman;
 
+  const digipayAvailable =
+    digipayEnabled &&
+    !!course &&
+    course.digipay_enabled !== false &&
+    effectiveAmount > 0 &&
+    effectiveAmount <= digipayMaxToman;
+  const digipayInstallment = Math.round(effectiveAmount / 6);
+
   // SnappPay splits the order into 4 installments; the first one is paid today.
   const snapppayFirstInstallment = Math.round(effectiveAmount / 4);
 
@@ -201,6 +218,13 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMethod, methodsLoaded, snapppayAvailable]);
+
+  useEffect(() => {
+    if (selectedMethod === 'digipay' && methodsLoaded && !digipayAvailable) {
+      onPaymentMethodChange(zarinpalEnabled ? 'zarinpal' : manualEnabled ? 'manual' : 'zarinpal');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMethod, methodsLoaded, digipayAvailable]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
@@ -586,6 +610,24 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
                   <Zap className="h-5 w-5 text-primary" />
                 </Label>
                 <RadioGroupItem value="snapppay" id="snapppay" />
+              </div>
+            )}
+
+            {digipayAvailable && (
+              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
+                <Label
+                  htmlFor="digipay"
+                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
+                >
+                  <div className="text-right">
+                    <div className="font-medium text-foreground text-right">خرید ۶ قسطه با دیجی‌پی</div>
+                    <div className="text-sm text-muted-foreground text-right">
+                      حدود {formatPrice(digipayInstallment)} در هر قسط (۶ قسط)
+                    </div>
+                  </div>
+                  <Zap className="h-5 w-5 text-primary" />
+                </Label>
+                <RadioGroupItem value="digipay" id="digipay" />
               </div>
             )}
             {manualEnabled && (

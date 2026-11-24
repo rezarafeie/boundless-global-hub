@@ -65,6 +65,8 @@ const AdminSettingsPanel: React.FC = () => {
   const [rpSnapppayEnabled, setRpSnapppayEnabled] = useState(false);
   const [snapppayEnabled, setSnapppayEnabled] = useState(false);
   const [snapppayMaxToman, setSnapppayMaxToman] = useState<string>('50000000');
+  const [digipayEnabled, setDigipayEnabled] = useState(false);
+  const [digipayMaxToman, setDigipayMaxToman] = useState<string>('100000000');
   const [manualPaymentEnabled, setManualPaymentEnabled] = useState(true);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
@@ -72,7 +74,7 @@ const AdminSettingsPanel: React.FC = () => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('admin_settings')
-        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url, zarinpal_enabled, zibal_enabled, manual_payment_enabled, rafieipay_enabled, rafieipay_zibal_enabled, rafieipay_zarinpal_enabled, rafieipay_snapppay_enabled, snapppay_enabled, snapppay_max_amount_toman' as any)
+        .select('use_full_leads_system, quick_enroll_enabled, zarinpal_use_proxy, zarinpal_proxy_url, zarinpal_enabled, zibal_enabled, manual_payment_enabled, rafieipay_enabled, rafieipay_zibal_enabled, rafieipay_zarinpal_enabled, rafieipay_snapppay_enabled, snapppay_enabled, snapppay_max_amount_toman, digipay_enabled, digipay_max_amount_toman' as any)
         .eq('id', 1)
         .single();
       
@@ -89,6 +91,8 @@ const AdminSettingsPanel: React.FC = () => {
         setRpSnapppayEnabled((data as any).rafieipay_snapppay_enabled === true);
         setSnapppayEnabled((data as any).snapppay_enabled === true);
         setSnapppayMaxToman(String((data as any).snapppay_max_amount_toman ?? 50000000));
+        setDigipayEnabled((data as any).digipay_enabled === true);
+        setDigipayMaxToman(String((data as any).digipay_max_amount_toman ?? 100000000));
         setManualPaymentEnabled((data as any).manual_payment_enabled !== false);
       }
       setLoadingSettings(false);
@@ -97,7 +101,7 @@ const AdminSettingsPanel: React.FC = () => {
   }, []);
 
   const handleTogglePaymentMethod = async (
-    method: 'zarinpal' | 'zibal' | 'rafieipay' | 'rafieipay_zibal' | 'rafieipay_zarinpal' | 'rafieipay_snapppay' | 'snapppay' | 'manual',
+    method: 'zarinpal' | 'zibal' | 'rafieipay' | 'rafieipay_zibal' | 'rafieipay_zarinpal' | 'rafieipay_snapppay' | 'snapppay' | 'digipay' | 'manual',
     checked: boolean
   ) => {
     const column =
@@ -108,6 +112,7 @@ const AdminSettingsPanel: React.FC = () => {
       : method === 'rafieipay_zarinpal' ? 'rafieipay_zarinpal_enabled'
       : method === 'rafieipay_snapppay' ? 'rafieipay_snapppay_enabled'
       : method === 'snapppay' ? 'snapppay_enabled'
+      : method === 'digipay' ? 'digipay_enabled'
       : 'manual_payment_enabled';
     const setter =
       method === 'zarinpal' ? setZarinpalEnabled
@@ -117,6 +122,7 @@ const AdminSettingsPanel: React.FC = () => {
       : method === 'rafieipay_zarinpal' ? setRpZarinpalEnabled
       : method === 'rafieipay_snapppay' ? setRpSnapppayEnabled
       : method === 'snapppay' ? setSnapppayEnabled
+      : method === 'digipay' ? setDigipayEnabled
       : setManualPaymentEnabled;
     setter(checked);
     const { error } = await supabase
@@ -135,12 +141,27 @@ const AdminSettingsPanel: React.FC = () => {
         rafieipay_zarinpal: 'زرین‌پال از طریق رفیعی پی',
         rafieipay_snapppay: 'اسنپ‌پی از طریق رفیعی پی',
         snapppay: 'خرید اقساطی با اسنپ‌پی',
+        digipay: 'خرید ۶ قسطه با دیجی‌پی',
         manual: 'کارت به کارت',
       };
       toast({
         title: 'ذخیره شد',
         description: `${labels[method]} ${checked ? 'فعال' : 'غیرفعال'} شد`,
       });
+    }
+  };
+
+  const handleSaveDigipayMax = async () => {
+    const value = Math.max(0, Math.round(Number(digipayMaxToman) || 0));
+    const { error } = await supabase
+      .from('admin_settings')
+      .update({ digipay_max_amount_toman: value, updated_at: new Date().toISOString() } as any)
+      .eq('id', 1);
+    if (error) {
+      toast({ title: 'خطا', description: 'خطا در ذخیره سقف مبلغ دیجی‌پی', variant: 'destructive' });
+    } else {
+      setDigipayMaxToman(String(value));
+      toast({ title: 'ذخیره شد', description: 'سقف مبلغ دیجی‌پی به‌روزرسانی شد' });
     }
   };
 
@@ -449,6 +470,36 @@ const AdminSettingsPanel: React.FC = () => {
                         سفارش‌های بالاتر از این مبلغ، گزینه اسنپ‌پی را نمایش نمی‌دهند (پیش‌فرض ۵۰٬۰۰۰٬۰۰۰ تومان).
                         غیرفعال‌سازی اسنپ‌پی برای یک دوره خاص از تنظیمات همان دوره انجام می‌شود.
                       </p>
+                    </div>
+                  )}
+                </div>
+                <div className="p-4 border rounded-lg space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label htmlFor="digipay-enabled" className="text-base font-medium">
+                        خرید ۶ قسطه با دیجی‌پی
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        {digipayEnabled
+                          ? 'کاربران می‌توانند دوره را با اعتبار ۶ قسطه دیجی‌پی بخرند'
+                          : 'گزینه دیجی‌پی در صفحه ثبت‌نام نمایش داده نمی‌شود'}
+                      </p>
+                    </div>
+                    <Switch
+                      id="digipay-enabled"
+                      checked={digipayEnabled}
+                      onCheckedChange={(c) => handleTogglePaymentMethod('digipay', c)}
+                      disabled={loadingSettings}
+                    />
+                  </div>
+                  {digipayEnabled && (
+                    <div className="space-y-2">
+                      <Label htmlFor="digipay-max" className="text-sm">حداکثر مبلغ مجاز (تومان)</Label>
+                      <div className="flex gap-2">
+                        <Input id="digipay-max" type="number" value={digipayMaxToman}
+                          onChange={(e) => setDigipayMaxToman(e.target.value)} className="max-w-xs" dir="ltr" />
+                        <Button onClick={handleSaveDigipayMax} variant="outline">ذخیره</Button>
+                      </div>
                     </div>
                   )}
                 </div>

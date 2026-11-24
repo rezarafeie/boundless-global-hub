@@ -11,4 +11,5 @@ test('stored Rafiei Pay payment method wins over missing or misleading callback 
 test('direct gateway callbacks retain their original verifier', () => {
   assert.equal(paymentCallbackGateway('zibal', '123456', 'zibal'), 'zibal');
   assert.equal(paymentCallbackGateway('snapppay', null, 'snapppay'), 'snapppay');
+  assert.equal(paymentCallbackGateway('digipay', null, 'digipay'), 'digipay');
 });
