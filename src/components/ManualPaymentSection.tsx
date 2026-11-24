@@ -500,151 +500,17 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
           <RadioGroup
             value={selectedMethod}
             onValueChange={(value) => onPaymentMethodChange(value as PaymentMethod)}
-            className="space-y-3"
+            className="grid gap-2.5"
           >
-            {zarinpalEnabled && (
-              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
-                <Label
-                  htmlFor="zarinpal"
-                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
-                >
-                  <div className="text-right">
-                    <div className="font-medium text-foreground text-right">پرداخت آنلاین</div>
-                    <div className="text-sm text-muted-foreground text-right">از طریق درگاه زرین‌پال</div>
-                  </div>
-                  <CreditCard className="h-5 w-5 text-primary" />
-                </Label>
-                <RadioGroupItem value="zarinpal" id="zarinpal" />
-              </div>
-            )}
-            {zibalEnabled && (
-              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
-                <Label
-                  htmlFor="zibal"
-                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
-                >
-                  <div className="text-right">
-                    <div className="font-medium text-foreground text-right">پرداخت آنلاین</div>
-                    <div className="text-sm text-muted-foreground text-right">از طریق درگاه زیبال</div>
-                  </div>
-                  <CreditCard className="h-5 w-5 text-primary" />
-                </Label>
-                <RadioGroupItem value="zibal" id="zibal" />
-              </div>
-            )}
-            {rafieipayEnabled && (
-              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
-                <Label
-                  htmlFor="rafieipay"
-                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
-                >
-                  <div className="text-right">
-                    <div className="font-medium text-foreground text-right">پرداخت آنلاین (رفیعی پی)</div>
-                    <div className="text-sm text-muted-foreground text-right">انتخاب روش پرداخت در صفحه رفیعی پی</div>
-                  </div>
-                  <CreditCard className="h-5 w-5 text-primary" />
-                </Label>
-                <RadioGroupItem value="rafieipay" id="rafieipay" />
-              </div>
-            )}
-            {rpZibalEnabled && (
-              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
-                <Label
-                  htmlFor="rafieipay_zibal"
-                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
-                >
-                  <div className="text-right">
-                    <div className="font-medium text-foreground text-right">پرداخت آنلاین با زیبال</div>
-                    <div className="text-sm text-muted-foreground text-right">پرداخت با تمام کارت های بانکی شتاب</div>
-                  </div>
-                  <CreditCard className="h-5 w-5 text-primary" />
-                </Label>
-                <RadioGroupItem value="rafieipay_zibal" id="rafieipay_zibal" />
-              </div>
-            )}
-            {rpZarinpalEnabled && (
-              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
-                <Label
-                  htmlFor="rafieipay_zarinpal"
-                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
-                >
-                  <div className="text-right">
-                    <div className="font-medium text-foreground text-right">پرداخت آنلاین با زرین‌پال</div>
-                    <div className="text-sm text-muted-foreground text-right">پرداخت با تمام کارت های بانکی شتاب</div>
-                  </div>
-                  <CreditCard className="h-5 w-5 text-primary" />
-                </Label>
-                <RadioGroupItem value="rafieipay_zarinpal" id="rafieipay_zarinpal" />
-              </div>
-            )}
-            {rpSnapppayAvailable && (
-              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
-                <Label
-                  htmlFor="rafieipay_snapppay"
-                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
-                >
-                  <div className="text-right">
-                    <div className="font-medium text-foreground text-right">خرید اقساطی با اسنپ‌پی</div>
-                    <div className="text-sm text-muted-foreground text-right">
-                      پرداخت امروز: {formatPrice(snapppayFirstInstallment)} (قسط اول از ۴ قسط)
-                    </div>
-                  </div>
-                  <Zap className="h-5 w-5 text-primary" />
-                </Label>
-                <RadioGroupItem value="rafieipay_snapppay" id="rafieipay_snapppay" />
-              </div>
-            )}
-
-            {snapppayAvailable && (
-              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
-                <Label
-                  htmlFor="snapppay"
-                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
-                >
-                  <div className="text-right">
-                    <div className="font-medium text-foreground text-right">خرید اقساطی با اسنپ‌پی</div>
-                    <div className="text-sm text-muted-foreground text-right">
-                      پرداخت امروز: {formatPrice(snapppayFirstInstallment)} (قسط اول از ۴ قسط)
-                    </div>
-                  </div>
-                  <Zap className="h-5 w-5 text-primary" />
-                </Label>
-                <RadioGroupItem value="snapppay" id="snapppay" />
-              </div>
-            )}
-
-            {digipayAvailable && (
-              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
-                <Label
-                  htmlFor="digipay"
-                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
-                >
-                  <div className="text-right">
-                    <div className="font-medium text-foreground text-right">خرید ۶ قسطه با دیجی‌پی</div>
-                    <div className="text-sm text-muted-foreground text-right">
-                      حدود {formatPrice(digipayInstallment)} در هر قسط (۶ قسط)
-                    </div>
-                  </div>
-                  <Zap className="h-5 w-5 text-primary" />
-                </Label>
-                <RadioGroupItem value="digipay" id="digipay" />
-              </div>
-            )}
-            {manualEnabled && (
-              <div className="flex items-center space-x-2 space-x-reverse flex-row-reverse">
-                <Label
-                  htmlFor="manual"
-                  className="flex items-center gap-3 cursor-pointer p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors w-full flex-row-reverse text-right"
-                >
-                  <div className="text-right">
-                    <div className="font-medium text-foreground text-right">کارت به کارت</div>
-                    <div className="text-sm text-muted-foreground text-right">واریز به حساب و آپلود رسید</div>
-                  </div>
-                  <FileText className="h-5 w-5 text-primary" />
-                </Label>
-                <RadioGroupItem value="manual" id="manual" />
-              </div>
-            )}
+            {zarinpalEnabled && <GatewayOption value="zarinpal" selected={selectedMethod} logo="/gateways/zarinpal.com.png" title="زرین‌پال" subtitle="پرداخت آنلاین با همه کارت‌های شتاب" />}
+            {zibalEnabled && <GatewayOption value="zibal" selected={selectedMethod} logo="/gateways/zibal.ir.png" title="زیبال" subtitle="پرداخت آنلاین با همه کارت‌های شتاب" />}
+            {rafieipayEnabled && <GatewayOption value="rafieipay" selected={selectedMethod} icon={<CreditCard className="h-5 w-5" />} title="رفیعی پی" subtitle="انتخاب درگاه در صفحه رفیعی پی" />}
+            {rpZibalEnabled && <GatewayOption value="rafieipay_zibal" selected={selectedMethod} logo="/gateways/zibal.ir.png" title="زیبال" subtitle="پرداخت آنلاین با همه کارت‌های شتاب" />}
+            {rpZarinpalEnabled && <GatewayOption value="rafieipay_zarinpal" selected={selectedMethod} logo="/gateways/zarinpal.com.png" title="زرین‌پال" subtitle="پرداخت آنلاین با همه کارت‌های شتاب" />}
+            {rpSnapppayAvailable && <GatewayOption value="rafieipay_snapppay" selected={selectedMethod} logo="/gateways/snapppay.ir.png" title="اسنپ‌پی · ۴ قسط" subtitle="بدون پیش‌پرداخت اضافه، قسط اول امروز" badge="اقساطی" amount={formatPrice(snapppayFirstInstallment)} amountLabel="پرداخت امروز" />}
+            {snapppayAvailable && <GatewayOption value="snapppay" selected={selectedMethod} logo="/gateways/snapppay.ir.png" title="اسنپ‌پی · ۴ قسط" subtitle="بدون پیش‌پرداخت اضافه، قسط اول امروز" badge="اقساطی" amount={formatPrice(snapppayFirstInstallment)} amountLabel="پرداخت امروز" />}
+            {digipayAvailable && <GatewayOption value="digipay" selected={selectedMethod} logo="/gateways/mydigipay.com.png" title="دیجی‌پی · ۶ قسط" subtitle="خرید اقساطی در ۶ ماه" badge="اقساطی" amount={formatPrice(digipayInstallment)} amountLabel="هر قسط حدود" />}
+            {manualEnabled && <GatewayOption value="manual" selected={selectedMethod} icon={<FileText className="h-5 w-5" />} title="کارت به کارت" subtitle="واریز به حساب و آپلود رسید" />}
           </RadioGroup>
         </div>
       )}
@@ -883,3 +749,36 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
 };
 
 export default ManualPaymentSection;
+
+function GatewayOption({ value, selected, logo, icon, title, subtitle, badge, amount, amountLabel }: {
+  value: string; selected: string; logo?: string; icon?: React.ReactNode; title: string; subtitle: string;
+  badge?: string; amount?: string; amountLabel?: string;
+}) {
+  const active = selected === value;
+  return (
+    <Label
+      htmlFor={`pm-${value}`}
+      className={`flex items-center gap-3 cursor-pointer rounded-2xl border p-3.5 transition-all text-right ${
+        active ? 'border-foreground bg-muted/60 shadow-sm ring-1 ring-foreground' : 'border-border bg-card hover:border-foreground/40'
+      }`}
+    >
+      <RadioGroupItem value={value} id={`pm-${value}`} className="shrink-0" />
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background">
+        {logo ? <img src={logo} alt={title} className="h-8 w-8 object-contain" loading="lazy" /> : <span className="text-foreground">{icon}</span>}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="text-[15px] font-semibold leading-6 text-foreground">{title}</span>
+          {badge && <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] font-medium text-background">{badge}</span>}
+        </div>
+        <div className="text-xs leading-5 text-muted-foreground">{subtitle}</div>
+      </div>
+      {amount && (
+        <div className="shrink-0 text-left">
+          <div className="text-[10px] text-muted-foreground">{amountLabel}</div>
+          <div className="text-sm font-bold text-foreground whitespace-nowrap">{amount}</div>
+        </div>
+      )}
+    </Label>
+  );
+}
