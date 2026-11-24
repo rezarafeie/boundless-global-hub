@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowUpLeft, Copy, Check, Plus, Gift, Sparkles, Flame, Calculator } from "lucide-react";
+import { ArrowLeft, ArrowUpLeft, Copy, Check, Plus, Sparkles, Flame } from "lucide-react";
 import { rafieiServices } from "@/data/rafieiServices";
 import MainLayout from "@/components/Layout/MainLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -118,47 +118,6 @@ const ServiceTile = ({ s }: { s: Service }) => {
   );
 };
 
-/** Mini game: spin to reveal one real deal from the campaign. */
-const LuckyBox = ({ rows, onReveal }: { rows: DiscountRow[]; onReveal: (id: string) => void }) => {
-  const [spinning, setSpinning] = useState(false);
-  const [idx, setIdx] = useState<number | null>(null);
-  const [tries, setTries] = useState(() => Number(sessionStorage.getItem("bf_tries") || 3));
-  const spin = () => {
-    if (spinning || tries <= 0 || !rows.length) return;
-    setSpinning(true);
-    let n = 0; const total = 18 + Math.floor(Math.random() * rows.length);
-    const tick = () => {
-      setIdx(n % rows.length); n++;
-      if (n <= total) setTimeout(tick, 60 + n * 6);
-      else { setSpinning(false); const left = tries - 1; setTries(left); sessionStorage.setItem("bf_tries", String(left)); }
-    };
-    tick();
-  };
-  const r = idx !== null ? rows[idx] : null;
-  return (
-    <div className="relative overflow-hidden rounded-[2rem] border border-border bg-card p-6 md:p-8">
-      <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground"><Gift className="h-4 w-4" /> جعبه شانس بلک فرایدی</div>
-      <h3 className="mt-2 text-2xl font-extrabold text-foreground">ببین شانست کدوم دوره‌ست</h3>
-      <div className={`mt-6 flex min-h-[120px] items-center justify-center rounded-3xl bg-foreground p-6 text-center text-background transition-transform ${spinning ? "scale-[0.98]" : ""}`}>
-        {r ? (
-          <div>
-            <div className="text-5xl font-black">{fa(r.discount_percentage)}٪</div>
-            <div className="mt-2 text-sm font-bold text-background/80">{r.courses!.title}</div>
-          </div>
-        ) : <span className="text-background/60">دکمه رو بزن…</span>}
-      </div>
-      <div className="mt-5 flex items-center gap-3">
-        <button onClick={spin} disabled={spinning || tries <= 0} className="flex-1 rounded-full bg-foreground px-5 py-3 text-sm font-bold text-background disabled:opacity-40">
-          {spinning ? "در حال چرخش…" : tries > 0 ? `بچرخون (${fa(tries)} شانس)` : "شانس‌هات تموم شد"}
-        </button>
-        {r && !spinning && (
-          <button onClick={() => onReveal(r.courses!.id)} className="rounded-full border border-foreground px-5 py-3 text-sm font-bold text-foreground">دیدن پیشنهاد</button>
-        )}
-      </div>
-    </div>
-  );
-};
-
 const BlackFridayLanding: React.FC = () => {
   const { isActive, settings } = useBlackFridayContext();
   const t = useCountdown(settings?.end_date);
@@ -258,22 +217,7 @@ const BlackFridayLanding: React.FC = () => {
               <p className="rounded-3xl border border-border p-10 text-center text-muted-foreground">به‌زودی…</p>
             ) : (
               <>
-                <div className="mb-10 grid gap-6 md:grid-cols-2">
-                  <LuckyBox rows={rows} onReveal={reveal} />
-                  <div className="rounded-[2rem] border border-border bg-card p-6 md:p-8">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground"><Calculator className="h-4 w-4" /> ماشین‌حساب سود</div>
-                    <h3 className="mt-2 text-2xl font-extrabold text-foreground">دوره‌ها رو با + انتخاب کن</h3>
-                    <div className="mt-6 rounded-3xl bg-foreground p-6 text-background">
-                      <div className="text-xs text-background/60">سود تو از بلک فرایدی</div>
-                      <div className="mt-1 text-4xl font-black tabular-nums">{fa(calc.save)} <span className="text-sm font-medium text-background/70">تومان</span></div>
-                      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-background/15 pt-4 text-sm">
-                        <div><div className="text-[11px] text-background/60">جمع نهایی</div><b>{fa(calc.fin)}</b></div>
-                        <div><div className="text-[11px] text-background/60">هر قسط ({fa(INST)} قسط)</div><b>{fa(calc.fin / INST)}</b></div>
-                      </div>
-                    </div>
-                    <p className="mt-4 text-xs text-muted-foreground">{picked.length ? `${fa(picked.length)} دوره انتخاب شده` : "هنوز دوره‌ای انتخاب نکردی"}</p>
-                  </div>
-                </div>
+                <p className="mb-6 flex items-center gap-2 text-sm text-muted-foreground"><Plus className="h-4 w-4" /> روی + هر دوره بزن تا سود و قسطت رو یکجا ببینی</p>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 md:gap-8">
                   {rows.map((r) => <CourseTile key={r.courses!.id} row={r} picked={picked.includes(r.courses!.id)} onPrice={onPrice}
                     onPick={() => setPicked((p) => p.includes(r.courses!.id) ? p.filter((x) => x !== r.courses!.id) : [...p, r.courses!.id])} />)}
@@ -296,6 +240,25 @@ const BlackFridayLanding: React.FC = () => {
               </div>
             </div>
           </section>
+        )}
+        {picked.length > 0 && (
+          <div className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] animate-in slide-in-from-bottom-4">
+            <div className="mx-auto flex max-w-3xl items-center gap-3 rounded-[1.75rem] bg-foreground p-3 pr-5 text-background shadow-float">
+              <div className="min-w-0 flex-1">
+                <div className="text-[11px] text-background/60">{fa(picked.length)} دوره · سود تو</div>
+                <div className="truncate text-xl font-black tabular-nums md:text-2xl">{fa(calc.save)} <span className="text-xs font-medium text-background/60">تومان</span></div>
+              </div>
+              <div className="hidden border-r border-background/15 pr-4 sm:block">
+                <div className="text-[11px] text-background/60">هر قسط ({fa(INST)} قسط)</div>
+                <div className="text-base font-bold tabular-nums">{fa(calc.fin / INST)}</div>
+              </div>
+              <div className="border-r border-background/15 pr-3 text-left">
+                <div className="text-[11px] text-background/60">شروع با</div>
+                <div className="text-base font-bold">{short(calc.fin / INST)}</div>
+              </div>
+              <button onClick={() => setPicked([])} aria-label="پاک کردن انتخاب‌ها" className="rounded-full border border-background/25 px-3 py-2 text-xs text-background/80">پاک</button>
+            </div>
+          </div>
         )}
       </div>
     </MainLayout>
