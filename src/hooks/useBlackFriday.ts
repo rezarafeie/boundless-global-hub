@@ -38,7 +38,7 @@ export const useBlackFriday = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('black_friday_discounts')
-        .select('*');
+        .select('*, courses(slug)');
       
       if (error) throw error;
       return data as BlackFridayDiscount[];
@@ -52,7 +52,8 @@ export const useBlackFriday = () => {
     new Date(settings.end_date) >= new Date();
 
   const getCourseDiscount = (courseId: string) => {
-    return discounts?.find(d => d.course_id === courseId)?.discount_percentage || 0;
+    // Accepts a course id or slug
+    return discounts?.find(d => d.course_id === courseId || (d as any).courses?.slug === courseId)?.discount_percentage || 0;
   };
 
   return {

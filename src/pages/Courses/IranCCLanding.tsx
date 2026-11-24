@@ -1,3 +1,4 @@
+import { useBlackFridayContext } from "@/contexts/BlackFridayContext";
 import { fetchLiveCoursePrice } from "@/lib/liveCoursePrice";
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
@@ -130,14 +131,19 @@ const faqs = [
 /* ───────── COMPONENT ───────── */
 
 const IranCCLanding: React.FC = () => {
-  const [coursePrice, setCoursePrice] = useState<number>(18700000);
+  const [basePrice, setCoursePrice] = useState<number>(18700000);
+  const [courseId, setCourseId] = useState<string | null>(null);
   const [originalPrice] = useState<number>(35000000);
+  const { isActive: bfActive, getCourseDiscount } = useBlackFridayContext();
+  const bfPercent = bfActive && courseId ? getCourseDiscount(courseId) : 0;
+  const coursePrice = bfPercent > 0 ? Math.round(basePrice * (1 - bfPercent / 100)) : basePrice;
   const courseSlug = "iran";
 
   useEffect(() => {
     (async () => {
       try {
         const data = await fetchLiveCoursePrice(courseSlug);
+        if (data?.id) setCourseId(data.id);
         if (data?.price) setCoursePrice(Number(data.price));
       } catch (e) { console.error(e); }
     })();
@@ -220,7 +226,7 @@ const IranCCLanding: React.FC = () => {
             <p className="text-muted-foreground mb-6">سرمایه‌گذاری روی پایدارترین مدل کسب‌وکار داخلی</p>
 
             <div className="flex items-center justify-center gap-4 mb-3">
-              <span className="text-2xl line-through text-muted-foreground">{fmt(originalPrice)}</span>
+              <span className="text-2xl line-through text-muted-foreground">{fmt(bfPercent > 0 ? basePrice : originalPrice)}</span>
               <span className="text-5xl md:text-6xl font-extrabold" style={{ color: `hsl(${IRAN_GREEN})` }}>
                 {fmt(coursePrice)}
               </span>

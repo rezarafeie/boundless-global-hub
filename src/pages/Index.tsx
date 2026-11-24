@@ -18,12 +18,11 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Zap, Clock, ArrowLeft } from "lucide-react";
 import { TetherlandService } from "@/lib/tetherlandService";
 import { useBlackFridayContext } from "@/contexts/BlackFridayContext";
-import BlackFridayBanner from "@/components/BlackFriday/BlackFridayBanner";
 import QuickEnrollPopover from "@/components/Course/QuickEnrollPopover";
 
 const Index = () => {
   const { translations } = useLanguage();
-  const { isActive: isBlackFridayActive, settings: blackFridaySettings } = useBlackFridayContext();
+  const { isActive: isBlackFridayActive, getCourseDiscount } = useBlackFridayContext();
   const [featuredCourses, setFeaturedCourses] = useState<any[]>([]);
   const [boundlessCourses, setBoundlessCourses] = useState<any[]>([]);
   const [totalCoursesCount, setTotalCoursesCount] = useState<number>(0);
@@ -175,7 +174,7 @@ const Index = () => {
   };
 
   // Component for course cards with price conversion
-  const CourseCardWithPrice = ({ course, currentPrice, isOnSale, isOnPrelaunch, color }: any) => {
+  const CourseCardWithPrice = ({ course, currentPrice, isOnSale, isOnPrelaunch, isBlackFriday, color }: any) => {
     const [displayPrice, setDisplayPrice] = useState<string>('');
     const [originalPrice, setOriginalPrice] = useState<string>('');
     
@@ -244,7 +243,7 @@ const Index = () => {
     const config = colorConfig[color as keyof typeof colorConfig];
     const IconComponent = config.icon;
 
-    const tag = course.price === 0 ? 'رایگان' : isOnPrelaunch ? 'پیش‌فروش' : isOnSale ? 'تخفیف ویژه' : null;
+    const tag = course.price === 0 ? 'رایگان' : isOnPrelaunch ? 'پیش‌فروش' : isBlackFriday ? 'بلک فرایدی' : isOnSale ? 'تخفیف ویژه' : null;
     return (
       <article className="group flex h-full flex-col overflow-hidden rounded-[2rem] border border-border bg-card transition-all duration-500 hover:-translate-y-1 hover:shadow-float">
         <Link to={`/courses/${course.slug}`} className="relative block aspect-[4/3] overflow-hidden bg-photo-shade">
@@ -320,8 +319,10 @@ const Index = () => {
     const isOnSale = course.is_sale_enabled && course.sale_price && (!course.sale_expires_at || new Date(course.sale_expires_at) > new Date());
     const isOnPrelaunch = course.is_pre_launch_enabled && course.pre_launch_price && (!course.pre_launch_ends_at || new Date(course.pre_launch_ends_at) > new Date());
     const basePrice = course.use_dollar_price ? course.usd_price : course.price;
-    const currentPrice = isOnPrelaunch ? course.pre_launch_price : isOnSale ? course.sale_price : basePrice;
-    return { isOnSale, isOnPrelaunch, currentPrice };
+    // Same priority as checkout: pre-launch, sale, then Black Friday
+    const bf = !isOnPrelaunch && !isOnSale && isBlackFridayActive ? getCourseDiscount(course.id) : 0;
+    const currentPrice = isOnPrelaunch ? course.pre_launch_price : isOnSale ? course.sale_price : bf > 0 ? basePrice * (1 - bf / 100) : basePrice;
+    return { isOnSale: isOnSale || bf > 0, isOnPrelaunch, currentPrice, isBlackFriday: bf > 0 };
   };
 
   const CourseRow = ({ eyebrow, title, sub, courses, color }: { eyebrow: string; title: string; sub: string; courses: any[]; color: string }) =>
