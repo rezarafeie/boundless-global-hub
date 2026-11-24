@@ -298,3 +298,6 @@ verify_jwt = false
 
 [functions.messenger-telegram-relay]
 verify_jwt = false
+
+[functions.bf-services-admin]
+verify_jwt = false

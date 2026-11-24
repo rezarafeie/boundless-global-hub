@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { Trash2, Plus } from 'lucide-react';
 import { rafieiServices } from '@/data/rafieiServices';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,14 +20,17 @@ const BlackFridayServicesManager = () => {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [form, setForm] = useState(empty);
-  const db = supabase as any;
+  const { token } = useAuth();
+  const call = async (body: unknown) => {
+    const { data, error } = await supabase.functions.invoke('bf-services-admin', { body, headers: token ? { 'x-session-token': token } : undefined });
+    if (error || data?.error) throw new Error(data?.error || error?.message || 'خطا');
+    return data.data;
+  };
 
   const { data: services = [] } = useQuery({
     queryKey: ['bf-services-admin'],
     queryFn: async () => {
-      const { data, error } = await db.from('black_friday_services').select('*').order('sort_order').order('created_at');
-      if (error) throw error;
-      return data as Service[];
+      return (await call({ action: 'list' })) as Service[];
     },
   });
   const refresh = () => { qc.invalidateQueries({ queryKey: ['bf-services-admin'] }); qc.invalidateQueries({ queryKey: ['bf-landing-services'] }); };
@@ -35,22 +39,19 @@ const BlackFridayServicesManager = () => {
     mutationFn: async () => {
       if (!form.title.trim() || !/^https?:\/\//.test(form.url.trim())) throw new Error('عنوان و لینک معتبر (با https://) لازم است');
       const pct = Math.min(100, Math.max(1, Math.round(Number(form.discount_percentage))));
-      const { error } = await db.from('black_friday_services').insert({
+      await call({ action: 'create', data: {
         title: form.title.trim(), description: form.description.trim() || null, url: form.url.trim(),
         discount_percentage: pct, discount_code: form.discount_code.trim() || null, sort_order: Number(form.sort_order) || 0,
-      });
-      if (error) throw error;
+      } });
     },
     onSuccess: () => { setForm(empty); refresh(); toast({ title: 'سرویس اضافه شد' }); },
     onError: (e: any) => toast({ title: 'خطا', description: e.message, variant: 'destructive' }),
   });
   const update = async (id: string, patch: Partial<Service>) => {
-    const { error } = await db.from('black_friday_services').update(patch).eq('id', id);
-    if (error) toast({ title: 'خطا', description: error.message, variant: 'destructive' }); else refresh();
+    try { await call({ action: 'update', id, data: patch }); refresh(); } catch (e: any) { toast({ title: 'خطا', description: e.message, variant: 'destructive' }); }
   };
   const remove = async (id: string) => {
-    const { error } = await db.from('black_friday_services').delete().eq('id', id);
-    if (error) toast({ title: 'خطا', description: error.message, variant: 'destructive' }); else refresh();
+    try { await call({ action: 'delete', id }); refresh(); } catch (e: any) { toast({ title: 'خطا', description: e.message, variant: 'destructive' }); }
   };
 
   return (
