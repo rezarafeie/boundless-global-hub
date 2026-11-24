@@ -1,4 +1,5 @@
 ## Enrollment SMS
+- [ ] Enable all three messages for all courses, only for new successful registrations; retain per-course controls
 - [ ] Connect the three approved Kavenegar patterns to existing per-course followups with payment, activation and course-start guards
 - [ ] Implement expiring single-use short course login at l.rafiei.co/s/:code with server-side access validation
 - [ ] Verify policy tests, short-login flow and course editor; enable delivery only for the user's selected courses and test real SMS only with a consenting recipient

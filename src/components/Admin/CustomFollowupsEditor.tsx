@@ -11,6 +11,7 @@ import { Plus, Trash2, Save, Loader2, ChevronDown } from 'lucide-react';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { scheduleDuration } from './CourseScheduleSection';
 import TestStageButton from './TestStageButton';
+import EnrollmentSmsSettings from './EnrollmentSmsSettings';
 import MessageMediaButtonsEditor, { MessageButton, MessageMediaItem } from './MessageMediaButtonsEditor';
 
 interface CustomFollowup {
@@ -116,6 +117,7 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
   const channelNames: Record<CustomFollowup['channel'], string> = { bot: 'ربات', business: 'چت پشتیبانی', email: 'ایمیل', sms: 'پیامک', instagram: 'اینستاگرام' };
   return (
     <div dir="rtl" className="space-y-4">
+      <EnrollmentSmsSettings courseId={courseId} />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0"><h3 className="text-base font-semibold">پیگیری‌های سفارشی</h3><p className="mt-1 text-xs text-muted-foreground">زمان‌بندی از لحظه ثبت‌نام</p></div>
         <Button type="button" size="sm" variant="outline" onClick={addRow} className="shrink-0"><Plus className="h-4 w-4" /> افزودن پیگیری</Button>

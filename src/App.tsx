@@ -51,6 +51,7 @@ import CourseAccess from "./pages/CourseAccess";
 
 // SSO pages
 import SSOAccess from "./pages/SSOAccess";
+import ShortCourseLogin from "./pages/ShortCourseLogin";
 import SSOLogin from "./pages/SSOLogin";
 
 // Course pages
@@ -222,6 +223,7 @@ const App = () => {
                     <Toaster />
                     <AnalyticsTracker />
                     <Routes>
+                      <Route path="/s/:code" element={<ShortCourseLogin />} />
                       <Route path="/:slug" element={<ShortLinkRedirect />} />
                       <Route path="/" element={<ShortLinkRedirect />} />
                     </Routes>
@@ -351,6 +353,7 @@ const App = () => {
                     <Route path="/user-detail/:userId" element={<UserDetail />} />
                     
                     {/* SSO Access routes */}
+                    <Route path="/s/:code" element={<ShortCourseLogin />} />
                     <Route path="/sso-access" element={<SSOAccess />} />
                     <Route path="/sso-login" element={<SSOLogin />} />
                     

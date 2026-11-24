@@ -12,6 +12,7 @@ const AnalyticsTracker = () => {
 
   useEffect(() => {
     // Track on route changes
+    if (location.pathname.startsWith('/s/') || location.pathname === '/sso-access') return;
     trackPageview(location.pathname + location.search);
   }, [location.pathname, location.search]);
 

@@ -1,5 +1,8 @@
 project_id = "ihhetvwuhqohbfgkqoxw"
 
+[functions.enrollment-sms]
+verify_jwt = false
+
 [api]
 port = 54321
 schemas = ["public", "storage", "graphql_public"]
