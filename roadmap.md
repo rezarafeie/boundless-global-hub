@@ -1,9 +1,10 @@
 ## Enrollment SMS
-- [ ] Send a real approved-template test to the user-provided consenting mobile; verify Kavenegar acceptance without recording the phone in project files
-- [ ] Enable all three messages for all courses, only for new successful registrations; retain per-course controls
-- [ ] Connect the three approved Kavenegar patterns to existing per-course followups with payment, activation and course-start guards
-- [ ] Implement expiring single-use short course login at l.rafiei.co/s/:code with server-side access validation
-- [ ] Verify policy tests, short-login flow and course editor; enable delivery only for the user's selected courses and test real SMS only with a consenting recipient
+- [x] Send a real approved-template test to the consenting mobile; Kavenegar accepted activation message 1740703834 and its delivery record saved successfully
+- [x] Enable all three messages for all 15 courses, only for new successful registrations; per-course controls retained; hourly reminders, activation 60 minutes and course start 1440 minutes
+- [x] Connect the three approved Kavenegar patterns with payment, activation and course-start guards; 14 tests pass including delivery dedupe, provider rejection and fresh activation stop
+- [x] Implement 24-hour single-use short course login at l.rafiei.co/s/:code; browser verified saved test enrollment/session redirects to Boundless Taste and mobile replay is rejected; test records removed
+- [ ] Verify signed-in course editor controls (external Supabase cannot mint the current user's admin session)
+- [ ] Verify published l.rafiei.co short route after publishing the website changes (preview course login verified)
 
 ## Hub shared authentication
 - [x] Repair verified Hub linking blocked by an unconfirmed phone-only duplicate; preserve both accounts' histories; seven rollback checks pass
