@@ -100,6 +100,7 @@
 - [x] Show the enrolled course's real lesson list as locked until Telegram activation
 
 ## Course gamification settings save
+- [x] Redesign course editing with seven persistent panels, compact followup/activation scheduling and fixed safe-area save access; verified real course at desktop/current/mobile widths, unsaved changes survive navigation and no runtime errors or horizontal overflow; no live course settings changed during verification
 - [x] Save gamification settings with the main course update button
 - [x] Restore Boundless Taste gamification to enabled
 

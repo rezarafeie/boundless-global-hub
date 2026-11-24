@@ -1,5 +1,7 @@
 # Project architecture rules
 
+- Course editing uses persistent section panels with compact scheduling disclosures; hidden panels remain mounted so navigation preserves unsaved course, message and gamification state without changing persistence or lifecycle rules.
+
 - Hub API uses the contract-approved Supabase edge-function transport, constant-time shared-secret authentication, protected server-only identity mapping, access-scoped action adapters and existing academy lifecycle services; static hosting cannot implement production server routes.
 - Hub authentication uses private HMAC OTP/ticket records and atomic service-only consumption; account.link accepts the shared-secret-verified X-Hub-User email as proof only when source_user_id equals the unique account.resolve match for that email, and identical repeats are idempotent; neither flow creates or merges accounts or matches by name, and an existing different binding is never replaced.
 - Hub linking ignores phone-only duplicate rows only when they have no email, Hub binding or verified identity proof; email, bound-owner and proven-phone conflicts remain blocking, and duplicate history is never transferred.

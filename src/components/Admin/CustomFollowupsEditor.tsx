@@ -7,7 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Save, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Save, Loader2, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
+import { scheduleDuration } from './CourseScheduleSection';
 import TestStageButton from './TestStageButton';
 import MessageMediaButtonsEditor, { MessageButton, MessageMediaItem } from './MessageMediaButtonsEditor';
 
@@ -41,6 +43,7 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
   const [rows, setRows] = useState<CustomFollowup[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const load = async () => {
@@ -68,6 +71,7 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
     }).select().single();
     if (error) { toast({ title: 'خطا', description: error.message, variant: 'destructive' }); return; }
     setRows(prev => [...prev, data as any]);
+    setExpandedId((data as any).id);
   };
 
   const save = async (r: CustomFollowup) => {
@@ -108,63 +112,43 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
 
   const patch = (id: string, p: Partial<CustomFollowup>) => setRows(prev => prev.map(r => r.id === id ? { ...r, ...p } : r));
 
+
+  const channelNames: Record<CustomFollowup['channel'], string> = { bot: 'ربات', business: 'چت پشتیبانی', email: 'ایمیل', sms: 'پیامک', instagram: 'اینستاگرام' };
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h5 className="text-sm font-semibold">پیگیری‌های سفارشی (زمان‌بندی آزاد)</h5>
-          <p className="text-xs text-muted-foreground">ارسال پیگیری در زمان دلخواه (از لحظه خرید) از طریق ربات، ایمیل یا پیامک — مستقل از مرحله کاربر.</p>
-        </div>
-        <Button type="button" size="sm" onClick={addRow}><Plus className="h-3 w-3 ml-1" /> افزودن</Button>
+    <div dir="rtl" className="space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0"><h3 className="text-base font-semibold">پیگیری‌های سفارشی</h3><p className="mt-1 text-xs text-muted-foreground">زمان‌بندی از لحظه ثبت‌نام</p></div>
+        <Button type="button" size="sm" variant="outline" onClick={addRow} className="shrink-0"><Plus className="h-4 w-4" /> افزودن پیگیری</Button>
       </div>
-
-      {loading && <div className="text-xs text-muted-foreground">در حال بارگذاری…</div>}
-      {!loading && rows.length === 0 && <div className="text-xs text-muted-foreground">هنوز پیگیری سفارشی ثبت نشده.</div>}
-
-      {rows.map(r => (
-        <div key={r.id} className="border rounded p-3 space-y-3 bg-muted/20">
-          <div className="flex flex-wrap items-center gap-3">
-            <Switch checked={r.enabled} onCheckedChange={(v) => patch(r.id, { enabled: v })} />
-            <Input value={r.name} onChange={(e) => patch(r.id, { name: e.target.value })} className="h-8 w-48" placeholder="نام" />
-            <Select value={r.channel} onValueChange={(v) => patch(r.id, { channel: v as any })}>
-              <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="bot">ربات تلگرام</SelectItem>
-                <SelectItem value="business">چت پشتیبانی (Business)</SelectItem>
-                <SelectItem value="email">ایمیل</SelectItem>
-                <SelectItem value="sms">پیامک</SelectItem>
-                <SelectItem value="instagram">دایرکت اینستاگرام</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex items-center gap-1">
-              <Label className="text-xs">تاخیر (دقیقه)</Label>
-              <Input type="number" value={r.delay_minutes} onChange={(e) => patch(r.id, { delay_minutes: Number(e.target.value) })} className="h-8 w-24" />
-            </div>
-            <div className="flex items-center gap-1">
-              <Label className="text-xs">تکرار</Label>
-              <Input type="number" value={r.max_repeats} onChange={(e) => patch(r.id, { max_repeats: Number(e.target.value) })} className="h-8 w-16" />
-            </div>
-            <div className="flex items-center gap-1">
-              <Label className="text-xs">فاصله تکرار (دقیقه)</Label>
-              <Input type="number" value={r.repeat_delay_minutes} onChange={(e) => patch(r.id, { repeat_delay_minutes: Number(e.target.value) })} className="h-8 w-24" />
-            </div>
-            <div className="flex items-center gap-1">
-              <Switch disabled={r.channel === 'instagram'} checked={r.channel === 'instagram' || r.skip_if_activated} onCheckedChange={(v) => patch(r.id, { skip_if_activated: v, ...(v ? { only_if_activated: false } : {}) })} />
-              <Label className="text-xs">فقط اگر فعال‌سازی نشده</Label>
-            </div>
-            <div className="flex items-center gap-1">
-              <Switch disabled={r.channel === 'instagram'} checked={r.channel !== 'instagram' && r.only_if_activated} onCheckedChange={(v) => patch(r.id, { only_if_activated: v, ...(v ? { skip_if_activated: false } : {}) })} />
-              <Label className="text-xs">فقط اگر فعال‌سازی شده</Label>
-            </div>
-            <div className="mr-auto flex gap-2">
-              <Button type="button" size="sm" variant="outline" onClick={() => save(r)} disabled={savingId === r.id}>
-                {savingId === r.id ? <Loader2 className="h-3 w-3 animate-spin ml-1" /> : <Save className="h-3 w-3 ml-1" />} ذخیره
+      {loading && <div className="py-4 text-sm text-muted-foreground">در حال بارگذاری…</div>}
+      {!loading && rows.length === 0 && <div className="border-b border-dashed py-6 text-sm text-muted-foreground">هنوز پیگیری سفارشی ثبت نشده.</div>}
+      <div className="divide-y divide-border">
+        {rows.map(r => (
+          <Collapsible key={r.id} open={expandedId === r.id} onOpenChange={open => setExpandedId(open ? r.id : null)}>
+            <div className="flex items-center gap-3 py-2">
+              <Button type="button" variant="ghost" aria-expanded={expandedId === r.id} onClick={() => setExpandedId(expandedId === r.id ? null : r.id)} className="h-auto min-w-0 flex-1 justify-start px-0 py-3 text-right whitespace-normal hover:bg-transparent">
+                <span className="min-w-0 flex-1"><span className="block break-words font-semibold">{r.name || 'پیگیری بدون نام'}</span><span className="mt-1 block text-xs font-normal leading-6 text-muted-foreground">{channelNames[r.channel]} · {scheduleDuration(r.delay_minutes)} بعد از ثبت‌نام · {r.max_repeats.toLocaleString('fa-IR')} بار</span></span>
+                <ChevronDown className={'h-4 w-4 shrink-0 transition-transform ' + (expandedId === r.id ? 'rotate-180' : '')} />
               </Button>
-              <Button type="button" size="sm" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+              <Switch checked={r.enabled} onCheckedChange={v => patch(r.id, { enabled: v })} aria-label={'فعال بودن ' + r.name} />
             </div>
-          </div>
-
-          {r.channel === 'email' && (
+            <CollapsibleContent forceMount className="space-y-5 pb-6 data-[state=closed]:hidden">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2"><Label htmlFor={'followup-name-' + r.id}>نام پیگیری</Label><Input id={'followup-name-' + r.id} value={r.name} onChange={e => patch(r.id, { name: e.target.value })} /></div>
+                <div className="space-y-2"><Label>کانال ارسال</Label><Select value={r.channel} onValueChange={v => patch(r.id, { channel: v as CustomFollowup['channel'] })} dir="rtl"><SelectTrigger aria-label="کانال ارسال"><SelectValue /></SelectTrigger><SelectContent>
+                  <SelectItem value="bot">ربات تلگرام / بله</SelectItem><SelectItem value="business">چت پشتیبانی (Business)</SelectItem><SelectItem value="email">ایمیل</SelectItem><SelectItem value="sms">پیامک</SelectItem><SelectItem value="instagram">دایرکت اینستاگرام</SelectItem>
+                </SelectContent></Select></div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="space-y-2"><Label htmlFor={'followup-delay-' + r.id}>اولین ارسال (دقیقه بعد)</Label><Input id={'followup-delay-' + r.id} type="number" value={r.delay_minutes} onChange={e => patch(r.id, { delay_minutes: Number(e.target.value) })} /></div>
+                <div className="space-y-2"><Label htmlFor={'followup-count-' + r.id}>تعداد ارسال</Label><Input id={'followup-count-' + r.id} type="number" value={r.max_repeats} onChange={e => patch(r.id, { max_repeats: Number(e.target.value) })} /></div>
+                <div className="space-y-2"><Label htmlFor={'followup-repeat-' + r.id}>فاصله تکرار (دقیقه)</Label><Input id={'followup-repeat-' + r.id} type="number" value={r.repeat_delay_minutes} onChange={e => patch(r.id, { repeat_delay_minutes: Number(e.target.value) })} /></div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex items-center justify-between gap-3 border-b pb-3"><Label htmlFor={'followup-pending-' + r.id} className="text-sm">فقط قبل از فعال‌سازی</Label><Switch id={'followup-pending-' + r.id} disabled={r.channel === 'instagram'} checked={r.channel === 'instagram' || r.skip_if_activated} onCheckedChange={v => patch(r.id, { skip_if_activated: v, ...(v ? { only_if_activated: false } : {}) })} /></div>
+                <div className="flex items-center justify-between gap-3 border-b pb-3"><Label htmlFor={'followup-active-' + r.id} className="text-sm">فقط بعد از فعال‌سازی</Label><Switch id={'followup-active-' + r.id} disabled={r.channel === 'instagram'} checked={r.channel !== 'instagram' && r.only_if_activated} onCheckedChange={v => patch(r.id, { only_if_activated: v, ...(v ? { skip_if_activated: false } : {}) })} /></div>
+              </div>
+                        {r.channel === 'email' && (
             <div className="space-y-2">
               <Input value={r.email_subject || ''} onChange={(e) => patch(r.id, { email_subject: e.target.value })} placeholder="موضوع ایمیل" dir="rtl" />
               <Textarea rows={4} value={r.email_body || ''} onChange={(e) => patch(r.id, { email_body: e.target.value })} placeholder="متن ایمیل" dir="rtl" />
@@ -195,15 +179,16 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
             </div>
           )}
 
-          <p className="text-[10px] text-muted-foreground">
-            متغیرها: {'{user_name}, {first_name}, {last_name}, {email}, {phone}, {course_title}, {enrollment_id}, {activation_id}, {activation_link}, {activation_token}'}
-          </p>
-
-          <TestStageButton stage="custom" courseId={courseId} customFollowupId={r.id} label="ارسال تستی" />
-        </div>
-      ))}
+              <details className="text-xs text-muted-foreground"><summary className="cursor-pointer py-2">متغیرهای پیام</summary><p className="break-words leading-7">{'{user_name}, {first_name}, {last_name}, {email}, {phone}, {course_title}, {enrollment_id}, {activation_id}, {activation_link}, {activation_token}'}</p></details>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+                <TestStageButton stage="custom" courseId={courseId} customFollowupId={r.id} label="ارسال تستی" />
+                <div className="flex items-center gap-2"><Button type="button" size="icon" variant="ghost" aria-label={'حذف ' + r.name} onClick={() => remove(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button><Button type="button" size="sm" variant="outline" onClick={() => save(r)} disabled={savingId === r.id}>{savingId === r.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} ذخیره پیگیری</Button></div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        ))}
+      </div>
     </div>
   );
 };
-
 export default CustomFollowupsEditor;

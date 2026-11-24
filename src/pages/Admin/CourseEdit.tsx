@@ -1,12 +1,13 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import CourseEditorNavigation, { courseEditorSections, type CourseEditorSectionId } from '@/components/Admin/CourseEditorNavigation';
+import CourseScheduleSection, { CourseEditorDisclosure } from '@/components/Admin/CourseScheduleSection';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, DollarSign, RefreshCw, Percent, Clock, Link as LinkIcon, MessageCircle, Gift, Rocket } from 'lucide-react';
+import { ArrowLeft, DollarSign, RefreshCw, Percent, Clock, Link as LinkIcon, MessageCircle, Gift, Rocket, Save, Loader2 } from 'lucide-react';
 import CourseGamificationSettings, { CourseGamificationSettingsHandle } from '@/components/Admin/CourseGamificationSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -74,10 +75,12 @@ const CourseEdit: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const { toast } = useToast();
   const gamificationSettingsRef = useRef<CourseGamificationSettingsHandle>(null);
-  
+
+  const [activeSection, setActiveSection] = useState<CourseEditorSectionId>('general');
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState<Course | null>(null);
-  
+
   const [formData, setFormData] = useState({
     slug: '',
     title: '',
@@ -189,7 +192,7 @@ const CourseEdit: React.FC = () => {
         .single();
 
       if (error) throw error;
-      
+
       setCourse(data);
       setFormData({
         slug: data.slug,
@@ -301,10 +304,10 @@ const CourseEdit: React.FC = () => {
     try {
       const rialAmount = await TetherlandService.convertUSDToIRR(usdAmount);
       const rate = await TetherlandService.getUSDTToIRRRate();
-      
+
       setExchangeRate(rate);
       setCalculatedRialPrice(rialAmount);
-      
+
       // Update the price field with calculated Rial amount
       setFormData(prev => ({ ...prev, price: rialAmount.toString() }));
     } catch (error) {
@@ -327,7 +330,7 @@ const CourseEdit: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.title.trim() || !formData.slug.trim() || !formData.price) {
       toast({
         title: "خطا",
@@ -337,6 +340,7 @@ const CourseEdit: React.FC = () => {
       return;
     }
 
+    setSaving(true);
     try {
       const courseData = {
         slug: formData.slug.trim(),
@@ -424,11 +428,11 @@ const CourseEdit: React.FC = () => {
         .from('courses')
         .update(courseData)
         .eq('id', courseId);
-      
+
       if (error) throw error;
 
       await gamificationSettingsRef.current?.save();
-      
+
       toast({
         title: "موفق",
         description: "دوره با موفقیت به‌روزرسانی شد"
@@ -442,6 +446,8 @@ const CourseEdit: React.FC = () => {
         description: error.message || "خطا در ذخیره دوره",
         variant: "destructive"
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -473,27 +479,31 @@ const CourseEdit: React.FC = () => {
     );
   }
 
+
+  const selectedSection = courseEditorSections.find(section => section.id === activeSection) ?? courseEditorSections[0];
+
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" onClick={() => navigate('/enroll/admin')}>
-            <ArrowLeft className="h-4 w-4 ml-2" />
-            بازگشت
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">ویرایش دوره</h1>
-            <p className="text-muted-foreground">ویرایش دوره: {course.title}</p>
-          </div>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>اطلاعات دوره</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div dir="rtl" className="mx-auto max-w-7xl px-3 pb-28 pt-6 sm:px-6 lg:px-8">
+        <header className="mb-6 flex items-start gap-3 border-b border-border pb-5">
+          <Button type="button" variant="ghost" size="icon" aria-label="بازگشت به دوره‌ها" onClick={() => navigate('/enroll/admin')}><ArrowLeft className="h-5 w-5 rotate-180" /></Button>
+          <div className="min-w-0 flex-1"><p className="mb-2 text-xs text-muted-foreground">مدیریت دوره‌ها / ویرایش دوره</p><h1 className="break-words text-xl font-bold sm:text-2xl">{course.title}</h1></div>
+          <span className="shrink-0 rounded-md bg-muted px-3 py-1.5 text-xs text-muted-foreground">{formData.is_active ? 'فعال' : 'غیرفعال'}</span>
+        </header>
+        <div className="grid items-start gap-6 lg:grid-cols-[230px_minmax(0,1fr)] lg:gap-10">
+          <CourseEditorNavigation active={activeSection} onChange={setActiveSection} />
+          <div className="min-w-0 lg:border-r lg:border-border lg:pr-8">
+            <div className="mb-6"><h2 className="text-lg font-semibold">{selectedSection.title}</h2><p className="mt-1 text-sm text-muted-foreground">{selectedSection.detail}</p></div>
+            <form id="course-edit-form" onSubmit={handleSubmit} className="min-w-0 [&_input]:max-w-full [&_textarea]:max-w-full"
+              onInvalidCapture={event => {
+                const target = event.target as HTMLInputElement;
+                const panel = target.closest<HTMLElement>('[data-course-section]');
+                if (!panel?.hidden) return;
+                event.preventDefault();
+                const section = courseEditorSections.find(item => item.id === panel.dataset.courseSection);
+                if (section) { setActiveSection(section.id); requestAnimationFrame(() => target.focus()); }
+              }}>
+              <section hidden={activeSection !== 'general'} data-course-section="general" aria-label="اطلاعات دوره" className="space-y-6"><div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="title">عنوان دوره *</Label>
                   <Input
@@ -504,7 +514,7 @@ const CourseEdit: React.FC = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="slug">نامک (Slug) *</Label>
                   <Input
@@ -516,8 +526,7 @@ const CourseEdit: React.FC = () => {
                   />
                 </div>
               </div>
-
-              <div>
+<div>
                 <Label htmlFor="description">توضیحات</Label>
                 <Textarea
                   id="description"
@@ -527,15 +536,36 @@ const CourseEdit: React.FC = () => {
                   rows={3}
                 />
               </div>
+<div className="flex items-center gap-2">
+                <Switch
+                  id="is_active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
+                />
+                <Label htmlFor="is_active">دوره فعال است</Label>
+              </div>
+<div className="border-t pt-6 space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">تنظیمات صفحه فرود</h3>
 
-              {/* Pricing Section */}
-              <div className="border-t pt-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="use_landing_page_merge"
+                    checked={formData.use_landing_page_merge}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, use_landing_page_merge: checked }))}
+                  />
+                  <Label htmlFor="use_landing_page_merge">ادغام دکمه شروع دوره</Label>
+                  <p className="text-sm text-muted-foreground">
+                    جایگزین کردن لینک خارجی با صفحه ثبت‌نام داخلی (/enroll?course=slug)
+                  </p>
+                </div>
+              </div></section>
+<section hidden={activeSection !== 'pricing'} data-course-section="pricing" aria-label="قیمت و پرداخت" className="space-y-6"><div className="border-t pt-6 space-y-4">
                 <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <DollarSign className="h-5 w-5" />
                   تنظیمات قیمت‌گذاری
                 </h3>
-                
-                <div className="flex items-center space-x-2">
+
+                <div className="flex items-center gap-2">
                   <Switch
                     id="use_dollar_price"
                     checked={formData.use_dollar_price}
@@ -566,9 +596,9 @@ const CourseEdit: React.FC = () => {
                     </div>
 
                     {exchangeRate && calculatedRialPrice && (
-                      <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="bg-muted/30 p-3 rounded-md border border-border">
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-blue-800 dark:text-blue-400">قیمت محاسبه شده</h4>
+                          <h4 className="font-medium text-foreground">قیمت محاسبه شده</h4>
                           <Button
                             type="button"
                             variant="outline"
@@ -583,7 +613,7 @@ const CourseEdit: React.FC = () => {
                           <p className="text-muted-foreground">
                             نرخ تتر به ریال: {TetherlandService.formatIRRAmount(exchangeRate)} ریال
                           </p>
-                          <p className="font-medium text-lg text-blue-700 dark:text-blue-300">
+                          <p className="font-medium text-lg text-foreground">
                             قیمت نهایی: {TetherlandService.formatIRRAmount(calculatedRialPrice)} ریال
                           </p>
                         </div>
@@ -617,8 +647,8 @@ const CourseEdit: React.FC = () => {
                     <Percent className="h-5 w-5" />
                     تنظیمات حراج
                   </h3>
-                  
-                  <div className="flex items-center space-x-2">
+
+                  <div className="flex items-center gap-2">
                     <Switch
                       id="is_sale_enabled"
                       checked={formData.is_sale_enabled}
@@ -643,7 +673,7 @@ const CourseEdit: React.FC = () => {
                           required={formData.is_sale_enabled}
                         />
                       </div>
-                      
+
                       <div>
                         <Label htmlFor="sale_expires_at">تاریخ پایان حراج</Label>
                         <Input
@@ -664,8 +694,8 @@ const CourseEdit: React.FC = () => {
                     <Rocket className="h-5 w-5" />
                     تنظیمات پیش‌فروش
                   </h3>
-                  
-                  <div className="flex items-center space-x-2">
+
+                  <div className="flex items-center gap-2">
                     <Switch
                       id="is_pre_launch_enabled"
                       checked={formData.is_pre_launch_enabled}
@@ -676,13 +706,13 @@ const CourseEdit: React.FC = () => {
 
                   {formData.is_pre_launch_enabled && (
                     <div className="space-y-4">
-                      <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
-                        <h4 className="font-medium text-orange-800 dark:text-orange-400 mb-2">نحوه عملکرد پیش‌فروش</h4>
+                      <div className="bg-muted/30 p-3 rounded-md border border-border">
+                        <h4 className="font-medium text-foreground mb-2">نحوه عملکرد پیش‌فروش</h4>
                         <p className="text-sm text-muted-foreground">
                           در حالت پیش‌فروش، دوره با قیمت ویژه عرضه می‌شود و پس از تاریخ لانچ به قیمت اصلی بازمی‌گردد.
                         </p>
                       </div>
-                      
+
                       <div>
                         <Label htmlFor="pre_launch_price">
                           قیمت پیش‌فروش ({formData.use_dollar_price ? 'دلار آمریکا' : 'تومان'}) *
@@ -697,7 +727,7 @@ const CourseEdit: React.FC = () => {
                           required={formData.is_pre_launch_enabled}
                         />
                       </div>
-                      
+
                       <div>
                         <Label htmlFor="pre_launch_ends_at">تاریخ پایان پیش‌فروش *</Label>
                         <Input
@@ -708,7 +738,7 @@ const CourseEdit: React.FC = () => {
                           required={formData.is_pre_launch_enabled}
                         />
                       </div>
-                      
+
                       <div>
                         <Label htmlFor="launch_date">تاریخ لانچ رسمی *</Label>
                         <Input
@@ -726,15 +756,38 @@ const CourseEdit: React.FC = () => {
                   )}
                 </div>
               </div>
-
-              {/* Academy Access Section */}
-              <div className="border-t pt-6 space-y-4">
+<div className="border-t pt-6 space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">پرداخت اقساطی (اسنپ‌پی)</h3>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="snapppay_enabled"
+                    checked={formData.snapppay_enabled !== false}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, snapppay_enabled: checked }))}
+                  />
+                  <Label htmlFor="snapppay_enabled">نمایش گزینه خرید اقساطی اسنپ‌پی برای این دوره</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  در صورت غیرفعال بودن، اسنپ‌پی حتی اگر در تنظیمات کلی فعال باشد برای این دوره نمایش داده نمی‌شود.
+                </p>
+              </div>
+<div className="border-t pt-6 space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">پرداخت ۶ قسطه (دیجی‌پی)</h3>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="digipay_enabled"
+                    checked={formData.digipay_enabled !== false}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, digipay_enabled: checked }))}
+                  />
+                  <Label htmlFor="digipay_enabled">نمایش گزینه خرید ۶ قسطه دیجی‌پی برای این دوره</Label>
+                </div>
+              </div></section>
+<section hidden={activeSection !== 'access'} data-course-section="access" aria-label="محتوا و دسترسی" className="space-y-6"><div className="border-t pt-6 space-y-4">
                 <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <LinkIcon className="h-5 w-5" />
                   سیستم دسترسی دوره آکادمی
                 </h3>
-                
-                <div className="flex items-center space-x-2">
+
+                <div className="flex items-center gap-2">
                   <Switch
                     id="enable_course_access"
                     checked={formData.enable_course_access}
@@ -746,32 +799,32 @@ const CourseEdit: React.FC = () => {
                 {formData.enable_course_access && (
                   <div className="space-y-4">
                     {/* Free Access Option */}
-                    <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border">
                       <div className="space-y-1">
-                        <Label htmlFor="free-access-toggle" className="text-base font-medium text-green-800 dark:text-green-400">
+                        <Label htmlFor="free-access-toggle" className="text-base font-medium text-foreground">
                           دسترسی رایگان عمومی
                         </Label>
-                        <p className="text-sm text-green-600 dark:text-green-300">
+                        <p className="text-sm text-foreground">
                           اگر فعال باشد، لینک /access نیازی به ورود یا احراز هویت ندارد و همه می‌توانند محتوای دوره را ببینند
                         </p>
                       </div>
                       <Switch
                         id="free-access-toggle"
                         checked={formData.is_free_access}
-                        onCheckedChange={(checked) => 
+                        onCheckedChange={(checked) =>
                           setFormData(prev => ({ ...prev, is_free_access: checked }))
                         }
                       />
                     </div>
 
-                    <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <h4 className="font-medium text-blue-800 dark:text-blue-400 mb-2">مدیریت محتوای دوره</h4>
+                    <div className="bg-muted/30 p-3 rounded-md border border-border">
+                      <h4 className="font-medium text-foreground mb-2">مدیریت محتوای دوره</h4>
                       <p className="text-sm text-muted-foreground mb-4">
                         برای مدیریت درس‌ها و بخش‌های دوره از دکمه زیر استفاده کنید.
                       </p>
-                      <Button 
+                      <Button
                         type="button"
-                        variant="outline" 
+                        variant="outline"
                         onClick={() => navigate(`/enroll/admin/course/${courseId}/lessons`)}
                         className="w-full"
                       >
@@ -782,8 +835,8 @@ const CourseEdit: React.FC = () => {
                 )}
 
                 {!formData.enable_course_access && (
-                  <div className="bg-yellow-50 dark:bg-yellow-950/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                    <h4 className="font-medium text-yellow-800 dark:text-yellow-400 mb-2">مدیریت محتوا غیرفعال</h4>
+                  <div className="bg-muted/30 p-3 rounded-md border border-border">
+                    <h4 className="font-medium text-foreground mb-2">مدیریت محتوا غیرفعال</h4>
                     <p className="text-sm text-muted-foreground">
                       برای دسترسی به سیستم مدیریت محتوای دوره (درس‌ها و بخش‌ها)، ابتدا سوئیچ "فعال‌سازی سیستم دسترسی دوره" را روشن کنید.
                     </p>
@@ -801,7 +854,7 @@ const CourseEdit: React.FC = () => {
                       placeholder="https://t.me/support"
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="telegram_channel_link">لینک کانال تلگرام</Label>
                     <Input
@@ -826,14 +879,14 @@ const CourseEdit: React.FC = () => {
                 </div>
 
                 {/* Required Activations Section */}
-                <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
-                  <h4 className="font-medium text-orange-800 dark:text-orange-400 mb-3">فعال‌سازی‌های اجباری</h4>
+                <div className="bg-muted/30 p-3 rounded-md border border-border">
+                  <h4 className="font-medium text-foreground mb-3">فعال‌سازی‌های اجباری</h4>
                   <p className="text-sm text-muted-foreground mb-4">
                     در صورت فعال بودن، کاربران تا زمان فعال‌سازی این بخش‌ها نمی‌توانند به محتوای دوره دسترسی داشته باشند.
                   </p>
-                  
+
                   <div className="space-y-3">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         id="support_activation_required"
                         checked={formData.support_activation_required}
@@ -841,8 +894,8 @@ const CourseEdit: React.FC = () => {
                       />
                       <Label htmlFor="support_activation_required">فعال‌سازی پشتیبانی اجباری</Label>
                     </div>
-                    
-                    <div className="flex items-center space-x-2">
+
+                    <div className="flex items-center gap-2">
                       <Switch
                         id="telegram_activation_required"
                         checked={formData.telegram_activation_required}
@@ -851,7 +904,7 @@ const CourseEdit: React.FC = () => {
                       <Label htmlFor="telegram_activation_required">فعال‌سازی کانال تلگرام اجباری</Label>
                     </div>
 
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <Switch
                         id="vpn_warning_enabled"
                         checked={formData.vpn_warning_enabled}
@@ -859,10 +912,10 @@ const CourseEdit: React.FC = () => {
                       />
                       <Label htmlFor="vpn_warning_enabled">نمایش هشدار خاموش کردن VPN در پخش ویدیو درس‌ها</Label>
                     </div>
-                    
-                    
+
+
                      {/* Smart Activation Section */}
-                     <div className="flex items-center space-x-2">
+                     <div className="flex items-center gap-2">
                        <Switch
                          id="smart_activation_enabled"
                          checked={formData.smart_activation_enabled}
@@ -871,52 +924,13 @@ const CourseEdit: React.FC = () => {
                        <Label htmlFor="smart_activation_enabled">فعال‌سازی هوشمند</Label>
                      </div>
 
-                      <div className="flex items-center space-x-2">
-                       <Switch
-                         id="rafiei_bot_followup_enabled"
-                         checked={formData.rafiei_bot_followup_enabled}
-                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_followup_enabled: checked, rafiei_bot_activation_required: checked ? prev.rafiei_bot_activation_required : false }))}
-                       />
-                       <Label htmlFor="rafiei_bot_followup_enabled">کوچ شخصی تلگرام (پیگیری خودکار)</Label>
-                     </div>
 
-                     <div className="flex items-center space-x-2 pr-6">
-                       <Switch
-                         id="rafiei_bot_activation_required"
-                         checked={!!formData.rafiei_bot_activation_required}
-                         disabled={!formData.rafiei_bot_followup_enabled}
-                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_activation_required: checked }))}
-                       />
-                       <Label htmlFor="rafiei_bot_activation_required" className={!formData.rafiei_bot_followup_enabled ? 'text-muted-foreground' : ''}>
-                         فعال‌سازی کوچ تلگرام اجباری (ویزارد بعد از خرید)
-                       </Label>
-                      </div>
 
-                     {formData.rafiei_bot_followup_enabled && (
-                       <div className="pr-6 space-y-2 border-r-2 border-muted pr-4 mt-2">
-                         <p className="text-sm font-medium text-muted-foreground">انواع پیام‌های شخصی‌سازی شده کوچ</p>
-                         {([
-                           ['lesson_complete', '🎯 تبریک پس از اتمام هر درس'],
-                           ['course_complete', '🏆 تبریک پایان دوره'],
-                           ['inactivity', '⏰ یادآوری در صورت غیبت (۳/۷/۱۴ روز)'],
-                           ['coaching', '💬 سوالات کوچینگ دوره‌ای'],
-                         ] as const).map(([key, label]) => (
-                           <div key={key} className="flex items-center space-x-2">
-                             <Switch
-                               id={`bot_cfg_${key}`}
-                               checked={formData.rafiei_bot_followup_config?.[key] !== false}
-                               onCheckedChange={(checked) => setFormData(prev => ({
-                                 ...prev,
-                                 rafiei_bot_followup_config: { ...prev.rafiei_bot_followup_config, [key]: checked },
-                               }))}
-                             />
-                             <Label htmlFor={`bot_cfg_${key}`}>{label}</Label>
-                           </div>
-                         ))}
-                       </div>
-                     )}
-                     
-                     <div className="flex items-center space-x-2">
+
+
+
+
+                     <div className="flex items-center gap-2">
                        <Switch
                          id="telegram_only_access"
                          checked={formData.telegram_only_access}
@@ -927,9 +941,9 @@ const CourseEdit: React.FC = () => {
                          در صورت فعال بودن، کاربران فقط از طریق فعال‌سازی تلگرام می‌توانند به محتوای دوره دسترسی داشته باشند
                        </p>
                      </div>
-                    
+
                     {formData.smart_activation_enabled && (
-                      <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800 mt-3">
+                      <div className="bg-muted/30 p-3 rounded-md border border-border mt-3">
                         <Label htmlFor="smart_activation_telegram_link">لینک تلگرام فعال‌سازی هوشمند</Label>
                         <Textarea
                           id="smart_activation_telegram_link"
@@ -945,17 +959,69 @@ mba
                           rows={8}
                           className="mt-2"
                         />
-                        <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+                        <p className="text-sm text-foreground mt-2">
                           می‌توانید از متغیرهای زیر در متن استفاده کنید: {"{name}"}, {"{lastname}"}, {"{phone}"}, {"{email}"}
                         </p>
                       </div>
                     )}
 
                     {/* Telegram Bot Support Activation Tracking */}
-                    <div className="border-t pt-4 mt-4 space-y-3">
+
+
+                    {/* ---- Support Activation Followup ---- */}
+
+
+                    {/* Custom time-based followups */}
+
+                  </div>
+                </div>
+              </div>
+<div className="border-t pt-6 space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">تنظیمات رفیعی پلیر (SpotPlayer)</h3>
+
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="is_spotplayer_enabled"
+                    checked={formData.is_spotplayer_enabled}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_spotplayer_enabled: checked }))}
+                  />
+                  <Label htmlFor="is_spotplayer_enabled">فعال‌سازی رفیعی پلیر</Label>
+                </div>
+
+                {formData.is_spotplayer_enabled && (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="spotplayer_course_id">شناسه دوره در SpotPlayer *</Label>
+                      <Input
+                        id="spotplayer_course_id"
+                        value={formData.spotplayer_course_id}
+                        onChange={(e) => setFormData(prev => ({ ...prev, spotplayer_course_id: e.target.value }))}
+                        placeholder="مثال: course_123"
+                        required={formData.is_spotplayer_enabled}
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        شناسه دوره در پنل SpotPlayer که برای ایجاد لایسنس استفاده می‌شود
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="create_test_license"
+                        checked={formData.create_test_license}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, create_test_license: checked }))}
+                      />
+                      <Label htmlFor="create_test_license">ایجاد لایسنس تستی</Label>
+                      <p className="text-sm text-muted-foreground">
+                        لایسنس‌های تستی محدودیت زمانی دارند
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div></section>
+<section hidden={activeSection !== 'activation'} data-course-section="activation" aria-label="پشتیبانی و پیام‌ها" className="space-y-6"><div className="border-t pt-4 mt-4 space-y-3">
                       <h4 className="text-sm font-semibold text-foreground">فعال‌سازی پشتیبانی از طریق ربات تلگرام (رهگیری کامل)</h4>
 
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center gap-2">
                         <Switch
                           id="telegram_support_activation_enabled"
                           checked={formData.telegram_support_activation_enabled}
@@ -970,7 +1036,7 @@ mba
                       {/* Bale messenger activation (opt-in) */}
                       <div className="border-t pt-4 mt-4 space-y-3">
                         <h4 className="text-sm font-semibold text-foreground">فعال‌سازی از طریق ربات بله</h4>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center gap-2">
                           <Switch
                             id="bale_support_activation_enabled"
                             checked={!!formData.bale_support_activation_enabled}
@@ -1005,7 +1071,7 @@ mba
 
 
 
-                      <div className="bg-muted/40 p-3 rounded-lg mt-2">
+                      <div className="border-b border-border pb-5 pt-3">
                         <Label htmlFor="telegram_activation_keyword">کلمه کلیدی فعال‌سازی</Label>
                         <Input
                           id="telegram_activation_keyword"
@@ -1019,9 +1085,10 @@ mba
                         </p>
                       </div>
 
-                      <div className="bg-muted/40 p-3 rounded-lg mt-2">
-                        <Label htmlFor="support_prefilled_message_template">قالب پیام پیش‌فرض پشتیبانی</Label>
-                        <Textarea
+                      <CourseEditorDisclosure title="قالب پیام پیش‌فرض پشتیبانی" summary="اطلاعاتی که دانشجو برای پشتیبانی ارسال می‌کند">
+<Label htmlFor="support_prefilled_message_template">قالب پیام پیش‌فرض پشتیبانی</Label>
+
+<Textarea
                           id="support_prefilled_message_template"
                           value={formData.support_prefilled_message_template}
                           onChange={(e) => setFormData(prev => ({ ...prev, support_prefilled_message_template: e.target.value }))}
@@ -1030,13 +1097,14 @@ mba
                           className="mt-2 font-mono text-sm"
                           dir="rtl"
                         />
-                        <p className="text-xs text-muted-foreground mt-2">
+
+<p className="text-xs text-muted-foreground mt-2">
                           این پیام هنگام کلیک کاربر روی «فعال‌سازی پشتیبانی» به تلگرام ارسال می‌شود. متغیرهای قابل استفاده: <code>{'{keyword}'}</code>، <code>{'{course}'}</code>، <code>{'{name}'}</code>، <code>{'{lastname}'}</code>، <code>{'{phone}'}</code>، <code>{'{email}'}</code>، <code>{'{activation_token}'}</code>. در صورت خالی بودن، قالب پیش‌فرض استفاده می‌شود.
                         </p>
-                      </div>
+</CourseEditorDisclosure>
 
 
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center gap-2">
                         <Switch
                           id="telegram_course_access_via_bot_enabled"
                           checked={formData.telegram_course_access_via_bot_enabled}
@@ -1046,29 +1114,32 @@ mba
                       </div>
 
                       {formData.telegram_support_activation_enabled && (
-                        <div className="bg-muted/40 p-3 rounded-lg mt-2">
-                          <Label htmlFor="telegram_bot_welcome_message">پیام خوش‌آمدگویی ربات</Label>
-                          <Textarea
+                        <CourseEditorDisclosure title="پیام خوش‌آمدگویی ربات" summary="متن اصلی و پیام‌های اضافه">
+<Label htmlFor="telegram_bot_welcome_message">پیام خوش‌آمدگویی ربات</Label>
+
+<Textarea
                             id="telegram_bot_welcome_message"
                             value={formData.telegram_bot_welcome_message}
                             onChange={(e) => setFormData(prev => ({ ...prev, telegram_bot_welcome_message: e.target.value }))}
                             rows={7}
                             className="mt-2"
                           />
-                          <p className="text-xs text-muted-foreground mt-2">
+
+<p className="text-xs text-muted-foreground mt-2">
                             متغیرهای در دسترس: {"{{name}}"}, {"{{course_title}}"}
                           </p>
-                          <ActivationExtraMessagesEditor
+
+<ActivationExtraMessagesEditor
                             event="welcome"
                             value={formData.activation_extra_messages}
                             onChange={(next) => setFormData(prev => ({ ...prev, activation_extra_messages: next }))}
                           />
-                        </div>
+</CourseEditorDisclosure>
                       )}
 
                       {formData.telegram_support_activation_enabled && (
-                        <div className="bg-muted/40 p-3 rounded-lg mt-2">
-                          <div className="flex items-center justify-between">
+                        <CourseEditorDisclosure title="پیام پس از فعال‌سازی پشتیبانی" summary="متن، رسانه، دکمه‌ها و تأخیر ارسال">
+<div className="flex items-center justify-between">
                             <Label htmlFor="telegram_bot_activated_message">پیام پس از فعال‌سازی پشتیبانی</Label>
                             <div className="flex items-center gap-2">
                               <Label htmlFor="telegram_bot_activated_enabled" className="text-xs text-muted-foreground">ارسال این پیام</Label>
@@ -1079,14 +1150,16 @@ mba
                               />
                             </div>
                           </div>
-                          <Textarea
+
+<Textarea
                             id="telegram_bot_activated_message"
                             value={formData.telegram_bot_activated_message}
                             onChange={(e) => setFormData(prev => ({ ...prev, telegram_bot_activated_message: e.target.value }))}
                             rows={7}
                             className="mt-2"
                           />
-                          <div className="mt-3">
+
+<div className="mt-3">
                             <MessageMediaButtonsEditor
                               hideButtons
                               mediaUrl={null}
@@ -1099,18 +1172,20 @@ mba
                               }))}
                             />
                           </div>
-                          <div className="flex items-center gap-2 mt-3">
+
+<div className="flex items-center gap-2 mt-3">
                             <Label className="text-xs">تاخیر ارسال (دقیقه)</Label>
                             <Input type="number" min={0} className="h-8 w-24"
                               value={formData.telegram_bot_activated_delay_minutes}
                               onChange={(e) => setFormData(prev => ({ ...prev, telegram_bot_activated_delay_minutes: Math.max(0, Number(e.target.value) || 0) }))} />
                             <span className="text-xs text-muted-foreground">۰ = ارسال فوری</span>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-2">
+
+<p className="text-xs text-muted-foreground mt-2">
                             پس از فعال‌سازی پشتیبانی، این پیام همراه با دکمه‌های دسترسی دوره برای کاربر ارسال می‌شود. متغیرها: {"{{name}}"}, {"{{course_title}}"}
                           </p>
 
-                          <div className="mt-4">
+<div className="mt-4">
                             <Label>دکمه‌های سفارشی زیر پیام</Label>
                             <p className="text-xs text-muted-foreground mt-1 mb-2">علاوه بر دکمه‌های پیش‌فرض (دسترسی دوره، کانال، پشتیبانی)، این دکمه‌ها هم افزوده می‌شوند.</p>
                             <div className="space-y-2">
@@ -1161,17 +1236,58 @@ mba
                               </Button>
                             </div>
                           </div>
-                          <ActivationExtraMessagesEditor
+
+<ActivationExtraMessagesEditor
                             event="activated"
                             value={formData.activation_extra_messages}
                             onChange={(next) => setFormData(prev => ({ ...prev, activation_extra_messages: next }))}
                           />
-                        </div>
+</CourseEditorDisclosure>
                       )}
-                    </div>
-
-                    {/* ---- Support Activation Followup ---- */}
-                    <div className="border-t pt-4 mt-4 space-y-4">
+                    </div></section>
+<section hidden={activeSection !== 'followups'} data-course-section="followups" aria-label="زمان‌بندی و پیگیری" className="space-y-6"><section className="space-y-3 border-b pb-6"><h3 className="text-base font-semibold">کوچ شخصی</h3><div className="flex items-center gap-2">
+                       <Switch
+                         id="rafiei_bot_followup_enabled"
+                         checked={formData.rafiei_bot_followup_enabled}
+                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_followup_enabled: checked, rafiei_bot_activation_required: checked ? prev.rafiei_bot_activation_required : false }))}
+                       />
+                       <Label htmlFor="rafiei_bot_followup_enabled">کوچ شخصی تلگرام (پیگیری خودکار)</Label>
+                     </div>
+<div className="flex items-center gap-2 pr-6">
+                       <Switch
+                         id="rafiei_bot_activation_required"
+                         checked={!!formData.rafiei_bot_activation_required}
+                         disabled={!formData.rafiei_bot_followup_enabled}
+                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, rafiei_bot_activation_required: checked }))}
+                       />
+                       <Label htmlFor="rafiei_bot_activation_required" className={!formData.rafiei_bot_followup_enabled ? 'text-muted-foreground' : ''}>
+                         فعال‌سازی کوچ تلگرام اجباری (ویزارد بعد از خرید)
+                       </Label>
+                      </div>
+{formData.rafiei_bot_followup_enabled && (
+                       <div className="space-y-2 border-r-2 border-muted pr-4 mt-2">
+                         <p className="text-sm font-medium text-muted-foreground">انواع پیام‌های شخصی‌سازی شده کوچ</p>
+                         {([
+                           ['lesson_complete', '🎯 تبریک پس از اتمام هر درس'],
+                           ['course_complete', '🏆 تبریک پایان دوره'],
+                           ['inactivity', '⏰ یادآوری در صورت غیبت (۳/۷/۱۴ روز)'],
+                           ['coaching', '💬 سوالات کوچینگ دوره‌ای'],
+                         ] as const).map(([key, label]) => (
+                           <div key={key} className="flex items-center gap-2">
+                             <Switch
+                               id={`bot_cfg_${key}`}
+                               checked={formData.rafiei_bot_followup_config?.[key] !== false}
+                               onCheckedChange={(checked) => setFormData(prev => ({
+                                 ...prev,
+                                 rafiei_bot_followup_config: { ...prev.rafiei_bot_followup_config, [key]: checked },
+                               }))}
+                             />
+                             <Label htmlFor={`bot_cfg_${key}`}>{label}</Label>
+                           </div>
+                         ))}
+                       </div>
+                     )}</section>
+<div className="border-t pt-4 mt-4 space-y-4">
                       <div className="flex items-center justify-between">
                         <h4 className="text-sm font-semibold text-foreground">پیگیری خودکار فعال‌سازی پشتیبانی</h4>
                         <div className="flex items-center gap-2">
@@ -1183,31 +1299,24 @@ mba
                           <Label htmlFor="support_followup_enabled">فعال</Label>
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        پیگیری در سه مرحله به کاربرانی که هنوز پشتیبانی را فعال نکرده‌اند ارسال می‌شود. متغیرهای مجاز: <code>{'{{name}}'}</code>, <code>{'{{course_title}}'}</code>. حداکثر تکرار در هر مرحله: 
+                      <div className="flex items-center justify-between gap-4 border-b pb-4">
+                        <Label htmlFor="followup-max-repeats" className="text-sm">حداکثر ارسال در هر مرحله</Label>
                         <Input
+                          id="followup-max-repeats"
                           type="number"
                           min={1}
                           max={5}
-                          className="inline-block w-16 h-7 mx-2"
+                          className="h-9 w-20 shrink-0"
                           value={formData.support_followup_max_repeats}
                           onChange={(e) => setFormData(prev => ({ ...prev, support_followup_max_repeats: Number(e.target.value) }))}
                         />
-                      </p>
+                      </div>
 
                       {/* Stage 1: Email + SMS */}
-                      <div className="bg-muted/40 p-3 rounded-lg space-y-3">
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <h5 className="text-sm font-semibold">مرحله ۱ — خریدار وارد ربات نشده (ایمیل + پیامک)</h5>
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={formData.support_followup_stage1_enabled}
-                              onCheckedChange={(v) => setFormData(prev => ({ ...prev, support_followup_stage1_enabled: v }))}
-                            />
-                            <Label className="text-xs">فعال</Label>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
+                      <CourseScheduleSection title="۱. هنوز وارد ربات نشده" channel="ایمیل و پیامک" delay={formData.support_followup_stage1_delay_minutes} repeat={formData.support_followup_stage1_repeat_delay_minutes} enabled={formData.support_followup_stage1_enabled} onEnabledChange={value => setFormData(prev => ({ ...prev, support_followup_stage1_enabled: value }))}>
+
+
+<div className="grid grid-cols-2 gap-3">
                           <div>
                             <Label className="text-xs">تأخیر ارسال اول (دقیقه)</Label>
                             <Input type="number" min={1} className="h-8"
@@ -1221,13 +1330,15 @@ mba
                               onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_repeat_delay_minutes: Number(e.target.value) }))} />
                           </div>
                         </div>
-                        <div>
+
+<div>
                           <Label>موضوع ایمیل</Label>
                           <Input value={formData.support_followup_stage1_email_subject}
                             onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_email_subject: e.target.value }))}
                             className="mt-1" dir="rtl" />
                         </div>
-                        <div>
+
+<div>
                           <Label>متن ایمیل</Label>
                           <Textarea rows={5} value={formData.support_followup_stage1_email_body}
                             onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_email_body: e.target.value }))}
@@ -1236,13 +1347,15 @@ mba
                             متغیرهای مجاز: <code dir="ltr">{'{user_name}'}</code>, <code dir="ltr">{'{first_name}'}</code>, <code dir="ltr">{'{last_name}'}</code>, <code dir="ltr">{'{email}'}</code>, <code dir="ltr">{'{phone}'}</code>, <code dir="ltr">{'{course_title}'}</code>, <code dir="ltr">{'{enrollment_id}'}</code>, <code dir="ltr">{'{activation_id}'}</code>, <code dir="ltr">{'{activation_link}'}</code>, <code dir="ltr">{'{activation_token}'}</code>.
                           </p>
                         </div>
-                        <div>
+
+<div>
                           <Label>متن پیامک (fallback در صورت خالی بودن آدرس تمپلیت)</Label>
                           <Textarea rows={2} value={formData.support_followup_stage1_sms_text}
                             onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_sms_text: e.target.value }))}
                             className="mt-1" dir="rtl" />
                         </div>
-                        <div>
+
+<div>
                           <Label>آدرس تمپلیت کاوه‌نگار (Lookup API)</Label>
                           <Textarea rows={2} value={formData.support_followup_stage1_sms_template_url}
                             onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage1_sms_template_url: e.target.value }))}
@@ -1251,22 +1364,15 @@ mba
                             متغیرهای مجاز: <code>{'{api_key}'}</code>, <code>{'{user_phone_number}'}</code>, <code>{'{user_name}'}</code>, <code>{'{course_title}'}</code>. در صورت خالی بودن، از متن پیامک بالا استفاده می‌شود.
                           </p>
                         </div>
-                        <TestStageButton stage={1} courseId={courseId!} />
-                      </div>
+
+<TestStageButton stage={1} courseId={course.id} />
+</CourseScheduleSection>
 
                       {/* Stage 2: Bot */}
-                      <div className="bg-muted/40 p-3 rounded-lg space-y-3">
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <h5 className="text-sm font-semibold">مرحله ۲ — وارد ربات شده، روی «فعال‌سازی پشتیبانی» نزده</h5>
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={formData.support_followup_stage2_enabled}
-                              onCheckedChange={(v) => setFormData(prev => ({ ...prev, support_followup_stage2_enabled: v }))}
-                            />
-                            <Label className="text-xs">فعال</Label>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
+                      <CourseScheduleSection title="۲. وارد ربات شده؛ فعال‌سازی را نزده" channel="ربات تلگرام / بله" delay={formData.support_followup_stage2_delay_minutes} repeat={formData.support_followup_stage2_repeat_delay_minutes} enabled={formData.support_followup_stage2_enabled} onEnabledChange={value => setFormData(prev => ({ ...prev, support_followup_stage2_enabled: value }))}>
+
+
+<div className="grid grid-cols-2 gap-3">
                           <div>
                             <Label className="text-xs">تأخیر ارسال اول (دقیقه)</Label>
                             <Input type="number" min={1} className="h-8"
@@ -1280,10 +1386,12 @@ mba
                               onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage2_repeat_delay_minutes: Number(e.target.value) }))} />
                           </div>
                         </div>
-                        <Textarea rows={4} value={formData.support_followup_stage2_bot_text}
+
+<Textarea rows={4} value={formData.support_followup_stage2_bot_text}
                           onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage2_bot_text: e.target.value }))}
                           dir="rtl" />
-                        <MessageMediaButtonsEditor
+
+<MessageMediaButtonsEditor
                           mediaUrl={formData.support_followup_stage2_media_url}
                           mediaType={formData.support_followup_stage2_media_type}
                           buttons={formData.support_followup_stage2_buttons as any}
@@ -1295,22 +1403,15 @@ mba
                             ...(p.buttons !== undefined ? { support_followup_stage2_buttons: p.buttons as any } : {}),
                           }))}
                         />
-                        <TestStageButton stage={2} courseId={courseId!} />
-                      </div>
+
+<TestStageButton stage={2} courseId={course.id} />
+</CourseScheduleSection>
 
                       {/* Stage 3: Business chat */}
-                      <div className="bg-muted/40 p-3 rounded-lg space-y-3">
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <h5 className="text-sm font-semibold">مرحله ۳ — پیام پشتیبانی ارسال شده، فعال‌سازی نهایی نشده</h5>
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={formData.support_followup_stage3_enabled}
-                              onCheckedChange={(v) => setFormData(prev => ({ ...prev, support_followup_stage3_enabled: v }))}
-                            />
-                            <Label className="text-xs">فعال</Label>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
+                      <CourseScheduleSection title="۳. پیام پشتیبانی ارسال شده؛ تأیید نشده" channel="چت پشتیبانی" delay={formData.support_followup_stage3_delay_minutes} repeat={formData.support_followup_stage3_repeat_delay_minutes} enabled={formData.support_followup_stage3_enabled} onEnabledChange={value => setFormData(prev => ({ ...prev, support_followup_stage3_enabled: value }))}>
+
+
+<div className="grid grid-cols-2 gap-3">
                           <div>
                             <Label className="text-xs">تأخیر ارسال اول (دقیقه)</Label>
                             <Input type="number" min={1} className="h-8"
@@ -1324,10 +1425,12 @@ mba
                               onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage3_repeat_delay_minutes: Number(e.target.value) }))} />
                           </div>
                         </div>
-                        <Textarea rows={4} value={formData.support_followup_stage3_business_text}
+
+<Textarea rows={4} value={formData.support_followup_stage3_business_text}
                           onChange={(e) => setFormData(prev => ({ ...prev, support_followup_stage3_business_text: e.target.value }))}
                           dir="rtl" />
-                        <MessageMediaButtonsEditor
+
+<MessageMediaButtonsEditor
                           mediaUrl={formData.support_followup_stage3_media_url}
                           mediaType={formData.support_followup_stage3_media_type}
                           buttons={formData.support_followup_stage3_buttons as any}
@@ -1339,102 +1442,30 @@ mba
                             ...(p.buttons !== undefined ? { support_followup_stage3_buttons: p.buttons as any } : {}),
                           }))}
                         />
-                        <p className="text-xs text-muted-foreground">
+
+<p className="text-xs text-muted-foreground">
                           در صورت تنظیم <code>telegram_business_connection_id</code> در تنظیمات ادمین، پیام به صورت چت بیزینسی از حساب @rafieiacademy ارسال می‌شود؛ در غیر این صورت از طریق ربات به کاربر ارسال می‌گردد.
                         </p>
-                        <TestStageButton stage={3} courseId={courseId!} />
-                      </div>
+
+<TestStageButton stage={3} courseId={course.id} />
+</CourseScheduleSection>
                     </div>
-
-                    {/* Custom time-based followups */}
-                    <div className="border rounded-lg p-4 space-y-3 mt-4 bg-background">
-                      <CustomFollowupsEditor courseId={courseId!} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-
-
-
-              {/* SnappPay Section */}
-              <div className="border-t pt-6 space-y-4">
-                <h3 className="text-lg font-semibold text-foreground">پرداخت اقساطی (اسنپ‌پی)</h3>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="snapppay_enabled"
-                    checked={formData.snapppay_enabled !== false}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, snapppay_enabled: checked }))}
-                  />
-                  <Label htmlFor="snapppay_enabled">نمایش گزینه خرید اقساطی اسنپ‌پی برای این دوره</Label>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  در صورت غیرفعال بودن، اسنپ‌پی حتی اگر در تنظیمات کلی فعال باشد برای این دوره نمایش داده نمی‌شود.
+<section className="pt-6"><CustomFollowupsEditor courseId={course.id} /></section></section>
+<section hidden={activeSection !== 'rewards'} data-course-section="rewards" aria-label="مهلت آموزش و جوایز" className="space-y-6"><div className="border-t pt-6 space-y-4">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Gift className="h-5 w-5" />
+                  دسترسی گیمیفای (۷ روزه)
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  روشن/خاموش کردن سیستم برای این دوره و تنظیم مدت دسترسی، هزینه و مدت تمدید، مهلت ماموریت‌ها و جوایز.
+                  این تنظیمات همراه با دکمه «به‌روزرسانی دوره» ذخیره می‌شود.
                 </p>
-              </div>
-
-              {/* DigiPay Section */}
-              <div className="border-t pt-6 space-y-4">
-                <h3 className="text-lg font-semibold text-foreground">پرداخت ۶ قسطه (دیجی‌پی)</h3>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="digipay_enabled"
-                    checked={formData.digipay_enabled !== false}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, digipay_enabled: checked }))}
-                  />
-                  <Label htmlFor="digipay_enabled">نمایش گزینه خرید ۶ قسطه دیجی‌پی برای این دوره</Label>
-                </div>
-              </div>
-
-              {/* SpotPlayer Section */}
-              <div className="border-t pt-6 space-y-4">
-                <h3 className="text-lg font-semibold text-foreground">تنظیمات رفیعی پلیر (SpotPlayer)</h3>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="is_spotplayer_enabled"
-                    checked={formData.is_spotplayer_enabled}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_spotplayer_enabled: checked }))}
-                  />
-                  <Label htmlFor="is_spotplayer_enabled">فعال‌سازی رفیعی پلیر</Label>
-                </div>
-
-                {formData.is_spotplayer_enabled && (
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="spotplayer_course_id">شناسه دوره در SpotPlayer *</Label>
-                      <Input
-                        id="spotplayer_course_id"
-                        value={formData.spotplayer_course_id}
-                        onChange={(e) => setFormData(prev => ({ ...prev, spotplayer_course_id: e.target.value }))}
-                        placeholder="مثال: course_123"
-                        required={formData.is_spotplayer_enabled}
-                      />
-                      <p className="text-sm text-muted-foreground mt-1">
-                        شناسه دوره در پنل SpotPlayer که برای ایجاد لایسنس استفاده می‌شود
-                      </p>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="create_test_license"
-                        checked={formData.create_test_license}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, create_test_license: checked }))}
-                      />
-                      <Label htmlFor="create_test_license">ایجاد لایسنس تستی</Label>
-                      <p className="text-sm text-muted-foreground">
-                        لایسنس‌های تستی محدودیت زمانی دارند
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* WooCommerce Section */}
-              <div className="border-t pt-6 space-y-4">
+                {courseId && <CourseGamificationSettings ref={gamificationSettingsRef} courseId={courseId} />}
+              </div></section>
+<section hidden={activeSection !== 'advanced'} data-course-section="advanced" aria-label="اتصال‌ها و لید" className="space-y-6"><div className="border-t pt-6 space-y-4">
                 <h3 className="text-lg font-semibold text-foreground">تنظیمات WooCommerce</h3>
-                
-                <div className="flex items-center space-x-2">
+
+                <div className="flex items-center gap-2">
                   <Switch
                     id="woocommerce_create_access"
                     checked={formData.woocommerce_create_access}
@@ -1470,32 +1501,13 @@ mba
                   />
                 </div>
               </div>
-
-              {/* Landing Page Merge Section */}
-              <div className="border-t pt-6 space-y-4">
-                <h3 className="text-lg font-semibold text-foreground">تنظیمات صفحه فرود</h3>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="use_landing_page_merge"
-                    checked={formData.use_landing_page_merge}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, use_landing_page_merge: checked }))}
-                  />
-                  <Label htmlFor="use_landing_page_merge">ادغام دکمه شروع دوره</Label>
-                  <p className="text-sm text-muted-foreground">
-                    جایگزین کردن لینک خارجی با صفحه ثبت‌نام داخلی (/enroll?course=slug)
-                  </p>
-                </div>
-              </div>
-
-              {/* Lead Generation Section */}
-              <div className="border-t pt-6 space-y-4">
+<div className="border-t pt-6 space-y-4">
                 <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <MessageCircle className="h-5 w-5" />
                   تولید لید از ثبت‌نام‌ها
                 </h3>
-                
-                <div className="flex items-center space-x-2">
+
+                <div className="flex items-center gap-2">
                   <Switch
                     id="use_enrollments_as_leads"
                     checked={formData.use_enrollments_as_leads}
@@ -1506,13 +1518,13 @@ mba
 
                 {formData.use_enrollments_as_leads && (
                   <div className="space-y-4">
-                    <div className="bg-yellow-50 dark:bg-yellow-950/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                      <h4 className="font-medium text-yellow-800 dark:text-yellow-400 mb-2">نحوه عملکرد تولید لید</h4>
+                    <div className="bg-muted/30 p-3 rounded-md border border-border">
+                      <h4 className="font-medium text-foreground mb-2">نحوه عملکرد تولید لید</h4>
                       <p className="text-sm text-muted-foreground">
                         تمام ثبت‌نام‌هایی که پس از تاریخ انتخابی برای این دوره انجام شوند، به‌عنوان لید در سیستم مدیریت لید قابل دسترسی خواهند بود.
                       </p>
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="lead_start_date">تاریخ شروع تولید لید *</Label>
                       <Input
@@ -1528,46 +1540,20 @@ mba
                     </div>
                   </div>
                 )}
-              </div>
-
-              {/* Gamified Access Section */}
-              <div className="border-t pt-6 space-y-4">
-                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <Gift className="h-5 w-5" />
-                  دسترسی گیمیفای (۷ روزه)
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  روشن/خاموش کردن سیستم برای این دوره و تنظیم مدت دسترسی، هزینه و مدت تمدید، مهلت ماموریت‌ها و جوایز.
-                  این تنظیمات همراه با دکمه «به‌روزرسانی دوره» ذخیره می‌شود.
-                </p>
-                {courseId && <CourseGamificationSettings ref={gamificationSettingsRef} courseId={courseId} />}
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="is_active"
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
-                />
-                <Label htmlFor="is_active">دوره فعال است</Label>
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-6">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate('/enroll/admin')}
-                >
-                  لغو
-                </Button>
-                <Button type="submit">
-                  به‌روزرسانی دوره
-                </Button>
-              </div>
+              </div></section>
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
+      <footer dir="rtl" className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+          <span className="hidden min-w-0 truncate text-sm text-muted-foreground sm:block">{course.title}</span>
+          <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+            <Button type="button" variant="outline" disabled={saving} onClick={() => navigate('/enroll/admin')}>انصراف</Button>
+            <Button type="submit" form="course-edit-form" disabled={saving} className="flex-1 sm:flex-none">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{saving ? 'در حال ذخیره…' : 'ذخیره تغییرات'}</Button>
+          </div>
+        </div>
+      </footer>
     </MainLayout>
   );
 };
