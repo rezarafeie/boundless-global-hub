@@ -287,6 +287,15 @@ export async function processEnrollmentQueue(limit = 10) {
         enrollment_link: `https://academy.rafiei.co/enroll/success?enrollment=${enrollment.id}`,
       });
       if (!job.reply_sent_at) await novinhub.reply(conversationId, reply);
+      if (!job.reply_sent_at) {
+        // Some devices don't open plain links; follow up with a tappable NovinHub button.
+        const btnText = 'اگر لینک بالا باز نشد، روی دکمه زیر بزنید 👇';
+        try { await novinhub.replyWithButton(conversationId, btnText, 'فعال‌سازی پشتیبانی', telegramLink, 'web_url'); }
+        catch (e1) {
+          try { await novinhub.replyWithButton(conversationId, btnText, 'فعال‌سازی پشتیبانی', telegramLink, 'url'); }
+          catch (e2) { console.error('activation button failed', (e1 as Error).message, (e2 as Error).message); }
+        }
+      }
       await save({ status: 'completed', reply_sent_at: job.reply_sent_at || new Date().toISOString(), last_error: null });
       processed++;
     } catch (e) {

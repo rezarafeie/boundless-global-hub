@@ -172,6 +172,11 @@ export const novinhub = {
     return nhFetch(`/conversation/${conversationId}/messages${qs ? `?${qs}` : ''}`);
   },
 
+  /** Reply with documented URL buttons (POST /conversation/:id/reply, `buttons`). */
+  replyWithButton: (conversationId: string | number, content: string, title: string, url: string, type = 'web_url') =>
+    nhFetch(`/conversation/${conversationId}/reply`, { method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, buttons: [{ type, title, url }] }) }),
   /** Reply to a conversation. `content` is the body text. */
   reply: (conversationId: string | number, content: string) =>
     nhFetch(`/conversation/${conversationId}/reply`, { method: 'POST',
