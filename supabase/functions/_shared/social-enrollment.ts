@@ -168,6 +168,16 @@ export async function requireSocialAdmin(req: Request, client: ReturnType<typeof
       if (auth.user?.id) {
         const { data: academy } = await client.from('academy_users').select('role').eq('id', auth.user.id).maybeSingle();
         if (academy?.role === 'admin') return;
+        const email = auth.user.email?.trim().toLowerCase();
+        if (email) {
+          const { data: cu } = await client.from('chat_users').select('id, role, is_messenger_admin').ilike('email', email.replace(/[%_\\]/g, (c) => '\\' + c)).limit(5);
+          for (const u of cu ?? []) {
+            if (u.role === 'admin' || u.role === 'enrollments_manager' || u.is_messenger_admin) return;
+            const { data: r } = await client.from('user_roles').select('role_name').eq('user_id', u.id).eq('is_active', true)
+              .in('role_name', ['admin', 'social_admin', 'enrollments_manager']);
+            if (r?.length) return;
+          }
+        }
       }
     }
     throw new Error('دسترسی مدیریت معتبر نیست');

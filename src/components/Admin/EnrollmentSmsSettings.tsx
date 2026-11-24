@@ -28,6 +28,7 @@ export default function EnrollmentSmsSettings({ courseId }: { courseId: string }
     return data;
   };
   useEffect(() => {
+    if (!token) return;
     let cancelled = false;
     call({ action: 'get', course_id: courseId }).then(result => {
       if (cancelled) return;
