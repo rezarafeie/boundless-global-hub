@@ -3247,6 +3247,50 @@ export type Database = {
           },
         ]
       }
+      course_enrollment_sms_settings: {
+        Row: {
+          activation_delay_minutes: number
+          activation_enabled: boolean
+          course_id: string
+          created_at: string
+          enabled_from: string
+          start_delay_minutes: number
+          start_enabled: boolean
+          updated_at: string
+          welcome_enabled: boolean
+        }
+        Insert: {
+          activation_delay_minutes?: number
+          activation_enabled?: boolean
+          course_id: string
+          created_at?: string
+          enabled_from?: string
+          start_delay_minutes?: number
+          start_enabled?: boolean
+          updated_at?: string
+          welcome_enabled?: boolean
+        }
+        Update: {
+          activation_delay_minutes?: number
+          activation_enabled?: boolean
+          course_id?: string
+          created_at?: string
+          enabled_from?: string
+          start_delay_minutes?: number
+          start_enabled?: boolean
+          updated_at?: string
+          welcome_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_enrollment_sms_settings_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: true
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_gamification_notifications: {
         Row: {
           channels: Json
@@ -3594,6 +3638,41 @@ export type Database = {
             columns: ["title_group_id"]
             isOneToOne: false
             referencedRelation: "course_title_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_sms_login_tokens: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          enrollment_id: string
+          expires_at: string
+          token_hash: string
+          updated_at: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at?: string
+          enrollment_id: string
+          expires_at: string
+          token_hash: string
+          updated_at?: string
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          enrollment_id?: string
+          expires_at?: string
+          token_hash?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_sms_login_tokens_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
             referencedColumns: ["id"]
           },
         ]
@@ -4649,6 +4728,44 @@ export type Database = {
           user_replied_at?: string | null
         }
         Relationships: []
+      }
+      enrollment_sms_deliveries: {
+        Row: {
+          created_at: string
+          enrollment_id: string
+          error_code: string | null
+          kind: string
+          provider_message_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enrollment_id: string
+          error_code?: string | null
+          kind: string
+          provider_message_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enrollment_id?: string
+          error_code?: string | null
+          kind?: string
+          provider_message_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_sms_deliveries_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       enrollments: {
         Row: {
@@ -10588,6 +10705,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      consume_course_sms_login: {
+        Args: { p_hash: string; p_session: string }
+        Returns: Json
+      }
       create_webinar_followup: {
         Args: { p_session_token: string; p_webinar_id: string }
         Returns: {
@@ -10635,6 +10756,7 @@ export type Database = {
         Args: { phone_number: string }
         Returns: string
       }
+      dispatch_enrollment_sms: { Args: never; Returns: undefined }
       distribute_lead_and_create_deal: {
         Args: {
           p_agent_user_id: number
@@ -10653,6 +10775,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      enrollment_sms_candidates: { Args: never; Returns: Json[] }
+      enrollment_sms_worker_key: { Args: never; Returns: string }
       ensure_support_activation: {
         Args: {
           p_course_id: string
