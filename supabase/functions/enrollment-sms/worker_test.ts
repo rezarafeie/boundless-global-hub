@@ -8,7 +8,7 @@ function fixture(kind = 'activation', responseStatus = 200, providerStatus = 200
   let claimed = false, sends = 0, progress: any[] = [], saved: any = null;
   const tables: Record<string, any> = {
     support_activations: activation, enrollments: enrollment,
-    course_enrollment_sms_settings: { welcome_enabled: true, activation_enabled: true, start_enabled: true, enabled_from: '2026-10-01', activation_delay_minutes: 60, start_delay_minutes: 1440 },
+    course_enrollment_sms_settings: { welcome_enabled: true, activation_enabled: true, start_enabled: true, enabled_from: '2026-10-01', activation_delay_minutes: 60, start_delay_minutes: 720 },
     courses: { title: 'مزه بدون مرز', is_active: true }, course_gamification_settings: null, course_access_windows: null,
   };
   const client: any = {
@@ -59,6 +59,15 @@ Deno.test('ambiguous provider timeout never triggers blind automatic retry', asy
 Deno.test('course-start message is not sent for any saved lesson opening', async () => {
   const f = fixture('start'); f.setProgress([{ is_opened: true }]);
   await processSms(f.client, f.send); assertEquals(f.sends(), 0);
+});
+Deno.test('course-start reminder becomes due 12 hours after activation, not before', async () => {
+  const f = fixture('start');
+  Object.assign(f.activation, { activated_at: new Date(Date.now() - 719 * 60000).toISOString() });
+  await processSms(f.client, f.send);
+  assertEquals(f.sends(), 0);
+  Object.assign(f.activation, { activated_at: new Date(Date.now() - 720 * 60000).toISOString() });
+  await processSms(f.client, f.send);
+  assertEquals(f.sends(), 1);
 });
 Deno.test('course-start message is skipped for course access lock', async () => {
   const f = fixture('start'); f.tables.course_access_windows = { status: 'locked' };

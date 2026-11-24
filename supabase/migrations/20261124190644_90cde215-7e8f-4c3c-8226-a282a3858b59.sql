@@ -1,0 +1,2 @@
+ALTER TABLE public.course_enrollment_sms_settings ALTER COLUMN start_delay_minutes SET DEFAULT 720;
+UPDATE public.course_enrollment_sms_settings SET start_delay_minutes=720 WHERE course_id IS NOT NULL;

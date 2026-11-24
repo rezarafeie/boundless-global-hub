@@ -1,6 +1,6 @@
 ## Enrollment SMS
 - [x] Send a real approved-template test to the consenting mobile; Kavenegar accepted activation message 1740703834 and its delivery record saved successfully
-- [x] Enable all three messages for all 15 courses, only for new successful registrations; per-course controls retained; hourly reminders, activation 60 minutes and course start 1440 minutes
+- [x] Enable all three messages for all 15 courses, only for new successful registrations; per-course controls retained; hourly reminders, activation 60 minutes and course start 720 minutes (12 hours)
 - [x] Connect the three approved Kavenegar patterns with payment, activation and course-start guards; 14 tests pass including delivery dedupe, provider rejection and fresh activation stop
 - [x] Implement 24-hour single-use short course login at l.rafiei.co/s/:code; browser verified saved test enrollment/session redirects to Boundless Taste and mobile replay is rejected; test records removed
 - [ ] Verify signed-in course editor controls (external Supabase cannot mint the current user's admin session)

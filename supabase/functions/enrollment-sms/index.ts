@@ -132,7 +132,7 @@ export async function handleEnrollmentSms(req: Request) {
     if (error) throw error;
     const { data: logs, error: logsError } = await client.from('enrollment_sms_deliveries').select('kind,status,error_code,created_at,enrollments!inner(course_id)').eq('enrollments.course_id', b.course_id).order('created_at', { ascending: false }).limit(10);
     if (logsError) throw logsError;
-    return json({ data: data ?? { course_id: b.course_id, welcome_enabled: false, activation_enabled: false, start_enabled: false, activation_delay_minutes: 60, start_delay_minutes: 1440 }, logs });
+    return json({ data: data ?? { course_id: b.course_id, welcome_enabled: false, activation_enabled: false, start_enabled: false, activation_delay_minutes: 60, start_delay_minutes: 720 }, logs });
   } catch { return json({ error: 'ذخیره یا دریافت اطلاعات پیامک انجام نشد' }, 500); }
 }
 if (import.meta.main) Deno.serve(handleEnrollmentSms);
