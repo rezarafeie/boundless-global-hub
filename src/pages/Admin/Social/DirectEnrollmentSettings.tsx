@@ -48,7 +48,7 @@ export default function DirectEnrollmentSettings() {
     try { setData(await call({ action: 'list' })); } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   };
-  useEffect(() => { void load(); }, [token]);
+  useEffect(() => { if (token) void load(); }, [token]);
   const save = async () => {
     if (!editor) return;
     setBusy(true);

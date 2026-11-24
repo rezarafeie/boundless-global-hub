@@ -28,7 +28,8 @@ const BlackFridayServicesManager = () => {
   };
 
   const { data: services = [] } = useQuery({
-    queryKey: ['bf-services-admin'],
+    queryKey: ['bf-services-admin', token],
+    enabled: !!token,
     queryFn: async () => {
       return (await call({ action: 'list' })) as Service[];
     },
