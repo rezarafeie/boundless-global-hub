@@ -255,3 +255,7 @@ img {
   .bubble-other { background-color: hsl(var(--bubble-other)); color: hsl(var(--bubble-other-foreground)); box-shadow: 0 1px 2px hsl(var(--bubble-shadow)); }
   .bubble-own { box-shadow: 0 1px 2px hsl(var(--bubble-shadow)); }
 }
+
+@keyframes bf-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.bf-marquee { animation: bf-marquee 28s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .bf-marquee { animation: none; } }

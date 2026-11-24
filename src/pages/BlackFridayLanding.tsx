@@ -26,6 +26,29 @@ const CountBlock = ({ v, l }: { v: number; l: string }) => (
   </div>
 );
 
+const Tape = ({ text, tilt = "", invert = false }: { text: string; tilt?: string; invert?: boolean }) => (
+  <div className={`relative overflow-hidden py-3 text-left ${invert ? "bg-background text-foreground border-y border-foreground" : "bg-foreground text-background"} ${tilt}`} dir="ltr" aria-hidden>
+    <div className="bf-marquee flex w-max flex-nowrap items-center whitespace-nowrap">
+      {Array.from({ length: 2 }).map((_, k) => (
+        <div key={k} className="flex shrink-0 flex-nowrap items-center">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <span key={i} className="mx-5 flex shrink-0 items-center gap-5 whitespace-nowrap text-sm font-black uppercase tracking-[0.25em] md:text-base">{text}<span className="h-2 w-2 shrink-0 rotate-45 bg-current" /></span>
+          ))}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const SectionHead = ({ eyebrow, title, sub, ghost }: { eyebrow: string; title: string; sub?: string; ghost: string }) => (
+  <div className="relative mb-8 md:mb-12">
+    <span className="pointer-events-none absolute -top-6 left-0 select-none text-[5rem] font-black leading-none text-foreground/[0.05] md:-top-10 md:text-[9rem]" dir="ltr">{ghost}</span>
+    <span className="relative inline-flex items-center gap-2 rounded-full bg-foreground px-3 py-1 text-[11px] font-bold text-background"><Flame className="h-3 w-3" />{eyebrow}</span>
+    <h2 className="relative mt-3 text-3xl font-black text-foreground md:text-5xl">{title}</h2>
+    {sub && <p className="relative mt-2 max-w-xl text-sm leading-7 text-muted-foreground md:text-base">{sub}</p>}
+  </div>
+);
+
 const INST = 4;
 const short = (n: number) => n >= 1_000_000 ? `${fa(Math.round(n / 100_000) / 10)} میلیون` : `${fa(Math.round(n / 1000))} هزار`;
 
@@ -46,12 +69,14 @@ const CourseTile = ({ row, picked, onPick, onPrice }: { row: DiscountRow; picked
       <Link to={`/courses/${c.slug}`} className="relative block aspect-[16/10] overflow-hidden bg-photo-shade">
         <img src={courseImage(c.slug, c.title)} alt={c.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-[1200ms] group-hover:scale-105" />
         <div className="absolute inset-0 bg-gradient-to-t from-photo-shade via-photo-shade/30 to-transparent" />
+        <span className="absolute right-4 top-4 rotate-[-4deg] rounded-md bg-foreground px-2 py-1 font-mono text-[10px] font-black tracking-widest text-background" dir="ltr">BLACK FRIDAY</span>
         <span className="absolute left-4 top-4 rounded-2xl bg-background px-3 py-2 text-center leading-none text-foreground shadow-float">
           <b className="block text-2xl font-black">{fa(row.discount_percentage)}٪</b><span className="text-[10px] font-bold">تخفیف</span>
         </span>
         <h3 className="absolute inset-x-5 bottom-4 text-xl font-extrabold leading-snug text-photo-ink md:text-2xl">{c.title}</h3>
       </Link>
-      <div className="flex flex-1 flex-col gap-4 p-5">
+      <div className="flex flex-1 flex-col gap-4 p-4 md:p-5">
+        {c.description && <p className="line-clamp-3 text-sm leading-7 text-muted-foreground">{c.description}</p>}
         {price > 0 ? (
           <>
             <div className="rounded-2xl bg-foreground p-4 text-background">
@@ -92,16 +117,17 @@ const ServiceTile = ({ s }: { s: Service }) => {
   const meta = rafieiServices.find((x) => x.name === s.title || (x.href.startsWith("http") && s.url.startsWith(x.href)));
   const Icon = meta?.icon || Sparkles;
   return (
-    <div className="group relative flex min-h-[260px] flex-col overflow-hidden rounded-[1.75rem] bg-foreground p-5 text-background transition-all duration-300 hover:-translate-y-1 hover:shadow-float md:p-6">
+    <div className="group relative flex min-h-[300px] flex-col overflow-hidden rounded-[2rem] bg-foreground p-6 text-background transition-all duration-300 hover:-translate-y-1 hover:shadow-float md:p-6">
       <Icon className="pointer-events-none absolute -bottom-6 -left-6 h-36 w-36 text-background/[0.06] transition-transform duration-700 group-hover:rotate-12" />
       <div className="relative flex items-start justify-between">
-        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-background text-foreground"><Icon className="h-6 w-6" /></span>
-        <span className="text-left leading-none"><b className="block text-3xl font-black">{fa(s.discount_percentage)}٪</b><span className="text-[10px] text-background/60">تخفیف</span></span>
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-background text-foreground"><Icon className="h-7 w-7" /></span>
+        <span className="text-left leading-none"><b className="block text-4xl font-black">{fa(s.discount_percentage)}٪</b><span className="text-[10px] text-background/60">تخفیف</span></span>
       </div>
       <div className="relative mt-auto pt-6">
         {meta && <span className="block font-mono text-[10px] uppercase tracking-[0.2em] text-background/50" dir="ltr">{meta.en}</span>}
-        <h3 className="mt-1 text-xl font-extrabold">{s.title}</h3>
-        <p className="mt-1.5 line-clamp-3 text-sm leading-6 text-background/70">{s.description || meta?.description}</p>
+        <h3 className="mt-1 text-2xl font-extrabold">{s.title}</h3>
+        {meta && <p className="mt-1 text-sm font-semibold text-background/85">{meta.tagline}</p>}
+        <p className="mt-2 text-sm leading-7 text-background/65">{s.description || meta?.description}</p>
       </div>
       <div className="relative mt-4 flex flex-wrap items-center gap-2">
         {s.discount_code && (
@@ -167,9 +193,9 @@ const BlackFridayLanding: React.FC = () => {
     <MainLayout>
       <div dir="rtl">
         {/* Hero */}
-        <section className="px-4 pt-6 md:pt-10">
+        <section className="px-3 pt-4 md:px-4 md:pt-10">
           <div className="container mx-auto">
-            <div className="relative overflow-hidden rounded-[2.5rem] bg-foreground px-6 py-16 text-center md:px-12 md:py-24">
+            <div className="relative overflow-hidden rounded-[2rem] bg-foreground px-5 py-14 md:rounded-[2.5rem] text-center md:px-12 md:py-24">
               <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(hsl(var(--background)) 1px, transparent 1px)", backgroundSize: "22px 22px" }} />
               <div className="pointer-events-none absolute -top-40 left-1/2 h-80 w-[40rem] -translate-x-1/2 rounded-full bg-background/10 blur-3xl" />
               <div className="relative">
@@ -202,13 +228,15 @@ const BlackFridayLanding: React.FC = () => {
           </div>
         </section>
 
+        <div className="relative my-8 h-32 overflow-hidden">
+          <div className="absolute inset-x-[-5%] top-3 -rotate-3"><Tape text={`BLACK FRIDAY · ${maxOff ? `UP TO ${maxOff}% OFF` : "SALE"}`} /></div>
+          <div className="absolute inset-x-[-5%] top-[4.5rem] rotate-2"><Tape invert text="تخفیف بزرگ سال · فقط چند روز" /></div>
+        </div>
+
         {/* Courses */}
-        <section id="courses" className="scroll-mt-28 px-4 py-16 md:py-24">
+        <section id="courses" className="scroll-mt-28 px-3 py-14 md:px-4 md:py-24">
           <div className="container mx-auto">
-            <div className="mb-10 md:mb-14">
-              <span className="text-xs font-semibold tracking-wide text-muted-foreground">دوره‌های آکادمی</span>
-              <h2 className="mt-3 text-3xl font-extrabold text-foreground md:text-5xl">دوره‌های تخفیف‌خورده</h2>
-            </div>
+            <SectionHead ghost="SALE" eyebrow="دوره‌های آکادمی" title="دوره‌های تخفیف‌خورده" sub="قیمت‌ها فقط تا پایان کمپین؛ با پرداخت قسطی همین امروز شروع کن." />
             {!isActive ? (
               <p className="rounded-3xl border border-border p-10 text-center text-muted-foreground">
                 {notStarted ? "قیمت‌های ویژه با شروع کمپین نمایش داده می‌شوند." : "این کمپین به پایان رسیده است."}
@@ -227,15 +255,13 @@ const BlackFridayLanding: React.FC = () => {
           </div>
         </section>
 
+        {isActive && services.length > 0 && <Tape text="RAFIEI GROUP · BLACK FRIDAY · LIMITED TIME" />}
         {/* Group services */}
         {isActive && services.length > 0 && (
-          <section className="px-4 pb-16 md:pb-24">
+          <section className="px-3 pb-28 pt-14 md:px-4 md:pt-20">
             <div className="container mx-auto">
-              <div className="mb-10 md:mb-14">
-                <span className="text-xs font-semibold tracking-wide text-muted-foreground">گروه رفیعی</span>
-                <h2 className="mt-3 text-3xl font-extrabold text-foreground md:text-5xl">سرویس‌های گروه رفیعی</h2>
-              </div>
-              <div className="grid grid-cols-2 gap-3 md:gap-5 lg:grid-cols-4">
+              <SectionHead ghost="OFF" eyebrow="اکوسیستم رفیعی" title="تخفیف سرویس‌های گروه رفیعی" sub="کد تخفیف رو کپی کن و توی سرویس مورد نظرت استفاده کن." />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-3">
                 {services.map((s) => <ServiceTile key={s.id} s={s} />)}
               </div>
             </div>

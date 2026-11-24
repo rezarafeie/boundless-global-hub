@@ -18,7 +18,7 @@ const ServiceCard: React.FC<{ s: RafieiService; large?: boolean }> = ({ s, large
       </div>
     </>
   );
-  const cls = `group flex h-full flex-col rounded-[1.75rem] border border-border bg-card p-5 text-right transition-all duration-300 hover:-translate-y-1 hover:shadow-float ${large ? 'min-h-[220px] md:p-6' : 'min-h-[180px]'}`;
+  const cls = `group flex h-full flex-col rounded-[1.75rem] border border-border bg-card p-4 text-right md:p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-float ${large ? 'min-h-[220px] md:p-6' : 'min-h-[180px]'}`;
   return s.internal
     ? <Link to={s.href} className={cls}>{inner}</Link>
     : <a href={s.href} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>;
