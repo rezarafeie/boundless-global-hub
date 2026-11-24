@@ -20,6 +20,20 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const body = await req.json();
+    // ---- admin-only connection test (no payment is created) ------------
+    if (body?.action === "connection_test") {
+      const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+      const { data: u } = await supabase.auth.getUser(token);
+      const email = u?.user?.email;
+      if (!email) return json({ success: false, error: "unauthorized" }, 401);
+      const { data: isAdmin } = await supabase.rpc("is_academy_admin" as any, { user_uuid: u.user.id } as any);
+      if (!isAdmin) return json({ success: false, error: "forbidden" }, 403);
+      const r = await digipay.verify("CONNECTION-TEST-" + Date.now(), "connection-test", "11");
+      const proxyAuthOk = r.status !== 0 && r.status !== 401 && r.status !== 403;
+      const digipayReplied = !!r.body?.result || (r.status >= 400 && r.status < 500 && r.status !== 401);
+      return json({ success: proxyAuthOk && digipayReplied, httpStatus: r.status, proxyAuthOk, digipayReplied, detail: r.body });
+    }
     const {
       courseSlug,
       testSlug,
@@ -31,7 +45,7 @@ serve(async (req) => {
       customAmount,
       enrollmentType,
       checkOnly, // eligibility probe from the checkout UI
-    } = await req.json();
+    } = body;
 
     // ---- gateway availability (admin settings) -------------------------
     const { data: settings } = await supabase
