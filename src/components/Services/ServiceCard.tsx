@@ -11,7 +11,8 @@ const ServiceCard: React.FC<{ s: RafieiService; large?: boolean }> = ({ s, large
         <ArrowUpLeft className="h-4 w-4 text-muted-foreground transition-transform group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" />
       </div>
       <div className="mt-auto pt-6">
-        <h3 className={`font-extrabold text-foreground ${large ? 'text-xl' : 'text-base'}`}>{s.name}</h3>
+        <span className="block font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground" dir="ltr">{s.en}</span>
+        <h3 className={`mt-1 font-extrabold text-foreground ${large ? 'text-xl' : 'text-base'}`}>{s.name}</h3>
         <p className="mt-1.5 line-clamp-2 text-sm leading-6 text-muted-foreground">{s.tagline}</p>
         {!s.internal && <span className="mt-3 block font-mono text-[11px] text-muted-foreground/70" dir="ltr">{s.href.replace('https://', '')}</span>}
       </div>

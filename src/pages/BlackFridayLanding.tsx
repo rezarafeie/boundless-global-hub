@@ -92,24 +92,25 @@ const ServiceTile = ({ s }: { s: Service }) => {
   const meta = rafieiServices.find((x) => x.name === s.title || (x.href.startsWith("http") && s.url.startsWith(x.href)));
   const Icon = meta?.icon || Sparkles;
   return (
-    <div className="group relative flex min-h-[220px] flex-col rounded-[1.75rem] border border-border bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-float md:p-6">
-      <div className="flex items-start justify-between">
-        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-foreground text-background"><Icon className="h-6 w-6" /></span>
-        <span className="rounded-full bg-foreground px-3 py-1 text-sm font-black text-background">{fa(s.discount_percentage)}٪−</span>
+    <div className="group relative flex min-h-[260px] flex-col overflow-hidden rounded-[1.75rem] bg-foreground p-5 text-background transition-all duration-300 hover:-translate-y-1 hover:shadow-float md:p-6">
+      <Icon className="pointer-events-none absolute -bottom-6 -left-6 h-36 w-36 text-background/[0.06] transition-transform duration-700 group-hover:rotate-12" />
+      <div className="relative flex items-start justify-between">
+        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-background text-foreground"><Icon className="h-6 w-6" /></span>
+        <span className="text-left leading-none"><b className="block text-3xl font-black">{fa(s.discount_percentage)}٪</b><span className="text-[10px] text-background/60">تخفیف</span></span>
       </div>
-      <div className="mt-auto pt-6">
-        <h3 className="text-xl font-extrabold text-foreground">{s.title}</h3>
-        <p className="mt-1.5 line-clamp-2 text-sm leading-6 text-muted-foreground">{s.description || meta?.tagline}</p>
-        <span className="mt-2 block font-mono text-[11px] text-muted-foreground/70" dir="ltr">{s.url.replace(/^https?:\/\//, "")}</span>
+      <div className="relative mt-auto pt-6">
+        {meta && <span className="block font-mono text-[10px] uppercase tracking-[0.2em] text-background/50" dir="ltr">{meta.en}</span>}
+        <h3 className="mt-1 text-xl font-extrabold">{s.title}</h3>
+        <p className="mt-1.5 line-clamp-3 text-sm leading-6 text-background/70">{s.description || meta?.description}</p>
       </div>
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="relative mt-4 flex flex-wrap items-center gap-2">
         {s.discount_code && (
           <button onClick={() => { navigator.clipboard?.writeText(s.discount_code!); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-            className="inline-flex items-center gap-2 rounded-full border border-dashed border-foreground/40 px-3 py-1.5 font-mono text-xs font-semibold text-foreground" dir="ltr">
+            className="inline-flex items-center gap-2 rounded-full border border-dashed border-background/40 px-3 py-1.5 font-mono text-xs font-semibold" dir="ltr">
             {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} {s.discount_code}
           </button>
         )}
-        <a href={s.url} target="_blank" rel="noopener noreferrer" className="mr-auto inline-flex items-center gap-1 rounded-full bg-foreground px-4 py-1.5 text-sm font-bold text-background">
+        <a href={s.url} target="_blank" rel="noopener noreferrer" className="mr-auto inline-flex items-center gap-1 rounded-full bg-background px-4 py-1.5 text-sm font-bold text-foreground">
           استفاده <ArrowUpLeft className="h-4 w-4" />
         </a>
       </div>

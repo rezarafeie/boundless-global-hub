@@ -386,7 +386,8 @@ const Index = () => {
 
       <CourseRow eyebrow="هوش مصنوعی" title="ابزاری که آینده را می‌سازد، امروز در دست توست" sub="آموزش عملی هوش مصنوعی برای زندگی هوشمندتر و کسب‌وکاری که سریع‌تر رشد می‌کند." courses={featuredCourses} color="blue" />
 
-      <ServiceGroupSection group="finance" />
+      <ServiceGroupSection group="life" />
+      <ServiceGroupSection group="community" />
 
       <section className="px-4 pb-4">
         <div className="container mx-auto space-y-4">
