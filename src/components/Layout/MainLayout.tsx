@@ -71,10 +71,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     <div className={`flex min-h-screen flex-col bg-background text-foreground dark:bg-background dark:text-foreground`} dir={direction}>
       <Header />
       
-      {isBlackFridayActive && blackFridaySettings?.end_date && (
-        <BlackFridayBanner endDate={blackFridaySettings.end_date} />
-      )}
-      
       <GlobalAccessCountdownBanner className="top-16" />
 
       <NotificationErrorBoundary>
@@ -87,6 +83,9 @@ const MainLayout = ({ children }: MainLayoutProps) => {
           className="flex-1 transition-all duration-300 ease-in-out" 
           style={{ paddingTop: dynamicTopPadding }}
         >
+          {isBlackFridayActive && blackFridaySettings?.end_date && (
+            <BlackFridayBanner endDate={blackFridaySettings.end_date} />
+          )}
           {children}
         </main>
       </OfflineDetector>

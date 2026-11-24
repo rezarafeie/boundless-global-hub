@@ -35,6 +35,7 @@ const TESTIMONIAL_VIDEOS = [
   "https://rafiei.arvanvod.ir/d7maAb4xV6/jGzbwL3gvR/origin_config.json",
 ];
 import { TetherlandService } from "@/lib/tetherlandService";
+import { useBlackFridayContext } from "@/contexts/BlackFridayContext";
 
 const BRAND = "212 90% 45%";
 const ACCENT = "32 95% 50%";
@@ -153,10 +154,18 @@ const faqs = [
 /* ───────── COMPONENT ───────── */
 
 const BoundlessCCLanding: React.FC = () => {
-  const [coursePrice, setCoursePrice] = useState<number>(0);
+  const [basePrice, setBasePrice] = useState<number>(0);
   const [originalPrice, setOriginalPrice] = useState<number>(0);
-  const [saleEndsAt, setSaleEndsAt] = useState<string | null>(null);
-  const [hasDiscount, setHasDiscount] = useState<boolean>(false);
+  const [courseId, setCourseId] = useState<string | null>(null);
+  const [saleEndsAtRaw, setSaleEndsAt] = useState<string | null>(null);
+  const [saleOn, setHasDiscount] = useState<boolean>(false);
+  const { isActive: bfActive, getCourseDiscount, settings: bfSettings } = useBlackFridayContext();
+  // Same priority as checkout: active sale first, then Black Friday.
+  const bfPercent = !saleOn && bfActive && courseId ? getCourseDiscount(courseId) : 0;
+  const coursePrice = bfPercent > 0 ? Math.round(originalPrice * (1 - bfPercent / 100)) : basePrice;
+  const hasDiscount = saleOn || bfPercent > 0;
+  const saleEndsAt = bfPercent > 0 ? (bfSettings?.end_date ?? null) : saleEndsAtRaw;
+  const setCoursePrice = setBasePrice;
   const courseSlug = "boundless";
 
   useEffect(() => {
@@ -164,10 +173,11 @@ const BoundlessCCLanding: React.FC = () => {
       try {
         const { data } = await supabase
           .from("courses")
-          .select("price, is_sale_enabled, sale_price, sale_expires_at, use_dollar_price, usd_price")
+          .select("id, price, is_sale_enabled, sale_price, sale_expires_at, use_dollar_price, usd_price")
           .eq("slug", courseSlug)
           .maybeSingle();
         if (!data) return;
+        setCourseId((data as any).id);
         const notExpired =
           !data.sale_expires_at || new Date(data.sale_expires_at) > new Date();
 
@@ -292,7 +302,7 @@ const BoundlessCCLanding: React.FC = () => {
                         background: `linear-gradient(90deg, hsl(${ACCENT}), hsl(20 90% 50%), hsl(${ACCENT}))`,
                       }}
                     >
-                      Exclusive · Limited Edition · پیشنهاد ویژه
+                      {bfPercent > 0 ? "BLACK FRIDAY · تخفیف بلک فرایدی" : "Exclusive · Limited Edition · پیشنهاد ویژه"}
                     </div>
 
                     {/* Perforated side notches (ticket look) */}

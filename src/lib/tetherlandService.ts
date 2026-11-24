@@ -11,12 +11,23 @@ interface TetherlandResponse {
 export class TetherlandService {
   private static readonly API_URL = 'https://api.tetherland.com/currencies';
   private static cache: { rate: number; timestamp: number } | null = null;
-  private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  private static readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes, persisted across reloads
+  private static readonly STORAGE_KEY = 'tetherland_usdt_rate_v1';
 
   /**
    * Fetch the latest USDT to IRR exchange rate
    */
   static async getUSDTToIRRRate(): Promise<number> {
+    // Restore persisted cache so page refreshes don't refetch the rate
+    if (!this.cache && typeof localStorage !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(this.STORAGE_KEY);
+        if (raw) {
+          const c = JSON.parse(raw);
+          if (typeof c?.rate === 'number' && typeof c?.timestamp === 'number') this.cache = c;
+        }
+      } catch { /* ignore */ }
+    }
     // Check cache first
     if (this.cache && Date.now() - this.cache.timestamp < this.CACHE_DURATION) {
       return this.cache.rate;
@@ -46,6 +57,7 @@ export class TetherlandService {
         rate,
         timestamp: Date.now(),
       };
+      try { localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.cache)); } catch { /* ignore */ }
 
       return rate;
     } catch (error) {

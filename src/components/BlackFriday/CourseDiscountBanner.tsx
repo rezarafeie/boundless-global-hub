@@ -1,8 +1,6 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Zap, Tag } from 'lucide-react';
-import BlackFridayCountdown from './BlackFridayCountdown';
 import { useBlackFridayContext } from '@/contexts/BlackFridayContext';
+import { useCountdown } from '@/hooks/useCountdown';
 
 interface CourseDiscountBannerProps {
   discount: number;
@@ -11,136 +9,41 @@ interface CourseDiscountBannerProps {
   courseSlug: string;
 }
 
-const CourseDiscountBanner: React.FC<CourseDiscountBannerProps> = ({ 
-  discount, 
-  courseName,
-  originalPrice,
-  courseSlug
-}) => {
+const fmt = (n: number) => new Intl.NumberFormat('fa-IR').format(Math.round(n));
+const fa2 = (n: number) => new Intl.NumberFormat('fa-IR', { minimumIntegerDigits: 2 }).format(n);
+
+/** Minimal Black Friday price card for course landing pages. */
+const CourseDiscountBanner: React.FC<CourseDiscountBannerProps> = ({ discount, courseName, originalPrice }) => {
   const { settings } = useBlackFridayContext();
-  const discountedPrice = originalPrice * (1 - discount / 100);
-  
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fa-IR').format(price);
-  };
+  const t = useCountdown(settings?.end_date);
+  const discounted = originalPrice * (1 - discount / 100);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="relative bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-500 rounded-3xl p-8 mb-12 shadow-2xl overflow-hidden"
-    >
-      {/* Animated background particles */}
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(20)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-2 h-2 bg-black/10 rounded-full"
-            initial={{
-              x: Math.random() * 100 + '%',
-              y: -20,
-              opacity: 0,
-            }}
-            animate={{
-              y: '120%',
-              opacity: [0, 1, 0],
-            }}
-            transition={{
-              duration: 3 + Math.random() * 2,
-              repeat: Infinity,
-              delay: Math.random() * 3,
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="relative z-10">
-        {/* Header with Black Friday Title */}
-        <div className="text-center mb-6">
-          <motion.div
-            animate={{
-              scale: [1, 1.05, 1],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-            }}
-            className="inline-flex items-center gap-3 bg-black text-yellow-400 px-8 py-3 rounded-full text-2xl md:text-3xl font-black mb-4"
-          >
-            <Zap className="h-7 w-7 fill-yellow-400" />
+    <div dir="rtl" className="rounded-3xl border border-border bg-card/70 backdrop-blur-xl p-6 md:p-8 mb-10">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 rounded-full bg-foreground text-background text-[11px] font-black tracking-[0.2em]" dir="ltr">
             BLACK FRIDAY
-            <Zap className="h-7 w-7 fill-yellow-400" />
-          </motion.div>
-          
-          <h3 className="text-2xl md:text-3xl font-bold text-black mb-2">
-            🔥 تخفیف ویژه {courseName}
-          </h3>
+          </span>
+          <span className="text-sm text-muted-foreground">{courseName}</span>
         </div>
-
-        {/* Countdown Timer */}
-        {settings?.end_date && (
-          <div className="flex justify-center mb-6">
-            <BlackFridayCountdown endDate={settings.end_date} />
-          </div>
+        {!t.done && (
+          <span className="text-sm text-muted-foreground tabular-nums" dir="ltr">
+            {fa2(t.days)}:{fa2(t.hours)}:{fa2(t.minutes)}:{fa2(t.seconds)}
+          </span>
         )}
-
-        {/* Price Section */}
-        <div className="bg-black/10 backdrop-blur-sm rounded-2xl p-6 mb-6">
-          <div className="grid md:grid-cols-3 gap-6 items-center text-center">
-            {/* Original Price */}
-            <div>
-              <p className="text-sm text-black/70 font-medium mb-2">قیمت اصلی</p>
-              <p className="text-2xl font-bold text-black line-through">
-                {formatPrice(originalPrice)} تومان
-              </p>
-            </div>
-
-            {/* Discount Badge */}
-            <div>
-              <motion.div
-                animate={{
-                  rotate: [0, 5, -5, 0],
-                }}
-                transition={{
-                  duration: 0.5,
-                  repeat: Infinity,
-                  repeatDelay: 2,
-                }}
-                className="inline-flex items-center gap-2 bg-red-600 text-white px-6 py-4 rounded-2xl text-3xl font-black shadow-lg"
-              >
-                <Tag className="h-8 w-8" />
-                {discount}% تخفیف
-              </motion.div>
-            </div>
-
-            {/* Final Price */}
-            <div>
-              <p className="text-sm text-black/70 font-medium mb-2">قیمت با تخفیف</p>
-              <motion.p
-                animate={{
-                  scale: [1, 1.1, 1],
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  repeatDelay: 1,
-                }}
-                className="text-3xl md:text-4xl font-black text-black"
-              >
-                {formatPrice(discountedPrice)} تومان
-              </motion.p>
-            </div>
-          </div>
-        </div>
-
-        {/* Call to Action */}
-        <div className="text-center">
-          <p className="text-lg font-bold text-black/90">
-            ⏰ این تخفیف فقط تا پایان تایمر اعتبار دارد!
-          </p>
-        </div>
       </div>
-    </motion.div>
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-1">
+        <span className="text-4xl md:text-5xl font-black text-foreground">{fmt(discounted)}</span>
+        <span className="text-base text-muted-foreground mb-1">تومان</span>
+        {originalPrice > 0 && (
+          <span className="text-sm text-muted-foreground line-through mb-1.5">{fmt(originalPrice)}</span>
+        )}
+        <span className="mr-auto px-3 py-1 rounded-full border border-foreground text-foreground text-sm font-bold">
+          {fmt(discount)}٪ تخفیف
+        </span>
+      </div>
+    </div>
   );
 };
 

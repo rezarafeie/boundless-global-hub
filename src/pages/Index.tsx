@@ -357,9 +357,6 @@ const Index = () => {
 
   return (
     <MainLayout>
-      {isBlackFridayActive && blackFridaySettings?.end_date && (
-        <BlackFridayBanner endDate={blackFridaySettings.end_date} />
-      )}
 
       <Hero ctaText="مشاهده دوره‌ها" ctaLink="/courses" />
 
