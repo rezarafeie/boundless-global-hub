@@ -11,13 +11,14 @@ const settingsSchema = z.object({
 }).strict();
 const schema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('worker') }).strict(),
+  z.object({ action: z.literal('test'), activation_id: z.string().uuid(), kind: z.enum(['welcome', 'activation', 'start']) }).strict(),
   z.object({ action: z.literal('get'), course_id: z.string().uuid() }).strict(),
   z.object({ action: z.literal('save'), course_id: z.string().uuid(), settings: settingsSchema }).strict(),
   z.object({ action: z.literal('login'), code: z.string().regex(/^[A-Za-z0-9]{10}$/) }).strict(),
 ]);
 
-export async function processSms(client: ReturnType<typeof db>, send = fetch) {
-  const { data: candidates, error } = await client.rpc('enrollment_sms_candidates');
+export async function processSms(client: ReturnType<typeof db>, send = fetch, test?: { activation_id: string; kind: SmsKind }) {
+  const { data: candidates, error } = test ? { data: [test], error: null } : await client.rpc('enrollment_sms_candidates');
   if (error) throw error;
   const summary: Record<string, number> = { sent: 0, failed: 0, skipped: 0, unknown: 0 };
   for (const candidate of candidates ?? []) {
@@ -31,12 +32,12 @@ export async function processSms(client: ReturnType<typeof db>, send = fetch) {
       client.from('course_enrollment_sms_settings').select('*').eq('course_id', activation.course_id).maybeSingle(),
     ]);
     if (enrollmentError || settingsError) throw enrollmentError || settingsError;
-    if (!settings?.[`${kind === 'start' ? 'start' : kind}_enabled`] || !enrollment || Date.parse(enrollment.created_at) < Date.parse(settings.enabled_from)) continue;
+    if (!enrollment || (!test && (!settings?.[`${kind}_enabled`] || Date.parse(enrollment.created_at) < Date.parse(settings.enabled_from)))) continue;
     const { data: progress, error: progressError } = await client.from('user_lesson_progress').select('is_opened,is_completed,total_time_spent').eq('user_id', activation.user_id).eq('course_id', activation.course_id);
     if (progressError) throw progressError;
     if (!smsEligible(kind, activation, enrollment, courseStarted(progress ?? []))) continue;
     const elapsedFrom = kind === 'start' ? activation.activated_at : activation.created_at;
-    const delay = kind === 'welcome' ? 0 : settings[`${kind}_delay_minutes`];
+    const delay = kind === 'welcome' || test ? 0 : settings[`${kind}_delay_minutes`];
     if (Date.now() < Date.parse(elapsedFrom) + delay * 60000) continue;
     const { error: claimError } = await client.from('enrollment_sms_deliveries').insert({ enrollment_id: enrollment.id, kind });
     if (claimError?.code === '23505') continue;
@@ -88,7 +89,7 @@ export async function processSms(client: ReturnType<typeof db>, send = fetch) {
     if (saveError) throw saveError;
     await client.from('support_activation_followup_log').insert({ support_activation_id: activation.id, course_id: activation.course_id,
       user_id: activation.user_id, stage: 0, channel: 'sms', status, error_message: errorCode,
-      payload: { kind, template: SMS_TEMPLATES[kind], provider_message_id: messageId } });
+      payload: { kind, template: SMS_TEMPLATES[kind], provider_message_id: messageId, is_test: Boolean(test) } });
     summary[status] = (summary[status] ?? 0) + 1;
   }
   return summary;
@@ -112,12 +113,12 @@ export async function handleEnrollmentSms(req: Request) {
       if (!data) return json({ error: 'لینک منقضی شده، قبلاً استفاده شده یا دسترسی دوره فعال نیست؛ از صفحه ورود وارد شوید.' }, 410);
       return json({ data });
     }
-    if (b.action === 'worker') {
+    if (b.action === 'worker' || b.action === 'test') {
       const supplied = req.headers.get('x-enrollment-sms-secret');
       if (!supplied) return json({ error: 'دسترسی ارسال معتبر نیست' }, 403);
       const { data: key, error } = await client.rpc('enrollment_sms_worker_key');
       if (error || !key || !(await constantTimeEqual(supplied, key))) return json({ error: 'دسترسی ارسال معتبر نیست' }, 403);
-      return json({ data: await processSms(client) });
+      return json({ data: await processSms(client, fetch, b.action === 'test' ? { activation_id: b.activation_id, kind: b.kind } : undefined) });
     }
     try { await requireSocialAdmin(req, client); } catch { return json({ error: 'دسترسی مدیریت معتبر نیست' }, 403); }
     const { data: course, error: courseError } = await client.from('courses').select('id').eq('id', b.course_id).maybeSingle();
