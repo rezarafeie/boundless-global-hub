@@ -18,7 +18,7 @@ const BlackFridayBanner: React.FC<BlackFridayBannerProps> = ({ endDate }) => {
       target="_blank"
       rel="noopener noreferrer"
       dir="rtl"
-      className="block w-full bg-foreground text-background hover:opacity-95 transition-opacity"
+      className="sticky top-16 z-40 block w-full bg-foreground text-background hover:opacity-95 transition-opacity"
     >
       <div className="container mx-auto px-4 h-10 flex items-center justify-center gap-3 text-xs sm:text-sm">
         <span className="font-black tracking-[0.2em]" dir="ltr">BLACK FRIDAY</span>
