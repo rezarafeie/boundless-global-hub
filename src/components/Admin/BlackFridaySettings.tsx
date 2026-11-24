@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Percent, Trash2 } from 'lucide-react';
+import BlackFridayServicesManager from './BlackFridayServicesManager';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const BlackFridaySettings = () => {
@@ -158,7 +159,7 @@ const BlackFridaySettings = () => {
             <div className="space-y-0.5">
               <Label>فعال‌سازی بلک فرایدی</Label>
               <p className="text-sm text-muted-foreground">
-                با فعال‌سازی، تم سایت به سیاه و طلایی تغییر می‌کند
+                با فعال‌سازی، بنر بالای سایت، صفحه /blackfriday و قیمت‌های تخفیفی نمایش داده می‌شوند
               </p>
             </div>
             <Switch
@@ -290,6 +291,8 @@ const BlackFridaySettings = () => {
           )}
         </CardContent>
       </Card>
+
+      <BlackFridayServicesManager />
     </div>
   );
 };

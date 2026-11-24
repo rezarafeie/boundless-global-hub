@@ -14,9 +14,7 @@ const BlackFridayBanner: React.FC<BlackFridayBannerProps> = ({ endDate }) => {
   if (t.done) return null;
   return (
     <a
-      href="https://rafiei.co/blackfriday"
-      target="_blank"
-      rel="noopener noreferrer"
+      href="/blackfriday"
       dir="rtl"
       className="sticky top-16 z-40 block w-full bg-foreground text-background hover:opacity-95 transition-opacity"
     >

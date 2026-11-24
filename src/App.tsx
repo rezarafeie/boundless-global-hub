@@ -58,6 +58,7 @@ import MetaverseLanding from "./pages/Courses/MetaverseLanding";
 import InstagramLanding from "./pages/Courses/InstagramLanding";
 import InstagramEssentialsLanding from "./pages/Courses/InstagramEssentialsLanding";
 import BoundlessLanding from "./pages/Courses/BoundlessLanding";
+import BlackFridayLanding from "./pages/BlackFridayLanding";
 import FreeCourseLanding from "./pages/Courses/FreeCourseLanding";
 import SmartPackLanding from "./pages/Courses/SmartPackLanding";
 import ServitLanding from "./pages/Courses/ServitLanding";
@@ -356,6 +357,7 @@ const App = () => {
                     {/* Course Access */}
                     <Route path="/course-access" element={<CourseAccess />} />
 
+                    <Route path="/blackfriday" element={<BlackFridayLanding />} />
                     {/* Course landing pages */}
                     <Route path="/courses/metaverse" element={<MetaverseLanding />} />
                     <Route path="/courses/instagram" element={<InstagramLanding />} />

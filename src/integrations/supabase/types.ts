@@ -849,6 +849,45 @@ export type Database = {
           },
         ]
       }
+      black_friday_services: {
+        Row: {
+          created_at: string
+          description: string | null
+          discount_code: string | null
+          discount_percentage: number
+          id: string
+          is_active: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discount_code?: string | null
+          discount_percentage?: number
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discount_code?: string | null
+          discount_percentage?: number
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       black_friday_settings: {
         Row: {
           created_at: string | null
