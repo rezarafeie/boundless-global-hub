@@ -1,3 +1,8 @@
+## Enrollment SMS
+- [ ] Connect the three approved Kavenegar patterns to existing per-course followups with payment, activation and course-start guards
+- [ ] Implement expiring single-use short course login at l.rafiei.co/s/:code with server-side access validation
+- [ ] Verify policy tests, short-login flow and course editor; enable delivery only for the user's selected courses and test real SMS only with a consenting recipient
+
 ## Hub shared authentication
 - [x] Repair verified Hub linking blocked by an unconfirmed phone-only duplicate; preserve both accounts' histories; seven rollback checks pass
 - [ ] Confirm live account.link and me.enrollments for source user 3 after a fresh Hub login (previous five-minute link authorization expired)
