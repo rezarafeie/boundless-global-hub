@@ -76,8 +76,11 @@ async function getCountryCode(): Promise<string | null> {
 }
 
 export function trackPageview(pathname?: string) {
+  // Never persist login capabilities in analytics or send them to geolocation services.
+  if (window.location.pathname.startsWith('/s/') || window.location.pathname === '/sso-access') return;
   ric(async () => {
     const url = new URL(window.location.href);
+    if (url.pathname.startsWith('/s/') || url.pathname === '/sso-access') return;
     const country = await getCountryCode();
     const payload = {
       sessionId: getSessionId(),
