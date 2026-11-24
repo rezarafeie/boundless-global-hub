@@ -9,6 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Trash2, Plus } from 'lucide-react';
+import { rafieiServices } from '@/data/rafieiServices';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type Service = { id: string; title: string; description: string | null; url: string; discount_percentage: number; discount_code: string | null; sort_order: number; is_active: boolean };
 const empty = { title: '', description: '', url: '', discount_percentage: 20, discount_code: '', sort_order: 0 };
@@ -59,6 +61,12 @@ const BlackFridayServicesManager = () => {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-3 md:grid-cols-2">
+          <div className="space-y-1 md:col-span-2"><Label>انتخاب از خدمات گروه رفیعی</Label>
+            <Select onValueChange={(name) => { const sv = rafieiServices.find((x) => x.name === name); if (sv) setForm({ ...form, title: sv.name, url: sv.href.startsWith('http') ? sv.href : `https://academy.rafiei.co${sv.href}`, description: sv.tagline }); }}>
+              <SelectTrigger><SelectValue placeholder="یک سرویس انتخاب کنید" /></SelectTrigger>
+              <SelectContent>{rafieiServices.filter((x) => !services.some((e) => e.title === x.name)).map((x) => <SelectItem key={x.href + x.name} value={x.name}>{x.name} — {x.tagline}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
           <div className="space-y-1"><Label>عنوان</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
           <div className="space-y-1"><Label>لینک</Label><Input dir="ltr" placeholder="https://" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} /></div>
           <div className="space-y-1 md:col-span-2"><Label>توضیح کوتاه</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
