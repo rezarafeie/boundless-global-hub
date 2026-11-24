@@ -14,6 +14,7 @@
 - Sparse NovinHub form completions resolve page/form identity through the documented form-response API using exact response and person IDs, then verify the correlated conversation owner before sending; missing email is never fabricated.
 - Long Instagram activation messages use the existing short bot deep link for the same activation token instead of the percent-encoded support prefill URL, preserving the support flow while fitting direct-message limits.
 - NovinHub conversation replies send the documented JSON content payload; form-urlencoded replies returned provider errors during verified live delivery.
+- Instagram activation followups reuse custom followup claims and logs, resolve recipients only from server-owned completed enrollment events, recheck conversation ownership and activation before sending, and never fall back to another channel; this preserves the existing lifecycle without identity guessing or duplicate bot delivery.
 - Optional-email enrollment stays in create-enrollment, requires a server-only social credential and a server-verified free course, and skips missing-email lookups and recipient email delivery; ordinary website validation remains unchanged.
 - Call center operations reuse the existing gateway and processing functions with server-validated roles and ownership; provider routing stays capture-only until its contract and staged rollout are verified.
 - Call-center scheduled HTTP work requires a server-only credential, never a public API key or client body flag, because it can import private recordings and incur AI costs.

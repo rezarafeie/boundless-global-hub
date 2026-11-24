@@ -45,7 +45,8 @@
 - [x] Verify 16 tests, access grants, unsigned request rejection and real delivery of all 15 courses with totals matching the database
 
 ## Instagram direct enrollment
-- [ ] Add optional Instagram activation followups to the existing scheduler and course editor; verify ownership, activation stop and delivery logs
+- [x] Add optional Instagram activation followups to the existing scheduler and course editor; eight fixture tests pass for ownership, activation stop and provider rejection; existing claims and delivery logs reused
+- [ ] Verify real Instagram followup delivery and signed-in course editor (requires an authorized admin preview session and a consenting test Instagram conversation; sandbox admin page denies access)
 - [x] Make email optional for trusted free-course direct enrollment, keep website validation unchanged, store missing email as null and skip recipient email delivery; 17 targeted tests pass
 - [x] Connect form 10424 on Instagram account 210093 to the existing free Boundless Taste enrollment flow, preserving form 9808
 - [x] Repair sparse form response enrichment: real response 4368140 verified under page 210093/form 10424 and conversation 6382167437 owner rez.raf

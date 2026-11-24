@@ -125,6 +125,7 @@ const AllFollowupLogs: React.FC = () => {
                 <SelectItem value="telegram_business">تلگرام Business</SelectItem>
                 <SelectItem value="email">ایمیل</SelectItem>
                 <SelectItem value="sms">پیامک</SelectItem>
+                <SelectItem value="instagram">دایرکت اینستاگرام</SelectItem>
               </SelectContent>
             </Select>
             <Select value={stage} onValueChange={setStage}>

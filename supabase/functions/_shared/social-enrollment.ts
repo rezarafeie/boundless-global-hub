@@ -100,7 +100,7 @@ export function ownsConversation(conversation: any, accountId: string, socialId:
       String(p.social_user_id ?? p.socialUser?.id ?? '') === socialId);
 }
 
-async function resolveFormContext(client: ReturnType<typeof db>, event: any, receivedAt: string) {
+export async function resolveFormContext(client: ReturnType<typeof db>, event: any, receivedAt: string) {
   const p = event.payload;
   if (event.type !== 'autoform_completed' ||
     ((p.account_id ?? p.account?.id) && (p.auto_form_id ?? p.autoform_id ?? p.automation_form_id ?? p.automationForm?.id ?? p.auto_form?.id ?? p.form_id ?? p.form?.id) &&
@@ -270,7 +270,8 @@ export async function processEnrollmentQueue(limit = 10) {
       if (!enrollment?.id || !enrollment.chat_user_id || !['completed', 'success'].includes(enrollment.payment_status)) {
         throw new Error('ثبت‌نام کامل نیست؛ فعال‌سازی پشتیبانی ارسال نشد');
       }
-      await save({ enrollment_id: enrollment.id });
+      // Retain the resolved, ownership-checked form context for later Instagram followups.
+      await save({ enrollment_id: enrollment.id, payload: event });
       if (!existingUser) {
         await client.from('chat_users').update({ signup_source: 'instagram_direct' }).eq('id', enrollment.chat_user_id).eq('signup_source', 'enrollment');
       }

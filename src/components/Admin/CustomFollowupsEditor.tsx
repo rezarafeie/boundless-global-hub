@@ -16,7 +16,7 @@ interface CustomFollowup {
   course_id: string;
   name: string;
   enabled: boolean;
-  channel: 'bot' | 'email' | 'sms' | 'business';
+  channel: 'bot' | 'email' | 'sms' | 'business' | 'instagram';
   delay_minutes: number;
   max_repeats: number;
   repeat_delay_minutes: number;
@@ -71,6 +71,10 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
   };
 
   const save = async (r: CustomFollowup) => {
+    if (r.channel === 'instagram' && (!r.bot_text?.trim() || r.bot_text.length > 900)) {
+      toast({ title: 'متن دایرکت را وارد کنید', description: 'متن پیگیری حداکثر ۹۰۰ کاراکتر؛ لینک فعال‌سازی خودکار اضافه می‌شود.', variant: 'destructive' });
+      return;
+    }
     setSavingId(r.id);
     const { error } = await supabase.from('support_activation_custom_followups' as any).update({
       name: r.name,
@@ -88,8 +92,8 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
       media_type: r.media_type,
       buttons: r.buttons ?? [],
       media_items: r.media_items ?? [],
-      skip_if_activated: r.skip_if_activated,
-      only_if_activated: r.only_if_activated,
+      skip_if_activated: r.channel === 'instagram' ? true : r.skip_if_activated,
+      only_if_activated: r.channel === 'instagram' ? false : r.only_if_activated,
     }).eq('id', r.id);
     setSavingId(null);
     if (error) { toast({ title: 'خطا', description: error.message, variant: 'destructive' }); return; }
@@ -129,6 +133,7 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
                 <SelectItem value="business">چت پشتیبانی (Business)</SelectItem>
                 <SelectItem value="email">ایمیل</SelectItem>
                 <SelectItem value="sms">پیامک</SelectItem>
+                <SelectItem value="instagram">دایرکت اینستاگرام</SelectItem>
               </SelectContent>
             </Select>
             <div className="flex items-center gap-1">
@@ -144,11 +149,11 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
               <Input type="number" value={r.repeat_delay_minutes} onChange={(e) => patch(r.id, { repeat_delay_minutes: Number(e.target.value) })} className="h-8 w-24" />
             </div>
             <div className="flex items-center gap-1">
-              <Switch checked={r.skip_if_activated} onCheckedChange={(v) => patch(r.id, { skip_if_activated: v, ...(v ? { only_if_activated: false } : {}) })} />
+              <Switch disabled={r.channel === 'instagram'} checked={r.channel === 'instagram' || r.skip_if_activated} onCheckedChange={(v) => patch(r.id, { skip_if_activated: v, ...(v ? { only_if_activated: false } : {}) })} />
               <Label className="text-xs">فقط اگر فعال‌سازی نشده</Label>
             </div>
             <div className="flex items-center gap-1">
-              <Switch checked={r.only_if_activated} onCheckedChange={(v) => patch(r.id, { only_if_activated: v, ...(v ? { skip_if_activated: false } : {}) })} />
+              <Switch disabled={r.channel === 'instagram'} checked={r.channel !== 'instagram' && r.only_if_activated} onCheckedChange={(v) => patch(r.id, { only_if_activated: v, ...(v ? { skip_if_activated: false } : {}) })} />
               <Label className="text-xs">فقط اگر فعال‌سازی شده</Label>
             </div>
             <div className="mr-auto flex gap-2">
@@ -169,6 +174,12 @@ const CustomFollowupsEditor: React.FC<Props> = ({ courseId }) => {
             <div className="space-y-2">
               <Textarea rows={2} value={r.sms_text || ''} onChange={(e) => patch(r.id, { sms_text: e.target.value })} placeholder="متن پیامک (در صورت خالی بودن قالب Kavenegar استفاده می‌شود)" dir="rtl" />
               <Textarea rows={2} value={r.sms_template_url || ''} onChange={(e) => patch(r.id, { sms_template_url: e.target.value })} placeholder="آدرس قالب Kavenegar (اختیاری)" dir="ltr" className="font-mono text-xs" />
+            </div>
+          )}
+          {r.channel === 'instagram' && (
+            <div className="space-y-2">
+              <Textarea rows={4} maxLength={900} value={r.bot_text || ''} onChange={(e) => patch(r.id, { bot_text: e.target.value })} placeholder="متن پیگیری فعال‌سازی در دایرکت" dir="rtl" />
+              <p className="text-xs text-muted-foreground">فقط ثبت‌نام‌های متصل به دایرکت نوین‌هاب؛ توقف پس از فعال‌سازی پشتیبانی. لینک و دکمه فعال‌سازی همراه پیام ارسال می‌شوند؛ ارسال تابع محدودیت‌های اینستاگرام است.</p>
             </div>
           )}
           {(r.channel === 'bot' || r.channel === 'business') && (

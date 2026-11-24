@@ -2,6 +2,7 @@
 import { supabase } from "./supabase.ts";
 import { sendMessage, tgCall, sendRichMessage, buildButtonsKeyboard, appendButtonsAsLinks } from "./telegram.ts";
 import { botLogChannel, resolveBotTarget, runWithChannel } from "./channel.ts";
+import { sendInstagramActivationFollowup } from "./instagram-followup.ts";
 
 // Where can we reach this person with a bot message? Telegram first, Bale as the
 // mirror for users who linked the Bale bot instead.
@@ -334,7 +335,19 @@ export async function runCustom(row: Row, cf: any, opts: { isTest?: boolean } = 
   const results: any[] = [];
   const logExtra = { custom_followup_id: cf.id, name: cf.name, is_test: !!opts.isTest };
 
-  if (cf.channel === "email") {
+  if (cf.channel === "instagram") {
+    try {
+      const text = render(cf.bot_text, vars);
+      if (!text.trim()) throw new Error("متن پیگیری اینستاگرام خالی است");
+      const result = await sendInstagramActivationFollowup(row, text, vars.activation_link);
+      await logSendCustom(row, cf, "instagram", result.unreachable ? "unreachable" : result.skipped ? "skipped" : "sent", undefined, { ...logExtra, ...result });
+      return [{ channel: "instagram", ...result }];
+    } catch (e) {
+      const error = e instanceof Error ? e.message : String(e);
+      await logSendCustom(row, cf, "instagram", "failed", error, logExtra);
+      return [{ channel: "instagram", ok: false, error }];
+    }
+  } else if (cf.channel === "email") {
     const email = user.email;
     if (!email) {
       await logSendCustom(row, cf, "email", "skipped", "no email", logExtra);
