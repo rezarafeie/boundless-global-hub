@@ -43,6 +43,7 @@ export type PaymentMethod =
   | 'rafieipay_zibal'
   | 'rafieipay_zarinpal'
   | 'rafieipay_snapppay'
+  | 'rafieipay_crypto'
   | 'snapppay'
   | 'digipay'
   | 'manual';
@@ -129,6 +130,7 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
         zarinpal: z,
         zibal: zb,
         rafieipay: rp,
+        rafieipay_crypto: rp,
         rafieipay_zibal: rpZb,
         rafieipay_zarinpal: rpZp,
         rafieipay_snapppay: rpSp,
@@ -502,15 +504,16 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
             onValueChange={(value) => onPaymentMethodChange(value as PaymentMethod)}
             className="grid gap-2.5"
           >
-            {zarinpalEnabled && <GatewayOption value="zarinpal" selected={selectedMethod} logo="/gateways/zarinpal.com.png" title="زرین‌پال" subtitle="پرداخت آنلاین با همه کارت‌های شتاب" />}
-            {zibalEnabled && <GatewayOption value="zibal" selected={selectedMethod} logo="/gateways/zibal.ir.png" title="زیبال" subtitle="پرداخت آنلاین با همه کارت‌های شتاب" />}
-            {rafieipayEnabled && <GatewayOption value="rafieipay" selected={selectedMethod} icon={<CreditCard className="h-5 w-5" />} title="رفیعی پی" subtitle="انتخاب درگاه در صفحه رفیعی پی" />}
-            {rpZibalEnabled && <GatewayOption value="rafieipay_zibal" selected={selectedMethod} logo="/gateways/zibal.ir.png" title="زیبال" subtitle="پرداخت آنلاین با همه کارت‌های شتاب" />}
-            {rpZarinpalEnabled && <GatewayOption value="rafieipay_zarinpal" selected={selectedMethod} logo="/gateways/zarinpal.com.png" title="زرین‌پال" subtitle="پرداخت آنلاین با همه کارت‌های شتاب" />}
-            {rpSnapppayAvailable && <GatewayOption value="rafieipay_snapppay" selected={selectedMethod} logo="/gateways/snapppay.ir.png" title="اسنپ‌پی · ۴ قسط" subtitle="بدون پیش‌پرداخت اضافه، قسط اول امروز" badge="اقساطی" amount={formatPrice(snapppayFirstInstallment)} amountLabel="پرداخت امروز" />}
-            {snapppayAvailable && <GatewayOption value="snapppay" selected={selectedMethod} logo="/gateways/snapppay.ir.png" title="اسنپ‌پی · ۴ قسط" subtitle="بدون پیش‌پرداخت اضافه، قسط اول امروز" badge="اقساطی" amount={formatPrice(snapppayFirstInstallment)} amountLabel="پرداخت امروز" />}
-            {digipayAvailable && <GatewayOption value="digipay" selected={selectedMethod} logo="/gateways/mydigipay.com.png" title="دیجی‌پی · ۶ قسط" subtitle="خرید اقساطی در ۶ ماه" badge="اقساطی" amount={formatPrice(digipayInstallment)} amountLabel="هر قسط حدود" />}
-            {manualEnabled && <GatewayOption value="manual" selected={selectedMethod} icon={<FileText className="h-5 w-5" />} title="کارت به کارت" subtitle="واریز به حساب و آپلود رسید" />}
+            {rafieipayEnabled && <GatewayOption value="rafieipay" selected={selectedMethod} rafiei title="رفیعی پی" subtitle="همه روش‌ها در یک صفحه" />}
+            {rafieipayEnabled && <GatewayOption value="rafieipay_crypto" selected={selectedMethod} rafiei title="ارز دیجیتال" subtitle="پرداخت با تتر و کریپتو در رفیعی پی" />}
+            {zarinpalEnabled && <GatewayOption value="zarinpal" selected={selectedMethod} logo="/gateways/zarinpal.com.png" title="زرین‌پال" subtitle="کارت‌های بانکی شتاب" />}
+            {zibalEnabled && <GatewayOption value="zibal" selected={selectedMethod} logo="/gateways/zibal.ir.png" title="زیبال" subtitle="کارت‌های بانکی شتاب" />}
+            {rpZarinpalEnabled && <GatewayOption value="rafieipay_zarinpal" selected={selectedMethod} logo="/gateways/zarinpal.com.png" title="زرین‌پال" subtitle="کارت‌های بانکی شتاب" />}
+            {rpZibalEnabled && <GatewayOption value="rafieipay_zibal" selected={selectedMethod} logo="/gateways/zibal.ir.png" title="زیبال" subtitle="کارت‌های بانکی شتاب" />}
+            {rpSnapppayAvailable && <GatewayOption value="rafieipay_snapppay" selected={selectedMethod} logo="/gateways/snapppay.ir.png" title="اسنپ‌پی" subtitle={`۴ قسط · امروز ${formatPrice(snapppayFirstInstallment)}`} />}
+            {snapppayAvailable && <GatewayOption value="snapppay" selected={selectedMethod} logo="/gateways/snapppay.ir.png" title="اسنپ‌پی" subtitle={`۴ قسط · امروز ${formatPrice(snapppayFirstInstallment)}`} />}
+            {digipayAvailable && <GatewayOption value="digipay" selected={selectedMethod} logo="/gateways/mydigipay.com.png" title="دیجی‌پی" subtitle={`۶ قسط · هر قسط ${formatPrice(digipayInstallment)}`} />}
+            {manualEnabled && <GatewayOption value="manual" selected={selectedMethod} icon={<FileText className="h-5 w-5" />} title="کارت به کارت" subtitle="واریز و آپلود رسید" />}
           </RadioGroup>
         </div>
       )}
@@ -750,35 +753,32 @@ const ManualPaymentSection: React.FC<ManualPaymentSectionProps> = ({
 
 export default ManualPaymentSection;
 
-function GatewayOption({ value, selected, logo, icon, title, subtitle, badge, amount, amountLabel }: {
-  value: string; selected: string; logo?: string; icon?: React.ReactNode; title: string; subtitle: string;
-  badge?: string; amount?: string; amountLabel?: string;
+function GatewayOption({ value, selected, logo, icon, rafiei, title, subtitle }: {
+  value: string; selected: string; logo?: string; icon?: React.ReactNode; rafiei?: boolean; title: string; subtitle: string;
 }) {
   const active = selected === value;
   return (
     <Label
       htmlFor={`pm-${value}`}
-      className={`flex items-center gap-3 cursor-pointer rounded-2xl border p-3.5 transition-all text-right ${
-        active ? 'border-foreground bg-muted/60 shadow-sm ring-1 ring-foreground' : 'border-border bg-card hover:border-foreground/40'
+      dir="rtl"
+      className={`flex w-full items-center gap-3 cursor-pointer rounded-2xl border px-3.5 py-3 text-right transition-colors ${
+        active ? 'border-foreground bg-muted/50' : 'border-border bg-card hover:border-foreground/30'
       }`}
     >
       <RadioGroupItem value={value} id={`pm-${value}`} className="shrink-0" />
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background">
-        {logo ? <img src={logo} alt={title} className="h-8 w-8 object-contain" loading="lazy" /> : <span className="text-foreground">{icon}</span>}
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background">
+        {rafiei ? (
+          <img src="/lovable-uploads/d03b7d97-8f42-4806-a04a-add408342460.png" alt="رفیعی" className="h-6 w-6 object-contain dark:invert" />
+        ) : logo ? (
+          <img src={logo} alt={title} className="h-7 w-7 object-contain" loading="lazy" />
+        ) : (
+          <span className="text-foreground">{icon}</span>
+        )}
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="text-[15px] font-semibold leading-6 text-foreground">{title}</span>
-          {badge && <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] font-medium text-background">{badge}</span>}
-        </div>
-        <div className="text-xs leading-5 text-muted-foreground">{subtitle}</div>
+      <div className="min-w-0 flex-1 text-right">
+        <div className="truncate text-[15px] font-semibold leading-6 text-foreground">{title}</div>
+        <div className="truncate text-xs leading-5 text-muted-foreground">{subtitle}</div>
       </div>
-      {amount && (
-        <div className="shrink-0 text-left">
-          <div className="text-[10px] text-muted-foreground">{amountLabel}</div>
-          <div className="text-sm font-bold text-foreground whitespace-nowrap">{amount}</div>
-        </div>
-      )}
     </Label>
   );
 }

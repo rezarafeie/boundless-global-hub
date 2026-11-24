@@ -78,6 +78,7 @@ const Enroll: React.FC = () => {
     if (method === 'rafieipay') return { fnName: 'rafieipay-request' };
     if (method === 'rafieipay_zibal') return { fnName: 'rafieipay-request', gateway: 'zibal' };
     if (method === 'rafieipay_zarinpal') return { fnName: 'rafieipay-request', gateway: 'zarinpal' };
+    if (method === 'rafieipay_crypto') return { fnName: 'rafieipay-request', gateway: 'crypto' };
     if (method === 'rafieipay_snapppay') return { fnName: 'rafieipay-request', gateway: 'snapppay' };
     return { fnName: 'zarinpal-request' };
   };

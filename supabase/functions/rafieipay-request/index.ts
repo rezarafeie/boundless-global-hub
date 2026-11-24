@@ -17,7 +17,7 @@ serve(async (req) => {
 
     // Only these gateways may be forwarded to Rafiei Pay. Empty/undefined = Rafiei Pay Checkout
     // (customer picks the method inside Rafiei Pay).
-    const allowedGateways = ['zibal', 'zarinpal', 'snapppay'];
+    const allowedGateways = ['zibal', 'zarinpal', 'snapppay', 'crypto'];
     const rpGateway: string | undefined =
       typeof gateway === 'string' && allowedGateways.includes(gateway) ? gateway : undefined;
 
@@ -130,8 +130,14 @@ serve(async (req) => {
     // Rafiei Pay Checkout = no gateway (customer chooses inside Rafiei Pay)
     if (rpGateway) payload.gateway = rpGateway;
 
-    const result = await rafieipayFetch('/functions/v1/payments-request', payload, { enrollmentId: enrollment.id });
-    const r = result.body || {};
+    let result = await rafieipayFetch('/functions/v1/payments-request', payload, { enrollmentId: enrollment.id });
+    let r = result.body || {};
+    // If Rafiei Pay cannot preselect crypto, fall back to its checkout page where crypto is chosen.
+    if (rpGateway === 'crypto' && !(r?.payment_url || r?.paymentUrl || r?.checkout_url || r?.checkoutUrl)) {
+      delete payload.gateway;
+      result = await rafieipayFetch('/functions/v1/payments-request', payload, { enrollmentId: enrollment.id });
+      r = result.body || {};
+    }
 
     // Checkout mode returns checkout_url; direct-gateway mode returns payment_url.
     const redirectUrl = r?.payment_url || r?.paymentUrl || r?.checkout_url || r?.checkoutUrl;
