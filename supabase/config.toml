@@ -304,6 +304,3 @@ verify_jwt = false
 
 [functions.bf-services-admin]
 verify_jwt = false
-
-[functions.support-activation-business-resend]
-verify_jwt = false
