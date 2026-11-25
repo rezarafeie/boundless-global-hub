@@ -4102,14 +4102,17 @@ async function handleUpdate(update: any, reportAuthenticated = false, replyDispa
   // ===== Auto-detect support-activation message anywhere (e.g. support group where bot is a member) =====
 
   if (text) {
-    const tokenMatch = text.match(/(?:کد\s*فعال[‌\s]*سازی|activation[_\s-]*token|activation[_\s-]*code)\s*[:：]\s*([a-f0-9]{16,64})/i);
+    const tokenMatch = text.match(/(?:کد\s*فعال[‌\s]*سازی|activation[_\s-]*token|activation[_\s-]*code)\s*[:：]\s*([A-Za-z0-9]{10,64})/i);
     if (tokenMatch) {
-      const token = tokenMatch[1].toLowerCase();
-      const { data: act } = await supabase
+      const rawToken = tokenMatch[1];
+      // Short base62 tokens are case-sensitive; legacy hex tokens are stored lowercase.
+      const candidates = Array.from(new Set([rawToken, rawToken.toLowerCase()]));
+      const { data: actRows } = await supabase
         .from('support_activations')
         .select('id, user_id, course_id, status, telegram_id, clicked_support_button_at')
-        .eq('activation_token', token)
-        .maybeSingle();
+        .in('activation_token', candidates)
+        .limit(1);
+      const act = actRows?.[0] ?? null;
       if (act) {
         if (act.status !== 'activated') {
           await supabase.from('support_activations').update({
