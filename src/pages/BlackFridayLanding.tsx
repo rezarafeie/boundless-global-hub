@@ -231,6 +231,22 @@ const BlackFridayLanding: React.FC = () => {
     });
     return firstPayments.length ? Math.min(...firstPayments) : null;
   }, [rows, prices, installmentGateways]);
+  const startCoursePrice = useMemo(() => {
+    const isStartCourse = (r: DiscountRow) => {
+      const slug = r.courses!.slug || "";
+      const title = r.courses!.title || "";
+      return slug === "boundless" || slug === "boundless-taste" || title.includes("دوره شروع");
+    };
+    const row = rows.find(isStartCourse) ?? (rows.length ? rows.slice().sort((a, b) => {
+      const pa = (prices[a.courses!.id] || 0) * (1 - a.discount_percentage / 100);
+      const pb = (prices[b.courses!.id] || 0) * (1 - b.discount_percentage / 100);
+      return pa - pb;
+    })[0] : null);
+    if (!row) return null;
+    const price = prices[row.courses!.id] || 0;
+    if (!price) return null;
+    return price * (1 - row.discount_percentage / 100);
+  }, [rows, prices]);
   const reveal = (id: string) => { setPicked((p) => (p.includes(id) ? p : [...p, id])); document.getElementById(`deal-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }); };
 
   useEffect(() => { document.title = "بلک فرایدی | آکادمی رفیعی"; }, []);
@@ -256,12 +272,12 @@ const BlackFridayLanding: React.FC = () => {
                   بزرگ‌ترین تخفیف سال روی دوره‌های آکادمی و سرویس‌های گروه رفیعی
                   {maxOff > 0 && <> — تا <b className="text-background">{fa(maxOff)}٪</b></>}
                 </p>
-                {isActive && (totalSave > 0 || startingInstallment !== null) && (
+                {isActive && (totalSave > 0 || startCoursePrice !== null) && (
                   <p className="mx-auto mt-4 inline-flex flex-wrap items-center justify-center gap-2 rounded-full bg-background/10 px-4 py-2 text-sm font-bold text-background">
                     <Flame className="h-4 w-4" />
                     {totalSave > 0 && <span>تا {short(totalSave)} تومان سود</span>}
-                    {totalSave > 0 && startingInstallment !== null && <span aria-hidden>—</span>}
-                    {startingInstallment !== null && <span>شروع اقساط از {short(startingInstallment)} تومان</span>}
+                    {totalSave > 0 && startCoursePrice !== null && <span aria-hidden>—</span>}
+                    {startCoursePrice !== null && <span>شروع از {short(startCoursePrice)} تومان</span>}
                   </p>
                 )}
                 {isActive && !t.done && (
