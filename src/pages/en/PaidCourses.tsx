@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { User, Calendar, Award, BarChart3, Gift, Star, CheckCircle, Target, TrendingUp, Zap } from "lucide-react";
+import { courseImage, courseImagePosition } from "@/lib/academyImagery";
 
 const PaidCourses = () => {
   const { translations } = useLanguage();
@@ -274,11 +275,12 @@ const PaidCourses = () => {
                   <div className="bg-background border border-primary/10 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.01] hover:border-primary/30">
                     
                     {/* Course Header */}
-                    <div className="aspect-video relative">
+                    <div className="aspect-[4/3] relative">
                       <img 
-                        src={course.image} 
+                        src={courseImage("", course.title)}
                         alt={course.title}
                         className="w-full h-full object-cover"
+                        style={{ objectPosition: courseImagePosition("", course.title) }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end">
                         <div className="p-6">

@@ -6,7 +6,7 @@ import t1 from '@/assets/real/t1.webp.asset.json';
 import t2 from '@/assets/real/t2.webp.asset.json';
 import t3 from '@/assets/real/t3.webp.asset.json';
 import t5 from '@/assets/real/t5.webp.asset.json';
-import kBoundless from '@/assets/real/k_boundless2.webp.asset.json';
+import { courseImage, courseImagePosition } from '@/lib/academyImagery';
 
 const fade = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { duration: 0.7 } };
 
@@ -15,7 +15,7 @@ export const FeaturedCourse = () => (
     <div className="container mx-auto">
       <motion.div {...fade} className="grid overflow-hidden rounded-[2rem] border border-border bg-card md:grid-cols-2">
         <div className="relative min-h-[280px] bg-photo-shade md:min-h-[460px]">
-          <img src={kBoundless.url} alt="دوره شروع بدون مرز" className="absolute inset-0 h-full w-full object-cover" />
+          <img src={courseImage('boundless', 'دوره شروع بدون مرز')} alt="دوره شروع بدون مرز" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: courseImagePosition('boundless', 'دوره شروع بدون مرز') }} />
           <div className="absolute inset-0 bg-gradient-to-t from-photo-shade/70 to-transparent md:bg-gradient-to-l md:from-photo-shade/40" />
           <span className="absolute right-5 top-5 rounded-full border border-photo-ink/20 bg-photo-shade/40 px-3 py-1 text-xs text-photo-ink backdrop-blur-md">پیشنهاد ویژه</span>
         </div>

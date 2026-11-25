@@ -5,7 +5,7 @@ import Hero from "@/components/Hero";
 import { ServiceGroupSection } from "@/components/Services/ServicesShowcase";
 import FounderStory from "@/components/FounderStory";
 import PhotoQuote from "@/components/PhotoQuote";
-import { courseImage } from "@/lib/academyImagery";
+import { courseImage, courseImagePosition } from "@/lib/academyImagery";
 import CourseCard from "@/components/CourseCard";
 import SectionTitle from "@/components/SectionTitle";
 import IRClassBanner from "@/components/IRClassBanner";
@@ -247,7 +247,7 @@ const Index = () => {
     return (
       <article className="group flex h-full flex-col overflow-hidden rounded-[2rem] border border-border bg-card transition-all duration-500 hover:-translate-y-1 hover:shadow-float">
         <Link to={`/courses/${course.slug}`} className="relative block aspect-[4/3] overflow-hidden bg-photo-shade">
-          <img src={courseImage(course.slug, course.title)} alt={course.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105" />
+          <img src={courseImage(course.slug, course.title)} alt={course.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105" style={{ objectPosition: courseImagePosition(course.slug, course.title) }} />
           <div className="absolute inset-0 bg-gradient-to-t from-photo-shade via-photo-shade/30 to-transparent" />
           {tag && <span className="absolute right-4 top-4 rounded-full border border-photo-ink/20 bg-photo-shade/40 px-3 py-1 text-xs font-medium text-photo-ink backdrop-blur-md">{tag}</span>}
           <h3 className="absolute inset-x-5 bottom-5 text-2xl font-extrabold leading-snug text-photo-ink md:text-[1.7rem]">{course.title}</h3>

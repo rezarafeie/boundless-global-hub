@@ -1,3 +1,9 @@
+## Checkout, Black Friday and course covers
+- [x] Make the online payment button readable in dark mode
+- [x] Show Black Friday installment pricing only when the course and gateway are eligible; five policy tests pass and unauthorized Rafiei Pay requests are rejected without records
+- [x] Replace the Iran, Boundless Start and Smart Pack covers and correct focal positioning across course cards
+- [x] Verify checkout, Black Friday and course cards in mobile dark mode; new covers load and disabled-course cash pricing is visible
+
 ## Enrollment SMS
 - [x] Send a real approved-template test to the consenting mobile; Kavenegar accepted activation message 1740703834 and its delivery record saved successfully
 - [x] Enable all three messages for all 15 courses, only for new successful registrations; per-course controls retained; hourly reminders, activation 60 minutes and course start 720 minutes (12 hours)

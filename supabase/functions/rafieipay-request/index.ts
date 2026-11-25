@@ -36,9 +36,27 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    let snapppayMaxToman = 50_000_000;
+    if (rpGateway === 'snapppay') {
+      const { data: settings } = await supabase
+        .from('admin_settings')
+        .select('rafieipay_snapppay_enabled, snapppay_max_amount_toman')
+        .eq('id', 1)
+        .maybeSingle();
+      if ((settings as any)?.rafieipay_snapppay_enabled !== true) {
+        return new Response(JSON.stringify({ error: 'پرداخت اقساطی اسنپ‌پی از طریق رفیعی‌پی فعال نیست' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      snapppayMaxToman = Number((settings as any)?.snapppay_max_amount_toman || 50_000_000);
+    }
+
     let paymentAmount: number, enrollment: any, itemTitle: string, itemSlug: string;
 
     if (enrollmentType === 'test' && testSlug) {
+      if (rpGateway === 'snapppay') {
+        return new Response(JSON.stringify({ error: 'پرداخت اقساطی برای آزمون فعال نیست' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
       const { data: test, error: testError } = await supabase
         .from('tests').select('*').eq('slug', testSlug).eq('is_active', true).single();
       if (testError || !test) {
@@ -71,10 +89,18 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Course not found' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
+      if (rpGateway === 'snapppay' && (course as any).snapppay_enabled === false) {
+        return new Response(JSON.stringify({ error: 'پرداخت اقساطی برای این دوره فعال نیست' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
       // Amount is decided server-side: a client value may only lower the price (discounts), never raise it.
       const courseBase = Number(course.price || 0);
       const courseRequested = Number(customAmount);
       paymentAmount = Number.isFinite(courseRequested) && courseRequested > 0 && courseRequested <= courseBase ? courseRequested : courseBase;
+      if (rpGateway === 'snapppay' && paymentAmount > snapppayMaxToman) {
+        return new Response(JSON.stringify({ error: `پرداخت اقساطی اسنپ‌پی برای مبالغ بالای ${snapppayMaxToman.toLocaleString('fa-IR')} تومان امکان‌پذیر نیست` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
       itemTitle = course.title; itemSlug = courseSlug;
 
       const { data: ce, error: ceErr } = await supabase

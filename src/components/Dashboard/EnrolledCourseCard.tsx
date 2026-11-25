@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, ClipboardCheck, PlayCircle } from 'lucide-react';
-import { courseImage } from '@/lib/academyImagery';
+import { courseImage, courseImagePosition } from '@/lib/academyImagery';
 
 export interface CourseProgressInfo {
   totalLessons: number;
@@ -30,7 +30,7 @@ const EnrolledCourseCard: React.FC<Props> = ({ title, slug, enrollmentId, paid, 
     <Link to={to} dir="rtl"
       className="group flex overflow-hidden rounded-3xl border border-border bg-card text-right transition-all duration-300 hover:-translate-y-0.5 hover:shadow-float">
       <div className={`relative shrink-0 overflow-hidden bg-muted ${compact ? 'w-28' : 'w-36 md:w-44'}`}>
-        <img src={courseImage(slug || '', title)} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+        <img src={courseImage(slug || '', title)} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" style={{ objectPosition: courseImagePosition(slug || '', title) }} />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-3 p-4 md:p-5">
         <div className="flex items-start justify-between gap-3">

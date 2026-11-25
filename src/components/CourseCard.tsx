@@ -8,7 +8,7 @@ import { BookOpen, Code, DollarSign, GraduationCap, Search, Star, User, Clock, U
 import { useNavigate } from "react-router-dom";
 import { useBlackFridayContext } from "@/contexts/BlackFridayContext";
 import BlackFridayBadge from "@/components/BlackFriday/BlackFridayBadge";
-import { courseImage } from "@/lib/academyImagery";
+import { courseImage, courseImagePosition } from "@/lib/academyImagery";
 
 interface CourseCardProps {
   title: string;
@@ -112,7 +112,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
       className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-[2rem] border border-border bg-card transition-all duration-500 ease-smooth hover:-translate-y-1 hover:shadow-float"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-photo-shade">
-        <img src={courseImage(slug, title)} alt={title} loading="lazy" className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105" />
+        <img src={courseImage(slug, title)} alt={title} loading="lazy" className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105" style={{ objectPosition: courseImagePosition(slug, title) }} />
         <div className="absolute inset-0 bg-gradient-to-t from-photo-shade via-photo-shade/30 to-transparent" />
         <div className="absolute right-4 top-4 flex items-center gap-2">
           {blackFridayDiscount > 0 && <BlackFridayBadge discount={blackFridayDiscount} className="text-xs scale-75" />}

@@ -1098,7 +1098,7 @@ const Enroll: React.FC = () => {
                      {(paymentMethod !== 'manual') && (test || course) && !isFree && (
                      <Button
                        type="submit"
-                       className="w-full bg-gradient-to-r from-primary to-foreground hover:from-primary/90 hover:to-foreground/90 text-white h-14 text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+                       className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-14 text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200"
                        disabled={submitting}
                      >
                        {submitting ? (

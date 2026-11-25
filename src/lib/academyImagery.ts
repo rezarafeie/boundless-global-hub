@@ -1,11 +1,12 @@
-import k_boundless from '@/assets/real/k_boundless2.webp.asset.json';
+import k_boundless from '@/assets/real/k_boundless_v3.webp.asset.json';
 import k_taste from '@/assets/real/k_taste.webp.asset.json';
 import k_instagram from '@/assets/real/k_instagram.webp.asset.json';
 import k_meta from '@/assets/real/k_meta.webp.asset.json';
 import k_wealth from '@/assets/real/k_wealth.webp.asset.json';
 import k_passive from '@/assets/real/k_passive.webp.asset.json';
 import k_life from '@/assets/real/k_life.webp.asset.json';
-import k_pack from '@/assets/real/k_pack.webp.asset.json';
+import k_pack from '@/assets/real/k_pack_v2.webp.asset.json';
+import k_iran from '@/assets/real/k_iran.webp.asset.json';
 import k_america from '@/assets/real/k_america.webp.asset.json';
 import k_crisis from '@/assets/real/k_crisis.webp.asset.json';
 import k_rescue from '@/assets/real/k_rescue.webp.asset.json';
@@ -58,6 +59,7 @@ export const courseImage = (slug = '', title = ''): string => {
   if (s.includes('servit') || s.includes('wealth') || s.includes('servat') || title.includes('ثروت')) return k_wealth.url;
   if (s.includes('passive') || title.includes('غیرفعال')) return k_passive.url;
   if (s.includes('smart-pack') || title.includes('پک هوشمند')) return k_pack.url;
+  if (s.includes('iran') || title.includes('ایران')) return k_iran.url;
   if (s.includes('smart-life') || title.includes('زندگی هوشمند')) return k_life.url;
   if (s.includes('smart') || title.includes('هوش')) return k_ai2.url;
   if (s.includes('america') || title.includes('آمریکا')) return k_america.url;
@@ -66,6 +68,25 @@ export const courseImage = (slug = '', title = ''): string => {
   if (s.includes('change') || title.includes('تغییر')) return k_change.url;
   if (s.includes('boundless') || title.includes('بدون مرز') || title.includes('شروع')) return k_boundless.url;
   return k_default.url;
+};
+
+/** Focal point shared by every course-card shape, including narrow dashboard cards. */
+export const courseImagePosition = (slug = '', title = ''): string => {
+  const s = `${slug} ${title}`.toLowerCase();
+  if (s.includes('taste') || title.includes('مزه')) return '45% 35%';
+  if (s.includes('instagram') || title.includes('اینستاگرام')) return '42% 32%';
+  if (s.includes('metaverse') || title.includes('متاورس')) return '72% 38%';
+  if (s.includes('servit') || s.includes('wealth') || s.includes('servat') || title.includes('ثروت')) return '50% 30%';
+  if (s.includes('passive') || title.includes('غیرفعال')) return '50% 28%';
+  if (s.includes('smart-pack') || title.includes('پک هوشمند')) return '50% 45%';
+  if (s.includes('iran') || title.includes('ایران')) return '62% 48%';
+  if (s.includes('smart-life') || title.includes('زندگی هوشمند') || s.includes('smart') || title.includes('هوش')) return '50% 32%';
+  if (s.includes('america') || title.includes('آمریکا')) return '50% 35%';
+  if (s.includes('crisis') || title.includes('بحران')) return '50% 40%';
+  if (s.includes('rescue') || title.includes('نجات')) return '70% 45%';
+  if (s.includes('change') || title.includes('تغییر')) return '35% 40%';
+  if (s.includes('boundless') || title.includes('بدون مرز') || title.includes('شروع')) return '68% 48%';
+  return '50% 32%';
 };
 
 export const sceneGallery = [g1.url, g2.url, g3.url, g4.url, c_change.url];
