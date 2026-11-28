@@ -188,6 +188,20 @@ img {
 }
 
 @layer components {
+  /* Container breakpoints are independent of its maximum width. */
+  @screen md {
+    .container {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+  @screen lg {
+    .container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+
   .stv2 {
     --stv2-ink: 221 39% 11%;
     --stv2-paper: 210 40% 98%;
