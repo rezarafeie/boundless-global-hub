@@ -86,7 +86,8 @@ export default function JobApplication() {
   // Success message component
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center" dir="rtl">
+      <div className="public-content" dir="rtl">
+      <main className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
         <div className="container mx-auto max-w-2xl px-4">
           <div className="bg-card rounded-xl shadow-lg border p-8 text-center">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-green-500/10 rounded-full mb-6">
@@ -137,14 +138,16 @@ export default function JobApplication() {
             </div>
           </div>
         </div>
+      </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5" dir="rtl">
+    <div className="public-content" dir="rtl">
+    <main className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-20 px-4">
+      <section className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-20">
         <div className="container mx-auto max-w-4xl text-center">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-background/10 rounded-full mb-6 backdrop-blur-sm">
             <Briefcase className="w-10 h-10" />
@@ -156,7 +159,7 @@ export default function JobApplication() {
             در کنار ما، آینده‌ای روشن و موفق برای خود بسازید
           </p>
         </div>
-      </div>
+      </section>
 
       {/* Features Section */}
       <div className="container mx-auto max-w-6xl px-4 py-12">
@@ -348,6 +351,7 @@ export default function JobApplication() {
           </p>
         </div>
       </div>
+    </main>
     </div>
   );
 }

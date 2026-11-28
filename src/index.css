@@ -188,6 +188,50 @@ img {
 }
 
 @layer components {
+  .public-content {
+    --page-gutter: 1rem;
+    --page-max-width: 1400px;
+  }
+
+  .public-content main {
+    overflow-x: clip;
+  }
+
+  .public-content main .grid > *,
+  .public-content main .flex > * {
+    min-width: 0;
+  }
+
+  /* The container owns horizontal spacing, never both it and its section. */
+  .public-content main section:has(> .container):not(.container) {
+    padding-inline: 0;
+  }
+
+  .public-content main .container {
+    width: 100%;
+    max-width: var(--page-max-width);
+    margin-inline: auto;
+    padding-inline: var(--page-gutter);
+  }
+
+  /* Embedded banners inherit their parent's grid without a second inset. */
+  .public-content main .container .container {
+    max-width: none;
+    padding-inline: 0;
+  }
+
+  /* Compact enrollment forms remain compact inside the shared page grid. */
+  .public-content main .container.max-w-lg { max-width: 32rem; }
+  .public-content main .container.max-w-md { max-width: 28rem; }
+  .public-content main .container.max-w-sm { max-width: 24rem; }
+
+  @screen md {
+    .public-content { --page-gutter: 1.5rem; }
+  }
+  @screen lg {
+    .public-content { --page-gutter: 2rem; }
+  }
+
   /* Container breakpoints are independent of its maximum width. */
   @screen md {
     .container {

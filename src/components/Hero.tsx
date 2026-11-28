@@ -19,7 +19,7 @@ const Hero: React.FC<HeroProps> = ({ title, subtitle, ctaText, ctaLink }) => {
   const { language } = useLanguage();
   const scene = useMemo(pickHeroScene, []);
   return (
-    <section className="px-3 pt-3 md:px-4 md:pt-4">
+    <section className="container mx-auto pt-3 md:pt-4">
     <div className="relative isolate overflow-hidden rounded-[2rem] bg-photo-shade text-photo-ink">
       <motion.img
         key={scene.image}
@@ -31,7 +31,7 @@ const Hero: React.FC<HeroProps> = ({ title, subtitle, ctaText, ctaLink }) => {
         className={`absolute inset-0 -z-10 h-full w-full object-cover object-[30%_center] md:${scene.position}`}
       />
       <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-photo-shade via-photo-shade/70 to-photo-shade/10 md:bg-gradient-to-l md:from-photo-shade md:via-photo-shade/75 md:to-photo-shade/20" />
-      <div className="container mx-auto flex min-h-[78svh] items-end px-6 pt-24 pb-14 md:min-h-[min(78vh,760px)] md:px-12 md:items-center md:pb-24">
+      <div className="flex min-h-[78svh] items-end px-6 pt-24 pb-14 md:min-h-[min(78vh,760px)] md:px-12 md:items-center md:pb-24">
         <div className="max-w-xl">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease }}
             className="inline-flex items-center gap-2 rounded-full border border-photo-ink/20 bg-photo-ink/10 px-4 py-1.5 text-xs font-medium backdrop-blur-md">

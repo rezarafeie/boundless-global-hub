@@ -16,7 +16,7 @@ const Magazine = () => {
       />
       
       <section id="magazine" className="py-0">
-        <div className="container-fluid p-0">
+        <div className="container">
           <EnhancedIframe
             src="https://auth.rafiei.co/mag/"
             title="مجله آکادمی رفیعی"

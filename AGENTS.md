@@ -1,5 +1,7 @@
 # Project architecture rules
 
+- Public content pages use MainLayout's scoped section grid with one responsive gutter and zero extra inset on nested containers; operational screens and narrow inner reading blocks retain their own layout because section edges must align without widening forms or messenger tools.
+
 - Enrollment SMS uses service-only per-course settings and enrollment/kind claims with the existing activation and lesson progress records; short SMS login hashes are consumed atomically into existing user sessions after rechecking payment, activation and course access, because reminders must not grant access or duplicate delivery.
 
 - Course editing uses persistent section panels with compact scheduling disclosures; hidden panels remain mounted so navigation preserves unsaved course, message and gamification state without changing persistence or lifecycle rules.

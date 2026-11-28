@@ -1,3 +1,8 @@
+## Public page section alignment
+- [x] Unify section widths and side gutters across home, course catalog, founder and public content pages without changing application screens
+- [x] Remove doubled container spacing and align the hero, gallery, ecosystem and Iran banners
+- [x] Verify 27 public pages at mobile, tablet and desktop widths (81 combinations), aligned container edges and no horizontal overflow; home founder/gallery/Iran edges match exactly and course filtering changes 12 cards to 7 free cards
+
 ## Checkout, Black Friday and course covers
 - [x] Make the online payment button readable in dark mode
 - [x] Show Black Friday installment pricing only when the course and gateway are eligible; five policy tests pass and unauthorized Rafiei Pay requests are rejected without records

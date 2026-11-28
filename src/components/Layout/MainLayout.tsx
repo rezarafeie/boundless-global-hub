@@ -45,6 +45,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   // Routes that require online connection - only messenger requires connection now
   const requiresConnectionRoutes = ['/hub/messenger'];
   const requiresConnection = requiresConnectionRoutes.some(route => location.pathname.startsWith(route));
+
+  // Public content shares one section grid; operational screens keep their own layouts.
+  const publicContentPath = location.pathname.replace(/^\/en(?=\/|$)/, '') || '/';
+  const hasPublicSections = publicContentPath === '/' ||
+    /^\/(courses(?:\/|$)|course$|free-courses$|paid-courses$|reza-rafiei$|about$|contact$|blog(?:\/|$)|magazine(?:\/|$)|blackfriday$|job$|internship$|ir-class$|rescue$)/.test(publicContentPath);
   
   // Calculate dynamic top padding based on notifications - more precise calculation
   const dynamicTopPadding = hasBannerNotifications ? `${headerHeight + totalHeight}px` : `${headerHeight}px`;
@@ -68,7 +73,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   }
   
   return (
-    <div className={`flex min-h-screen flex-col bg-background text-foreground dark:bg-background dark:text-foreground`} dir={direction}>
+    <div className={`flex min-h-screen flex-col bg-background text-foreground dark:bg-background dark:text-foreground ${hasPublicSections ? 'public-content' : ''}`} dir={direction}>
       <Header />
       
       <GlobalAccessCountdownBanner className="top-16" />

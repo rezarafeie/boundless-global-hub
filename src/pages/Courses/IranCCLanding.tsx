@@ -704,7 +704,7 @@ const IranCCLanding: React.FC = () => {
             <QuickEnrollPopover courseSlug="iran" fallbackHref="/enroll/?course=iran">
               <Button
                 size="lg"
-                className="bg-white text-black hover:bg-white/90 font-bold text-lg px-8 py-6 rounded-xl shadow-2xl"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg px-6 py-4 rounded-xl shadow-2xl w-full max-w-2xl h-auto whitespace-normal leading-relaxed"
               >
                 <Flame className="ml-2 h-5 w-5" style={{ color: `hsl(${IRAN_RED})` }} />
                 بله، می‌خواهم بیزینسم را در ایران راه بیندازم — {fmt(coursePrice)} تومان
